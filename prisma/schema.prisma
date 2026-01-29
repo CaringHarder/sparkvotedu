@@ -18,5 +18,44 @@ model Teacher {
   createdAt        DateTime @default(now()) @map("created_at")
   updatedAt        DateTime @updatedAt @map("updated_at")
 
+  classSessions ClassSession[]
+
   @@map("teachers")
+}
+
+model ClassSession {
+  id        String    @id @default(uuid())
+  code      String
+  name      String?
+  status    String    @default("active")
+  teacherId String    @map("teacher_id")
+  teacher   Teacher   @relation(fields: [teacherId], references: [id])
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  endedAt   DateTime? @map("ended_at")
+
+  participants StudentParticipant[]
+
+  @@index([code, status])
+  @@map("class_sessions")
+}
+
+model StudentParticipant {
+  id           String    @id @default(uuid())
+  funName      String    @map("fun_name")
+  deviceId     String    @map("device_id")
+  fingerprint  String?
+  recoveryCode String?   @map("recovery_code")
+  rerollUsed   Boolean   @default(false) @map("reroll_used")
+  banned       Boolean   @default(false)
+  lastSeenAt   DateTime  @default(now()) @map("last_seen_at")
+  createdAt    DateTime  @default(now()) @map("created_at")
+  sessionId    String    @map("session_id")
+  session      ClassSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@unique([sessionId, deviceId])
+  @@unique([sessionId, funName])
+  @@index([sessionId, fingerprint])
+  @@index([recoveryCode])
+  @@map("student_participants")
 }
