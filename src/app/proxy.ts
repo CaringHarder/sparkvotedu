@@ -2,14 +2,19 @@ import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
 const AUTH_PAGES = ['/login', '/signup', '/forgot-password', '/update-password', '/auth']
-const PUBLIC_PAGES = ['/']
+const PUBLIC_PAGES = ['/', '/join']
 
 function isAuthPage(pathname: string): boolean {
   return AUTH_PAGES.some((page) => pathname === page || pathname.startsWith(`${page}/`))
 }
 
 function isPublicPage(pathname: string): boolean {
-  return PUBLIC_PAGES.includes(pathname)
+  if (PUBLIC_PAGES.includes(pathname)) return true
+  // Student-facing routes are accessible without authentication
+  if (pathname.startsWith('/join/')) return true
+  if (pathname.startsWith('/session/')) return true
+  if (pathname.startsWith('/api/sessions/')) return true
+  return false
 }
 
 export async function proxy(request: NextRequest) {
