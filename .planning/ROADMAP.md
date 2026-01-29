@@ -54,14 +54,14 @@ Plans:
   3. Student can close the browser, reopen it, and return to the same session with the same fun name
   4. Student can see a list of active brackets and polls in their session and select one to participate in
   5. Two students on identical school-issued laptops are recognized as distinct participants
-**Plans**: TBD
+**Plans**: 5 plans
 
 Plans:
-- [ ] 02-01: Class code join flow and session creation
-- [ ] 02-02: Device fingerprinting with composite signals
-- [ ] 02-03: Fun name generation and assignment
-- [ ] 02-04: Session persistence and returning student recognition
-- [ ] 02-05: Student session view (active brackets/polls list)
+- [ ] 02-01-PLAN.md — Database schema (ClassSession, StudentParticipant), class code generator, fun name generator, student types
+- [ ] 02-02-PLAN.md — Device fingerprinting system (FingerprintJS, localStorage UUID, useDeviceIdentity hook)
+- [ ] 02-03-PLAN.md — Join flow backend (DAL, server actions, proxy update for student routes)
+- [ ] 02-04-PLAN.md — Join page UI, welcome screen, session layout, reroll and recovery code components
+- [ ] 02-05-PLAN.md — Teacher session management, student activity grid, Supabase Realtime hooks
 
 ### Phase 3: Bracket Creation & Management
 **Goal**: Teachers can create single-elimination brackets, populate them with entrants using multiple methods, and manage bracket lifecycle
@@ -222,7 +222,7 @@ Note: Phase 3 depends only on Phase 1 (not Phase 2), so Phases 2 and 3 could the
 | Phase | Plans Complete | Status | Completed |
 |-------|---------------|--------|-----------|
 | 1. Foundation & Auth | 5/5 | ✓ Complete | 2026-01-29 |
-| 2. Student Join Flow | 0/5 | Not started | - |
+| 2. Student Join Flow | 0/5 | Planned | - |
 | 3. Bracket Creation & Management | 0/6 | Not started | - |
 | 4. Voting & Real-Time | 0/6 | Not started | - |
 | 5. Polls | 0/4 | Not started | - |
