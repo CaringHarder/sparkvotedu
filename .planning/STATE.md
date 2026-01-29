@@ -10,28 +10,28 @@ See: .planning/PROJECT.md (updated 2026-01-28)
 ## Current Position
 
 Phase: 1 of 10 (Foundation & Auth)
-Plan: 0 of 5 in current phase
-Status: Ready to plan
-Last activity: 2026-01-28 -- Roadmap created with 10 phases, 51 plans, 62 requirements mapped
+Plan: 2 of 5 in current phase (01-01, 01-05 complete)
+Status: In progress - Wave 2 executing
+Last activity: 2026-01-29 -- Completed 01-05-PLAN.md (Feature Gating)
 
-Progress: [..........] 0%
+Progress: [##........] 4% (2/51 plans)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 0
-- Average duration: --
-- Total execution time: 0 hours
+- Total plans completed: 2
+- Average duration: ~36 min
+- Total execution time: ~1.2 hours
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
-| - | - | - | - |
+| 01-foundation-and-auth | 2/5 | ~1.2h | ~36m |
 
 **Recent Trend:**
-- Last 5 plans: --
-- Trend: --
+- Last 5 plans: 01-01 (~28m), 01-05 (43m)
+- Trend: Stable
 
 *Updated after each plan completion*
 
@@ -45,6 +45,10 @@ Recent decisions affecting current work:
 - [Roadmap]: 10 phases derived from 62 requirements across 10 categories; comprehensive depth
 - [Roadmap]: Build order follows Foundation -> Auth -> Student -> Brackets -> Voting -> Polls -> Billing -> Advanced -> Sports -> Analytics -> Landing
 - [Roadmap]: Real-time requirements (RT-01 through RT-04) grouped with voting (Phase 4) rather than as standalone phase
+- [01-05]: Pure functions over middleware for feature gating -- gate functions take tier as input, caller handles DB lookup
+- [01-05]: Smart upgradeTarget skips intermediate tiers when feature requires higher tier (free->pro_plus for sportsIntegration)
+- [01-05]: Vitest chosen as test runner for ESM-native support matching project type:module
+- [01-05]: as const on TIER_LIMITS for TypeScript literal type inference
 
 ### Pending Todos
 
@@ -58,6 +62,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-01-28
-Stopped at: Roadmap created, ready to plan Phase 1
+Last session: 2026-01-29T15:45:27Z
+Stopped at: Completed 01-05-PLAN.md (Feature Gating)
 Resume file: None
