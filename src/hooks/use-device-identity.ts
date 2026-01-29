@@ -3,13 +3,7 @@
 import { useEffect, useState } from 'react'
 import { getOrCreateDeviceId } from '@/lib/student/session-identity'
 import { getBrowserFingerprint } from '@/lib/student/fingerprint'
-
-// TODO: Import DeviceIdentity from @/types/student when Plan 02-01 creates it
-interface DeviceIdentity {
-  deviceId: string       // localStorage UUID (primary)
-  fingerprint: string    // FingerprintJS hash (secondary)
-  ready: boolean         // true when identity is fully computed
-}
+import type { DeviceIdentity } from '@/types/student'
 
 /**
  * Client-side React hook that combines both identity layers into a
