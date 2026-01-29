@@ -58,7 +58,7 @@ Plans:
 
 Plans:
 - [ ] 02-01-PLAN.md — Database schema (ClassSession, StudentParticipant), class code generator, fun name generator, student types
-- [ ] 02-02-PLAN.md — Device fingerprinting system (FingerprintJS, localStorage UUID, useDeviceIdentity hook)
+- [x] 02-02-PLAN.md — Device fingerprinting system (FingerprintJS, localStorage UUID, useDeviceIdentity hook)
 - [ ] 02-03-PLAN.md — Join flow backend (DAL, server actions, proxy update for student routes)
 - [ ] 02-04-PLAN.md — Join page UI, welcome screen, session layout, reroll and recovery code components
 - [ ] 02-05-PLAN.md — Teacher session management, student activity grid, Supabase Realtime hooks
@@ -222,7 +222,7 @@ Note: Phase 3 depends only on Phase 1 (not Phase 2), so Phases 2 and 3 could the
 | Phase | Plans Complete | Status | Completed |
 |-------|---------------|--------|-----------|
 | 1. Foundation & Auth | 5/5 | ✓ Complete | 2026-01-29 |
-| 2. Student Join Flow | 0/5 | Planned | - |
+| 2. Student Join Flow | 2/5 | In Progress | - |
 | 3. Bracket Creation & Management | 0/6 | Not started | - |
 | 4. Voting & Real-Time | 0/6 | Not started | - |
 | 5. Polls | 0/4 | Not started | - |
