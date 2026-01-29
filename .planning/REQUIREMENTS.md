@@ -1,7 +1,7 @@
 # Requirements: SparkVotEDU
 
 **Defined:** 2026-01-28
-**Core Value:** Teachers can instantly engage any classroom through voting — on any topic, in any format — and see participation happen in real time.
+**Core Value:** Teachers can instantly engage any classroom through voting -- on any topic, in any format -- and see participation happen in real time.
 
 ## v1 Requirements
 
@@ -143,74 +143,74 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| AUTH-01 | TBD | Pending |
-| AUTH-02 | TBD | Pending |
-| AUTH-03 | TBD | Pending |
-| AUTH-04 | TBD | Pending |
-| AUTH-05 | TBD | Pending |
-| AUTH-06 | TBD | Pending |
-| AUTH-07 | TBD | Pending |
-| STUD-01 | TBD | Pending |
-| STUD-02 | TBD | Pending |
-| STUD-03 | TBD | Pending |
-| STUD-04 | TBD | Pending |
-| STUD-05 | TBD | Pending |
-| STUD-06 | TBD | Pending |
-| BRKT-01 | TBD | Pending |
-| BRKT-02 | TBD | Pending |
-| BRKT-03 | TBD | Pending |
-| BRKT-04 | TBD | Pending |
-| BRKT-05 | TBD | Pending |
-| BRKT-06 | TBD | Pending |
-| BRKT-07 | TBD | Pending |
-| BRKT-08 | TBD | Pending |
-| BRKT-09 | TBD | Pending |
-| BRKT-10 | TBD | Pending |
-| BRKT-11 | TBD | Pending |
-| POLL-01 | TBD | Pending |
-| POLL-02 | TBD | Pending |
-| POLL-03 | TBD | Pending |
-| POLL-04 | TBD | Pending |
-| POLL-05 | TBD | Pending |
-| POLL-06 | TBD | Pending |
-| MGMT-01 | TBD | Pending |
-| MGMT-02 | TBD | Pending |
-| MGMT-03 | TBD | Pending |
-| MGMT-04 | TBD | Pending |
-| MGMT-05 | TBD | Pending |
-| MGMT-06 | TBD | Pending |
-| MGMT-07 | TBD | Pending |
-| MGMT-08 | TBD | Pending |
-| RT-01 | TBD | Pending |
-| RT-02 | TBD | Pending |
-| RT-03 | TBD | Pending |
-| RT-04 | TBD | Pending |
-| SPRT-01 | TBD | Pending |
-| SPRT-02 | TBD | Pending |
-| SPRT-03 | TBD | Pending |
-| SPRT-04 | TBD | Pending |
-| ANLYT-01 | TBD | Pending |
-| ANLYT-02 | TBD | Pending |
-| ANLYT-03 | TBD | Pending |
-| ANLYT-04 | TBD | Pending |
-| BILL-01 | TBD | Pending |
-| BILL-02 | TBD | Pending |
-| BILL-03 | TBD | Pending |
-| BILL-04 | TBD | Pending |
-| BILL-05 | TBD | Pending |
-| BILL-06 | TBD | Pending |
-| BILL-07 | TBD | Pending |
-| UI-01 | TBD | Pending |
-| UI-02 | TBD | Pending |
-| UI-03 | TBD | Pending |
-| UI-04 | TBD | Pending |
-| UI-05 | TBD | Pending |
+| AUTH-01 | Phase 1: Foundation & Auth | Pending |
+| AUTH-02 | Phase 1: Foundation & Auth | Pending |
+| AUTH-03 | Phase 1: Foundation & Auth | Pending |
+| AUTH-04 | Phase 1: Foundation & Auth | Pending |
+| AUTH-05 | Phase 1: Foundation & Auth | Pending |
+| AUTH-06 | Phase 1: Foundation & Auth | Pending |
+| AUTH-07 | Phase 1: Foundation & Auth | Pending |
+| STUD-01 | Phase 2: Student Join Flow | Pending |
+| STUD-02 | Phase 2: Student Join Flow | Pending |
+| STUD-03 | Phase 2: Student Join Flow | Pending |
+| STUD-04 | Phase 2: Student Join Flow | Pending |
+| STUD-05 | Phase 2: Student Join Flow | Pending |
+| STUD-06 | Phase 2: Student Join Flow | Pending |
+| BRKT-01 | Phase 3: Bracket Creation & Management | Pending |
+| BRKT-02 | Phase 7: Advanced Brackets | Pending |
+| BRKT-03 | Phase 7: Advanced Brackets | Pending |
+| BRKT-04 | Phase 7: Advanced Brackets | Pending |
+| BRKT-05 | Phase 7: Advanced Brackets | Pending |
+| BRKT-06 | Phase 7: Advanced Brackets | Pending |
+| BRKT-07 | Phase 3: Bracket Creation & Management | Pending |
+| BRKT-08 | Phase 4: Voting & Real-Time | Pending |
+| BRKT-09 | Phase 3: Bracket Creation & Management | Pending |
+| BRKT-10 | Phase 3: Bracket Creation & Management | Pending |
+| BRKT-11 | Phase 3: Bracket Creation & Management | Pending |
+| POLL-01 | Phase 5: Polls | Pending |
+| POLL-02 | Phase 5: Polls | Pending |
+| POLL-03 | Phase 5: Polls | Pending |
+| POLL-04 | Phase 5: Polls | Pending |
+| POLL-05 | Phase 5: Polls | Pending |
+| POLL-06 | Phase 5: Polls | Pending |
+| MGMT-01 | Phase 4: Voting & Real-Time | Pending |
+| MGMT-02 | Phase 4: Voting & Real-Time | Pending |
+| MGMT-03 | Phase 4: Voting & Real-Time | Pending |
+| MGMT-04 | Phase 3: Bracket Creation & Management | Pending |
+| MGMT-05 | Phase 3: Bracket Creation & Management | Pending |
+| MGMT-06 | Phase 3: Bracket Creation & Management | Pending |
+| MGMT-07 | Phase 4: Voting & Real-Time | Pending |
+| MGMT-08 | Phase 3: Bracket Creation & Management | Pending |
+| RT-01 | Phase 4: Voting & Real-Time | Pending |
+| RT-02 | Phase 4: Voting & Real-Time | Pending |
+| RT-03 | Phase 4: Voting & Real-Time | Pending |
+| RT-04 | Phase 4: Voting & Real-Time | Pending |
+| SPRT-01 | Phase 8: Sports Integration | Pending |
+| SPRT-02 | Phase 8: Sports Integration | Pending |
+| SPRT-03 | Phase 8: Sports Integration | Pending |
+| SPRT-04 | Phase 8: Sports Integration | Pending |
+| ANLYT-01 | Phase 9: Analytics | Pending |
+| ANLYT-02 | Phase 9: Analytics | Pending |
+| ANLYT-03 | Phase 9: Analytics | Pending |
+| ANLYT-04 | Phase 9: Analytics | Pending |
+| BILL-01 | Phase 6: Billing & Subscriptions | Pending |
+| BILL-02 | Phase 6: Billing & Subscriptions | Pending |
+| BILL-03 | Phase 6: Billing & Subscriptions | Pending |
+| BILL-04 | Phase 6: Billing & Subscriptions | Pending |
+| BILL-05 | Phase 6: Billing & Subscriptions | Pending |
+| BILL-06 | Phase 6: Billing & Subscriptions | Pending |
+| BILL-07 | Phase 6: Billing & Subscriptions | Pending |
+| UI-01 | Phase 10: Landing Page & Polish | Pending |
+| UI-02 | Phase 10: Landing Page & Polish | Pending |
+| UI-03 | Phase 10: Landing Page & Polish | Pending |
+| UI-04 | Phase 10: Landing Page & Polish | Pending |
+| UI-05 | Phase 10: Landing Page & Polish | Pending |
 
 **Coverage:**
-- v1 requirements: 55 total
-- Mapped to phases: 0
-- Unmapped: 55
+- v1 requirements: 62 total
+- Mapped to phases: 62
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-01-28*
-*Last updated: 2026-01-28 after initial definition*
+*Last updated: 2026-01-28 after roadmap creation*
