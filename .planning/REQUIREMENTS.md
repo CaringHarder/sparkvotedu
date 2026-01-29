@@ -9,13 +9,13 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Authentication
 
-- [ ] **AUTH-01**: Teacher can create account with email and password
-- [ ] **AUTH-02**: Teacher can sign in with Google OAuth
-- [ ] **AUTH-03**: Teacher can sign in with Microsoft OAuth
-- [ ] **AUTH-04**: Teacher can sign in with Apple OAuth
-- [ ] **AUTH-05**: Teacher session persists across browser refresh
-- [ ] **AUTH-06**: Teacher can reset password via email link
-- [ ] **AUTH-07**: Teacher can log out from any page
+- [x] **AUTH-01**: Teacher can create account with email and password
+- [x] **AUTH-02**: Teacher can sign in with Google OAuth
+- [x] **AUTH-03**: Teacher can sign in with Microsoft OAuth
+- [x] **AUTH-04**: Teacher can sign in with Apple OAuth
+- [x] **AUTH-05**: Teacher session persists across browser refresh
+- [x] **AUTH-06**: Teacher can reset password via email link
+- [x] **AUTH-07**: Teacher can log out from any page
 
 ### Student Participation
 
@@ -143,13 +143,13 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| AUTH-01 | Phase 1: Foundation & Auth | Pending |
-| AUTH-02 | Phase 1: Foundation & Auth | Pending |
-| AUTH-03 | Phase 1: Foundation & Auth | Pending |
-| AUTH-04 | Phase 1: Foundation & Auth | Pending |
-| AUTH-05 | Phase 1: Foundation & Auth | Pending |
-| AUTH-06 | Phase 1: Foundation & Auth | Pending |
-| AUTH-07 | Phase 1: Foundation & Auth | Pending |
+| AUTH-01 | Phase 1: Foundation & Auth | Complete |
+| AUTH-02 | Phase 1: Foundation & Auth | Complete |
+| AUTH-03 | Phase 1: Foundation & Auth | Complete |
+| AUTH-04 | Phase 1: Foundation & Auth | Complete |
+| AUTH-05 | Phase 1: Foundation & Auth | Complete |
+| AUTH-06 | Phase 1: Foundation & Auth | Complete |
+| AUTH-07 | Phase 1: Foundation & Auth | Complete |
 | STUD-01 | Phase 2: Student Join Flow | Pending |
 | STUD-02 | Phase 2: Student Join Flow | Pending |
 | STUD-03 | Phase 2: Student Join Flow | Pending |
