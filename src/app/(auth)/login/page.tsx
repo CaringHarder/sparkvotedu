@@ -1,4 +1,6 @@
 import { LoginForm } from '@/components/auth/login-form'
+import { OAuthButtons } from '@/components/auth/oauth-buttons'
+import { Separator } from '@/components/ui/separator'
 
 export default async function LoginPage({
   searchParams,
@@ -25,6 +27,14 @@ export default async function LoginPage({
       )}
 
       <LoginForm />
+
+      <div className="relative flex items-center gap-4 py-2">
+        <Separator className="flex-1" />
+        <span className="text-xs text-muted-foreground uppercase">or</span>
+        <Separator className="flex-1" />
+      </div>
+
+      <OAuthButtons />
     </div>
   )
 }
