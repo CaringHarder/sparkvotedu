@@ -1,0 +1,22 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "./generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Teacher {
+  id               String   @id @default(uuid())
+  email            String   @unique
+  name             String?
+  avatarUrl        String?  @map("avatar_url")
+  subscriptionTier String   @default("free") @map("subscription_tier")
+  stripeCustomerId String?  @map("stripe_customer_id")
+  supabaseAuthId   String   @unique @map("supabase_auth_id")
+  createdAt        DateTime @default(now()) @map("created_at")
+  updatedAt        DateTime @updatedAt @map("updated_at")
+
+  @@map("teachers")
+}
