@@ -2,7 +2,12 @@
 
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
-import { signUpSchema, signInSchema } from '@/lib/utils/validation'
+import {
+  signUpSchema,
+  signInSchema,
+  forgotPasswordSchema,
+  updatePasswordSchema,
+} from '@/lib/utils/validation'
 
 export async function signUp(
   _prevState: { error?: string; success?: string } | null,
@@ -62,4 +67,64 @@ export async function signIn(
   }
 
   redirect('/dashboard')
+}
+
+export async function resetPassword(
+  _prevState: { error?: string; success?: string } | null,
+  formData: FormData
+) {
+  const parsed = forgotPasswordSchema.safeParse({
+    email: formData.get('email'),
+  })
+
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0].message }
+  }
+
+  const supabase = await createClient()
+
+  const { error } = await supabase.auth.resetPasswordForEmail(
+    parsed.data.email,
+    {
+      redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/auth/callback?next=/update-password`,
+    }
+  )
+
+  if (error) {
+    return { error: error.message }
+  }
+
+  return { success: 'Check your email for a password reset link.' }
+}
+
+export async function updatePassword(
+  _prevState: { error?: string } | null,
+  formData: FormData
+) {
+  const parsed = updatePasswordSchema.safeParse({
+    password: formData.get('password'),
+    confirmPassword: formData.get('confirmPassword'),
+  })
+
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0].message }
+  }
+
+  const supabase = await createClient()
+
+  const { error } = await supabase.auth.updateUser({
+    password: parsed.data.password,
+  })
+
+  if (error) {
+    return { error: error.message }
+  }
+
+  redirect('/dashboard')
+}
+
+export async function signOut() {
+  const supabase = await createClient()
+  await supabase.auth.signOut()
+  redirect('/login')
 }
