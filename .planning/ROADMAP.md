@@ -35,14 +35,14 @@ Decimal phases appear between their surrounding integers in numeric order.
   3. Teacher can close the browser, reopen it, and still be logged in (session persists)
   4. Teacher can reset a forgotten password by receiving an email link
   5. Teacher can log out from any page and be returned to the sign-in screen
-**Plans**: TBD
+**Plans**: 5 plans
 
 Plans:
-- [ ] 01-01: Project scaffolding and database schema
-- [ ] 01-02: Email/password authentication and session management
-- [ ] 01-03: OAuth providers (Google, Microsoft, Apple)
-- [ ] 01-04: Password reset flow and logout
-- [ ] 01-05: Feature gating system architecture
+- [ ] 01-01-PLAN.md — Project scaffolding, Prisma v7 + Supabase setup, Teacher model, client utilities
+- [ ] 01-02-PLAN.md — Email/password auth, proxy.ts, session management, dashboard shell
+- [ ] 01-03-PLAN.md — Google, Microsoft, Apple OAuth sign-in buttons
+- [ ] 01-04-PLAN.md — Password reset flow and sign-out button
+- [ ] 01-05-PLAN.md — Feature gating system (canAccess, TIER_LIMITS, unit tests)
 
 ### Phase 2: Student Join Flow
 **Goal**: Students can join a class session anonymously via code, receive a fun name, and be recognized on return
@@ -221,7 +221,7 @@ Note: Phase 3 depends only on Phase 1 (not Phase 2), so Phases 2 and 3 could the
 
 | Phase | Plans Complete | Status | Completed |
 |-------|---------------|--------|-----------|
-| 1. Foundation & Auth | 0/5 | Not started | - |
+| 1. Foundation & Auth | 0/5 | Planned | - |
 | 2. Student Join Flow | 0/5 | Not started | - |
 | 3. Bracket Creation & Management | 0/6 | Not started | - |
 | 4. Voting & Real-Time | 0/6 | Not started | - |
