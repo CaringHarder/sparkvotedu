@@ -10,27 +10,27 @@ See: .planning/PROJECT.md (updated 2026-01-28)
 ## Current Position
 
 Phase: 1 of 10 (Foundation & Auth)
-Plan: 3 of 5 in current phase (01-01, 01-02, 01-05 complete)
-Status: In progress - Wave 2 executing
-Last activity: 2026-01-29 -- Completed 01-02-PLAN.md (Auth Flow & Pages)
+Plan: 4 of 5 in current phase (01-01, 01-02, 01-04, 01-05 complete)
+Status: In progress - Wave 3 complete
+Last activity: 2026-01-29 -- Completed 01-04-PLAN.md (Password Reset & Sign-Out)
 
-Progress: [##........] 6% (3/51 plans)
+Progress: [##........] 8% (4/51 plans)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 3
-- Average duration: ~27 min
-- Total execution time: ~1.3 hours
+- Total plans completed: 4
+- Average duration: ~20 min
+- Total execution time: ~1.4 hours
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
-| 01-foundation-and-auth | 3/5 | ~1.3h | ~27m |
+| 01-foundation-and-auth | 4/5 | ~1.4h | ~20m |
 
 **Recent Trend:**
-- Last 5 plans: 01-01 (~28m), 01-05 (43m), 01-02 (~8m)
+- Last 5 plans: 01-01 (~28m), 01-05 (43m), 01-02 (~8m), 01-04 (~3m)
 - Trend: Accelerating
 
 *Updated after each plan completion*
@@ -56,6 +56,8 @@ Recent decisions affecting current work:
 - [01-05]: Smart upgradeTarget skips intermediate tiers when feature requires higher tier (free->pro_plus for sportsIntegration)
 - [01-05]: Vitest chosen as test runner for ESM-native support matching project type:module
 - [01-05]: as const on TIER_LIMITS for TypeScript literal type inference
+- [01-04]: Form-wrapped signOut action for button invocation (standard Next.js server action pattern)
+- [01-04]: All auth forms follow useActionState + Zod schema + Supabase server client pattern
 
 ### Pending Todos
 
@@ -69,6 +71,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-01-29T15:47:51Z
-Stopped at: Completed 01-02-PLAN.md (Auth Flow & Pages)
+Last session: 2026-01-29T16:20:06Z
+Stopped at: Completed 01-04-PLAN.md (Password Reset & Sign-Out)
 Resume file: None
