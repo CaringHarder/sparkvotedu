@@ -59,8 +59,11 @@ Recent decisions affecting current work:
 - [01-05]: Smart upgradeTarget skips intermediate tiers when feature requires higher tier (free->pro_plus for sportsIntegration)
 - [01-05]: Vitest chosen as test runner for ESM-native support matching project type:module
 - [01-05]: as const on TIER_LIMITS for TypeScript literal type inference
+- [02-01]: crypto.randomInt for secure class code generation (not Math.random)
+- [02-01]: Word lists keyed by letter (Record<string, string[]>) for alliteration enforcement
+- [02-01]: 435 adjectives, 287 animals covering all 26 letters for fun name pool
 - [02-02]: FingerprintJS load promise cached at module level for singleton initialization
-- [02-02]: DeviceIdentity interface defined locally in hook (02-01 types not yet created)
+- [02-02]: DeviceIdentity interface defined locally in hook (02-01 types now available)
 
 ### Pending Todos
 

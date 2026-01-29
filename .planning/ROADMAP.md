@@ -57,7 +57,7 @@ Plans:
 **Plans**: 5 plans
 
 Plans:
-- [ ] 02-01-PLAN.md — Database schema (ClassSession, StudentParticipant), class code generator, fun name generator, student types
+- [x] 02-01-PLAN.md — Database schema (ClassSession, StudentParticipant), class code generator, fun name generator, student types
 - [x] 02-02-PLAN.md — Device fingerprinting system (FingerprintJS, localStorage UUID, useDeviceIdentity hook)
 - [ ] 02-03-PLAN.md — Join flow backend (DAL, server actions, proxy update for student routes)
 - [ ] 02-04-PLAN.md — Join page UI, welcome screen, session layout, reroll and recovery code components
