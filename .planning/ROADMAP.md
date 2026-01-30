@@ -74,15 +74,16 @@ Plans:
   3. Teacher can edit entrants (add, remove, reorder) while the bracket is in draft status
   4. Teacher can set a bracket to draft, active, or completed status
   5. Teacher dashboard shows all brackets with their current status at a glance
-**Plans**: TBD
+**Plans**: 7 plans
 
 Plans:
-- [ ] 03-01: Bracket engine (single-elimination state machine)
-- [ ] 03-02: Bracket creation wizard UI
-- [ ] 03-03: Entrant management (manual, CSV upload, curated topics)
-- [ ] 03-04: Visual bracket rendering (SVG tournament diagram)
-- [ ] 03-05: Bracket lifecycle management (draft/active/completed, edit, delete)
-- [ ] 03-06: Teacher dashboard with bracket/poll overview
+- [ ] 03-01-PLAN.md — Prisma schema (Bracket, BracketEntrant, Matchup), TypeScript types, Zod validation
+- [ ] 03-02-PLAN.md — Bracket engine TDD (calculateRounds, generateMatchups, seeding)
+- [ ] 03-03-PLAN.md — Curated topic lists + CSV parser (PapaParse)
+- [ ] 03-04-PLAN.md — SVG bracket diagram component (custom React SVG renderer)
+- [ ] 03-05-PLAN.md — Bracket DAL + server actions (CRUD with ownership auth)
+- [ ] 03-06-PLAN.md — Bracket creation wizard + entrant management UI (manual, CSV, topics)
+- [ ] 03-07-PLAN.md — Bracket list, detail, lifecycle pages + sidebar navigation
 
 ### Phase 4: Voting & Real-Time
 **Goal**: Students can vote on bracket matchups with results updating live for everyone, and teachers can advance brackets through rounds
@@ -224,7 +225,7 @@ Note: Phase 3 depends only on Phase 1 (not Phase 2), so Phases 2 and 3 could the
 |-------|---------------|--------|-----------|
 | 1. Foundation & Auth | 5/5 | ✓ Complete | 2026-01-29 |
 | 2. Student Join Flow | 6/6 | ✓ Complete | 2026-01-29 |
-| 3. Bracket Creation & Management | 0/6 | Not started | - |
+| 3. Bracket Creation & Management | 0/7 | Not started | - |
 | 4. Voting & Real-Time | 0/6 | Not started | - |
 | 5. Polls | 0/4 | Not started | - |
 | 6. Billing & Subscriptions | 0/5 | Not started | - |
