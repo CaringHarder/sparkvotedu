@@ -19,6 +19,7 @@ model Teacher {
   updatedAt        DateTime @updatedAt @map("updated_at")
 
   classSessions ClassSession[]
+  brackets      Bracket[]
 
   @@map("teachers")
 }
@@ -35,6 +36,7 @@ model ClassSession {
   endedAt   DateTime? @map("ended_at")
 
   participants StudentParticipant[]
+  brackets     Bracket[]
 
   @@index([code, status])
   @@map("class_sessions")
@@ -58,4 +60,66 @@ model StudentParticipant {
   @@index([sessionId, fingerprint])
   @@index([recoveryCode])
   @@map("student_participants")
+}
+
+model Bracket {
+  id          String       @id @default(uuid())
+  name        String
+  description String?
+  bracketType String       @default("single_elimination") @map("bracket_type")
+  size        Int
+  status      String       @default("draft")
+  teacherId   String       @map("teacher_id")
+  teacher     Teacher      @relation(fields: [teacherId], references: [id])
+  sessionId   String?      @map("session_id")
+  session     ClassSession? @relation(fields: [sessionId], references: [id])
+  createdAt   DateTime     @default(now()) @map("created_at")
+  updatedAt   DateTime     @updatedAt @map("updated_at")
+
+  entrants BracketEntrant[]
+  matchups Matchup[]
+
+  @@index([teacherId])
+  @@index([sessionId])
+  @@index([status])
+  @@map("brackets")
+}
+
+model BracketEntrant {
+  id           String   @id @default(uuid())
+  name         String
+  seedPosition Int      @map("seed_position")
+  bracketId    String   @map("bracket_id")
+  bracket      Bracket  @relation(fields: [bracketId], references: [id], onDelete: Cascade)
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  matchupsAsEntrant1 Matchup[] @relation("entrant1")
+  matchupsAsEntrant2 Matchup[] @relation("entrant2")
+  matchupsAsWinner   Matchup[] @relation("winner")
+
+  @@unique([bracketId, seedPosition])
+  @@index([bracketId])
+  @@map("bracket_entrants")
+}
+
+model Matchup {
+  id               String          @id @default(uuid())
+  round            Int
+  position         Int
+  bracketId        String          @map("bracket_id")
+  bracket          Bracket         @relation(fields: [bracketId], references: [id], onDelete: Cascade)
+  entrant1Id       String?         @map("entrant1_id")
+  entrant1         BracketEntrant? @relation("entrant1", fields: [entrant1Id], references: [id])
+  entrant2Id       String?         @map("entrant2_id")
+  entrant2         BracketEntrant? @relation("entrant2", fields: [entrant2Id], references: [id])
+  winnerId         String?         @map("winner_id")
+  winner           BracketEntrant? @relation("winner", fields: [winnerId], references: [id])
+  nextMatchupId    String?         @map("next_matchup_id")
+  nextMatchup      Matchup?        @relation("advancement", fields: [nextMatchupId], references: [id])
+  previousMatchups Matchup[]       @relation("advancement")
+  createdAt        DateTime        @default(now()) @map("created_at")
+
+  @@unique([bracketId, round, position])
+  @@index([bracketId])
+  @@map("matchups")
 }
