@@ -60,7 +60,7 @@ Plans:
 - [x] 02-01-PLAN.md — Database schema (ClassSession, StudentParticipant), class code generator, fun name generator, student types
 - [x] 02-02-PLAN.md — Device fingerprinting system (FingerprintJS, localStorage UUID, useDeviceIdentity hook)
 - [x] 02-03-PLAN.md — Join flow backend (DAL, server actions, proxy update for student routes)
-- [ ] 02-04-PLAN.md — Join page UI, welcome screen, session layout, reroll and recovery code components
+- [x] 02-04-PLAN.md — Join page UI, welcome screen, session layout, reroll and recovery code components
 - [ ] 02-05-PLAN.md — Teacher session management, student activity grid, Supabase Realtime hooks
 
 ### Phase 3: Bracket Creation & Management

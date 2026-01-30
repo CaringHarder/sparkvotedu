@@ -67,6 +67,10 @@ Recent decisions affecting current work:
 - [02-03]: DAL alias pattern for action/DAL name conflicts (endSessionDAL, banParticipantDAL)
 - [02-03]: toParticipantData helper maps Prisma model to StudentParticipantData interface
 - [02-03]: Student routes (/join, /session, /api/sessions) added as public pages in proxy
+- [02-04]: localStorage key pattern sparkvotedu_session_{sessionId} for per-session participant identity
+- [02-04]: HomeJoinInput on homepage redirects to /join/{code} instead of calling joinSession directly
+- [02-04]: Welcome screen uses 3-second countdown for auto-redirect, returning students get manual rejoin
+- [02-04]: Session layout is client component to access localStorage for participant identity
 - [02-05]: Server Component + Client Component split for session detail (SC fetches, CC handles interactivity)
 - [02-05]: useMemo for Supabase client in hooks to prevent duplicate channel subscriptions
 - [02-05]: Broadcast channel over Postgres Changes for activity updates (scalability in 30+ student classrooms)
