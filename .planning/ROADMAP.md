@@ -13,7 +13,7 @@ SparkVotEDU is rebuilt from the ground up across 10 phases, progressing from aut
 Decimal phases appear between their surrounding integers in numeric order.
 
 - [x] **Phase 1: Foundation & Auth** - Project scaffolding, database schema, teacher accounts, and session management
-- [ ] **Phase 2: Student Join Flow** - Anonymous student participation via class codes with device fingerprinting and fun names
+- [x] **Phase 2: Student Join Flow** - Anonymous student participation via class codes with device fingerprinting and fun names
 - [ ] **Phase 3: Bracket Creation & Management** - Teachers create, edit, and manage single-elimination brackets with entrant tools
 - [ ] **Phase 4: Voting & Real-Time** - Students vote on matchups with live updating dashboard and real-time bracket state
 - [ ] **Phase 5: Polls** - Simple and ranked polls with real-time results display
@@ -61,7 +61,7 @@ Plans:
 - [x] 02-02-PLAN.md — Device fingerprinting system (FingerprintJS, localStorage UUID, useDeviceIdentity hook)
 - [x] 02-03-PLAN.md — Join flow backend (DAL, server actions, proxy update for student routes)
 - [x] 02-04-PLAN.md — Join page UI, welcome screen, session layout, reroll and recovery code components
-- [ ] 02-05-PLAN.md — Teacher session management, student activity grid, Supabase Realtime hooks
+- [x] 02-05-PLAN.md — Teacher session management, student activity grid, Supabase Realtime hooks
 
 ### Phase 3: Bracket Creation & Management
 **Goal**: Teachers can create single-elimination brackets, populate them with entrants using multiple methods, and manage bracket lifecycle
@@ -222,7 +222,7 @@ Note: Phase 3 depends only on Phase 1 (not Phase 2), so Phases 2 and 3 could the
 | Phase | Plans Complete | Status | Completed |
 |-------|---------------|--------|-----------|
 | 1. Foundation & Auth | 5/5 | ✓ Complete | 2026-01-29 |
-| 2. Student Join Flow | 2/5 | In Progress | - |
+| 2. Student Join Flow | 5/5 | ✓ Complete | 2026-01-29 |
 | 3. Bracket Creation & Management | 0/6 | Not started | - |
 | 4. Voting & Real-Time | 0/6 | Not started | - |
 | 5. Polls | 0/4 | Not started | - |

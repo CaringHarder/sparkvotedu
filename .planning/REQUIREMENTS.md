@@ -19,12 +19,12 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Student Participation
 
-- [ ] **STUD-01**: Student can join a class session by entering a class code
-- [ ] **STUD-02**: Student is identified by device fingerprint (composite signals for identical school hardware)
-- [ ] **STUD-03**: Student receives a random fun name upon joining (Kahoot-style)
-- [ ] **STUD-04**: Student session persists across page refresh and reconnection
-- [ ] **STUD-05**: Student can see and choose from active brackets or polls in their session
-- [ ] **STUD-06**: Returning student is recognized and assigned their previous fun name
+- [x] **STUD-01**: Student can join a class session by entering a class code
+- [x] **STUD-02**: Student is identified by device fingerprint (composite signals for identical school hardware)
+- [x] **STUD-03**: Student receives a random fun name upon joining (Kahoot-style)
+- [x] **STUD-04**: Student session persists across page refresh and reconnection
+- [x] **STUD-05**: Student can see and choose from active brackets or polls in their session
+- [x] **STUD-06**: Returning student is recognized and assigned their previous fun name
 
 ### Brackets
 
