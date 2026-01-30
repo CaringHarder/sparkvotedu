@@ -27,6 +27,7 @@
     "lucide-react": "^0.563.0",
     "nanoid": "^5.1.6",
     "next": "16.1.6",
+    "papaparse": "^5.5.3",
     "pg": "^8.17.2",
     "prisma": "^7.3.0",
     "qrcode.react": "^4.2.0",
@@ -38,6 +39,7 @@
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
+    "@types/papaparse": "^5.5.2",
     "@types/pg": "^8.16.0",
     "@types/react": "^19",
     "@types/react-dom": "^19",
