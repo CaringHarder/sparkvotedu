@@ -1,5 +1,5 @@
 ---
-status: complete
+status: diagnosed
 phase: 02-student-join-flow
 source: 02-01-SUMMARY.md, 02-02-SUMMARY.md, 02-03-SUMMARY.md, 02-04-SUMMARY.md, 02-05-SUMMARY.md
 started: 2026-01-29T12:00:00Z
@@ -87,7 +87,13 @@ skipped: 10
   reason: "User reported: the teacher dashboard doesn't display a way to create anything"
   severity: major
   test: 2
-  root_cause: ""
-  artifacts: []
-  missing: []
-  debug_session: ""
+  root_cause: "Session creation feature is fully built but orphaned — no navigation from dashboard to /sessions. Dashboard layout has only a sidebar placeholder comment, and dashboard shell renders static text with zero interactive elements."
+  artifacts:
+    - path: "src/app/(dashboard)/layout.tsx"
+      issue: "Sidebar placeholder comment where navigation links should be — no link to /sessions"
+    - path: "src/components/dashboard/shell.tsx"
+      issue: "Static placeholder text 'Your brackets and polls will appear here' with no buttons or links"
+  missing:
+    - "Add sidebar navigation to dashboard layout with link to /sessions"
+    - "Update dashboard shell with session creation CTA or embed SessionCreator component"
+  debug_session: ".planning/debug/missing-session-creation-ui.md"
