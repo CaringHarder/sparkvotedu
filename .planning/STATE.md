@@ -5,33 +5,33 @@
 See: .planning/PROJECT.md (updated 2026-01-28)
 
 **Core value:** Teachers can instantly engage any classroom through voting -- on any topic, in any format -- and see participation happen in real time.
-**Current focus:** Phase 2 in progress -- Student Join Flow
+**Current focus:** Phase 2 complete -- Student Join Flow
 
 ## Current Position
 
 Phase: 2 of 10 (Student Join Flow)
-Plan: 3 of 5 in current phase
-Status: In progress
-Last activity: 2026-01-29 -- Completed 02-03-PLAN.md (Join flow backend)
+Plan: 5 of 5 in current phase
+Status: Phase complete
+Last activity: 2026-01-30 -- Completed 02-05-PLAN.md (Teacher session UI & student activity grid)
 
-Progress: [##........] 16% (8/51 plans)
+Progress: [##........] 20% (10/51 plans)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 8
-- Average duration: ~12 min
-- Total execution time: ~1.6 hours
+- Total plans completed: 10
+- Average duration: ~11 min
+- Total execution time: ~1.8 hours
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
 | 01-foundation-and-auth | 5/5 | ~1.5h | ~18m |
-| 02-student-join-flow | 3/5 | ~4m | ~1.3m |
+| 02-student-join-flow | 5/5 | ~12m | ~2.4m |
 
 **Recent Trend:**
-- Last 5 plans: 01-05 (43m), 01-02 (~8m), 01-04 (~3m), 02-02 (~2m), 02-03 (~2m)
+- Last 5 plans: 01-04 (~3m), 02-02 (~2m), 02-03 (~2m), 02-04 (~4m), 02-05 (~4m)
 - Trend: Accelerating
 
 *Updated after each plan completion*
@@ -67,6 +67,9 @@ Recent decisions affecting current work:
 - [02-03]: DAL alias pattern for action/DAL name conflicts (endSessionDAL, banParticipantDAL)
 - [02-03]: toParticipantData helper maps Prisma model to StudentParticipantData interface
 - [02-03]: Student routes (/join, /session, /api/sessions) added as public pages in proxy
+- [02-05]: Server Component + Client Component split for session detail (SC fetches, CC handles interactivity)
+- [02-05]: useMemo for Supabase client in hooks to prevent duplicate channel subscriptions
+- [02-05]: Broadcast channel over Postgres Changes for activity updates (scalability in 30+ student classrooms)
 
 ### Pending Todos
 
@@ -80,6 +83,6 @@ Recent decisions affecting current work:
 
 ## Session Continuity
 
-Last session: 2026-01-29
-Stopped at: Completed 02-03-PLAN.md (Join flow backend)
+Last session: 2026-01-30
+Stopped at: Completed 02-05-PLAN.md (Teacher session UI & student activity grid) -- Phase 2 complete
 Resume file: None
