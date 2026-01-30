@@ -1,0 +1,141 @@
+'use client'
+
+import { useTransition, useState } from 'react'
+import { useRouter } from 'next/navigation'
+import { updateBracketStatus, deleteBracket } from '@/actions/bracket'
+
+// --- BracketStatusBadge ---
+
+const statusStyles: Record<string, string> = {
+  draft: 'bg-muted text-muted-foreground',
+  active: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400',
+  completed: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400',
+}
+
+export function BracketStatusBadge({ status }: { status: string }) {
+  return (
+    <span
+      className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium capitalize ${
+        statusStyles[status] ?? statusStyles.draft
+      }`}
+    >
+      {status}
+    </span>
+  )
+}
+
+// --- BracketLifecycleControls ---
+
+interface LifecycleControlsProps {
+  bracketId: string
+  status: string
+  bracketName: string
+}
+
+export function BracketLifecycleControls({
+  bracketId,
+  status,
+  bracketName,
+}: LifecycleControlsProps) {
+  const router = useRouter()
+  const [isPending, startTransition] = useTransition()
+  const [error, setError] = useState<string | null>(null)
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+
+  function handleStatusChange(newStatus: string) {
+    setError(null)
+    startTransition(async () => {
+      const result = await updateBracketStatus({
+        bracketId,
+        status: newStatus,
+      })
+      if (result && 'error' in result) {
+        setError(result.error as string)
+      }
+    })
+  }
+
+  function handleDelete() {
+    setError(null)
+    startTransition(async () => {
+      const result = await deleteBracket({ bracketId })
+      if (result && 'error' in result) {
+        setError(result.error as string)
+      } else {
+        router.push('/brackets')
+      }
+    })
+  }
+
+  return (
+    <div className="flex flex-col gap-2">
+      <div className="flex items-center gap-2">
+        {status === 'draft' && (
+          <button
+            onClick={() => handleStatusChange('active')}
+            disabled={isPending}
+            className="rounded-md bg-green-600 px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-green-700 disabled:opacity-50"
+          >
+            {isPending ? 'Updating...' : 'Activate'}
+          </button>
+        )}
+
+        {status === 'active' && (
+          <button
+            onClick={() => handleStatusChange('completed')}
+            disabled={isPending}
+            className="rounded-md bg-blue-600 px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-blue-700 disabled:opacity-50"
+          >
+            {isPending ? 'Updating...' : 'Complete'}
+          </button>
+        )}
+
+        <button
+          onClick={() => setShowDeleteConfirm(true)}
+          disabled={isPending}
+          className="rounded-md bg-red-600 px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-red-700 disabled:opacity-50"
+        >
+          Delete
+        </button>
+      </div>
+
+      {error && (
+        <p className="text-xs text-red-600">{error}</p>
+      )}
+
+      {/* Delete confirmation dialog */}
+      {showDeleteConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+          <div className="mx-4 w-full max-w-sm rounded-lg border bg-card p-6 shadow-lg">
+            <h3 className="text-sm font-semibold text-card-foreground">
+              Delete Bracket
+            </h3>
+            <p className="mt-2 text-sm text-muted-foreground">
+              Are you sure you want to delete &quot;{bracketName}&quot;? This
+              cannot be undone.
+            </p>
+            <div className="mt-4 flex justify-end gap-2">
+              <button
+                onClick={() => setShowDeleteConfirm(false)}
+                disabled={isPending}
+                className="rounded-md border px-3 py-1.5 text-xs font-medium transition-colors hover:bg-accent disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => {
+                  setShowDeleteConfirm(false)
+                  handleDelete()
+                }}
+                disabled={isPending}
+                className="rounded-md bg-red-600 px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-red-700 disabled:opacity-50"
+              >
+                {isPending ? 'Deleting...' : 'Delete'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}

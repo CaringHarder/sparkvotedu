@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { LayoutDashboard, Users } from 'lucide-react'
+import { LayoutDashboard, Users, Trophy } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 
 interface NavItem {
@@ -14,6 +14,7 @@ interface NavItem {
 const navItems: NavItem[] = [
   { label: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
   { label: 'Sessions', href: '/sessions', icon: Users },
+  { label: 'Brackets', href: '/brackets', icon: Trophy },
 ]
 
 export function SidebarNav() {
