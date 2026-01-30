@@ -10,16 +10,16 @@ See: .planning/PROJECT.md (updated 2026-01-28)
 ## Current Position
 
 Phase: 3 of 10 (Bracket Creation & Management)
-Plan: 4 of 7 in current phase
+Plan: 5 of 7 in current phase
 Status: In progress
-Last activity: 2026-01-30 -- Completed 03-02-PLAN.md (bracket engine TDD)
+Last activity: 2026-01-30 -- Completed 03-05-PLAN.md (bracket DAL & server actions)
 
-Progress: [###.......] 29% (15/52 plans)
+Progress: [###.......] 31% (16/52 plans)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 15
+- Total plans completed: 16
 - Average duration: ~8 min
 - Total execution time: ~2 hours
 
@@ -29,10 +29,10 @@ Progress: [###.......] 29% (15/52 plans)
 |-------|-------|-------|----------|
 | 01-foundation-and-auth | 5/5 | ~1.5h | ~18m |
 | 02-student-join-flow | 6/6 | ~13m | ~2.2m |
-| 03-bracket-creation-management | 4/7 | ~6.3m | ~1.6m |
+| 03-bracket-creation-management | 5/7 | ~7.8m | ~1.6m |
 
 **Recent Trend:**
-- Last 5 plans: 02-06 (~1m), 03-01 (~1.5m), 03-04 (~1.5m), 03-03 (~1.3m), 03-02 (~2m)
+- Last 5 plans: 03-01 (~1.5m), 03-04 (~1.5m), 03-03 (~1.3m), 03-02 (~2m), 03-05 (~1.5m)
 - Trend: Accelerating
 
 *Updated after each plan completion*
@@ -86,6 +86,9 @@ Recent decisions affecting current work:
 - [03-03]: Fallback to first column value when no recognized header found
 - [03-03]: 10 curated topic lists with exactly 16 entries each covering 7 subjects
 - [03-02]: Recursive doubling algorithm for standard tournament seeding (NCAA-style 1v16, 8v9, etc.)
+- [03-05]: Shared createMatchupsInTransaction helper for DRY matchup creation across create and update flows
+- [03-05]: Forward-only status transitions via VALID_TRANSITIONS Record lookup
+- [03-05]: Combined createBracketWithEntrantsSchema defined in action file for bracket + entrants creation
 
 ### Pending Todos
 
@@ -100,5 +103,5 @@ Recent decisions affecting current work:
 ## Session Continuity
 
 Last session: 2026-01-30
-Stopped at: Completed 03-02-PLAN.md (bracket engine TDD)
+Stopped at: Completed 03-05-PLAN.md (bracket DAL & server actions)
 Resume file: None
