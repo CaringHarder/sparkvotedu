@@ -28,17 +28,17 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Brackets
 
-- [ ] **BRKT-01**: Teacher can create single-elimination brackets (4, 8, 16 teams)
+- [x] **BRKT-01**: Teacher can create single-elimination brackets (4, 8, 16 teams)
 - [ ] **BRKT-02**: Teacher can create double-elimination brackets (Pro Plus)
 - [ ] **BRKT-03**: Teacher can create round-robin brackets (Pro Plus)
 - [ ] **BRKT-04**: Teacher can create predictive brackets where students predict outcomes (Pro Plus)
 - [ ] **BRKT-05**: Predictive brackets display a scored leaderboard ranking student accuracy (Pro Plus)
 - [ ] **BRKT-06**: Teacher can create non-power-of-two brackets with auto-byes (Pro Plus)
-- [ ] **BRKT-07**: Bracket displays as a visual tournament diagram (not just text lists)
+- [x] **BRKT-07**: Bracket displays as a visual tournament diagram (not just text lists)
 - [ ] **BRKT-08**: Bracket updates in real-time as votes come in and winners advance
-- [ ] **BRKT-09**: Teacher can set bracket as draft, active, or completed
-- [ ] **BRKT-10**: Teacher can edit bracket before activation (add/remove/reorder entrants)
-- [ ] **BRKT-11**: Teacher can delete a bracket
+- [x] **BRKT-09**: Teacher can set bracket as draft, active, or completed
+- [x] **BRKT-10**: Teacher can edit bracket before activation (add/remove/reorder entrants)
+- [x] **BRKT-11**: Teacher can delete a bracket
 
 ### Polls
 
@@ -54,11 +54,11 @@ Requirements for initial release. Each maps to roadmap phases.
 - [ ] **MGMT-01**: Students vote on matchups to determine the winner
 - [ ] **MGMT-02**: Teacher can manually choose a winner (override votes)
 - [ ] **MGMT-03**: Teacher can advance bracket to next round after matchups are decided
-- [ ] **MGMT-04**: Teacher can auto-generate entrants from curated topic lists
-- [ ] **MGMT-05**: Teacher can upload entrants via CSV file
-- [ ] **MGMT-06**: Teacher can manually add multiple entrants at once
+- [x] **MGMT-04**: Teacher can auto-generate entrants from curated topic lists
+- [x] **MGMT-05**: Teacher can upload entrants via CSV file
+- [x] **MGMT-06**: Teacher can manually add multiple entrants at once
 - [ ] **MGMT-07**: Each student can only vote once per matchup (enforced server-side)
-- [ ] **MGMT-08**: Teacher dashboard shows all brackets and polls with status
+- [x] **MGMT-08**: Teacher dashboard shows all brackets and polls with status
 
 ### Real-Time Features
 
@@ -150,23 +150,23 @@ Which phases cover which requirements. Updated during roadmap creation.
 | AUTH-05 | Phase 1: Foundation & Auth | Complete |
 | AUTH-06 | Phase 1: Foundation & Auth | Complete |
 | AUTH-07 | Phase 1: Foundation & Auth | Complete |
-| STUD-01 | Phase 2: Student Join Flow | Pending |
-| STUD-02 | Phase 2: Student Join Flow | Pending |
-| STUD-03 | Phase 2: Student Join Flow | Pending |
-| STUD-04 | Phase 2: Student Join Flow | Pending |
-| STUD-05 | Phase 2: Student Join Flow | Pending |
-| STUD-06 | Phase 2: Student Join Flow | Pending |
-| BRKT-01 | Phase 3: Bracket Creation & Management | Pending |
+| STUD-01 | Phase 2: Student Join Flow | Complete |
+| STUD-02 | Phase 2: Student Join Flow | Complete |
+| STUD-03 | Phase 2: Student Join Flow | Complete |
+| STUD-04 | Phase 2: Student Join Flow | Complete |
+| STUD-05 | Phase 2: Student Join Flow | Complete |
+| STUD-06 | Phase 2: Student Join Flow | Complete |
+| BRKT-01 | Phase 3: Bracket Creation & Management | Complete |
 | BRKT-02 | Phase 7: Advanced Brackets | Pending |
 | BRKT-03 | Phase 7: Advanced Brackets | Pending |
 | BRKT-04 | Phase 7: Advanced Brackets | Pending |
 | BRKT-05 | Phase 7: Advanced Brackets | Pending |
 | BRKT-06 | Phase 7: Advanced Brackets | Pending |
-| BRKT-07 | Phase 3: Bracket Creation & Management | Pending |
+| BRKT-07 | Phase 3: Bracket Creation & Management | Complete |
 | BRKT-08 | Phase 4: Voting & Real-Time | Pending |
-| BRKT-09 | Phase 3: Bracket Creation & Management | Pending |
-| BRKT-10 | Phase 3: Bracket Creation & Management | Pending |
-| BRKT-11 | Phase 3: Bracket Creation & Management | Pending |
+| BRKT-09 | Phase 3: Bracket Creation & Management | Complete |
+| BRKT-10 | Phase 3: Bracket Creation & Management | Complete |
+| BRKT-11 | Phase 3: Bracket Creation & Management | Complete |
 | POLL-01 | Phase 5: Polls | Pending |
 | POLL-02 | Phase 5: Polls | Pending |
 | POLL-03 | Phase 5: Polls | Pending |
@@ -176,11 +176,11 @@ Which phases cover which requirements. Updated during roadmap creation.
 | MGMT-01 | Phase 4: Voting & Real-Time | Pending |
 | MGMT-02 | Phase 4: Voting & Real-Time | Pending |
 | MGMT-03 | Phase 4: Voting & Real-Time | Pending |
-| MGMT-04 | Phase 3: Bracket Creation & Management | Pending |
-| MGMT-05 | Phase 3: Bracket Creation & Management | Pending |
-| MGMT-06 | Phase 3: Bracket Creation & Management | Pending |
+| MGMT-04 | Phase 3: Bracket Creation & Management | Complete |
+| MGMT-05 | Phase 3: Bracket Creation & Management | Complete |
+| MGMT-06 | Phase 3: Bracket Creation & Management | Complete |
 | MGMT-07 | Phase 4: Voting & Real-Time | Pending |
-| MGMT-08 | Phase 3: Bracket Creation & Management | Pending |
+| MGMT-08 | Phase 3: Bracket Creation & Management | Complete |
 | RT-01 | Phase 4: Voting & Real-Time | Pending |
 | RT-02 | Phase 4: Voting & Real-Time | Pending |
 | RT-03 | Phase 4: Voting & Real-Time | Pending |
