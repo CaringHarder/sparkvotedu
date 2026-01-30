@@ -1,4 +1,5 @@
 import { SignOutButton } from '@/components/auth/signout-button'
+import { SidebarNav } from '@/components/dashboard/sidebar-nav'
 
 export default function DashboardLayout({
   children,
@@ -12,7 +13,11 @@ export default function DashboardLayout({
         <SignOutButton />
       </header>
       <div className="flex flex-1">
-        {/* Sidebar placeholder -- will be expanded in later phases */}
+        <aside className="hidden w-56 shrink-0 border-r md:block">
+          <div className="flex h-full flex-col gap-2 p-4">
+            <SidebarNav />
+          </div>
+        </aside>
         <main className="flex-1 p-6">{children}</main>
       </div>
     </div>
