@@ -5,22 +5,22 @@
 See: .planning/PROJECT.md (updated 2026-01-28)
 
 **Core value:** Teachers can instantly engage any classroom through voting -- on any topic, in any format -- and see participation happen in real time.
-**Current focus:** Phase 2 gap closure complete — ready for Phase 3
+**Current focus:** Phase 3 - Bracket Creation & Management
 
 ## Current Position
 
-Phase: 2 of 10 (Student Join Flow) — COMPLETE (with gap closure)
-Plan: 6 of 6 in current phase (5 original + 1 gap closure)
-Status: Phase 2 fully complete with UAT gap resolved
-Last activity: 2026-01-30 -- Completed 02-06-PLAN.md (dashboard navigation gap closure)
+Phase: 3 of 10 (Bracket Creation & Management)
+Plan: 1 of 7 in current phase
+Status: In progress
+Last activity: 2026-01-30 -- Completed 03-01-PLAN.md (bracket data models, types, validation)
 
-Progress: [##........] 21% (11/52 plans)
+Progress: [##........] 23% (12/52 plans)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 11
-- Average duration: ~10 min
+- Total plans completed: 12
+- Average duration: ~9.5 min
 - Total execution time: ~1.8 hours
 
 **By Phase:**
@@ -29,9 +29,10 @@ Progress: [##........] 21% (11/52 plans)
 |-------|-------|-------|----------|
 | 01-foundation-and-auth | 5/5 | ~1.5h | ~18m |
 | 02-student-join-flow | 6/6 | ~13m | ~2.2m |
+| 03-bracket-creation-management | 1/7 | ~1.5m | ~1.5m |
 
 **Recent Trend:**
-- Last 5 plans: 02-02 (~2m), 02-03 (~2m), 02-04 (~4m), 02-05 (~4m), 02-06 (~1m)
+- Last 5 plans: 02-03 (~2m), 02-04 (~4m), 02-05 (~4m), 02-06 (~1m), 03-01 (~1.5m)
 - Trend: Accelerating
 
 *Updated after each plan completion*
@@ -74,6 +75,10 @@ Recent decisions affecting current work:
 - [02-05]: Server Component + Client Component split for session detail (SC fetches, CC handles interactivity)
 - [02-05]: useMemo for Supabase client in hooks to prevent duplicate channel subscriptions
 - [02-05]: Broadcast channel over Postgres Changes for activity updates (scalability in 30+ student classrooms)
+- [03-01]: sessionId optional on Bracket model -- brackets can exist without sessions, assigned when activated
+- [03-01]: Self-referential Matchup.nextMatchupId for tournament advancement chain
+- [03-01]: Literal union (4|8|16) for bracket size validation -- no byes until Phase 7
+- [03-01]: Cascade delete on BracketEntrant and Matchup from Bracket
 
 ### Pending Todos
 
@@ -88,5 +93,5 @@ Recent decisions affecting current work:
 ## Session Continuity
 
 Last session: 2026-01-30
-Stopped at: Completed 02-06-PLAN.md (gap closure), Phase 2 fully complete
+Stopped at: Completed 03-01-PLAN.md (bracket data models, types, validation)
 Resume file: None
