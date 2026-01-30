@@ -1,37 +1,65 @@
 'use client'
 
 import { useParams } from 'next/navigation'
-import { ActivityGrid } from '@/components/student/activity-grid'
 
 /**
- * Student session view page.
+ * Student session main page.
  *
- * Renders the ActivityGrid which shows active brackets/polls,
- * empty state when none are active, and auto-navigates when
- * only one activity is active.
+ * Shows a holding state while the teacher sets up activities.
+ * The ActivityGrid from Plan 05 will replace this placeholder
+ * content when activity display is implemented.
  *
- * The participantId is stored in localStorage and passed to
- * the ActivityGrid for real-time subscription and vote status.
- *
- * NOTE: This is a scaffold. The full session page with participant
- * identity management will be built in plan 02-04. This page
- * focuses on the activity grid display.
+ * Participant identity is managed by the session layout via
+ * localStorage (sparkvotedu_session_{sessionId}).
  */
 export default function StudentSessionPage() {
   const params = useParams<{ sessionId: string }>()
   const sessionId = params.sessionId
 
-  // Participant ID would come from localStorage or session context.
-  // For now, use a placeholder that will be replaced when 02-04
-  // builds the full join flow and session context.
+  // Read participantId from localStorage for future activity grid usage
   const participantId =
     typeof window !== 'undefined'
-      ? localStorage.getItem('sparkvotedu_participant_id') ?? ''
+      ? (() => {
+          try {
+            const stored = localStorage.getItem(
+              `sparkvotedu_session_${sessionId}`
+            )
+            if (stored) {
+              return JSON.parse(stored).participantId ?? ''
+            }
+          } catch {
+            // localStorage not available
+          }
+          return ''
+        })()
       : ''
 
+  // Placeholder: will render ActivityGrid in Plan 05
+  void participantId
+
   return (
-    <div className="container mx-auto py-6 px-4">
-      <ActivityGrid sessionId={sessionId} participantId={participantId} />
+    <div className="flex flex-col items-center gap-6 py-12 text-center">
+      <div className="flex flex-col items-center gap-2">
+        <div className="text-4xl">*</div>
+        <h2 className="text-xl font-semibold">Hang tight!</h2>
+        <p className="text-muted-foreground">
+          Your teacher is setting things up.
+        </p>
+      </div>
+
+      <div className="flex items-center gap-2">
+        <span className="inline-block h-2 w-2 animate-pulse rounded-full bg-primary" />
+        <span
+          className="inline-block h-2 w-2 animate-pulse rounded-full bg-primary"
+          style={{ animationDelay: '0.2s' }}
+        />
+        <span
+          className="inline-block h-2 w-2 animate-pulse rounded-full bg-primary"
+          style={{ animationDelay: '0.4s' }}
+        />
+      </div>
+
+      <p className="text-xs text-muted-foreground">SparkVotEDU</p>
     </div>
   )
 }
