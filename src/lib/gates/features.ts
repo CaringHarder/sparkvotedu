@@ -144,3 +144,57 @@ export function canUseEntrantCount(tier: SubscriptionTier, entrantCount: number)
 
   return { allowed: true };
 }
+
+// ---------------------------------------------------------------------------
+// Poll feature gates
+// ---------------------------------------------------------------------------
+
+/**
+ * Check if a tier can use a specific poll type.
+ *
+ * Free: simple only. Pro/Pro Plus: simple + ranked.
+ * Determines upgradeTarget by finding the first tier that includes the poll type.
+ */
+export function canUsePollType(tier: SubscriptionTier, pollType: string): AccessResult {
+  const allowedTypes: readonly string[] = TIER_LIMITS[tier].pollTypes;
+
+  if (!allowedTypes.includes(pollType)) {
+    // Find the minimum tier that supports this poll type
+    let upgradeTarget: SubscriptionTier = 'pro_plus';
+    for (const t of TIER_ORDER) {
+      if ((TIER_LIMITS[t].pollTypes as readonly string[]).includes(pollType)) {
+        upgradeTarget = t;
+        break;
+      }
+    }
+
+    return {
+      allowed: false,
+      reason: `${pollType} polls require ${upgradeTarget} plan`,
+      upgradeTarget,
+    };
+  }
+
+  return { allowed: true };
+}
+
+/**
+ * Check if a tier supports the given number of poll options.
+ *
+ * Minimum is always 2 (hardcoded). Maximum varies by tier:
+ * free: 6, pro: 12, pro_plus: 32.
+ */
+export function canUsePollOptionCount(tier: SubscriptionTier, optionCount: number): AccessResult {
+  const limit = TIER_LIMITS[tier].maxPollOptions;
+
+  if (optionCount > limit) {
+    const upgradeTarget: SubscriptionTier = tier === 'free' ? 'pro' : 'pro_plus';
+    return {
+      allowed: false,
+      reason: `Poll option limit is ${limit}. Upgrade to ${upgradeTarget} for more options.`,
+      upgradeTarget,
+    };
+  }
+
+  return { allowed: true };
+}

@@ -16,6 +16,8 @@ function isPublicPage(pathname: string): boolean {
   if (pathname.startsWith('/api/sessions/')) return true
   // Bracket state API for polling fallback (students on networks blocking WebSocket)
   if (pathname.startsWith('/api/brackets/')) return true
+  // Poll state API for polling fallback (same pattern as brackets)
+  if (pathname.startsWith('/api/polls/')) return true
   return false
 }
 

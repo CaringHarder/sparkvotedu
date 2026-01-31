@@ -118,3 +118,45 @@ export async function broadcastActivityUpdate(
     payload: {},
   })
 }
+
+// ---------------------------------------------------------------------------
+// Poll broadcast functions
+// ---------------------------------------------------------------------------
+
+/**
+ * Broadcast a poll vote update to the poll channel.
+ *
+ * Sent after a poll vote is cast or updated. Teacher dashboard listens
+ * for updated vote distribution to animate charts in real-time.
+ */
+export async function broadcastPollVoteUpdate(
+  pollId: string,
+  voteCounts: Record<string, number>,
+  totalVotes: number
+): Promise<void> {
+  await broadcastMessage({
+    topic: `poll:${pollId}`,
+    event: 'poll_vote_update',
+    payload: { voteCounts, totalVotes },
+  })
+}
+
+// Poll update event types
+type PollUpdateType = 'poll_activated' | 'poll_closed' | 'poll_archived'
+
+/**
+ * Broadcast a poll state change to the poll channel.
+ *
+ * Used for lifecycle events: activated, closed, archived.
+ */
+export async function broadcastPollUpdate(
+  pollId: string,
+  type: PollUpdateType,
+  payload: Record<string, unknown> = {}
+): Promise<void> {
+  await broadcastMessage({
+    topic: `poll:${pollId}`,
+    event: 'poll_update',
+    payload: { type, ...payload },
+  })
+}
