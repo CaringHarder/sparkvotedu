@@ -106,7 +106,6 @@ export function PollForm({ template, existingPoll }: PollFormProps) {
 
         if (result && 'error' in result) {
           setError(result.error as string)
-          setIsSubmitting(false)
           return
         }
 
@@ -127,7 +126,6 @@ export function PollForm({ template, existingPoll }: PollFormProps) {
 
         if (result && 'error' in result) {
           setError(result.error as string)
-          setIsSubmitting(false)
           return
         }
 
@@ -137,6 +135,7 @@ export function PollForm({ template, existingPoll }: PollFormProps) {
       }
     } catch {
       setError('An unexpected error occurred. Please try again.')
+    } finally {
       setIsSubmitting(false)
     }
   }, [
