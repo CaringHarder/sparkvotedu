@@ -4,8 +4,8 @@ import { prisma } from '@/lib/prisma'
 /**
  * GET /api/sessions/[sessionId]/activities
  *
- * Returns all active/completed brackets for a session, mapped to the
- * Activity interface consumed by useRealtimeActivities. This is a public
+ * Returns all active/completed brackets and polls for a session, mapped to
+ * the Activity interface consumed by useRealtimeActivities. This is a public
  * route (students access without auth) -- already whitelisted in proxy:
  * "if (pathname.startsWith('/api/sessions/')) return true"
  *
@@ -50,7 +50,7 @@ export async function GET(
     })
 
     // For each bracket, check if participant has voted on current voting matchups
-    const activities = await Promise.all(
+    const bracketActivities = await Promise.all(
       brackets.map(async (bracket) => {
         let hasVoted = false
 
@@ -79,7 +79,52 @@ export async function GET(
       })
     )
 
-    return NextResponse.json(activities)
+    // Fetch polls in this session that are active or closed
+    const polls = await prisma.poll.findMany({
+      where: {
+        sessionId,
+        status: { in: ['active', 'closed'] },
+      },
+      select: {
+        id: true,
+        question: true,
+        status: true,
+        pollType: true,
+        _count: { select: { votes: true } },
+      },
+    })
+
+    // Map polls to Activity interface, check if participant has voted
+    const pollActivities = await Promise.all(
+      polls.map(async (poll) => {
+        let hasVoted = false
+        if (pid) {
+          const voteCount = await prisma.pollVote.count({
+            where: { pollId: poll.id, participantId: pid },
+          })
+          hasVoted = voteCount > 0
+        }
+        return {
+          id: poll.id,
+          name: poll.question,
+          type: 'poll' as const,
+          participantCount: poll._count.votes,
+          hasVoted,
+          status: poll.status,
+        }
+      })
+    )
+
+    // Merge bracket and poll activities, active first
+    const allActivities = [...bracketActivities, ...pollActivities].sort(
+      (a, b) => {
+        if (a.status === 'active' && b.status !== 'active') return -1
+        if (a.status !== 'active' && b.status === 'active') return 1
+        return 0
+      }
+    )
+
+    return NextResponse.json(allActivities)
   } catch {
     return NextResponse.json([], { status: 200 })
   }
