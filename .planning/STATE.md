@@ -5,23 +5,23 @@
 See: .planning/PROJECT.md (updated 2026-01-28)
 
 **Core value:** Teachers can instantly engage any classroom through voting -- on any topic, in any format -- and see participation happen in real time.
-**Current focus:** Phase 5 in progress -- Student Poll Voting UI complete
+**Current focus:** Phase 5 in progress -- Real-Time Poll Results complete
 
 ## Current Position
 
 Phase: 5 of 10 (Polls)
-Plan: 4 of 6 in current phase
+Plan: 5 of 6 in current phase
 Status: In progress
-Last activity: 2026-01-31 -- Completed 05-04-PLAN.md (Student Poll Voting UI)
+Last activity: 2026-01-31 -- Completed 05-05-PLAN.md (Real-Time Poll Results)
 
-Progress: [######....] 56% (29/52 plans)
+Progress: [######....] 58% (30/52 plans)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 29
-- Average duration: ~5.9 min
-- Total execution time: ~2.81 hours
+- Total plans completed: 30
+- Average duration: ~5.8 min
+- Total execution time: ~2.88 hours
 
 **By Phase:**
 
@@ -31,11 +31,11 @@ Progress: [######....] 56% (29/52 plans)
 | 02-student-join-flow | 6/6 | ~13m | ~2.2m |
 | 03-bracket-creation-management | 7/7 | ~15.8m | ~2.3m |
 | 04-voting-and-real-time | 6/6 | ~45.6m | ~7.6m |
-| 05-polls | 4/6 | ~11.7m | ~2.9m |
+| 05-polls | 5/6 | ~15.8m | ~3.2m |
 
 **Recent Trend:**
-- Last 5 plans: 04-06 (~25m incl. E2E testing), 05-01 (~2.9m), 05-02 (~3.1m), 05-04 (~2.7m)
-- Trend: Phase 5 plans consistently fast (~3m) for both backend and UI
+- Last 5 plans: 05-01 (~2.9m), 05-02 (~3.1m), 05-03 (~3.0m), 05-04 (~2.7m), 05-05 (~4.1m)
+- Trend: Phase 5 plans consistently fast (~3m), 05-05 slightly longer due to 9 files with animation code
 
 *Updated after each plan completion*
 
@@ -138,6 +138,11 @@ Recent decisions affecting current work:
 - [05-04]: Single usePollVote hook serves both simple and ranked polls with pollType parameter
 - [05-04]: Rank badges use gold/silver/bronze (amber-400, gray-300, amber-600) for top 3
 - [05-04]: Student poll page reads localStorage for participantId, matching 04-04 bracket page pattern
+- [05-05]: PollResults detects active->closed status change to auto-trigger reveal animation
+- [05-05]: Presentation mode uses CSS class overrides ([&_*]:text-white) for dark theme without modifying child components
+- [05-05]: F key shortcut for presentation mode toggle (excluded from input fields)
+- [05-05]: BordaLeaderboardEntry derived client-side from BordaScore broadcast data with maxPossiblePoints computed from poll metadata
+- [05-05]: Server component fetches session code + participant count for QR chip and participation rate
 
 ### Pending Todos
 
@@ -151,5 +156,5 @@ Recent decisions affecting current work:
 ## Session Continuity
 
 Last session: 2026-01-31
-Stopped at: Completed 05-03-PLAN.md (Teacher Poll UI)
+Stopped at: Completed 05-05-PLAN.md (Real-Time Poll Results)
 Resume file: None
