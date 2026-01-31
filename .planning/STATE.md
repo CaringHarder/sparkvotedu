@@ -5,23 +5,23 @@
 See: .planning/PROJECT.md (updated 2026-01-28)
 
 **Core value:** Teachers can instantly engage any classroom through voting -- on any topic, in any format -- and see participation happen in real time.
-**Current focus:** Phase 3 complete — ready for Phase 4
+**Current focus:** Phase 4 in progress — Voting and Real-Time
 
 ## Current Position
 
-Phase: 3 of 10 (Bracket Creation & Management) — COMPLETE
-Plan: 7 of 7 in current phase
-Status: Phase 3 fully complete, verified (28/28 must-haves passed)
-Last activity: 2026-01-30 -- Phase 3 verified and complete
+Phase: 4 of 10 (Voting and Real-Time)
+Plan: 2 of 6 in current phase
+Status: In progress
+Last activity: 2026-01-31 -- Completed 04-02-PLAN.md (Bracket Advancement Engine)
 
-Progress: [####......] 35% (18/52 plans)
+Progress: [####......] 37% (19/52 plans)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 18
+- Total plans completed: 19
 - Average duration: ~7 min
-- Total execution time: ~2.1 hours
+- Total execution time: ~2.2 hours
 
 **By Phase:**
 
@@ -30,10 +30,11 @@ Progress: [####......] 35% (18/52 plans)
 | 01-foundation-and-auth | 5/5 | ~1.5h | ~18m |
 | 02-student-join-flow | 6/6 | ~13m | ~2.2m |
 | 03-bracket-creation-management | 7/7 | ~15.8m | ~2.3m |
+| 04-voting-and-real-time | 1/6 | ~4m | ~4m |
 
 **Recent Trend:**
-- Last 5 plans: 03-03 (~1.3m), 03-02 (~2m), 03-05 (~1.5m), 03-07 (~3m), 03-06 (~5m)
-- Trend: Accelerating
+- Last 5 plans: 03-05 (~1.5m), 03-07 (~3m), 03-06 (~5m), 04-02 (~4m)
+- Trend: Stable
 
 *Updated after each plan completion*
 
@@ -94,6 +95,9 @@ Recent decisions affecting current work:
 - [03-06]: Subject color mapping Record for consistent topic badge theming
 - [03-07]: BracketStatus cast from Prisma string to literal union type via 'as BracketStatus' in server component serialization
 - [03-07]: Custom modal dialog for delete confirmation instead of window.confirm for consistent UX
+- [04-02]: Position parity determines next-round slot: odd -> entrant1Id, even -> entrant2Id (matches Phase 3 bracket engine)
+- [04-02]: Undo blocked by vote count check on next matchup (not status check) for precise safety
+- [04-02]: Read-only queries (checkRoundComplete, isBracketComplete) skip $transaction for performance
 
 ### Pending Todos
 
@@ -107,6 +111,6 @@ Recent decisions affecting current work:
 
 ## Session Continuity
 
-Last session: 2026-01-30
-Stopped at: Phase 3 complete and verified — ready for Phase 4
+Last session: 2026-01-31
+Stopped at: Completed 04-02-PLAN.md (Bracket Advancement Engine)
 Resume file: None
