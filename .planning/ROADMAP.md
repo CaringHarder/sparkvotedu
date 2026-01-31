@@ -16,7 +16,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 2: Student Join Flow** - Anonymous student participation via class codes with device fingerprinting and fun names
 - [x] **Phase 3: Bracket Creation & Management** - Teachers create, edit, and manage single-elimination brackets with entrant tools
 - [x] **Phase 4: Voting & Real-Time** - Students vote on matchups with live updating dashboard and real-time bracket state
-- [ ] **Phase 5: Polls** - Simple and ranked polls with real-time results display
+- [x] **Phase 5: Polls** - Simple and ranked polls with real-time results display
 - [ ] **Phase 6: Billing & Subscriptions** - Stripe integration, tier enforcement, and upgrade prompts
 - [ ] **Phase 7: Advanced Brackets** - Double-elimination, round-robin, predictive brackets, and non-power-of-two support
 - [ ] **Phase 8: Sports Integration** - Real sports tournament brackets from external APIs for classroom prediction competitions
@@ -123,8 +123,8 @@ Plans:
 - [x] 05-04-PLAN.md — Student poll voting UI (simple + ranked)
 - [x] 05-05-PLAN.md — Real-time results, charts, reveal animation, presentation mode
 - [x] 05-06-PLAN.md — Navigation refactor, activities integration, image upload
-- [ ] 05-07-PLAN.md — Gap closure: fix update button hang + polls 404 page
-- [ ] 05-08-PLAN.md — Gap closure: session assignment UI for polls
+- [x] 05-07-PLAN.md — Gap closure: fix update button hang + polls 404 page
+- [x] 05-08-PLAN.md — Gap closure: session assignment UI for polls
 
 ### Phase 6: Billing & Subscriptions
 **Goal**: Teachers can subscribe to Pro or Pro Plus tiers via Stripe, with features gated and upgrade prompts shown for locked capabilities
@@ -231,7 +231,7 @@ Note: Phase 3 depends only on Phase 1 (not Phase 2), so Phases 2 and 3 could the
 | 2. Student Join Flow | 6/6 | Complete | 2026-01-29 |
 | 3. Bracket Creation & Management | 7/7 | Complete | 2026-01-30 |
 | 4. Voting & Real-Time | 6/6 | Complete | 2026-01-31 |
-| 5. Polls | 6/8 | Gap closure | 2026-01-31 |
+| 5. Polls | 8/8 | Complete | 2026-01-31 |
 | 6. Billing & Subscriptions | 0/5 | Not started | - |
 | 7. Advanced Brackets | 0/6 | Not started | - |
 | 8. Sports Integration | 0/5 | Not started | - |
