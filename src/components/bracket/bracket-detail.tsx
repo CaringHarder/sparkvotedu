@@ -2,23 +2,33 @@
 
 import { useState, useTransition } from 'react'
 import Link from 'next/link'
-import { ArrowLeft, Pencil, Radio } from 'lucide-react'
+import { ArrowLeft, Pencil, Radio, Link2, Unlink } from 'lucide-react'
 import type { BracketWithDetails } from '@/lib/bracket/types'
 import { BracketDiagram } from '@/components/bracket/bracket-diagram'
 import { BracketStatusBadge, BracketLifecycleControls } from '@/components/bracket/bracket-status'
 import { updateBracketVotingSettings } from '@/actions/bracket-advance'
+import { assignBracketToSession } from '@/actions/bracket'
+
+interface SessionInfo {
+  id: string
+  code: string
+  createdAt: string
+}
 
 interface BracketDetailProps {
   bracket: BracketWithDetails
   totalRounds: number
+  sessions: SessionInfo[]
 }
 
-export function BracketDetail({ bracket, totalRounds }: BracketDetailProps) {
+export function BracketDetail({ bracket, totalRounds, sessions }: BracketDetailProps) {
   const [isPending, startTransition] = useTransition()
   const [viewingMode, setViewingMode] = useState(bracket.viewingMode)
   const [showVoteCounts, setShowVoteCounts] = useState(bracket.showVoteCounts)
   const [timerSeconds, setTimerSeconds] = useState<number | null>(bracket.votingTimerSeconds)
   const [settingsError, setSettingsError] = useState<string | null>(null)
+  const [currentSessionId, setCurrentSessionId] = useState<string | null>(bracket.sessionId)
+  const [sessionError, setSessionError] = useState<string | null>(null)
 
   function handleUpdateSetting(update: {
     viewingMode?: string
@@ -33,6 +43,21 @@ export function BracketDetail({ bracket, totalRounds }: BracketDetailProps) {
       })
       if (result && 'error' in result) {
         setSettingsError(result.error as string)
+      }
+    })
+  }
+
+  function handleSessionAssign(sessionId: string | null) {
+    setSessionError(null)
+    setCurrentSessionId(sessionId)
+    startTransition(async () => {
+      const result = await assignBracketToSession({
+        bracketId: bracket.id,
+        sessionId,
+      })
+      if (result && 'error' in result) {
+        setSessionError(result.error as string)
+        setCurrentSessionId(bracket.sessionId) // revert
       }
     })
   }
@@ -94,6 +119,52 @@ export function BracketDetail({ bracket, totalRounds }: BracketDetailProps) {
             bracketName={bracket.name}
           />
         </div>
+      </div>
+
+      {/* Session assignment */}
+      <div className="rounded-lg border p-4">
+        <h2 className="mb-3 text-sm font-semibold">Class Session</h2>
+        {sessionError && (
+          <p className="mb-3 text-xs text-red-600">{sessionError}</p>
+        )}
+        {sessions.length === 0 ? (
+          <p className="text-sm text-muted-foreground">
+            No active sessions. Create a session first to link this bracket.
+          </p>
+        ) : (
+          <div className="flex items-center gap-3">
+            <select
+              value={currentSessionId ?? ''}
+              onChange={(e) => handleSessionAssign(e.target.value || null)}
+              disabled={isPending}
+              className="flex-1 rounded-md border bg-background px-3 py-1.5 text-sm"
+            >
+              <option value="">No session assigned</option>
+              {sessions.map((s) => (
+                <option key={s.id} value={s.id}>
+                  Session {s.code}
+                </option>
+              ))}
+            </select>
+            {currentSessionId && (
+              <button
+                type="button"
+                onClick={() => handleSessionAssign(null)}
+                disabled={isPending}
+                className="inline-flex items-center gap-1 rounded-md border px-2 py-1.5 text-xs text-muted-foreground transition-colors hover:bg-muted"
+              >
+                <Unlink className="h-3 w-3" />
+                Unlink
+              </button>
+            )}
+            {currentSessionId && (
+              <span className="inline-flex items-center gap-1 text-xs text-green-600">
+                <Link2 className="h-3 w-3" />
+                Linked
+              </span>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Voting settings (for active brackets) */}

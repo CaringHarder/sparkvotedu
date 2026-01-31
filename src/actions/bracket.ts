@@ -1,5 +1,6 @@
 'use server'
 
+import { prisma } from '@/lib/prisma'
 import { getAuthenticatedTeacher } from '@/lib/dal/auth'
 import {
   createBracketDAL,
@@ -139,6 +140,64 @@ export async function updateBracketEntrants(input: unknown) {
     return { success: true }
   } catch {
     return { error: 'Failed to update bracket entrants' }
+  }
+}
+
+/**
+ * Assign (or unassign) a bracket to a class session.
+ * Auth -> validate -> ownership check -> update -> revalidate -> return
+ */
+export async function assignBracketToSession(input: unknown) {
+  const teacher = await getAuthenticatedTeacher()
+  if (!teacher) {
+    return { error: 'Not authenticated' }
+  }
+
+  const schema = z.object({
+    bracketId: z.string().uuid(),
+    sessionId: z.string().uuid().nullable(),
+  })
+
+  const parsed = schema.safeParse(input)
+  if (!parsed.success) {
+    return { error: 'Invalid data', issues: parsed.error.issues }
+  }
+
+  const { bracketId, sessionId } = parsed.data
+
+  try {
+    // Verify bracket ownership
+    const bracket = await prisma.bracket.findFirst({
+      where: { id: bracketId, teacherId: teacher.id },
+      select: { id: true },
+    })
+    if (!bracket) {
+      return { error: 'Bracket not found or not owned by you' }
+    }
+
+    // If assigning, verify session ownership
+    if (sessionId) {
+      const session = await prisma.classSession.findFirst({
+        where: { id: sessionId, teacherId: teacher.id },
+        select: { id: true },
+      })
+      if (!session) {
+        return { error: 'Session not found or not owned by you' }
+      }
+    }
+
+    await prisma.bracket.update({
+      where: { id: bracketId },
+      data: { sessionId },
+    })
+
+    revalidatePath('/brackets')
+    revalidatePath(`/brackets/${bracketId}`)
+
+    return { success: true }
+  } catch (err) {
+    console.error('Failed to assign bracket to session:', err)
+    return { error: 'Failed to assign bracket to session' }
   }
 }
 

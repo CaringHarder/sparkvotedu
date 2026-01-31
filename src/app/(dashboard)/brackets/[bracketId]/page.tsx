@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation'
 import { getAuthenticatedTeacher } from '@/lib/dal/auth'
 import { getBracketWithDetails } from '@/lib/dal/bracket'
+import { prisma } from '@/lib/prisma'
 import { BracketDetail } from '@/components/bracket/bracket-detail'
 import type { BracketStatus } from '@/lib/bracket/types'
 
@@ -22,6 +23,19 @@ export default async function BracketDetailPage({
   }
 
   const totalRounds = Math.log2(bracket.size)
+
+  // Fetch teacher's active sessions for session assignment
+  const sessions = await prisma.classSession.findMany({
+    where: { teacherId: teacher.id, status: 'active' },
+    select: { id: true, code: true, createdAt: true },
+    orderBy: { createdAt: 'desc' },
+  })
+
+  const serializedSessions = sessions.map((s) => ({
+    id: s.id,
+    code: s.code,
+    createdAt: s.createdAt.toISOString(),
+  }))
 
   // Serialize dates and relations for client component
   const serialized = {
@@ -66,5 +80,5 @@ export default async function BracketDetailPage({
     })),
   }
 
-  return <BracketDetail bracket={serialized} totalRounds={totalRounds} />
+  return <BracketDetail bracket={serialized} totalRounds={totalRounds} sessions={serializedSessions} />
 }

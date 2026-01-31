@@ -290,7 +290,11 @@ export async function updateBracketVotingSettings(input: unknown) {
     }
 
     // Build update data from provided fields
-    const updateData: Record<string, unknown> = {}
+    const updateData: {
+      viewingMode?: string
+      showVoteCounts?: boolean
+      votingTimerSeconds?: number | null
+    } = {}
     if (settings.viewingMode !== undefined) updateData.viewingMode = settings.viewingMode
     if (settings.showVoteCounts !== undefined) updateData.showVoteCounts = settings.showVoteCounts
     if (settings.votingTimerSeconds !== undefined)
@@ -311,7 +315,9 @@ export async function updateBracketVotingSettings(input: unknown) {
         votingTimerSeconds: updated.votingTimerSeconds,
       },
     }
-  } catch {
-    return { error: 'Failed to update bracket voting settings' }
+  } catch (err) {
+    console.error('Failed to update bracket voting settings:', err)
+    const message = err instanceof Error ? err.message : 'Failed to update bracket voting settings'
+    return { error: message }
   }
 }
