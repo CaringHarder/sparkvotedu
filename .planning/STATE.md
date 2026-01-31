@@ -5,23 +5,23 @@
 See: .planning/PROJECT.md (updated 2026-01-28)
 
 **Core value:** Teachers can instantly engage any classroom through voting -- on any topic, in any format -- and see participation happen in real time.
-**Current focus:** Phase 5 in progress -- Real-Time Poll Results complete
+**Current focus:** Phase 5 complete -- All poll plans executed (schema, DAL, actions, teacher UI, student UI, results, navigation, image upload)
 
 ## Current Position
 
 Phase: 5 of 10 (Polls)
-Plan: 5 of 6 in current phase
-Status: In progress
-Last activity: 2026-01-31 -- Completed 05-05-PLAN.md (Real-Time Poll Results)
+Plan: 6 of 6 in current phase
+Status: Phase complete
+Last activity: 2026-01-31 -- Completed 05-06-PLAN.md (Navigation, Activities, Image Upload)
 
-Progress: [######....] 58% (30/52 plans)
+Progress: [######....] 60% (31/52 plans)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 30
-- Average duration: ~5.8 min
-- Total execution time: ~2.88 hours
+- Total plans completed: 31
+- Average duration: ~5.7 min
+- Total execution time: ~2.95 hours
 
 **By Phase:**
 
@@ -31,11 +31,11 @@ Progress: [######....] 58% (30/52 plans)
 | 02-student-join-flow | 6/6 | ~13m | ~2.2m |
 | 03-bracket-creation-management | 7/7 | ~15.8m | ~2.3m |
 | 04-voting-and-real-time | 6/6 | ~45.6m | ~7.6m |
-| 05-polls | 5/6 | ~15.8m | ~3.2m |
+| 05-polls | 6/6 | ~18.9m | ~3.2m |
 
 **Recent Trend:**
-- Last 5 plans: 05-01 (~2.9m), 05-02 (~3.1m), 05-03 (~3.0m), 05-04 (~2.7m), 05-05 (~4.1m)
-- Trend: Phase 5 plans consistently fast (~3m), 05-05 slightly longer due to 9 files with animation code
+- Last 5 plans: 05-02 (~3.1m), 05-03 (~3.0m), 05-04 (~2.7m), 05-05 (~4.1m), 05-06 (~3.1m)
+- Trend: Phase 5 plans consistently fast (~3m avg), 05-05 slightly longer due to 9 files with animation code
 
 *Updated after each plan completion*
 
@@ -143,10 +143,15 @@ Recent decisions affecting current work:
 - [05-05]: F key shortcut for presentation mode toggle (excluded from input fields)
 - [05-05]: BordaLeaderboardEntry derived client-side from BordaScore broadcast data with maxPossiblePoints computed from poll metadata
 - [05-05]: Server component fetches session code + participant count for QR chip and participation rate
+- [05-06]: Unified sidebar navigation with Activities section and always-visible Brackets/Polls sub-items
+- [05-06]: Existing bracket routes kept intact -- /activities is additive, not a replacement
+- [05-06]: Signed upload URL pattern for images bypasses Next.js server action body limits
+- [05-06]: Canvas API image compression (max 800px, JPEG 0.8) for poll option images
 
 ### Pending Todos
 
 - Configure Google, Microsoft, Apple OAuth providers in external consoles and Supabase dashboard (non-blocking, code complete)
+- Create 'poll-images' bucket in Supabase Storage dashboard for poll option image uploads
 
 ### Blockers/Concerns
 
@@ -156,5 +161,5 @@ Recent decisions affecting current work:
 ## Session Continuity
 
 Last session: 2026-01-31
-Stopped at: Completed 05-05-PLAN.md (Real-Time Poll Results)
+Stopped at: Completed 05-06-PLAN.md (Navigation, Activities, Image Upload) -- Phase 5 complete
 Resume file: None
