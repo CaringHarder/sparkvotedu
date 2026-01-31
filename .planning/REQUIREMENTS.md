@@ -42,12 +42,12 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Polls
 
-- [ ] **POLL-01**: Teacher can create simple polls (multiple choice, pick one)
-- [ ] **POLL-02**: Teacher can create ranked polls (students rank options in preference order)
-- [ ] **POLL-03**: Poll results display vote distribution in real-time
-- [ ] **POLL-04**: Ranked poll results show aggregated rankings (Borda count or instant-runoff)
-- [ ] **POLL-05**: Teacher can set poll as draft, active, or closed
-- [ ] **POLL-06**: Teacher can delete a poll
+- [x] **POLL-01**: Teacher can create simple polls (multiple choice, pick one)
+- [x] **POLL-02**: Teacher can create ranked polls (students rank options in preference order)
+- [x] **POLL-03**: Poll results display vote distribution in real-time
+- [x] **POLL-04**: Ranked poll results show aggregated rankings (Borda count or instant-runoff)
+- [x] **POLL-05**: Teacher can set poll as draft, active, or closed
+- [x] **POLL-06**: Teacher can delete a poll
 
 ### Bracket & Poll Management
 
@@ -167,12 +167,12 @@ Which phases cover which requirements. Updated during roadmap creation.
 | BRKT-09 | Phase 3: Bracket Creation & Management | Complete |
 | BRKT-10 | Phase 3: Bracket Creation & Management | Complete |
 | BRKT-11 | Phase 3: Bracket Creation & Management | Complete |
-| POLL-01 | Phase 5: Polls | Pending |
-| POLL-02 | Phase 5: Polls | Pending |
-| POLL-03 | Phase 5: Polls | Pending |
-| POLL-04 | Phase 5: Polls | Pending |
-| POLL-05 | Phase 5: Polls | Pending |
-| POLL-06 | Phase 5: Polls | Pending |
+| POLL-01 | Phase 5: Polls | Complete |
+| POLL-02 | Phase 5: Polls | Complete |
+| POLL-03 | Phase 5: Polls | Complete |
+| POLL-04 | Phase 5: Polls | Complete |
+| POLL-05 | Phase 5: Polls | Complete |
+| POLL-06 | Phase 5: Polls | Complete |
 | MGMT-01 | Phase 4: Voting & Real-Time | Complete |
 | MGMT-02 | Phase 4: Voting & Real-Time | Complete |
 | MGMT-03 | Phase 4: Voting & Real-Time | Complete |
@@ -213,4 +213,4 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 ---
 *Requirements defined: 2026-01-28*
-*Last updated: 2026-01-28 after roadmap creation*
+*Last updated: 2026-01-31 after Phase 5 completion*
