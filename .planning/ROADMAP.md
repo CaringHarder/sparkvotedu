@@ -95,15 +95,15 @@ Plans:
   3. Teacher can advance the bracket to the next round by accepting vote results or manually choosing a winner
   4. Each student can only vote once per matchup, enforced even if they try from the same device
   5. Dashboard shows the number of currently connected/participating students
-**Plans**: TBD
+**Plans**: 6 plans
 
 Plans:
-- [ ] 04-01: Vote submission engine with server-side deduplication
-- [ ] 04-02: Student voting interface with optimistic updates
-- [ ] 04-03: Real-time infrastructure (WebSocket with SSE/long-polling fallback)
-- [ ] 04-04: Live teacher dashboard (vote counts, connected students)
-- [ ] 04-05: Round advancement (vote-based and teacher override)
-- [ ] 04-06: School network transport resilience testing
+- [ ] 04-01-PLAN.md — Schema updates (Vote model, Matchup.status, Bracket voting fields), Vote DAL, server-side Broadcast helper
+- [ ] 04-02-PLAN.md — Bracket advancement engine TDD (winner propagation, undo, round completion)
+- [ ] 04-03-PLAN.md — Vote + advancement server actions, real-time hooks, transport fallback, bracket state API
+- [ ] 04-04-PLAN.md — Student voting interface (simple + advanced modes, optimistic vote feedback)
+- [ ] 04-05-PLAN.md — Live teacher dashboard (vote counts, participation sidebar, round controls, timer)
+- [ ] 04-06-PLAN.md — Winner reveal animations, celebration screen, full integration wiring
 
 ### Phase 5: Polls
 **Goal**: Teachers can create simple and ranked polls that students vote on with results displayed in real time
@@ -226,7 +226,7 @@ Note: Phase 3 depends only on Phase 1 (not Phase 2), so Phases 2 and 3 could the
 | 1. Foundation & Auth | 5/5 | ✓ Complete | 2026-01-29 |
 | 2. Student Join Flow | 6/6 | ✓ Complete | 2026-01-29 |
 | 3. Bracket Creation & Management | 7/7 | ✓ Complete | 2026-01-30 |
-| 4. Voting & Real-Time | 0/6 | Not started | - |
+| 4. Voting & Real-Time | 0/6 | Planned | - |
 | 5. Polls | 0/4 | Not started | - |
 | 6. Billing & Subscriptions | 0/5 | Not started | - |
 | 7. Advanced Brackets | 0/6 | Not started | - |
