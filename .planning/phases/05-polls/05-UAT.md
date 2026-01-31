@@ -1,5 +1,5 @@
 ---
-status: complete
+status: diagnosed
 phase: 05-polls
 source: [05-01-SUMMARY.md, 05-02-SUMMARY.md, 05-03-SUMMARY.md, 05-04-SUMMARY.md, 05-05-SUMMARY.md, 05-06-SUMMARY.md]
 started: 2026-01-31T23:30:00Z
@@ -132,30 +132,45 @@ skipped: 0
   reason: "User reported: there is no way to assign a poll to a session"
   severity: major
   test: 9
-  root_cause: ""
-  artifacts: []
-  missing: []
-  debug_session: ""
+  root_cause: "Session assignment UI never implemented for polls. PollDetailView has no session dropdown. Poll detail page doesn't fetch sessions. assignPollToSession schema doesn't allow null for unlinking."
+  artifacts:
+    - path: "src/components/poll/poll-detail-view.tsx"
+      issue: "Missing session assignment UI section (bracket equivalent has it at lines 108-151)"
+    - path: "src/app/(dashboard)/polls/[pollId]/page.tsx"
+      issue: "Missing session fetch query"
+    - path: "src/actions/poll.ts"
+      issue: "assignPollToSessionSchema sessionId not nullable (can't unlink)"
+  missing:
+    - "Add session fetch to poll detail page (copy bracket pattern)"
+    - "Add session assignment dropdown to PollDetailView"
+    - "Make assignPollToSessionSchema sessionId nullable"
+  debug_session: ".planning/debug/poll-session-assign-missing.md"
 
 - truth: "Polls sidebar sub-item links to a working polls list page"
   status: failed
   reason: "User reported: polls icon links to a 404 error"
   severity: major
   test: 7
-  root_cause: ""
-  artifacts: []
-  missing: []
-  debug_session: ""
+  root_cause: "No /polls/page.tsx index page exists. Sidebar links to /polls but only /polls/new and /polls/[pollId] pages were created."
+  artifacts:
+    - path: "src/components/dashboard/sidebar-nav.tsx"
+      issue: "Line 38 links to /polls which has no page"
+  missing:
+    - "Create /polls/page.tsx as redirect to /activities or as dedicated polls list"
+  debug_session: ".planning/debug/polls-404.md"
 
 - truth: "Teacher can edit a draft poll and save changes successfully"
   status: failed
   reason: "User reported: clicking 'Update Poll' leaves the button stuck in loading/disabled state with 'Updating' text, appears hung"
   severity: major
   test: 4
-  root_cause: ""
-  artifacts: []
-  missing: []
-  debug_session: ""
+  root_cause: "handleSubmit in poll-form.tsx never calls setIsSubmitting(false) on the update success path. router.refresh() preserves client state, so isSubmitting stays true forever."
+  artifacts:
+    - path: "src/components/poll/poll-form.tsx"
+      issue: "Line 113: missing setIsSubmitting(false) after router.refresh() on update success path"
+  missing:
+    - "Add setIsSubmitting(false) after router.refresh() or use try/finally pattern"
+  debug_session: ".planning/debug/poll-update-hang.md"
 
 - truth: "Activities page loads and shows both brackets and polls"
   status: resolved
