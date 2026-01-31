@@ -1,10 +1,12 @@
 'use client'
 
+import { useState, useTransition } from 'react'
 import Link from 'next/link'
-import { ArrowLeft, Pencil } from 'lucide-react'
+import { ArrowLeft, Pencil, Radio } from 'lucide-react'
 import type { BracketWithDetails } from '@/lib/bracket/types'
 import { BracketDiagram } from '@/components/bracket/bracket-diagram'
 import { BracketStatusBadge, BracketLifecycleControls } from '@/components/bracket/bracket-status'
+import { updateBracketVotingSettings } from '@/actions/bracket-advance'
 
 interface BracketDetailProps {
   bracket: BracketWithDetails
@@ -12,6 +14,29 @@ interface BracketDetailProps {
 }
 
 export function BracketDetail({ bracket, totalRounds }: BracketDetailProps) {
+  const [isPending, startTransition] = useTransition()
+  const [viewingMode, setViewingMode] = useState(bracket.viewingMode)
+  const [showVoteCounts, setShowVoteCounts] = useState(bracket.showVoteCounts)
+  const [timerSeconds, setTimerSeconds] = useState<number | null>(bracket.votingTimerSeconds)
+  const [settingsError, setSettingsError] = useState<string | null>(null)
+
+  function handleUpdateSetting(update: {
+    viewingMode?: string
+    showVoteCounts?: boolean
+    votingTimerSeconds?: number | null
+  }) {
+    setSettingsError(null)
+    startTransition(async () => {
+      const result = await updateBracketVotingSettings({
+        bracketId: bracket.id,
+        ...update,
+      })
+      if (result && 'error' in result) {
+        setSettingsError(result.error as string)
+      }
+    })
+  }
+
   return (
     <div className="space-y-6">
       {/* Back link */}
@@ -44,6 +69,16 @@ export function BracketDetail({ bracket, totalRounds }: BracketDetailProps) {
 
         {/* Action bar */}
         <div className="flex items-start gap-2">
+          {/* Go Live button for active brackets */}
+          {bracket.status === 'active' && (
+            <Link
+              href={`/brackets/${bracket.id}/live`}
+              className="inline-flex items-center gap-1.5 rounded-md bg-green-600 px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-green-700"
+            >
+              <Radio className="h-4 w-4 animate-pulse" />
+              Go Live
+            </Link>
+          )}
           {bracket.status === 'draft' && (
             <Link
               href={`/brackets/${bracket.id}/edit`}
@@ -60,6 +95,106 @@ export function BracketDetail({ bracket, totalRounds }: BracketDetailProps) {
           />
         </div>
       </div>
+
+      {/* Voting settings (for active brackets) */}
+      {bracket.status === 'active' && (
+        <div className="rounded-lg border p-4">
+          <h2 className="mb-3 text-sm font-semibold">Voting Settings</h2>
+          {settingsError && (
+            <p className="mb-3 text-xs text-red-600">{settingsError}</p>
+          )}
+          <div className="grid gap-4 sm:grid-cols-3">
+            {/* Viewing mode toggle */}
+            <div>
+              <label className="mb-1.5 block text-xs font-medium text-muted-foreground">
+                Viewing Mode
+              </label>
+              <div className="flex rounded-md border">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setViewingMode('simple')
+                    handleUpdateSetting({ viewingMode: 'simple' })
+                  }}
+                  disabled={isPending}
+                  className={`flex-1 rounded-l-md px-3 py-1.5 text-xs font-medium transition-colors ${
+                    viewingMode === 'simple'
+                      ? 'bg-primary text-primary-foreground'
+                      : 'hover:bg-muted'
+                  }`}
+                >
+                  Simple
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setViewingMode('advanced')
+                    handleUpdateSetting({ viewingMode: 'advanced' })
+                  }}
+                  disabled={isPending}
+                  className={`flex-1 rounded-r-md px-3 py-1.5 text-xs font-medium transition-colors ${
+                    viewingMode === 'advanced'
+                      ? 'bg-primary text-primary-foreground'
+                      : 'hover:bg-muted'
+                  }`}
+                >
+                  Advanced
+                </button>
+              </div>
+            </div>
+
+            {/* Show vote counts toggle */}
+            <div>
+              <label className="mb-1.5 block text-xs font-medium text-muted-foreground">
+                Show Vote Counts
+              </label>
+              <button
+                type="button"
+                onClick={() => {
+                  const next = !showVoteCounts
+                  setShowVoteCounts(next)
+                  handleUpdateSetting({ showVoteCounts: next })
+                }}
+                disabled={isPending}
+                className={`w-full rounded-md border px-3 py-1.5 text-xs font-medium transition-colors ${
+                  showVoteCounts
+                    ? 'border-primary bg-primary/10 text-primary'
+                    : 'hover:bg-muted'
+                }`}
+              >
+                {showVoteCounts ? 'On' : 'Off'}
+              </button>
+            </div>
+
+            {/* Timer setting */}
+            <div>
+              <label className="mb-1.5 block text-xs font-medium text-muted-foreground">
+                Voting Timer (seconds)
+              </label>
+              <div className="flex gap-1">
+                {[null, 30, 60, 120].map((val) => (
+                  <button
+                    key={val ?? 'none'}
+                    type="button"
+                    onClick={() => {
+                      setTimerSeconds(val)
+                      handleUpdateSetting({ votingTimerSeconds: val })
+                    }}
+                    disabled={isPending}
+                    className={`flex-1 rounded-md border px-2 py-1.5 text-xs font-medium transition-colors ${
+                      timerSeconds === val
+                        ? 'border-primary bg-primary/10 text-primary'
+                        : 'hover:bg-muted'
+                    }`}
+                  >
+                    {val === null ? 'Off' : `${val}s`}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Entrant list */}
       <div className="rounded-lg border p-4">

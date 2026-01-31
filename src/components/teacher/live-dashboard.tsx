@@ -1,9 +1,11 @@
 'use client'
 
-import { useState, useMemo, useCallback } from 'react'
+import { useState, useMemo, useCallback, useEffect, useRef } from 'react'
 import { useRealtimeBracket } from '@/hooks/use-realtime-bracket'
 import { useSessionPresence } from '@/hooks/use-student-session'
 import { BracketDiagram } from '@/components/bracket/bracket-diagram'
+import { WinnerReveal } from '@/components/bracket/winner-reveal'
+import { CelebrationScreen } from '@/components/bracket/celebration-screen'
 import { VoteCountDisplay } from '@/components/teacher/vote-count-display'
 import { ParticipationSidebar } from '@/components/teacher/participation-sidebar'
 import { RoundAdvancementControls } from '@/components/teacher/round-advancement-controls'
@@ -19,6 +21,14 @@ interface LiveDashboardProps {
   initialVoterIds: Record<string, string[]>
 }
 
+interface RevealState {
+  winnerName: string
+  entrant1Name: string
+  entrant2Name: string
+  entrant1Votes: number
+  entrant2Votes: number
+}
+
 export function LiveDashboard({
   bracket,
   totalRounds,
@@ -28,9 +38,14 @@ export function LiveDashboard({
 }: LiveDashboardProps) {
   const [selectedMatchupId, setSelectedMatchupId] = useState<string | null>(null)
   const [sidebarOpen, setSidebarOpen] = useState(true)
+  const [revealState, setRevealState] = useState<RevealState | null>(null)
+  const [showCelebration, setShowCelebration] = useState(false)
+
+  // Track previous matchup statuses for detecting newly decided matchups
+  const prevMatchupStatusRef = useRef<Record<string, string>>({})
 
   // Real-time vote count updates via Supabase Broadcast
-  const { voteCounts: realtimeVoteCounts, matchups: realtimeMatchups } =
+  const { voteCounts: realtimeVoteCounts, matchups: realtimeMatchups, bracketCompleted } =
     useRealtimeBracket(bracket.id)
 
   // Track connected students via Supabase Presence
@@ -78,6 +93,52 @@ export function LiveDashboard({
     return merged
   }, [initialVoteCounts, realtimeVoteCounts])
 
+  // Detect newly decided matchups and trigger WinnerReveal
+  useEffect(() => {
+    const prev = prevMatchupStatusRef.current
+
+    for (const matchup of currentMatchups) {
+      const prevStatus = prev[matchup.id]
+      // Trigger reveal when a matchup transitions from non-decided to decided
+      if (
+        prevStatus &&
+        prevStatus !== 'decided' &&
+        matchup.status === 'decided' &&
+        matchup.winner
+      ) {
+        const counts = mergedVoteCounts[matchup.id] ?? {}
+        const e1Votes = matchup.entrant1Id ? (counts[matchup.entrant1Id] ?? 0) : 0
+        const e2Votes = matchup.entrant2Id ? (counts[matchup.entrant2Id] ?? 0) : 0
+
+        setRevealState({
+          winnerName: matchup.winner.name,
+          entrant1Name: matchup.entrant1?.name ?? 'TBD',
+          entrant2Name: matchup.entrant2?.name ?? 'TBD',
+          entrant1Votes: e1Votes,
+          entrant2Votes: e2Votes,
+        })
+      }
+    }
+
+    // Update ref with current statuses
+    const newStatuses: Record<string, string> = {}
+    for (const m of currentMatchups) {
+      newStatuses[m.id] = m.status
+    }
+    prevMatchupStatusRef.current = newStatuses
+  }, [currentMatchups, mergedVoteCounts])
+
+  // Show celebration when bracket is completed
+  useEffect(() => {
+    if (bracketCompleted) {
+      // Small delay so WinnerReveal finishes first
+      const timer = setTimeout(() => {
+        setShowCelebration(true)
+      }, 4000)
+      return () => clearTimeout(timer)
+    }
+  }, [bracketCompleted])
+
   // Get total votes per matchup from real-time data
   const getTotalVotes = useCallback(
     (matchupId: string): number => {
@@ -105,6 +166,14 @@ export function LiveDashboard({
     return totalRounds
   }, [currentMatchups, totalRounds])
 
+  // Find the champion name for celebration
+  const championName = useMemo(() => {
+    const finalMatchup = currentMatchups.find(
+      (m) => m.round === totalRounds && m.position === 1
+    )
+    return finalMatchup?.winner?.name ?? 'Champion'
+  }, [currentMatchups, totalRounds])
+
   const handleTimerExpire = useCallback(() => {
     // Timer expired -- teacher is prompted to close voting or extend
     // No automatic action, just visual indication
@@ -112,6 +181,28 @@ export function LiveDashboard({
 
   return (
     <div className="flex h-full flex-col gap-4">
+      {/* Winner Reveal overlay */}
+      {revealState && (
+        <WinnerReveal
+          winnerName={revealState.winnerName}
+          entrant1Name={revealState.entrant1Name}
+          entrant2Name={revealState.entrant2Name}
+          showVoteCounts
+          entrant1Votes={revealState.entrant1Votes}
+          entrant2Votes={revealState.entrant2Votes}
+          onComplete={() => setRevealState(null)}
+        />
+      )}
+
+      {/* Celebration Screen overlay */}
+      {showCelebration && (
+        <CelebrationScreen
+          championName={championName}
+          bracketName={bracket.name}
+          onDismiss={() => setShowCelebration(false)}
+        />
+      )}
+
       {/* Top bar */}
       <div className="flex items-center justify-between rounded-lg border bg-card p-4">
         <div className="flex items-center gap-3">

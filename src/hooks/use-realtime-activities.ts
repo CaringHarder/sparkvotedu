@@ -15,13 +15,9 @@ export interface Activity {
 /**
  * Realtime activity list hook for the student session view.
  *
- * Subscribes to the `activities:{sessionId}` Supabase Realtime channel
- * and refetches activities on any change event.
- *
- * NOTE: Since brackets and polls don't exist yet (Phase 3+), this hook
- * initially always returns an empty array. The hook structure and Supabase
- * channel setup is what matters -- the data source will be connected in
- * future phases when activity tables and API endpoints are created.
+ * Fetches activities from /api/sessions/{sessionId}/activities and
+ * subscribes to the `activities:{sessionId}` Supabase Realtime channel
+ * for live updates when brackets are activated, advanced, or completed.
  *
  * @param sessionId - The class session ID to watch
  * @param participantId - The student participant ID (for hasVoted check)
@@ -29,20 +25,31 @@ export interface Activity {
  */
 export function useRealtimeActivities(
   sessionId: string,
-  _participantId: string
+  participantId: string
 ) {
   const [activities, setActivities] = useState<Activity[]>([])
   const [loading, setLoading] = useState(true)
   const supabase = useMemo(() => createClient(), [])
 
   const fetchActivities = useCallback(async () => {
-    // Scaffold: activities API doesn't exist yet (Phase 3+).
-    // When brackets/polls are built, this will fetch from
-    // /api/sessions/${sessionId}/activities or a server action.
-    // For now, return empty array to show empty state.
-    setActivities([])
-    setLoading(false)
-  }, [])
+    try {
+      const url = `/api/sessions/${sessionId}/activities${
+        participantId ? `?pid=${encodeURIComponent(participantId)}` : ''
+      }`
+      const res = await fetch(url)
+      if (res.ok) {
+        const data: Activity[] = await res.json()
+        setActivities(data)
+      } else {
+        setActivities([])
+      }
+    } catch {
+      // Network error -- keep previous state, will retry on next broadcast
+      setActivities([])
+    } finally {
+      setLoading(false)
+    }
+  }, [sessionId, participantId])
 
   useEffect(() => {
     fetchActivities()

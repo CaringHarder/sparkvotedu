@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { MatchupVoteCard } from '@/components/bracket/matchup-vote-card'
+import { CelebrationScreen } from '@/components/bracket/celebration-screen'
 import { useRealtimeBracket } from '@/hooks/use-realtime-bracket'
 import { useTransportFallback } from '@/hooks/use-transport-fallback'
 import type { MatchupData } from '@/lib/bracket/types'
@@ -32,9 +33,10 @@ export function SimpleVotingView({
   initialVotes,
 }: SimpleVotingViewProps) {
   const [currentIndex, setCurrentIndex] = useState(0)
+  const [showCelebration, setShowCelebration] = useState(false)
 
   // Real-time bracket updates
-  const { matchups: realtimeMatchups } = useRealtimeBracket(bracketId)
+  const { matchups: realtimeMatchups, bracketCompleted } = useRealtimeBracket(bracketId)
 
   // Use realtime matchups when available, otherwise initial
   const allMatchups = (realtimeMatchups as MatchupData[] | null) ?? initialMatchups
@@ -59,6 +61,22 @@ export function SimpleVotingView({
   }, [])
   const { transport } = useTransportFallback(bracketId, handlePollData)
 
+  // Show celebration when bracket is completed
+  useEffect(() => {
+    if (bracketCompleted) {
+      setShowCelebration(true)
+    }
+  }, [bracketCompleted])
+
+  // Derive champion name from final matchup
+  const championName = (() => {
+    const maxRound = Math.max(...allMatchups.map((m) => m.round), 0)
+    const finalMatchup = allMatchups.find(
+      (m) => m.round === maxRound && m.position === 1
+    )
+    return finalMatchup?.winner?.name ?? 'Champion'
+  })()
+
   // Clamp index to bounds
   const safeIndex = Math.max(0, Math.min(currentIndex, votableMatchups.length - 1))
   const currentMatchup = votableMatchups[safeIndex]
@@ -68,6 +86,15 @@ export function SimpleVotingView({
     (m) => initialVotes[m.id] != null
   ).length
 
+  // Celebration overlay (renders above all other content)
+  const celebrationOverlay = showCelebration ? (
+    <CelebrationScreen
+      championName={championName}
+      bracketName={bracketName}
+      onDismiss={() => setShowCelebration(false)}
+    />
+  ) : null
+
   // No votable matchups: waiting state
   if (votableMatchups.length === 0) {
     // Check if all initial matchups are decided (bracket may be done or waiting)
@@ -75,6 +102,7 @@ export function SimpleVotingView({
 
     return (
       <div className="mx-auto max-w-md px-4 py-12 text-center">
+        {celebrationOverlay}
         <h1 className="mb-6 text-2xl font-bold">{bracketName}</h1>
         {allDecided ? (
           <div className="space-y-3">
@@ -114,6 +142,7 @@ export function SimpleVotingView({
   if (votedCount === votableMatchups.length && votableMatchups.length > 0) {
     return (
       <div className="mx-auto max-w-md px-4 py-12 text-center">
+        {celebrationOverlay}
         <h1 className="mb-6 text-2xl font-bold">{bracketName}</h1>
         <div className="space-y-3">
           <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-green-100 dark:bg-green-900/30">
@@ -151,6 +180,7 @@ export function SimpleVotingView({
 
   return (
     <div className="mx-auto max-w-md px-4 py-6">
+      {celebrationOverlay}
       <h1 className="mb-6 text-center text-2xl font-bold">{bracketName}</h1>
 
       {/* Current matchup card */}

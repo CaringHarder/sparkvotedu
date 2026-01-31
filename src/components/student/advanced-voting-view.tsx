@@ -1,8 +1,9 @@
 'use client'
 
-import { useState, useCallback } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { BracketDiagram } from '@/components/bracket/bracket-diagram'
 import { MatchupVoteCard } from '@/components/bracket/matchup-vote-card'
+import { CelebrationScreen } from '@/components/bracket/celebration-screen'
 import { useRealtimeBracket } from '@/hooks/use-realtime-bracket'
 import { useTransportFallback } from '@/hooks/use-transport-fallback'
 import type { BracketWithDetails, MatchupData } from '@/lib/bracket/types'
@@ -29,6 +30,7 @@ export function AdvancedVotingView({
   initialVotes,
 }: AdvancedVotingViewProps) {
   const [selectedMatchupId, setSelectedMatchupId] = useState<string | null>(null)
+  const [showCelebration, setShowCelebration] = useState(false)
 
   // Real-time bracket updates
   const { matchups: realtimeMatchups, bracketCompleted } = useRealtimeBracket(bracket.id)
@@ -44,6 +46,21 @@ export function AdvancedVotingView({
     // Real-time bracket hook handles state
   }, [])
   const { transport } = useTransportFallback(bracket.id, handlePollData)
+
+  // Show celebration when bracket is completed
+  useEffect(() => {
+    if (bracketCompleted) {
+      setShowCelebration(true)
+    }
+  }, [bracketCompleted])
+
+  // Derive champion name from final matchup
+  const championName = (() => {
+    const finalMatchup = currentMatchups.find(
+      (m) => m.round === totalRounds && m.position === 1
+    )
+    return finalMatchup?.winner?.name ?? 'Champion'
+  })()
 
   // Find the selected matchup
   const selectedMatchup = selectedMatchupId
@@ -72,6 +89,15 @@ export function AdvancedVotingView({
 
   return (
     <div className="px-4 py-4">
+      {/* Celebration overlay */}
+      {showCelebration && (
+        <CelebrationScreen
+          championName={championName}
+          bracketName={bracket.name}
+          onDismiss={() => setShowCelebration(false)}
+        />
+      )}
+
       {/* Header */}
       <div className="mb-4 flex flex-col items-center gap-2 sm:flex-row sm:justify-between">
         <h1 className="text-xl font-bold">{bracket.name}</h1>
