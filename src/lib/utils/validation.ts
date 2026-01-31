@@ -106,3 +106,63 @@ export type CastVoteInput = z.infer<typeof castVoteSchema>
 export type AdvanceMatchupInput = z.infer<typeof advanceMatchupSchema>
 export type OpenVotingInput = z.infer<typeof openVotingSchema>
 export type UpdateBracketVotingSettingsInput = z.infer<typeof updateBracketVotingSettingsSchema>
+
+// Poll validation schemas
+export const createPollSchema = z.object({
+  question: z
+    .string()
+    .min(1, 'Poll question is required')
+    .max(300, 'Question must be 300 characters or less'),
+  description: z
+    .string()
+    .max(1000, 'Description must be 1000 characters or less')
+    .optional(),
+  pollType: z.enum(['simple', 'ranked']),
+  allowVoteChange: z.boolean().optional(),
+  showLiveResults: z.boolean().optional(),
+  rankingDepth: z.number().int().positive().nullable().optional(),
+})
+
+export const pollOptionSchema = z.object({
+  text: z
+    .string()
+    .min(1, 'Option text is required')
+    .max(200, 'Option text must be 200 characters or less'),
+  imageUrl: z.string().url().nullable().optional(),
+  position: z.number().int().min(0),
+})
+
+export const castPollVoteSchema = z.object({
+  pollId: z.string().uuid(),
+  participantId: z.string().uuid(),
+  optionId: z.string().uuid(),
+})
+
+export const castRankedPollVoteSchema = z.object({
+  pollId: z.string().uuid(),
+  participantId: z.string().uuid(),
+  rankings: z
+    .array(
+      z.object({
+        optionId: z.string().uuid(),
+        rank: z.number().int().positive(),
+      })
+    )
+    .min(1),
+})
+
+export const updatePollStatusSchema = z.object({
+  pollId: z.string().uuid(),
+  status: z.enum(['draft', 'active', 'closed', 'archived']),
+})
+
+export const deletePollSchema = z.object({
+  pollId: z.string().uuid(),
+})
+
+export type CreatePollInput = z.infer<typeof createPollSchema>
+export type PollOptionInput = z.infer<typeof pollOptionSchema>
+export type CastPollVoteInput = z.infer<typeof castPollVoteSchema>
+export type CastRankedPollVoteInput = z.infer<typeof castRankedPollVoteSchema>
+export type UpdatePollStatusInput = z.infer<typeof updatePollStatusSchema>
+export type DeletePollInput = z.infer<typeof deletePollSchema>
