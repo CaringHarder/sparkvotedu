@@ -55,6 +55,8 @@ model StudentParticipant {
   sessionId    String    @map("session_id")
   session      ClassSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
 
+  votes Vote[]
+
   @@unique([sessionId, deviceId])
   @@unique([sessionId, funName])
   @@index([sessionId, fingerprint])
@@ -63,18 +65,21 @@ model StudentParticipant {
 }
 
 model Bracket {
-  id          String       @id @default(uuid())
-  name        String
-  description String?
-  bracketType String       @default("single_elimination") @map("bracket_type")
-  size        Int
-  status      String       @default("draft")
-  teacherId   String       @map("teacher_id")
-  teacher     Teacher      @relation(fields: [teacherId], references: [id])
-  sessionId   String?      @map("session_id")
-  session     ClassSession? @relation(fields: [sessionId], references: [id])
-  createdAt   DateTime     @default(now()) @map("created_at")
-  updatedAt   DateTime     @updatedAt @map("updated_at")
+  id                 String       @id @default(uuid())
+  name               String
+  description        String?
+  bracketType        String       @default("single_elimination") @map("bracket_type")
+  size               Int
+  status             String       @default("draft")
+  viewingMode        String       @default("advanced") @map("viewing_mode")
+  showVoteCounts     Boolean      @default(true) @map("show_vote_counts")
+  votingTimerSeconds Int?         @map("voting_timer_seconds")
+  teacherId          String       @map("teacher_id")
+  teacher            Teacher      @relation(fields: [teacherId], references: [id])
+  sessionId          String?      @map("session_id")
+  session            ClassSession? @relation(fields: [sessionId], references: [id])
+  createdAt          DateTime     @default(now()) @map("created_at")
+  updatedAt          DateTime     @updatedAt @map("updated_at")
 
   entrants BracketEntrant[]
   matchups Matchup[]
@@ -96,6 +101,7 @@ model BracketEntrant {
   matchupsAsEntrant1 Matchup[] @relation("entrant1")
   matchupsAsEntrant2 Matchup[] @relation("entrant2")
   matchupsAsWinner   Matchup[] @relation("winner")
+  votesReceived      Vote[]
 
   @@unique([bracketId, seedPosition])
   @@index([bracketId])
@@ -106,6 +112,7 @@ model Matchup {
   id               String          @id @default(uuid())
   round            Int
   position         Int
+  status           String          @default("pending")
   bracketId        String          @map("bracket_id")
   bracket          Bracket         @relation(fields: [bracketId], references: [id], onDelete: Cascade)
   entrant1Id       String?         @map("entrant1_id")
@@ -119,7 +126,26 @@ model Matchup {
   previousMatchups Matchup[]       @relation("advancement")
   createdAt        DateTime        @default(now()) @map("created_at")
 
+  votes Vote[]
+
   @@unique([bracketId, round, position])
   @@index([bracketId])
   @@map("matchups")
+}
+
+model Vote {
+  id            String             @id @default(uuid())
+  matchupId     String             @map("matchup_id")
+  matchup       Matchup            @relation(fields: [matchupId], references: [id], onDelete: Cascade)
+  participantId String             @map("participant_id")
+  participant   StudentParticipant @relation(fields: [participantId], references: [id], onDelete: Cascade)
+  entrantId     String             @map("entrant_id")
+  entrant       BracketEntrant     @relation(fields: [entrantId], references: [id])
+  createdAt     DateTime           @default(now()) @map("created_at")
+  updatedAt     DateTime           @updatedAt @map("updated_at")
+
+  @@unique([matchupId, participantId])
+  @@index([matchupId])
+  @@index([participantId])
+  @@map("votes")
 }

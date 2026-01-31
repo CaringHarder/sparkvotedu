@@ -76,3 +76,33 @@ export type EntrantInput = z.infer<typeof entrantSchema>
 export type UpdateEntrantsInput = z.infer<typeof updateEntrantsSchema>
 export type UpdateBracketStatusInput = z.infer<typeof updateBracketStatusSchema>
 export type DeleteBracketInput = z.infer<typeof deleteBracketSchema>
+
+// Vote validation schemas
+export const castVoteSchema = z.object({
+  matchupId: z.string().uuid(),
+  participantId: z.string().uuid(),
+  entrantId: z.string().uuid(),
+})
+
+export const advanceMatchupSchema = z.object({
+  bracketId: z.string().uuid(),
+  matchupId: z.string().uuid(),
+  winnerId: z.string().uuid(),
+})
+
+export const openVotingSchema = z.object({
+  bracketId: z.string().uuid(),
+  matchupIds: z.array(z.string().uuid()).min(1),
+})
+
+export const updateBracketVotingSettingsSchema = z.object({
+  bracketId: z.string().uuid(),
+  viewingMode: z.enum(['simple', 'advanced']).optional(),
+  showVoteCounts: z.boolean().optional(),
+  votingTimerSeconds: z.number().int().positive().nullable().optional(),
+})
+
+export type CastVoteInput = z.infer<typeof castVoteSchema>
+export type AdvanceMatchupInput = z.infer<typeof advanceMatchupSchema>
+export type OpenVotingInput = z.infer<typeof openVotingSchema>
+export type UpdateBracketVotingSettingsInput = z.infer<typeof updateBracketVotingSettingsSchema>

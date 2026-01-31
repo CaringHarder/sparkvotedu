@@ -12,6 +12,9 @@ export interface BracketData {
   bracketType: string
   size: number
   status: BracketStatus
+  viewingMode: string
+  showVoteCounts: boolean
+  votingTimerSeconds: number | null
   teacherId: string
   sessionId: string | null
   createdAt: string // ISO string for serialization
@@ -31,6 +34,7 @@ export interface MatchupData {
   id: string
   round: number
   position: number
+  status: string
   bracketId: string
   entrant1Id: string | null
   entrant2Id: string | null
