@@ -5,22 +5,22 @@
 See: .planning/PROJECT.md (updated 2026-01-28)
 
 **Core value:** Teachers can instantly engage any classroom through voting -- on any topic, in any format -- and see participation happen in real time.
-**Current focus:** Phase 4 complete — ready for Phase 5 (Polls)
+**Current focus:** Phase 5 in progress -- Poll Data Foundation complete
 
 ## Current Position
 
-Phase: 4 of 10 (Voting and Real-Time) -- COMPLETE
-Plan: 6 of 6 in current phase
-Status: Phase complete
-Last activity: 2026-01-31 -- Completed 04-06-PLAN.md (Winner Reveal & Integration Wiring)
+Phase: 5 of 10 (Polls)
+Plan: 1 of 6 in current phase
+Status: In progress
+Last activity: 2026-01-31 -- Completed 05-01-PLAN.md (Poll Data Foundation)
 
-Progress: [#####.....] 48% (25/52 plans)
+Progress: [#####.....] 50% (26/52 plans)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 25
-- Average duration: ~6.5 min
+- Total plans completed: 26
+- Average duration: ~6.3 min
 - Total execution time: ~2.7 hours
 
 **By Phase:**
@@ -31,10 +31,11 @@ Progress: [#####.....] 48% (25/52 plans)
 | 02-student-join-flow | 6/6 | ~13m | ~2.2m |
 | 03-bracket-creation-management | 7/7 | ~15.8m | ~2.3m |
 | 04-voting-and-real-time | 6/6 | ~45.6m | ~7.6m |
+| 05-polls | 1/6 | ~2.9m | ~2.9m |
 
 **Recent Trend:**
-- Last 5 plans: 04-02 (~4m), 04-03 (~3.8m), 04-04 (~5m), 04-05 (~4m), 04-06 (~25m incl. E2E testing)
-- Trend: 04-06 was longer due to iterative E2E user acceptance testing (11 bugs found and fixed)
+- Last 5 plans: 04-04 (~5m), 04-05 (~4m), 04-06 (~25m incl. E2E testing), 05-01 (~2.9m)
+- Trend: 05-01 data foundation was fast (schema + types + pure functions, no UI)
 
 *Updated after each plan completion*
 
@@ -121,6 +122,10 @@ Recent decisions affecting current work:
 - [04-06]: QR code as compact chip with expandable dropdown on live dashboard
 - [04-06]: AnimatePresence mode="wait" for sequential card transitions in simple voting
 - [04-06]: prisma db push (not migrate) for cascade fix due to migration drift
+- [05-01]: @@unique([pollId, participantId, rank]) handles both simple (rank=1) and ranked (rank=1..N) vote deduplication
+- [05-01]: pollType as string (not DB enum) for flexibility, matching bracket status pattern
+- [05-01]: Borda scoring uses rankingDepth as base for partial rankings to avoid score inflation
+- [05-01]: Cascade delete on PollOption and PollVote from Poll, matching Bracket cascade pattern
 
 ### Pending Todos
 
@@ -134,5 +139,5 @@ Recent decisions affecting current work:
 ## Session Continuity
 
 Last session: 2026-01-31
-Stopped at: Phase 4 complete -- ready for Phase 5
+Stopped at: Completed 05-01-PLAN.md (Poll Data Foundation)
 Resume file: None
