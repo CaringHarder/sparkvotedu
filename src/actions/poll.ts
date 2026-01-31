@@ -198,10 +198,10 @@ export async function updatePollStatus(input: unknown) {
   }
 }
 
-// Schema for assigning poll to session
+// Schema for assigning poll to session (nullable allows unlinking)
 const assignPollToSessionSchema = z.object({
   pollId: z.string().uuid(),
-  sessionId: z.string().uuid(),
+  sessionId: z.string().uuid().nullable(),
 })
 
 /**
@@ -222,13 +222,15 @@ export async function assignPollToSession(input: unknown) {
   const { pollId, sessionId } = parsed.data
 
   try {
-    // Verify session ownership
-    const session = await prisma.classSession.findFirst({
-      where: { id: sessionId, teacherId: teacher.id },
-      select: { id: true },
-    })
-    if (!session) {
-      return { error: 'Session not found or not owned by you' }
+    // If assigning, verify session ownership
+    if (sessionId) {
+      const session = await prisma.classSession.findFirst({
+        where: { id: sessionId, teacherId: teacher.id },
+        select: { id: true },
+      })
+      if (!session) {
+        return { error: 'Session not found or not owned by you' }
+      }
     }
 
     const result = await assignPollToSessionDAL(pollId, teacher.id, sessionId)

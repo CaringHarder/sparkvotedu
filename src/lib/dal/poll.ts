@@ -206,7 +206,7 @@ export async function updatePollStatusDAL(
 export async function assignPollToSessionDAL(
   pollId: string,
   teacherId: string,
-  sessionId: string
+  sessionId: string | null
 ) {
   const poll = await prisma.poll.findFirst({
     where: { id: pollId, teacherId },
