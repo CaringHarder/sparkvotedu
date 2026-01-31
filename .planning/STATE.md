@@ -12,16 +12,16 @@ See: .planning/PROJECT.md (updated 2026-01-28)
 Phase: 4 of 10 (Voting and Real-Time)
 Plan: 5 of 6 in current phase
 Status: In progress
-Last activity: 2026-01-31 -- Completed 04-05-PLAN.md (Teacher Live Dashboard)
+Last activity: 2026-01-31 -- Completed 04-04-PLAN.md (Student Voting UI)
 
-Progress: [####......] 44% (23/52 plans)
+Progress: [#####.....] 46% (24/52 plans)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 23
-- Average duration: ~6.5 min
-- Total execution time: ~2.5 hours
+- Total plans completed: 24
+- Average duration: ~6.4 min
+- Total execution time: ~2.6 hours
 
 **By Phase:**
 
@@ -33,7 +33,7 @@ Progress: [####......] 44% (23/52 plans)
 | 04-voting-and-real-time | 5/6 | ~20.6m | ~4.1m |
 
 **Recent Trend:**
-- Last 5 plans: 04-01 (~4.8m), 04-02 (~4m), 04-03 (~3.8m), 04-04 (~skipped), 04-05 (~4m)
+- Last 5 plans: 04-01 (~4.8m), 04-02 (~4m), 04-03 (~3.8m), 04-04 (~5m), 04-05 (~4m)
 - Trend: Stable
 
 *Updated after each plan completion*
@@ -109,6 +109,9 @@ Recent decisions affecting current work:
 - [04-03]: useRef accumulator batches vote_update events; bracket_update events trigger immediate full refetch
 - [04-03]: Transport fallback uses 5s WebSocket timeout, 3s polling interval
 - [04-03]: /api/brackets/ routes added as public pages in proxy for student polling access
+- [04-04]: Client component bracket page reads localStorage for participantId (no server-side identity resolution)
+- [04-04]: SVG overlay with duplicated layout constants for interactive bracket diagram (keeps base BracketDiagram clean)
+- [04-04]: New /api/brackets/[bracketId]/votes?pid= endpoint for participant vote state restoration
 - [04-05]: Sentinel ID '__no_session__' for useSessionPresence to avoid conditional hook violation
 - [04-05]: Vote count overlays as interactive card grid below diagram (not inline SVG overlays)
 - [04-05]: Client-side timer with persistence to bracket.votingTimerSeconds via server action
@@ -127,5 +130,5 @@ Recent decisions affecting current work:
 ## Session Continuity
 
 Last session: 2026-01-31
-Stopped at: Completed 04-05-PLAN.md (Teacher Live Dashboard)
+Stopped at: Completed 04-04-PLAN.md (Student Voting UI)
 Resume file: None
