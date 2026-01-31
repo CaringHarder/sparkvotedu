@@ -10,18 +10,18 @@ See: .planning/PROJECT.md (updated 2026-01-28)
 ## Current Position
 
 Phase: 4 of 10 (Voting and Real-Time)
-Plan: 2 of 6 in current phase
+Plan: 3 of 6 in current phase
 Status: In progress
-Last activity: 2026-01-31 -- Completed 04-01-PLAN.md (Vote Data Foundation)
+Last activity: 2026-01-31 -- Completed 04-03-PLAN.md (Server Actions and Real-Time Hooks)
 
-Progress: [####......] 38% (20/52 plans)
+Progress: [####......] 40% (21/52 plans)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 20
+- Total plans completed: 21
 - Average duration: ~7 min
-- Total execution time: ~2.3 hours
+- Total execution time: ~2.4 hours
 
 **By Phase:**
 
@@ -30,10 +30,10 @@ Progress: [####......] 38% (20/52 plans)
 | 01-foundation-and-auth | 5/5 | ~1.5h | ~18m |
 | 02-student-join-flow | 6/6 | ~13m | ~2.2m |
 | 03-bracket-creation-management | 7/7 | ~15.8m | ~2.3m |
-| 04-voting-and-real-time | 2/6 | ~8.8m | ~4.4m |
+| 04-voting-and-real-time | 3/6 | ~12.6m | ~4.2m |
 
 **Recent Trend:**
-- Last 5 plans: 03-07 (~3m), 03-06 (~5m), 04-02 (~4m), 04-01 (~4.8m)
+- Last 5 plans: 03-06 (~5m), 03-07 (~3m), 04-01 (~4.8m), 04-02 (~4m), 04-03 (~3.8m)
 - Trend: Stable
 
 *Updated after each plan completion*
@@ -103,6 +103,12 @@ Recent decisions affecting current work:
 - [04-02]: Position parity determines next-round slot: odd -> entrant1Id, even -> entrant2Id (matches Phase 3 bracket engine)
 - [04-02]: Undo blocked by vote count check on next matchup (not status check) for precise safety
 - [04-02]: Read-only queries (checkRoundComplete, isBracketComplete) skip $transaction for performance
+- [04-03]: castVote is unauthenticated (student action) -- validates matchup status + banned flag instead of teacher auth
+- [04-03]: All bracket-advance actions verify teacher ownership via findFirst with teacherId filter
+- [04-03]: Non-blocking broadcast (.catch(console.error)) in server actions prevents broadcast failures from breaking vote flow
+- [04-03]: useRef accumulator batches vote_update events; bracket_update events trigger immediate full refetch
+- [04-03]: Transport fallback uses 5s WebSocket timeout, 3s polling interval
+- [04-03]: /api/brackets/ routes added as public pages in proxy for student polling access
 
 ### Pending Todos
 
@@ -117,5 +123,5 @@ Recent decisions affecting current work:
 ## Session Continuity
 
 Last session: 2026-01-31
-Stopped at: Completed 04-01-PLAN.md (Vote Data Foundation)
+Stopped at: Completed 04-03-PLAN.md (Server Actions and Real-Time Hooks)
 Resume file: None
