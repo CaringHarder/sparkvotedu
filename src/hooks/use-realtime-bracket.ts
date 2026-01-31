@@ -34,14 +34,16 @@ interface BracketStateResponse {
 }
 
 /**
- * Real-time bracket subscription hook with batched vote updates.
+ * Real-time bracket subscription hook with integrated transport fallback.
  *
  * Subscribes to the `bracket:{bracketId}` Supabase Broadcast channel.
  * - vote_update events are accumulated in a ref and flushed to state
- *   every `batchIntervalMs` (default 2 seconds) to avoid React re-render storms
- *   in classrooms with 30+ students voting simultaneously.
- * - bracket_update events (structural changes) trigger an immediate refetch
- *   of the full bracket state for instant UI feedback.
+ *   every `batchIntervalMs` (default 2 seconds) to avoid React re-render storms.
+ * - bracket_update events (structural changes) trigger an immediate refetch.
+ *
+ * Transport fallback: If WebSocket does not reach SUBSCRIBED status within
+ * 5 seconds, automatically switches to HTTP polling every 3 seconds.
+ * This ensures the app works on school networks that block WebSocket.
  *
  * @param bracketId - The bracket ID to subscribe to
  * @param batchIntervalMs - How often to flush accumulated vote updates (default 2000ms)
@@ -51,6 +53,7 @@ export function useRealtimeBracket(bracketId: string, batchIntervalMs = 2000) {
   const [voteCounts, setVoteCounts] = useState<VoteCounts>({})
   const [matchups, setMatchups] = useState<MatchupState[] | null>(null)
   const [bracketCompleted, setBracketCompleted] = useState(false)
+  const [transport, setTransport] = useState<'websocket' | 'polling'>('websocket')
 
   // Ref for batching vote updates -- accumulates between flushes
   const pendingUpdates = useRef<VoteCounts>({})
@@ -75,12 +78,20 @@ export function useRealtimeBracket(bracketId: string, batchIntervalMs = 2000) {
         }
       }
       setVoteCounts(counts)
+
+      // Check if bracket is complete
+      if (data.status === 'completed') {
+        setBracketCompleted(true)
+      }
     } catch {
       // Fetch failure is non-fatal -- will retry on next event or interval
     }
   }, [bracketId])
 
   useEffect(() => {
+    let wsConnected = false
+    let pollInterval: ReturnType<typeof setInterval> | null = null
+
     // Set up batch flush interval for vote count updates
     const flushInterval = setInterval(() => {
       const pending = pendingUpdates.current
@@ -125,13 +136,33 @@ export function useRealtimeBracket(bracketId: string, batchIntervalMs = 2000) {
           setBracketCompleted(true)
         }
       })
-      .subscribe()
+      .subscribe((status) => {
+        if (status === 'SUBSCRIBED') {
+          wsConnected = true
+          // Do an initial fetch to ensure we have latest state
+          fetchBracketState()
+        }
+      })
+
+    // Transport fallback: if WebSocket doesn't connect within 5 seconds,
+    // switch to HTTP polling every 3 seconds
+    const wsTimeout = setTimeout(() => {
+      if (!wsConnected) {
+        setTransport('polling')
+        // Immediately fetch once
+        fetchBracketState()
+        // Start polling interval
+        pollInterval = setInterval(fetchBracketState, 3000)
+      }
+    }, 5000)
 
     return () => {
       supabase.removeChannel(channel)
       clearInterval(flushInterval)
+      clearTimeout(wsTimeout)
+      if (pollInterval) clearInterval(pollInterval)
     }
   }, [bracketId, supabase, batchIntervalMs, fetchBracketState])
 
-  return { voteCounts, matchups, bracketCompleted, refetch: fetchBracketState }
+  return { voteCounts, matchups, bracketCompleted, transport, refetch: fetchBracketState }
 }

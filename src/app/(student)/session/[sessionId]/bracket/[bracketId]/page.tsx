@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useParams } from 'next/navigation'
+import Link from 'next/link'
 import { SimpleVotingView } from '@/components/student/simple-voting-view'
 import { AdvancedVotingView } from '@/components/student/advanced-voting-view'
 import type { BracketWithDetails, MatchupData, BracketEntrantData } from '@/lib/bracket/types'
@@ -135,6 +136,22 @@ export default function StudentBracketVotingPage() {
     loadBracket()
   }, [sessionId, bracketId])
 
+  const backLink = (
+    <Link
+      href={`/session/${sessionId}`}
+      className="mb-4 inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors"
+    >
+      <svg viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4">
+        <path
+          fillRule="evenodd"
+          d="M17 10a.75.75 0 01-.75.75H5.612l4.158 3.96a.75.75 0 11-1.04 1.08l-5.5-5.25a.75.75 0 010-1.08l5.5-5.25a.75.75 0 111.04 1.08L5.612 9.25H16.25A.75.75 0 0117 10z"
+          clipRule="evenodd"
+        />
+      </svg>
+      Back to brackets
+    </Link>
+  )
+
   // Loading state
   if (state.type === 'loading') {
     return (
@@ -179,12 +196,15 @@ export default function StudentBracketVotingPage() {
   // Draft bracket
   if (state.type === 'draft') {
     return (
-      <div className="flex items-center justify-center py-16">
-        <div className="max-w-sm text-center">
-          <p className="text-lg font-semibold">Not ready yet!</p>
-          <p className="mt-2 text-sm text-muted-foreground">
-            This bracket isn&apos;t active yet. Your teacher is still setting it up.
-          </p>
+      <div>
+        {backLink}
+        <div className="flex items-center justify-center py-16">
+          <div className="max-w-sm text-center">
+            <p className="text-lg font-semibold">Not ready yet!</p>
+            <p className="mt-2 text-sm text-muted-foreground">
+              This bracket isn&apos;t active yet. Your teacher is still setting it up.
+            </p>
+          </div>
         </div>
       </div>
     )
@@ -193,14 +213,17 @@ export default function StudentBracketVotingPage() {
   // Completed bracket (show read-only bracket)
   if (state.type === 'completed') {
     return (
-      <div className="px-4 py-6 text-center">
-        <h1 className="mb-2 text-2xl font-bold">{state.bracket.name}</h1>
-        <p className="mb-6 text-sm text-muted-foreground">This bracket has been completed!</p>
-        <AdvancedVotingView
-          bracket={state.bracket}
-          participantId=""
-          initialVotes={{}}
-        />
+      <div>
+        {backLink}
+        <div className="px-4 py-6 text-center">
+          <h1 className="mb-2 text-2xl font-bold">{state.bracket.name}</h1>
+          <p className="mb-6 text-sm text-muted-foreground">This bracket has been completed!</p>
+          <AdvancedVotingView
+            bracket={state.bracket}
+            participantId=""
+            initialVotes={{}}
+          />
+        </div>
       </div>
     )
   }
@@ -210,23 +233,29 @@ export default function StudentBracketVotingPage() {
 
   if (bracket.viewingMode === 'simple') {
     return (
-      <SimpleVotingView
-        matchups={bracket.matchups}
-        participantId={participantId}
-        bracketId={bracket.id}
-        bracketName={bracket.name}
-        initialVotes={initialVotes}
-      />
+      <div>
+        {backLink}
+        <SimpleVotingView
+          matchups={bracket.matchups}
+          participantId={participantId}
+          bracketId={bracket.id}
+          bracketName={bracket.name}
+          initialVotes={initialVotes}
+        />
+      </div>
     )
   }
 
   // Default to advanced view
   return (
-    <AdvancedVotingView
-      bracket={bracket}
-      participantId={participantId}
-      initialVotes={initialVotes}
-    />
+    <div>
+      {backLink}
+      <AdvancedVotingView
+        bracket={bracket}
+        participantId={participantId}
+        initialVotes={initialVotes}
+      />
+    </div>
   )
 }
 

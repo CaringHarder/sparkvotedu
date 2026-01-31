@@ -131,6 +131,60 @@ export function RoundAdvancementControls({
     })
   }
 
+  /**
+   * Close all voting matchups in a round and advance the vote-based winners.
+   * For each voting matchup, determines the winner from vote counts.
+   * Ties are skipped (teacher must handle those manually).
+   */
+  const handleCloseAndAdvanceRound = (round: number) => {
+    setError(null)
+    const votingMatchups = (matchupsByRound[round] ?? []).filter(
+      (m) => m.status === 'voting'
+    )
+
+    // Determine winners for each voting matchup
+    const advanceList: Array<{ matchupId: string; winnerId: string }> = []
+    const tiedMatchups: string[] = []
+
+    for (const m of votingMatchups) {
+      const counts = voteCounts[m.id] ?? {}
+      const e1Votes = m.entrant1Id ? (counts[m.entrant1Id] ?? 0) : 0
+      const e2Votes = m.entrant2Id ? (counts[m.entrant2Id] ?? 0) : 0
+
+      if (e1Votes > e2Votes && m.entrant1Id) {
+        advanceList.push({ matchupId: m.id, winnerId: m.entrant1Id })
+      } else if (e2Votes > e1Votes && m.entrant2Id) {
+        advanceList.push({ matchupId: m.id, winnerId: m.entrant2Id })
+      } else if (e1Votes > 0 && e1Votes === e2Votes) {
+        tiedMatchups.push(m.id)
+      }
+    }
+
+    if (tiedMatchups.length > 0 && advanceList.length === 0) {
+      setError('All matchups are tied. Please break ties manually.')
+      return
+    }
+
+    startTransition(async () => {
+      // Advance each matchup with a clear winner
+      for (const { matchupId, winnerId } of advanceList) {
+        const result = await advanceMatchup({
+          bracketId,
+          matchupId,
+          winnerId,
+        })
+        if (result && 'error' in result) {
+          setError(result.error as string)
+          return
+        }
+      }
+
+      if (tiedMatchups.length > 0) {
+        setError(`${advanceList.length} matchup(s) advanced. ${tiedMatchups.length} tied matchup(s) need manual resolution.`)
+      }
+    })
+  }
+
   const handleUndo = (matchupId: string) => {
     setError(null)
     setShowUndoConfirm(false)
@@ -224,8 +278,9 @@ export function RoundAdvancementControls({
             </button>
           )}
 
-          {/* Advance Round button */}
-          {roundStatus[currentRound]?.decided === (matchupsByRound[currentRound]?.length ?? 0) &&
+          {/* Advance Round button (non-final rounds only) */}
+          {currentRound < totalRounds &&
+           roundStatus[currentRound]?.decided === (matchupsByRound[currentRound]?.length ?? 0) &&
            roundStatus[currentRound]?.decided > 0 && (
             <button
               onClick={() => handleBatchAdvance(currentRound)}
@@ -236,6 +291,39 @@ export function RoundAdvancementControls({
                 ? 'Advancing...'
                 : `Advance ${roundStatus[currentRound]?.decided} matchup${
                     roundStatus[currentRound]?.decided !== 1 ? 's' : ''
+                  }`}
+            </button>
+          )}
+
+          {/* Bracket Complete (final round decided) */}
+          {currentRound === totalRounds &&
+           roundStatus[currentRound]?.decided === (matchupsByRound[currentRound]?.length ?? 0) &&
+           roundStatus[currentRound]?.decided > 0 && (
+            <div className="flex items-center gap-2 rounded-md bg-green-50 px-4 py-2 dark:bg-green-900/20">
+              <svg viewBox="0 0 20 20" fill="currentColor" className="h-5 w-5 text-green-600 dark:text-green-400">
+                <path
+                  fillRule="evenodd"
+                  d="M10 1a.75.75 0 01.75.75V3h2.5A2.75 2.75 0 0116 5.75v.586l1.127-.282A1.5 1.5 0 0119 7.5v2.25a1.5 1.5 0 01-1.19 1.467l-2.073.518A5.003 5.003 0 0112.5 14.77V16h1.75a.75.75 0 010 1.5h-8.5a.75.75 0 010-1.5H7.5v-1.23a5.003 5.003 0 01-3.237-3.035L2.19 11.217A1.5 1.5 0 011 9.75V7.5a1.5 1.5 0 011.873-1.453L4 6.329V5.75A2.75 2.75 0 016.75 3h2.5V1.75A.75.75 0 0110 1z"
+                  clipRule="evenodd"
+                />
+              </svg>
+              <span className="text-sm font-semibold text-green-700 dark:text-green-400">
+                Bracket Complete!
+              </span>
+            </div>
+          )}
+
+          {/* Close & Advance Round button (for voting matchups) */}
+          {roundStatus[currentRound]?.voting > 0 && (
+            <button
+              onClick={() => handleCloseAndAdvanceRound(currentRound)}
+              disabled={isPending}
+              className="rounded-md bg-orange-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-orange-700 disabled:opacity-50"
+            >
+              {isPending
+                ? 'Closing...'
+                : `Close Voting & Advance ${roundStatus[currentRound]?.voting} Matchup${
+                    roundStatus[currentRound]?.voting !== 1 ? 's' : ''
                   }`}
             </button>
           )}

@@ -4,18 +4,34 @@ import { useMemo } from 'react'
 import type { MatchupData, BracketEntrantData } from '@/lib/bracket/types'
 
 // --- Layout constants ---
-const MATCH_WIDTH = 200
-const MATCH_HEIGHT = 80
-const ROUND_GAP = 60
-const MATCH_V_GAP = 20
-const PADDING = 20
-const LABEL_HEIGHT = 30 // space for round labels above the bracket
+const MATCH_WIDTH = 160
+const MATCH_HEIGHT = 56
+const ROUND_GAP = 36
+const MATCH_V_GAP = 12
+const PADDING = 12
+const LABEL_HEIGHT = 24 // space for round labels above the bracket
+
+// --- Exported constants for interactive overlays ---
+export { MATCH_WIDTH, MATCH_HEIGHT, ROUND_GAP, MATCH_V_GAP, PADDING, LABEL_HEIGHT }
+export { getMatchPosition }
 
 // --- Props ---
 interface BracketDiagramProps {
   matchups: MatchupData[]
   totalRounds: number
   className?: string
+  /** When provided, entrant halves in "voting" matchups become clickable */
+  onEntrantClick?: (matchupId: string, entrantId: string) => void
+  /** Set of matchup IDs the student has already voted in */
+  votedMatchupIds?: Set<string>
+  /** Map of matchupId -> voted entrantId for showing which entrant was picked */
+  votedEntrantIds?: Record<string, string | null>
+  /** Teacher view: inline vote counts per matchup { e1: number, e2: number } */
+  voteLabels?: Record<string, { e1: number; e2: number }>
+  /** Teacher view: click handler when teacher clicks a matchup box */
+  onMatchupClick?: (matchupId: string) => void
+  /** Teacher view: currently selected matchup ID for highlight */
+  selectedMatchupId?: string | null
 }
 
 // --- Round label mapping ---
@@ -86,10 +102,20 @@ function MatchupBox({
   matchup,
   x,
   y,
+  onEntrantClick,
+  votedEntrantId,
+  voteLabel,
+  onMatchupClick,
+  isSelected,
 }: {
   matchup: MatchupData
   x: number
   y: number
+  onEntrantClick?: (matchupId: string, entrantId: string) => void
+  votedEntrantId?: string | null
+  voteLabel?: { e1: number; e2: number }
+  onMatchupClick?: (matchupId: string) => void
+  isSelected?: boolean
 }) {
   const entrant1Name = getEntrantName(matchup.entrant1)
   const entrant2Name = getEntrantName(matchup.entrant2)
@@ -97,6 +123,11 @@ function MatchupBox({
   const isEntrant2Winner = matchup.winnerId != null && matchup.winnerId === matchup.entrant2Id
   const isTBD1 = matchup.entrant1 == null
   const isTBD2 = matchup.entrant2 == null
+
+  const isVoting = matchup.status === 'voting'
+  const isClickable = isVoting && onEntrantClick
+  const voted1 = votedEntrantId === matchup.entrant1Id
+  const voted2 = votedEntrantId === matchup.entrant2Id
 
   return (
     <g>
@@ -109,7 +140,7 @@ function MatchupBox({
           height={MATCH_HEIGHT / 2 - 1}
           rx={6}
           ry={6}
-          style={{ fill: 'hsl(var(--primary) / 0.08)' }}
+          style={{ fill: 'color-mix(in oklch, var(--primary) 8%, transparent)' }}
         />
       )}
       {/* Winner highlight background for bottom half */}
@@ -121,7 +152,50 @@ function MatchupBox({
           height={MATCH_HEIGHT / 2 - 1}
           rx={6}
           ry={6}
-          style={{ fill: 'hsl(var(--primary) / 0.08)' }}
+          style={{ fill: 'color-mix(in oklch, var(--primary) 8%, transparent)' }}
+        />
+      )}
+
+      {/* Voted highlight for top half */}
+      {voted1 && (
+        <rect
+          x={x + 1}
+          y={y + 1}
+          width={MATCH_WIDTH - 2}
+          height={MATCH_HEIGHT / 2 - 1}
+          rx={6}
+          ry={6}
+          style={{ fill: 'color-mix(in oklch, var(--primary) 15%, transparent)' }}
+        />
+      )}
+      {/* Voted highlight for bottom half */}
+      {voted2 && (
+        <rect
+          x={x + 1}
+          y={y + MATCH_HEIGHT / 2}
+          width={MATCH_WIDTH - 2}
+          height={MATCH_HEIGHT / 2 - 1}
+          rx={6}
+          ry={6}
+          style={{ fill: 'color-mix(in oklch, var(--primary) 15%, transparent)' }}
+        />
+      )}
+
+      {/* Selected matchup highlight (teacher view) */}
+      {isSelected && (
+        <rect
+          x={x - 3}
+          y={y - 3}
+          width={MATCH_WIDTH + 6}
+          height={MATCH_HEIGHT + 6}
+          rx={9}
+          ry={9}
+          style={{
+            fill: 'none',
+            stroke: 'var(--primary)',
+            strokeWidth: 2.5,
+            strokeDasharray: '6 3',
+          }}
         />
       )}
 
@@ -134,28 +208,84 @@ function MatchupBox({
         rx={6}
         ry={6}
         style={{
-          fill: 'hsl(var(--card))',
-          stroke: 'hsl(var(--border))',
-          strokeWidth: 1.5,
+          fill: 'var(--card)',
+          stroke: isSelected ? 'var(--primary)' : isVoting ? 'var(--primary)' : 'var(--border)',
+          strokeWidth: isSelected ? 2 : isVoting ? 2 : 1.5,
+          cursor: onMatchupClick ? 'pointer' : undefined,
         }}
+        onClick={onMatchupClick ? () => onMatchupClick(matchup.id) : undefined}
       />
+
+      {/* Voting indicator glow */}
+      {isVoting && !isSelected && (
+        <rect
+          x={x}
+          y={y}
+          width={MATCH_WIDTH}
+          height={MATCH_HEIGHT}
+          rx={6}
+          ry={6}
+          style={{
+            fill: 'none',
+            stroke: 'var(--primary)',
+            strokeWidth: 1,
+            opacity: 0.3,
+            pointerEvents: 'none',
+          }}
+        />
+      )}
+
+      {/* Clickable top entrant area */}
+      {isClickable && matchup.entrant1Id && (
+        <rect
+          x={x}
+          y={y}
+          width={MATCH_WIDTH}
+          height={MATCH_HEIGHT / 2}
+          style={{ fill: 'transparent', cursor: 'pointer' }}
+          onClick={() => onEntrantClick(matchup.id, matchup.entrant1Id!)}
+        >
+          <title>Vote for {entrant1Name}</title>
+        </rect>
+      )}
 
       {/* Top entrant name */}
       <text
-        x={x + 10}
-        y={y + 28}
+        x={x + 8}
+        y={y + 19}
         style={{
           fill: isTBD1
-            ? 'hsl(var(--muted-foreground))'
-            : 'hsl(var(--foreground))',
-          fontSize: 13,
+            ? 'var(--muted-foreground)'
+            : voted1
+              ? 'var(--primary)'
+              : 'var(--foreground)',
+          fontSize: 11,
           fontFamily: 'inherit',
-          fontWeight: isEntrant1Winner ? 700 : 400,
+          fontWeight: isEntrant1Winner || voted1 ? 700 : 400,
           fontStyle: isTBD1 ? 'italic' : 'normal',
+          pointerEvents: 'none',
         }}
       >
-        {entrant1Name}
+        {entrant1Name}{voted1 ? ' ✓' : ''}
       </text>
+
+      {/* Top entrant vote count (teacher view) */}
+      {voteLabel && (
+        <text
+          x={x + MATCH_WIDTH - 8}
+          y={y + 19}
+          textAnchor="end"
+          style={{
+            fill: 'var(--muted-foreground)',
+            fontSize: 10,
+            fontFamily: 'inherit',
+            fontWeight: 600,
+            pointerEvents: 'none',
+          }}
+        >
+          {voteLabel.e1}
+        </text>
+      )}
 
       {/* Divider line */}
       <line
@@ -164,33 +294,69 @@ function MatchupBox({
         x2={x + MATCH_WIDTH}
         y2={y + MATCH_HEIGHT / 2}
         style={{
-          stroke: 'hsl(var(--border))',
+          stroke: isVoting ? 'var(--primary)' : 'var(--border)',
           strokeWidth: 1,
+          opacity: isVoting ? 0.3 : 1,
         }}
       />
 
+      {/* Clickable bottom entrant area */}
+      {isClickable && matchup.entrant2Id && (
+        <rect
+          x={x}
+          y={y + MATCH_HEIGHT / 2}
+          width={MATCH_WIDTH}
+          height={MATCH_HEIGHT / 2}
+          style={{ fill: 'transparent', cursor: 'pointer' }}
+          onClick={() => onEntrantClick(matchup.id, matchup.entrant2Id!)}
+        >
+          <title>Vote for {entrant2Name}</title>
+        </rect>
+      )}
+
       {/* Bottom entrant name */}
       <text
-        x={x + 10}
-        y={y + 60}
+        x={x + 8}
+        y={y + 44}
         style={{
           fill: isTBD2
-            ? 'hsl(var(--muted-foreground))'
-            : 'hsl(var(--foreground))',
-          fontSize: 13,
+            ? 'var(--muted-foreground)'
+            : voted2
+              ? 'var(--primary)'
+              : 'var(--foreground)',
+          fontSize: 11,
           fontFamily: 'inherit',
-          fontWeight: isEntrant2Winner ? 700 : 400,
+          fontWeight: isEntrant2Winner || voted2 ? 700 : 400,
           fontStyle: isTBD2 ? 'italic' : 'normal',
+          pointerEvents: 'none',
         }}
       >
-        {entrant2Name}
+        {entrant2Name}{voted2 ? ' ✓' : ''}
       </text>
+
+      {/* Bottom entrant vote count (teacher view) */}
+      {voteLabel && (
+        <text
+          x={x + MATCH_WIDTH - 8}
+          y={y + 44}
+          textAnchor="end"
+          style={{
+            fill: 'var(--muted-foreground)',
+            fontSize: 10,
+            fontFamily: 'inherit',
+            fontWeight: 600,
+            pointerEvents: 'none',
+          }}
+        >
+          {voteLabel.e2}
+        </text>
+      )}
     </g>
   )
 }
 
 // --- Main BracketDiagram component ---
-export function BracketDiagram({ matchups, totalRounds, className }: BracketDiagramProps) {
+export function BracketDiagram({ matchups, totalRounds, className, onEntrantClick, votedEntrantIds, voteLabels, onMatchupClick, selectedMatchupId }: BracketDiagramProps) {
   const roundLabels = useMemo(() => getRoundLabels(totalRounds), [totalRounds])
 
   // Pre-compute positions for all matchups
@@ -220,13 +386,12 @@ export function BracketDiagram({ matchups, totalRounds, className }: BracketDiag
     (round1Matches - 1) * MATCH_V_GAP
 
   return (
-    <div className={`overflow-x-auto ${className ?? ''}`}>
+    <div className={className ?? ''} style={{ width: '100%' }}>
       <svg
-        width={svgWidth}
-        height={svgHeight}
         viewBox={`0 0 ${svgWidth} ${svgHeight}`}
         xmlns="http://www.w3.org/2000/svg"
-        style={{ fontFamily: 'inherit' }}
+        preserveAspectRatio="xMinYMin meet"
+        style={{ fontFamily: 'inherit', width: '100%', height: 'auto', display: 'block' }}
       >
         {/* Round labels */}
         {roundLabels.map((label, i) => {
@@ -235,11 +400,11 @@ export function BracketDiagram({ matchups, totalRounds, className }: BracketDiag
             <text
               key={`label-${i}`}
               x={x}
-              y={PADDING + LABEL_HEIGHT / 2 + 4}
+              y={PADDING + LABEL_HEIGHT / 2 + 3}
               textAnchor="middle"
               style={{
-                fill: 'hsl(var(--muted-foreground))',
-                fontSize: 12,
+                fill: 'var(--muted-foreground)',
+                fontSize: 10,
                 fontWeight: 600,
                 fontFamily: 'inherit',
                 textTransform: 'uppercase',
@@ -263,7 +428,7 @@ export function BracketDiagram({ matchups, totalRounds, className }: BracketDiag
               key={`connector-${matchup.id}`}
               d={path}
               style={{
-                stroke: 'hsl(var(--border))',
+                stroke: 'var(--border)',
                 strokeWidth: 1.5,
                 fill: 'none',
               }}
@@ -278,6 +443,11 @@ export function BracketDiagram({ matchups, totalRounds, className }: BracketDiag
             matchup={matchup}
             x={pos.x}
             y={pos.y}
+            onEntrantClick={onEntrantClick}
+            votedEntrantId={votedEntrantIds?.[matchup.id]}
+            voteLabel={voteLabels?.[matchup.id]}
+            onMatchupClick={onMatchupClick}
+            isSelected={selectedMatchupId === matchup.id}
           />
         ))}
       </svg>

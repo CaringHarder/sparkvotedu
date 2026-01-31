@@ -53,7 +53,7 @@ export function WinnerReveal({
       if (countdownNumber > 0) {
         const timer = setTimeout(() => {
           setCountdownNumber((n) => n - 1)
-        }, 800)
+        }, 1100) // Allow enough time for enter + display + exit animations
         return () => clearTimeout(timer)
       } else {
         // Countdown done, move to reveal text
@@ -120,13 +120,11 @@ export function WinnerReveal({
             key={`countdown-${countdownNumber}`}
             className="text-8xl font-bold text-white md:text-9xl"
             initial={{ scale: 0.5, opacity: 0 }}
-            animate={{ scale: 1.5, opacity: 1 }}
-            exit={{ scale: 2, opacity: 0 }}
+            animate={{ scale: 1.3, opacity: 1 }}
+            exit={{ scale: 1.8, opacity: 0 }}
             transition={{
-              type: 'spring',
-              stiffness: 200,
-              damping: 15,
-              duration: 0.5,
+              duration: 0.35,
+              ease: 'easeOut',
             }}
           >
             {countdownNumber}
@@ -170,7 +168,7 @@ export function WinnerReveal({
             <p
               className="text-5xl font-bold text-primary md:text-7xl"
               style={{
-                textShadow: '0 0 40px hsl(var(--primary) / 0.5), 0 0 80px hsl(var(--primary) / 0.3)',
+                textShadow: '0 0 40px color-mix(in oklch, var(--primary) 50%, transparent), 0 0 80px color-mix(in oklch, var(--primary) 30%, transparent)',
               }}
             >
               {winnerName}

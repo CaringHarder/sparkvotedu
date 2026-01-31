@@ -1,10 +1,11 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useRef } from 'react'
+import { motion, AnimatePresence } from 'motion/react'
 import { MatchupVoteCard } from '@/components/bracket/matchup-vote-card'
+import { WinnerReveal } from '@/components/bracket/winner-reveal'
 import { CelebrationScreen } from '@/components/bracket/celebration-screen'
 import { useRealtimeBracket } from '@/hooks/use-realtime-bracket'
-import { useTransportFallback } from '@/hooks/use-transport-fallback'
 import type { MatchupData } from '@/lib/bracket/types'
 
 interface SimpleVotingViewProps {
@@ -33,10 +34,17 @@ export function SimpleVotingView({
   initialVotes,
 }: SimpleVotingViewProps) {
   const [currentIndex, setCurrentIndex] = useState(0)
+  const [showConfirmation, setShowConfirmation] = useState(false)
   const [showCelebration, setShowCelebration] = useState(false)
+  const [revealState, setRevealState] = useState<{
+    winnerName: string
+    entrant1Name: string
+    entrant2Name: string
+  } | null>(null)
+  const prevMatchupStatusRef = useRef<Record<string, string>>({})
 
-  // Real-time bracket updates
-  const { matchups: realtimeMatchups, bracketCompleted } = useRealtimeBracket(bracketId)
+  // Real-time bracket updates (includes integrated transport fallback)
+  const { matchups: realtimeMatchups, bracketCompleted, transport } = useRealtimeBracket(bracketId)
 
   // Use realtime matchups when available, otherwise initial
   const allMatchups = (realtimeMatchups as MatchupData[] | null) ?? initialMatchups
@@ -55,16 +63,39 @@ export function SimpleVotingView({
     setPrevVotableCount(votableMatchups.length)
   }, [votableMatchups.length, prevVotableCount])
 
-  // Transport fallback for school networks
-  const handlePollData = useCallback(() => {
-    // Real-time bracket hook handles state -- poll just triggers refetch indirectly
-  }, [])
-  const { transport } = useTransportFallback(bracketId, handlePollData)
+  // Detect final matchup decided → trigger WinnerReveal
+  useEffect(() => {
+    const maxRound = Math.max(...allMatchups.map((m) => m.round), 0)
+    const prev = prevMatchupStatusRef.current
+    for (const matchup of allMatchups) {
+      const prevStatus = prev[matchup.id]
+      if (
+        prevStatus &&
+        prevStatus !== 'decided' &&
+        matchup.status === 'decided' &&
+        matchup.winner &&
+        matchup.round === maxRound &&
+        matchup.position === 1
+      ) {
+        setRevealState({
+          winnerName: matchup.winner.name,
+          entrant1Name: matchup.entrant1?.name ?? 'TBD',
+          entrant2Name: matchup.entrant2?.name ?? 'TBD',
+        })
+      }
+    }
+    const newStatuses: Record<string, string> = {}
+    for (const m of allMatchups) {
+      newStatuses[m.id] = m.status
+    }
+    prevMatchupStatusRef.current = newStatuses
+  }, [allMatchups])
 
-  // Show celebration when bracket is completed
+  // Show celebration after bracket completes (matches teacher dashboard timing)
   useEffect(() => {
     if (bracketCompleted) {
-      setShowCelebration(true)
+      const timer = setTimeout(() => setShowCelebration(true), 4000)
+      return () => clearTimeout(timer)
     }
   }, [bracketCompleted])
 
@@ -81,17 +112,22 @@ export function SimpleVotingView({
   const safeIndex = Math.max(0, Math.min(currentIndex, votableMatchups.length - 1))
   const currentMatchup = votableMatchups[safeIndex]
 
-  // Check how many matchups the student has voted on
-  const votedCount = votableMatchups.filter(
-    (m) => initialVotes[m.id] != null
-  ).length
+  // Winner Reveal overlay (final round only)
+  const winnerRevealOverlay = revealState ? (
+    <WinnerReveal
+      winnerName={revealState.winnerName}
+      entrant1Name={revealState.entrant1Name}
+      entrant2Name={revealState.entrant2Name}
+      onComplete={() => setRevealState(null)}
+    />
+  ) : null
 
   // Celebration overlay (renders above all other content)
   const celebrationOverlay = showCelebration ? (
     <CelebrationScreen
       championName={championName}
       bracketName={bracketName}
-      onDismiss={() => setShowCelebration(false)}
+      onDismiss={() => { setShowCelebration(false); setRevealState(null) }}
     />
   ) : null
 
@@ -102,6 +138,7 @@ export function SimpleVotingView({
 
     return (
       <div className="mx-auto max-w-md px-4 py-12 text-center">
+        {winnerRevealOverlay}
         {celebrationOverlay}
         <h1 className="mb-6 text-2xl font-bold">{bracketName}</h1>
         {allDecided ? (
@@ -138,106 +175,102 @@ export function SimpleVotingView({
     )
   }
 
-  // All voted: congratulations state
-  if (votedCount === votableMatchups.length && votableMatchups.length > 0) {
-    return (
-      <div className="mx-auto max-w-md px-4 py-12 text-center">
-        {celebrationOverlay}
-        <h1 className="mb-6 text-2xl font-bold">{bracketName}</h1>
-        <div className="space-y-3">
-          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-green-100 dark:bg-green-900/30">
-            <svg viewBox="0 0 20 20" fill="currentColor" className="h-8 w-8 text-green-600 dark:text-green-400">
-              <path
-                fillRule="evenodd"
-                d="M16.704 4.153a.75.75 0 01.143 1.052l-8 10.5a.75.75 0 01-1.127.075l-4.5-4.5a.75.75 0 011.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 011.05-.143z"
-                clipRule="evenodd"
-              />
-            </svg>
-          </div>
-          <p className="text-lg font-semibold text-foreground">All done!</p>
-          <p className="text-sm text-muted-foreground">
-            Waiting for results... You can still change your votes below.
-          </p>
-        </div>
-
-        {/* Still allow navigating to change votes */}
-        <div className="mt-8">
-          <MatchupVoteCard
-            matchup={currentMatchup}
-            participantId={participantId}
-            initialVote={initialVotes[currentMatchup.id] ?? null}
-          />
-        </div>
-        <NavigationControls
-          currentIndex={safeIndex}
-          total={votableMatchups.length}
-          onPrevious={() => setCurrentIndex(safeIndex - 1)}
-          onNext={() => setCurrentIndex(safeIndex + 1)}
-        />
-      </div>
-    )
-  }
+  // Whether the student has voted on all available matchups
+  const allVoted = currentIndex >= votableMatchups.length
 
   return (
     <div className="mx-auto max-w-md px-4 py-6">
+      {winnerRevealOverlay}
       {celebrationOverlay}
       <h1 className="mb-6 text-center text-2xl font-bold">{bracketName}</h1>
 
-      {/* Current matchup card */}
-      <div className="flex justify-center">
-        <MatchupVoteCard
-          matchup={currentMatchup}
-          participantId={participantId}
-          initialVote={initialVotes[currentMatchup.id] ?? null}
-        />
+      {/* Progress indicator (hidden once all voted) */}
+      {!allVoted && !showConfirmation && (
+        <p className="mb-4 text-center text-sm text-muted-foreground">
+          Matchup {safeIndex + 1} of {votableMatchups.length}
+        </p>
+      )}
+
+      {/* Animated card area — matchup → confirmation → next matchup (or all done) */}
+      <div className="flex justify-center overflow-hidden">
+        <AnimatePresence mode="wait">
+          {allVoted ? (
+            /* All voted: waiting for round to end */
+            <motion.div
+              key="all-done"
+              initial={{ x: 300, opacity: 0 }}
+              animate={{ x: 0, opacity: 1 }}
+              transition={{ duration: 0.3, ease: 'easeOut' }}
+              className="w-full max-w-md"
+            >
+              <div className="flex flex-col items-center justify-center py-8 text-center">
+                <div className="mb-3 flex h-16 w-16 items-center justify-center rounded-full bg-green-100 dark:bg-green-900/30">
+                  <svg viewBox="0 0 20 20" fill="currentColor" className="h-8 w-8 text-green-600 dark:text-green-400">
+                    <path
+                      fillRule="evenodd"
+                      d="M16.704 4.153a.75.75 0 01.143 1.052l-8 10.5a.75.75 0 01-1.127.075l-4.5-4.5a.75.75 0 011.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 011.05-.143z"
+                      clipRule="evenodd"
+                    />
+                  </svg>
+                </div>
+                <p className="text-lg font-semibold text-foreground">All votes in!</p>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  Waiting for your teacher to advance the round...
+                </p>
+                <div className="mt-4 h-1.5 w-24 overflow-hidden rounded-full bg-muted">
+                  <div className="h-full w-full animate-pulse rounded-full bg-primary/40" />
+                </div>
+              </div>
+            </motion.div>
+          ) : showConfirmation ? (
+            <motion.div
+              key={`confirm-${safeIndex}`}
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ x: -300, opacity: 0 }}
+              transition={{ duration: 0.3, ease: 'easeOut' }}
+              className="w-full max-w-md"
+            >
+              <div className="flex min-h-[140px] flex-col items-center justify-center rounded-xl border bg-card p-8 shadow-sm">
+                <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
+                  <svg viewBox="0 0 20 20" fill="currentColor" className="h-6 w-6 text-primary">
+                    <path
+                      fillRule="evenodd"
+                      d="M16.704 4.153a.75.75 0 01.143 1.052l-8 10.5a.75.75 0 01-1.127.075l-4.5-4.5a.75.75 0 011.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 011.05-.143z"
+                      clipRule="evenodd"
+                    />
+                  </svg>
+                </div>
+                <p className="text-lg font-semibold text-foreground">Vote Submitted!</p>
+              </div>
+            </motion.div>
+          ) : currentMatchup ? (
+            <motion.div
+              key={`matchup-${currentMatchup.id}`}
+              initial={{ x: 300, opacity: 0 }}
+              animate={{ x: 0, opacity: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              transition={{ duration: 0.3, ease: 'easeOut' }}
+              className="w-full"
+            >
+              <MatchupVoteCard
+                key={currentMatchup.id}
+                matchup={currentMatchup}
+                participantId={participantId}
+                initialVote={initialVotes[currentMatchup.id] ?? null}
+                onVoteSubmitted={() => {
+                  // Show confirmation card, then advance (or show all-done)
+                  setShowConfirmation(true)
+                  setTimeout(() => {
+                    setShowConfirmation(false)
+                    setCurrentIndex((i) => i + 1)
+                  }, 1200)
+                }}
+              />
+            </motion.div>
+          ) : null}
+        </AnimatePresence>
       </div>
-
-      {/* Navigation */}
-      <NavigationControls
-        currentIndex={safeIndex}
-        total={votableMatchups.length}
-        onPrevious={() => setCurrentIndex(safeIndex - 1)}
-        onNext={() => setCurrentIndex(safeIndex + 1)}
-      />
-    </div>
-  )
-}
-
-/** Previous/Next navigation with progress indicator */
-function NavigationControls({
-  currentIndex,
-  total,
-  onPrevious,
-  onNext,
-}: {
-  currentIndex: number
-  total: number
-  onPrevious: () => void
-  onNext: () => void
-}) {
-  return (
-    <div className="mt-6 flex items-center justify-between">
-      <button
-        type="button"
-        onClick={onPrevious}
-        disabled={currentIndex === 0}
-        className="min-h-12 rounded-lg border px-4 py-2 text-sm font-medium transition-colors hover:bg-accent disabled:cursor-default disabled:opacity-50"
-      >
-        Previous
-      </button>
-
-      <span className="text-sm font-medium text-muted-foreground">
-        Matchup {currentIndex + 1} of {total}
-      </span>
-
-      <button
-        type="button"
-        onClick={onNext}
-        disabled={currentIndex === total - 1}
-        className="min-h-12 rounded-lg border px-4 py-2 text-sm font-medium transition-colors hover:bg-accent disabled:cursor-default disabled:opacity-50"
-      >
-        Next
-      </button>
     </div>
   )
 }

@@ -165,6 +165,7 @@ export async function getTeacherBrackets(teacherId: string) {
     orderBy: { createdAt: 'desc' },
     include: {
       _count: { select: { entrants: true } },
+      session: { select: { id: true, code: true, status: true } },
     },
   })
 }

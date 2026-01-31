@@ -10,6 +10,7 @@ interface MatchupVoteCardProps {
   initialVote: string | null
   disabled?: boolean
   showResult?: boolean
+  onVoteSubmitted?: () => void
 }
 
 /** Status badge text and color */
@@ -39,6 +40,7 @@ const MatchupVoteCardInner = React.memo(function MatchupVoteCardInner({
   initialVote,
   disabled = false,
   showResult = false,
+  onVoteSubmitted,
 }: MatchupVoteCardProps) {
   const { votedEntrantId, isPending, error, submitVote } = useVote(
     matchup.id,
@@ -57,12 +59,16 @@ const MatchupVoteCardInner = React.memo(function MatchupVoteCardInner({
     setVisibleError(null)
   }, [error])
 
-  const isInteractive = matchup.status === 'voting' && !disabled
+  // Lock voting once a vote is cast (no changing votes)
+  const hasVoted = votedEntrantId !== null
+  const isInteractive = matchup.status === 'voting' && !disabled && !hasVoted
   const statusBadge = getStatusBadge(matchup.status)
 
   function handleVote(entrantId: string) {
     if (!isInteractive) return
     submitVote(entrantId)
+    // Notify parent after vote (e.g. for auto-advance in simple mode)
+    onVoteSubmitted?.()
   }
 
   function renderEntrantButton(
@@ -80,6 +86,8 @@ const MatchupVoteCardInner = React.memo(function MatchupVoteCardInner({
     const isVoted = votedEntrantId === entrantId
     const isWinner = showResult && matchup.winnerId === entrantId
 
+    const isNotChosen = hasVoted && !isVoted
+
     return (
       <button
         type="button"
@@ -91,13 +99,17 @@ const MatchupVoteCardInner = React.memo(function MatchupVoteCardInner({
           ${isInteractive ? 'cursor-pointer hover:scale-105 active:scale-95' : 'cursor-default'}
           ${isVoted
             ? 'border-primary bg-primary/10 shadow-md'
-            : 'border-border bg-card hover:border-primary/50'
+            : isNotChosen
+              ? 'border-border bg-muted/50 opacity-50'
+              : 'border-border bg-card hover:border-primary/50'
           }
           ${isWinner ? 'ring-2 ring-yellow-400 ring-offset-2' : ''}
           disabled:opacity-70
         `}
       >
-        <span className="text-center text-lg font-semibold">{entrant.name}</span>
+        <span className={`text-center text-lg font-semibold ${isNotChosen ? 'text-muted-foreground' : ''}`}>
+          {entrant.name}
+        </span>
 
         {/* Checkmark for voted entrant */}
         {isVoted && (
@@ -151,6 +163,13 @@ const MatchupVoteCardInner = React.memo(function MatchupVoteCardInner({
 
         {renderEntrantButton(matchup.entrant2, matchup.entrant2Id)}
       </div>
+
+      {/* Vote locked confirmation */}
+      {hasVoted && !isPending && matchup.status === 'voting' && (
+        <p className="mt-2 text-center text-xs text-muted-foreground">
+          Vote submitted
+        </p>
+      )}
 
       {/* Error toast */}
       {visibleError && (

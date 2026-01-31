@@ -140,7 +140,7 @@ model Vote {
   participantId String             @map("participant_id")
   participant   StudentParticipant @relation(fields: [participantId], references: [id], onDelete: Cascade)
   entrantId     String             @map("entrant_id")
-  entrant       BracketEntrant     @relation(fields: [entrantId], references: [id])
+  entrant       BracketEntrant     @relation(fields: [entrantId], references: [id], onDelete: Cascade)
   createdAt     DateTime           @default(now()) @map("created_at")
   updatedAt     DateTime           @updatedAt @map("updated_at")
 

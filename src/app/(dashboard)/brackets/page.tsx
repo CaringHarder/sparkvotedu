@@ -22,6 +22,7 @@ export default async function BracketsPage() {
     status: b.status,
     createdAt: b.createdAt.toISOString(),
     _count: b._count,
+    sessionCode: b.session?.code ?? null,
   }))
 
   return (

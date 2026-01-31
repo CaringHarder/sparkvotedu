@@ -2,11 +2,10 @@
 
 import { useState, useTransition } from 'react'
 import Link from 'next/link'
-import { ArrowLeft, Pencil, Radio, Link2, Unlink } from 'lucide-react'
+import { ArrowLeft, Pencil, Radio, Link2, Unlink, ChevronDown, ChevronUp } from 'lucide-react'
 import type { BracketWithDetails } from '@/lib/bracket/types'
 import { BracketDiagram } from '@/components/bracket/bracket-diagram'
 import { BracketStatusBadge, BracketLifecycleControls } from '@/components/bracket/bracket-status'
-import { updateBracketVotingSettings } from '@/actions/bracket-advance'
 import { assignBracketToSession } from '@/actions/bracket'
 
 interface SessionInfo {
@@ -23,29 +22,9 @@ interface BracketDetailProps {
 
 export function BracketDetail({ bracket, totalRounds, sessions }: BracketDetailProps) {
   const [isPending, startTransition] = useTransition()
-  const [viewingMode, setViewingMode] = useState(bracket.viewingMode)
-  const [showVoteCounts, setShowVoteCounts] = useState(bracket.showVoteCounts)
-  const [timerSeconds, setTimerSeconds] = useState<number | null>(bracket.votingTimerSeconds)
-  const [settingsError, setSettingsError] = useState<string | null>(null)
   const [currentSessionId, setCurrentSessionId] = useState<string | null>(bracket.sessionId)
   const [sessionError, setSessionError] = useState<string | null>(null)
-
-  function handleUpdateSetting(update: {
-    viewingMode?: string
-    showVoteCounts?: boolean
-    votingTimerSeconds?: number | null
-  }) {
-    setSettingsError(null)
-    startTransition(async () => {
-      const result = await updateBracketVotingSettings({
-        bracketId: bracket.id,
-        ...update,
-      })
-      if (result && 'error' in result) {
-        setSettingsError(result.error as string)
-      }
-    })
-  }
+  const [showEntrants, setShowEntrants] = useState(false)
 
   function handleSessionAssign(sessionId: string | null) {
     setSessionError(null)
@@ -63,44 +42,34 @@ export function BracketDetail({ bracket, totalRounds, sessions }: BracketDetailP
   }
 
   return (
-    <div className="space-y-6">
-      {/* Back link */}
-      <Link
-        href="/brackets"
-        className="inline-flex items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground"
-      >
-        <ArrowLeft className="h-4 w-4" />
-        All Brackets
-      </Link>
+    <div className="space-y-4">
+      {/* Compact header row */}
+      <div className="flex flex-wrap items-center gap-3">
+        <Link
+          href="/brackets"
+          className="inline-flex items-center gap-1 text-sm text-muted-foreground transition-colors hover:text-foreground"
+        >
+          <ArrowLeft className="h-3.5 w-3.5" />
+        </Link>
 
-      {/* Header */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-        <div className="space-y-1">
-          <div className="flex items-center gap-3">
-            <h1 className="text-2xl font-bold tracking-tight">
-              {bracket.name}
-            </h1>
-            <BracketStatusBadge status={bracket.status} />
-          </div>
-          {bracket.description && (
-            <p className="text-sm text-muted-foreground">
-              {bracket.description}
-            </p>
-          )}
-          <p className="text-xs text-muted-foreground">
-            {bracket.size} entrants &middot; {totalRounds} rounds
-          </p>
-        </div>
+        <h1 className="text-lg font-bold tracking-tight">
+          {bracket.name}
+        </h1>
+        <BracketStatusBadge status={bracket.status} />
+        <span className="text-xs text-muted-foreground">
+          {bracket.size} entrants &middot; {totalRounds} rounds
+        </span>
 
-        {/* Action bar */}
-        <div className="flex items-start gap-2">
-          {/* Go Live button for active brackets */}
+        <div className="flex-1" />
+
+        {/* Actions */}
+        <div className="flex items-center gap-2">
           {bracket.status === 'active' && (
             <Link
               href={`/brackets/${bracket.id}/live`}
-              className="inline-flex items-center gap-1.5 rounded-md bg-green-600 px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-green-700"
+              className="inline-flex items-center gap-1.5 rounded-md bg-green-600 px-3 py-1.5 text-xs font-medium text-white shadow-sm transition-colors hover:bg-green-700"
             >
-              <Radio className="h-4 w-4 animate-pulse" />
+              <Radio className="h-3.5 w-3.5 animate-pulse" />
               Go Live
             </Link>
           )}
@@ -121,180 +90,183 @@ export function BracketDetail({ bracket, totalRounds, sessions }: BracketDetailP
         </div>
       </div>
 
-      {/* Session assignment */}
-      <div className="rounded-lg border p-4">
-        <h2 className="mb-3 text-sm font-semibold">Class Session</h2>
-        {sessionError && (
-          <p className="mb-3 text-xs text-red-600">{sessionError}</p>
-        )}
-        {sessions.length === 0 ? (
-          <p className="text-sm text-muted-foreground">
-            No active sessions. Create a session first to link this bracket.
-          </p>
-        ) : (
-          <div className="flex items-center gap-3">
-            <select
-              value={currentSessionId ?? ''}
-              onChange={(e) => handleSessionAssign(e.target.value || null)}
-              disabled={isPending}
-              className="flex-1 rounded-md border bg-background px-3 py-1.5 text-sm"
-            >
-              <option value="">No session assigned</option>
-              {sessions.map((s) => (
-                <option key={s.id} value={s.id}>
-                  Session {s.code}
-                </option>
-              ))}
-            </select>
-            {currentSessionId && (
-              <button
-                type="button"
-                onClick={() => handleSessionAssign(null)}
-                disabled={isPending}
-                className="inline-flex items-center gap-1 rounded-md border px-2 py-1.5 text-xs text-muted-foreground transition-colors hover:bg-muted"
-              >
-                <Unlink className="h-3 w-3" />
-                Unlink
-              </button>
+      {bracket.description && (
+        <p className="text-sm text-muted-foreground">{bracket.description}</p>
+      )}
+
+      {/* Main content: diagram + sidebar */}
+      <div className="flex gap-4">
+        {/* Bracket diagram — takes most of the space */}
+        <div className="min-w-0 flex-1 rounded-lg border p-3">
+          <BracketDiagram
+            matchups={bracket.matchups}
+            totalRounds={totalRounds}
+          />
+        </div>
+
+        {/* Compact sidebar for settings */}
+        <div className="hidden w-64 shrink-0 space-y-3 lg:block">
+          {/* Session assignment */}
+          <div className="rounded-lg border p-3">
+            <h2 className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Session</h2>
+            {sessionError && (
+              <p className="mb-2 text-xs text-red-600">{sessionError}</p>
             )}
-            {currentSessionId && (
-              <span className="inline-flex items-center gap-1 text-xs text-green-600">
-                <Link2 className="h-3 w-3" />
-                Linked
-              </span>
+            {sessions.length === 0 ? (
+              <p className="text-xs text-muted-foreground">No active sessions</p>
+            ) : (
+              <div className="space-y-2">
+                <select
+                  value={currentSessionId ?? ''}
+                  onChange={(e) => handleSessionAssign(e.target.value || null)}
+                  disabled={isPending}
+                  className="w-full rounded-md border bg-background px-2 py-1.5 text-xs"
+                >
+                  <option value="">No session</option>
+                  {sessions.map((s) => (
+                    <option key={s.id} value={s.id}>
+                      Session {s.code}
+                    </option>
+                  ))}
+                </select>
+                {currentSessionId && (
+                  <div className="flex items-center justify-between">
+                    <span className="inline-flex items-center gap-1 text-xs text-green-600">
+                      <Link2 className="h-3 w-3" />
+                      Linked
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => handleSessionAssign(null)}
+                      disabled={isPending}
+                      className="inline-flex items-center gap-1 text-xs text-muted-foreground transition-colors hover:text-foreground"
+                    >
+                      <Unlink className="h-3 w-3" />
+                      Unlink
+                    </button>
+                  </div>
+                )}
+              </div>
             )}
           </div>
-        )}
+
+          {/* Entrants (collapsible) */}
+          <div className="rounded-lg border">
+            <button
+              type="button"
+              onClick={() => setShowEntrants(!showEntrants)}
+              className="flex w-full items-center justify-between p-3 text-left"
+            >
+              <h2 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                Entrants ({bracket.entrants.length})
+              </h2>
+              {showEntrants ? (
+                <ChevronUp className="h-3.5 w-3.5 text-muted-foreground" />
+              ) : (
+                <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
+              )}
+            </button>
+            {showEntrants && (
+              <div className="border-t px-3 pb-3 pt-2">
+                <div className="space-y-0.5">
+                  {bracket.entrants.map((entrant) => (
+                    <div
+                      key={entrant.id}
+                      className="flex items-center gap-1.5 text-xs"
+                    >
+                      <span className="w-5 text-right text-muted-foreground">
+                        {entrant.seedPosition}
+                      </span>
+                      <span className="truncate">{entrant.name}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
       </div>
 
-      {/* Voting settings (for active brackets) */}
-      {bracket.status === 'active' && (
-        <div className="rounded-lg border p-4">
-          <h2 className="mb-3 text-sm font-semibold">Voting Settings</h2>
-          {settingsError && (
-            <p className="mb-3 text-xs text-red-600">{settingsError}</p>
+      {/* Mobile: settings below diagram */}
+      <div className="space-y-3 lg:hidden">
+        {/* Session assignment */}
+        <div className="rounded-lg border p-3">
+          <h2 className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Session</h2>
+          {sessionError && (
+            <p className="mb-2 text-xs text-red-600">{sessionError}</p>
           )}
-          <div className="grid gap-4 sm:grid-cols-3">
-            {/* Viewing mode toggle */}
-            <div>
-              <label className="mb-1.5 block text-xs font-medium text-muted-foreground">
-                Viewing Mode
-              </label>
-              <div className="flex rounded-md border">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setViewingMode('simple')
-                    handleUpdateSetting({ viewingMode: 'simple' })
-                  }}
-                  disabled={isPending}
-                  className={`flex-1 rounded-l-md px-3 py-1.5 text-xs font-medium transition-colors ${
-                    viewingMode === 'simple'
-                      ? 'bg-primary text-primary-foreground'
-                      : 'hover:bg-muted'
-                  }`}
-                >
-                  Simple
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setViewingMode('advanced')
-                    handleUpdateSetting({ viewingMode: 'advanced' })
-                  }}
-                  disabled={isPending}
-                  className={`flex-1 rounded-r-md px-3 py-1.5 text-xs font-medium transition-colors ${
-                    viewingMode === 'advanced'
-                      ? 'bg-primary text-primary-foreground'
-                      : 'hover:bg-muted'
-                  }`}
-                >
-                  Advanced
-                </button>
-              </div>
-            </div>
-
-            {/* Show vote counts toggle */}
-            <div>
-              <label className="mb-1.5 block text-xs font-medium text-muted-foreground">
-                Show Vote Counts
-              </label>
-              <button
-                type="button"
-                onClick={() => {
-                  const next = !showVoteCounts
-                  setShowVoteCounts(next)
-                  handleUpdateSetting({ showVoteCounts: next })
-                }}
+          {sessions.length === 0 ? (
+            <p className="text-xs text-muted-foreground">No active sessions</p>
+          ) : (
+            <div className="flex items-center gap-3">
+              <select
+                value={currentSessionId ?? ''}
+                onChange={(e) => handleSessionAssign(e.target.value || null)}
                 disabled={isPending}
-                className={`w-full rounded-md border px-3 py-1.5 text-xs font-medium transition-colors ${
-                  showVoteCounts
-                    ? 'border-primary bg-primary/10 text-primary'
-                    : 'hover:bg-muted'
-                }`}
+                className="flex-1 rounded-md border bg-background px-2 py-1.5 text-xs"
               >
-                {showVoteCounts ? 'On' : 'Off'}
-              </button>
+                <option value="">No session</option>
+                {sessions.map((s) => (
+                  <option key={s.id} value={s.id}>
+                    Session {s.code}
+                  </option>
+                ))}
+              </select>
+              {currentSessionId && (
+                <button
+                  type="button"
+                  onClick={() => handleSessionAssign(null)}
+                  disabled={isPending}
+                  className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
+                >
+                  <Unlink className="h-3 w-3" />
+                  Unlink
+                </button>
+              )}
+              {currentSessionId && (
+                <span className="inline-flex items-center gap-1 text-xs text-green-600">
+                  <Link2 className="h-3 w-3" />
+                  Linked
+                </span>
+              )}
             </div>
+          )}
+        </div>
 
-            {/* Timer setting */}
-            <div>
-              <label className="mb-1.5 block text-xs font-medium text-muted-foreground">
-                Voting Timer (seconds)
-              </label>
-              <div className="flex gap-1">
-                {[null, 30, 60, 120].map((val) => (
-                  <button
-                    key={val ?? 'none'}
-                    type="button"
-                    onClick={() => {
-                      setTimerSeconds(val)
-                      handleUpdateSetting({ votingTimerSeconds: val })
-                    }}
-                    disabled={isPending}
-                    className={`flex-1 rounded-md border px-2 py-1.5 text-xs font-medium transition-colors ${
-                      timerSeconds === val
-                        ? 'border-primary bg-primary/10 text-primary'
-                        : 'hover:bg-muted'
-                    }`}
+        {/* Entrants (collapsible) */}
+        <div className="rounded-lg border">
+          <button
+            type="button"
+            onClick={() => setShowEntrants(!showEntrants)}
+            className="flex w-full items-center justify-between p-3 text-left"
+          >
+            <h2 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+              Entrants ({bracket.entrants.length})
+            </h2>
+            {showEntrants ? (
+              <ChevronUp className="h-3.5 w-3.5 text-muted-foreground" />
+            ) : (
+              <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
+            )}
+          </button>
+          {showEntrants && (
+            <div className="border-t px-3 pb-3 pt-2">
+              <div className="grid grid-cols-2 gap-x-4 gap-y-0.5 sm:grid-cols-4">
+                {bracket.entrants.map((entrant) => (
+                  <div
+                    key={entrant.id}
+                    className="flex items-center gap-1.5 text-xs"
                   >
-                    {val === null ? 'Off' : `${val}s`}
-                  </button>
+                    <span className="w-5 text-right text-muted-foreground">
+                      {entrant.seedPosition}
+                    </span>
+                    <span className="truncate">{entrant.name}</span>
+                  </div>
                 ))}
               </div>
             </div>
-          </div>
+          )}
         </div>
-      )}
-
-      {/* Entrant list */}
-      <div className="rounded-lg border p-4">
-        <h2 className="mb-3 text-sm font-semibold">
-          Entrants ({bracket.entrants.length})
-        </h2>
-        <div className="grid grid-cols-2 gap-x-6 gap-y-1 sm:grid-cols-4">
-          {bracket.entrants.map((entrant) => (
-            <div
-              key={entrant.id}
-              className="flex items-center gap-2 text-sm"
-            >
-              <span className="w-6 text-right text-xs text-muted-foreground">
-                #{entrant.seedPosition}
-              </span>
-              <span className="truncate">{entrant.name}</span>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* SVG Bracket Diagram -- visual centerpiece */}
-      <div className="rounded-lg border p-4">
-        <h2 className="mb-3 text-sm font-semibold">Tournament Bracket</h2>
-        <BracketDiagram
-          matchups={bracket.matchups}
-          totalRounds={totalRounds}
-          className="mt-2"
-        />
       </div>
     </div>
   )

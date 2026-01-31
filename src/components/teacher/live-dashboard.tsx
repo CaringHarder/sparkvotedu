@@ -1,15 +1,14 @@
 'use client'
 
-import { useState, useMemo, useCallback, useEffect, useRef } from 'react'
+import { useState, useMemo, useCallback, useEffect, useRef, useTransition } from 'react'
 import { useRealtimeBracket } from '@/hooks/use-realtime-bracket'
 import { useSessionPresence } from '@/hooks/use-student-session'
 import { BracketDiagram } from '@/components/bracket/bracket-diagram'
 import { WinnerReveal } from '@/components/bracket/winner-reveal'
 import { CelebrationScreen } from '@/components/bracket/celebration-screen'
-import { VoteCountDisplay } from '@/components/teacher/vote-count-display'
 import { ParticipationSidebar } from '@/components/teacher/participation-sidebar'
-import { RoundAdvancementControls } from '@/components/teacher/round-advancement-controls'
-import { MatchupTimer } from '@/components/teacher/matchup-timer'
+import { QRCodeDisplay } from '@/components/teacher/qr-code-display'
+import { openMatchupsForVoting, advanceMatchup, batchAdvanceRound } from '@/actions/bracket-advance'
 import type { BracketWithDetails, MatchupData } from '@/lib/bracket/types'
 import type { VoteCounts } from '@/types/vote'
 
@@ -19,6 +18,7 @@ interface LiveDashboardProps {
   participants: Array<{ id: string; funName: string; lastSeenAt: string }>
   initialVoteCounts: Record<string, VoteCounts>
   initialVoterIds: Record<string, string[]>
+  sessionCode?: string | null
 }
 
 interface RevealState {
@@ -35,11 +35,14 @@ export function LiveDashboard({
   participants,
   initialVoteCounts,
   initialVoterIds,
+  sessionCode,
 }: LiveDashboardProps) {
   const [selectedMatchupId, setSelectedMatchupId] = useState<string | null>(null)
   const [sidebarOpen, setSidebarOpen] = useState(true)
   const [revealState, setRevealState] = useState<RevealState | null>(null)
   const [showCelebration, setShowCelebration] = useState(false)
+  const [isPending, startTransition] = useTransition()
+  const [error, setError] = useState<string | null>(null)
 
   // Track previous matchup statuses for detecting newly decided matchups
   const prevMatchupStatusRef = useRef<Record<string, string>>({})
@@ -49,7 +52,6 @@ export function LiveDashboard({
     useRealtimeBracket(bracket.id)
 
   // Track connected students via Supabase Presence
-  // Always call the hook (rules of hooks), use a dummy ID when no session
   const { connectedStudents } = useSessionPresence(
     bracket.sessionId ?? '__no_session__',
     '__teacher__'
@@ -78,10 +80,7 @@ export function LiveDashboard({
   // Merge initial vote counts with real-time updates
   const mergedVoteCounts = useMemo(() => {
     const merged = { ...initialVoteCounts }
-    // Override with real-time vote counts as they arrive
     for (const [matchupId, counts] of Object.entries(realtimeVoteCounts)) {
-      // realtimeVoteCounts has { [entrantId]: count, total: number }
-      // Convert to VoteCounts (Record<string, number>) stripping 'total'
       const voteCounts: VoteCounts = {}
       for (const [key, value] of Object.entries(counts)) {
         if (key !== 'total') {
@@ -93,71 +92,51 @@ export function LiveDashboard({
     return merged
   }, [initialVoteCounts, realtimeVoteCounts])
 
-  // Detect newly decided matchups and trigger WinnerReveal
+  // Detect newly decided FINAL matchup and trigger WinnerReveal
   useEffect(() => {
     const prev = prevMatchupStatusRef.current
-
     for (const matchup of currentMatchups) {
       const prevStatus = prev[matchup.id]
-      // Trigger reveal when a matchup transitions from non-decided to decided
       if (
         prevStatus &&
         prevStatus !== 'decided' &&
         matchup.status === 'decided' &&
-        matchup.winner
+        matchup.winner &&
+        matchup.round === totalRounds &&
+        matchup.position === 1
       ) {
-        const counts = mergedVoteCounts[matchup.id] ?? {}
-        const e1Votes = matchup.entrant1Id ? (counts[matchup.entrant1Id] ?? 0) : 0
-        const e2Votes = matchup.entrant2Id ? (counts[matchup.entrant2Id] ?? 0) : 0
-
         setRevealState({
           winnerName: matchup.winner.name,
           entrant1Name: matchup.entrant1?.name ?? 'TBD',
           entrant2Name: matchup.entrant2?.name ?? 'TBD',
-          entrant1Votes: e1Votes,
-          entrant2Votes: e2Votes,
+          entrant1Votes: 0,
+          entrant2Votes: 0,
         })
       }
     }
-
-    // Update ref with current statuses
     const newStatuses: Record<string, string> = {}
     for (const m of currentMatchups) {
       newStatuses[m.id] = m.status
     }
     prevMatchupStatusRef.current = newStatuses
-  }, [currentMatchups, mergedVoteCounts])
+  }, [currentMatchups, totalRounds])
 
   // Show celebration when bracket is completed
   useEffect(() => {
     if (bracketCompleted) {
-      // Small delay so WinnerReveal finishes first
-      const timer = setTimeout(() => {
-        setShowCelebration(true)
-      }, 4000)
+      const timer = setTimeout(() => setShowCelebration(true), 4000)
       return () => clearTimeout(timer)
     }
   }, [bracketCompleted])
 
-  // Get total votes per matchup from real-time data
-  const getTotalVotes = useCallback(
-    (matchupId: string): number => {
-      const counts = mergedVoteCounts[matchupId]
-      if (!counts) return 0
-      return Object.values(counts).reduce((sum, c) => sum + c, 0)
-    },
-    [mergedVoteCounts]
-  )
-
-  // Get voter IDs for selected matchup (from initial data)
+  // Get voter IDs for selected matchup
   const currentVoterIds = useMemo(() => {
     if (!selectedMatchupId) return []
     return initialVoterIds[selectedMatchupId] ?? []
   }, [selectedMatchupId, initialVoterIds])
 
-  // Current round (derive from matchup statuses)
+  // Current round
   const currentRound = useMemo(() => {
-    // Find the lowest round with non-decided matchups
     for (let r = 1; r <= totalRounds; r++) {
       const roundMatchups = currentMatchups.filter((m) => m.round === r)
       const allDecided = roundMatchups.every((m) => m.status === 'decided')
@@ -166,7 +145,7 @@ export function LiveDashboard({
     return totalRounds
   }, [currentMatchups, totalRounds])
 
-  // Find the champion name for celebration
+  // Champion name for celebration
   const championName = useMemo(() => {
     const finalMatchup = currentMatchups.find(
       (m) => m.round === totalRounds && m.position === 1
@@ -174,22 +153,135 @@ export function LiveDashboard({
     return finalMatchup?.winner?.name ?? 'Champion'
   }, [currentMatchups, totalRounds])
 
-  const handleTimerExpire = useCallback(() => {
-    // Timer expired -- teacher is prompted to close voting or extend
-    // No automatic action, just visual indication
+  // Round-level status counts
+  const roundStatus = useMemo(() => {
+    const status: Record<number, { pending: number; voting: number; decided: number; total: number }> = {}
+    for (let r = 1; r <= totalRounds; r++) {
+      const rm = currentMatchups.filter((m) => m.round === r)
+      status[r] = {
+        pending: rm.filter((m) => m.status === 'pending').length,
+        voting: rm.filter((m) => m.status === 'voting').length,
+        decided: rm.filter((m) => m.status === 'decided').length,
+        total: rm.length,
+      }
+    }
+    return status
+  }, [currentMatchups, totalRounds])
+
+  // Build inline vote count labels for diagram: matchupId -> "3-2" style label
+  const voteLabels = useMemo(() => {
+    const labels: Record<string, { e1: number; e2: number }> = {}
+    for (const m of currentMatchups) {
+      if (m.status === 'voting' || m.status === 'decided') {
+        const counts = mergedVoteCounts[m.id] ?? {}
+        labels[m.id] = {
+          e1: m.entrant1Id ? (counts[m.entrant1Id] ?? 0) : 0,
+          e2: m.entrant2Id ? (counts[m.entrant2Id] ?? 0) : 0,
+        }
+      }
+    }
+    return labels
+  }, [currentMatchups, mergedVoteCounts])
+
+  // Actions
+  const handleOpenVoting = useCallback(() => {
+    setError(null)
+    const pendingIds = currentMatchups
+      .filter((m) => m.round === currentRound && m.status === 'pending')
+      .map((m) => m.id)
+    if (pendingIds.length === 0) return
+    startTransition(async () => {
+      const result = await openMatchupsForVoting({ bracketId: bracket.id, matchupIds: pendingIds })
+      if (result && 'error' in result) setError(result.error as string)
+    })
+  }, [currentMatchups, currentRound, bracket.id])
+
+  const handleCloseAndAdvance = useCallback(() => {
+    setError(null)
+    const votingMatchups = currentMatchups.filter(
+      (m) => m.round === currentRound && m.status === 'voting'
+    )
+    const advanceList: Array<{ matchupId: string; winnerId: string }> = []
+    const tiedCount = { value: 0 }
+
+    for (const m of votingMatchups) {
+      const counts = mergedVoteCounts[m.id] ?? {}
+      const e1 = m.entrant1Id ? (counts[m.entrant1Id] ?? 0) : 0
+      const e2 = m.entrant2Id ? (counts[m.entrant2Id] ?? 0) : 0
+      if (e1 > e2 && m.entrant1Id) {
+        advanceList.push({ matchupId: m.id, winnerId: m.entrant1Id })
+      } else if (e2 > e1 && m.entrant2Id) {
+        advanceList.push({ matchupId: m.id, winnerId: m.entrant2Id })
+      } else if (e1 > 0) {
+        tiedCount.value++
+      }
+    }
+
+    if (tiedCount.value > 0 && advanceList.length === 0) {
+      setError('All matchups are tied. Click a matchup in the bracket to break ties.')
+      return
+    }
+
+    startTransition(async () => {
+      for (const { matchupId, winnerId } of advanceList) {
+        const result = await advanceMatchup({ bracketId: bracket.id, matchupId, winnerId })
+        if (result && 'error' in result) { setError(result.error as string); return }
+      }
+      if (tiedCount.value > 0) {
+        setError(`${advanceList.length} advanced. ${tiedCount.value} tied — click matchup to break tie.`)
+      }
+    })
+  }, [currentMatchups, currentRound, mergedVoteCounts, bracket.id])
+
+  const handleAdvanceRound = useCallback(() => {
+    setError(null)
+    startTransition(async () => {
+      const result = await batchAdvanceRound({ bracketId: bracket.id, round: currentRound })
+      if (result && 'error' in result) setError(result.error as string)
+    })
+  }, [bracket.id, currentRound])
+
+  // Click matchup in diagram to select it for per-matchup actions
+  const handleMatchupClick = useCallback((matchupId: string) => {
+    setSelectedMatchupId((prev) => (prev === matchupId ? null : matchupId))
   }, [])
 
+  // Per-matchup action: teacher picks winner (tie break or override)
+  const handlePickWinner = useCallback((matchupId: string, winnerId: string) => {
+    setError(null)
+    setSelectedMatchupId(null)
+    startTransition(async () => {
+      const result = await advanceMatchup({ bracketId: bracket.id, matchupId, winnerId })
+      if (result && 'error' in result) setError(result.error as string)
+    })
+  }, [bracket.id])
+
+  // Get selected matchup details
+  const selectedMatchup = currentMatchups.find((m) => m.id === selectedMatchupId) ?? null
+
+  // Round label helper
+  function getRoundLabel(round: number): string {
+    if (round === totalRounds) return 'Final'
+    if (round === totalRounds - 1) return 'Semis'
+    if (round === totalRounds - 2) return 'Quarters'
+    return `R${round}`
+  }
+
+  // Determine primary action for action bar
+  const rs = roundStatus[currentRound]
+  const allRoundDecided = rs && rs.decided === rs.total && rs.total > 0
+  const hasVoting = rs && rs.voting > 0
+  const hasPending = rs && rs.pending > 0
+  const bracketDone = currentRound === totalRounds && allRoundDecided
+
   return (
-    <div className="flex h-full flex-col gap-4">
+    <div className="flex h-full flex-col gap-3">
       {/* Winner Reveal overlay */}
       {revealState && (
         <WinnerReveal
           winnerName={revealState.winnerName}
           entrant1Name={revealState.entrant1Name}
           entrant2Name={revealState.entrant2Name}
-          showVoteCounts
-          entrant1Votes={revealState.entrant1Votes}
-          entrant2Votes={revealState.entrant2Votes}
           onComplete={() => setRevealState(null)}
         />
       )}
@@ -199,76 +291,153 @@ export function LiveDashboard({
         <CelebrationScreen
           championName={championName}
           bracketName={bracket.name}
-          onDismiss={() => setShowCelebration(false)}
+          onDismiss={() => { setShowCelebration(false); setRevealState(null) }}
         />
       )}
 
-      {/* Top bar */}
-      <div className="flex items-center justify-between rounded-lg border bg-card p-4">
-        <div className="flex items-center gap-3">
-          <h1 className="text-xl font-bold">{bracket.name}</h1>
-          <span className="rounded-full bg-green-100 px-3 py-1 text-xs font-medium text-green-700">
-            LIVE
-          </span>
-          <span className="rounded-md bg-muted px-2 py-1 text-xs text-muted-foreground">
-            {bracket.viewingMode} mode
-          </span>
+      {/* Top bar with actions */}
+      <div className="flex flex-wrap items-center gap-3 rounded-lg border bg-card px-4 py-3">
+        <h1 className="text-lg font-bold">{bracket.name}</h1>
+        <span className="rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-medium text-green-700">
+          LIVE
+        </span>
+
+        {/* Round tabs */}
+        <div className="flex gap-1">
+          {Array.from({ length: totalRounds }, (_, i) => i + 1).map((round) => {
+            const s = roundStatus[round]
+            const isActive = round === currentRound
+            const isComplete = s && s.decided === s.total && s.total > 0
+            return (
+              <span
+                key={round}
+                className={`rounded px-2 py-0.5 text-xs font-medium ${
+                  isActive
+                    ? 'bg-primary text-primary-foreground'
+                    : isComplete
+                      ? 'bg-green-100 text-green-700'
+                      : 'bg-muted text-muted-foreground'
+                }`}
+              >
+                {getRoundLabel(round)}
+                {isComplete && ' ✓'}
+              </span>
+            )
+          })}
         </div>
-        <div className="flex items-center gap-3">
-          <MatchupTimer
-            bracketId={bracket.id}
-            initialSeconds={bracket.votingTimerSeconds}
-            matchupId={selectedMatchupId}
-            onTimerExpire={handleTimerExpire}
-          />
-        </div>
+
+        <div className="flex-1" />
+
+        {/* Primary action buttons */}
+        {hasPending && (
+          <button
+            onClick={handleOpenVoting}
+            disabled={isPending}
+            className="rounded-md bg-blue-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+          >
+            {isPending ? 'Opening...' : `Open Voting (${rs!.pending})`}
+          </button>
+        )}
+
+        {hasVoting && (
+          <button
+            onClick={handleCloseAndAdvance}
+            disabled={isPending}
+            className="rounded-md bg-orange-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-orange-700 disabled:opacity-50"
+          >
+            {isPending ? 'Closing...' : `Close & Advance (${rs!.voting})`}
+          </button>
+        )}
+
+        {allRoundDecided && !bracketDone && (
+          <button
+            onClick={handleAdvanceRound}
+            disabled={isPending}
+            className="rounded-md bg-green-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-green-700 disabled:opacity-50"
+          >
+            {isPending ? 'Advancing...' : `Next Round →`}
+          </button>
+        )}
+
+        {bracketDone && (
+          <span className="flex items-center gap-1.5 rounded-md bg-green-50 px-3 py-1.5 text-xs font-semibold text-green-700 dark:bg-green-900/20 dark:text-green-400">
+            🏆 Complete!
+          </span>
+        )}
+
+        {sessionCode && <QRCodeDisplay code={sessionCode} />}
       </div>
 
-      {/* Main content area */}
-      <div className="flex flex-1 gap-4 overflow-hidden">
-        {/* Left: Bracket diagram with vote overlays */}
-        <div className="flex-1 overflow-auto rounded-lg border bg-card p-4">
-          <div className="relative">
-            <BracketDiagram
-              matchups={currentMatchups}
-              totalRounds={totalRounds}
-            />
-            {/* Vote count overlays */}
-            <div className="mt-4 grid grid-cols-2 gap-3 lg:grid-cols-3 xl:grid-cols-4">
-              {currentMatchups
-                .filter((m) => m.entrant1Id || m.entrant2Id)
-                .map((matchup) => (
+      {/* Error */}
+      {error && (
+        <div className="rounded-md bg-red-50 px-4 py-2 text-sm text-red-700 dark:bg-red-950/20 dark:text-red-400">
+          {error}
+          <button onClick={() => setError(null)} className="ml-2 underline">dismiss</button>
+        </div>
+      )}
+
+      {/* Pick winner modal */}
+      {selectedMatchup && selectedMatchup.status === 'voting' && (() => {
+        const votes = voteLabels[selectedMatchup.id]
+        const e1Votes = votes?.e1 ?? 0
+        const e2Votes = votes?.e2 ?? 0
+        const isTied = e1Votes === e2Votes
+        return (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onClick={() => setSelectedMatchupId(null)}>
+            <div className="mx-4 w-full max-w-sm rounded-xl border bg-card p-6 shadow-lg" onClick={(e) => e.stopPropagation()}>
+              <h2 className="mb-1 text-center text-base font-bold">Pick Winner</h2>
+              <p className="mb-5 text-center text-xs text-muted-foreground">
+                {isTied ? 'Tied — teacher breaks the tie' : 'Override or confirm the vote leader'}
+              </p>
+
+              <div className="flex gap-3">
+                {selectedMatchup.entrant1Id && (
                   <button
-                    key={matchup.id}
-                    onClick={() =>
-                      setSelectedMatchupId(
-                        selectedMatchupId === matchup.id ? null : matchup.id
-                      )
-                    }
-                    className={`rounded-lg border p-2 text-left transition-colors ${
-                      selectedMatchupId === matchup.id
-                        ? 'border-primary bg-primary/5 ring-1 ring-primary'
-                        : 'border-border hover:border-primary/50'
-                    }`}
+                    onClick={() => handlePickWinner(selectedMatchup.id, selectedMatchup.entrant1Id!)}
+                    disabled={isPending}
+                    className="flex flex-1 flex-col items-center gap-1.5 rounded-lg border-2 border-blue-200 bg-blue-50 px-4 py-4 transition-colors hover:border-blue-400 hover:bg-blue-100 disabled:opacity-50 dark:border-blue-800 dark:bg-blue-950/30 dark:hover:border-blue-600 dark:hover:bg-blue-950/50"
                   >
-                    <VoteCountDisplay
-                      matchupId={matchup.id}
-                      entrant1Name={matchup.entrant1?.name ?? 'TBD'}
-                      entrant2Name={matchup.entrant2?.name ?? 'TBD'}
-                      entrant1Id={matchup.entrant1Id ?? ''}
-                      entrant2Id={matchup.entrant2Id ?? ''}
-                      voteCounts={mergedVoteCounts[matchup.id] ?? {}}
-                      totalVotes={getTotalVotes(matchup.id)}
-                      totalParticipants={participants.length}
-                      status={matchup.status as 'pending' | 'voting' | 'decided'}
-                    />
+                    <span className="text-sm font-semibold">{selectedMatchup.entrant1?.name ?? 'TBD'}</span>
+                    <span className="text-lg font-bold text-blue-600 dark:text-blue-400">{e1Votes} vote{e1Votes !== 1 ? 's' : ''}</span>
                   </button>
-                ))}
+                )}
+                {selectedMatchup.entrant2Id && (
+                  <button
+                    onClick={() => handlePickWinner(selectedMatchup.id, selectedMatchup.entrant2Id!)}
+                    disabled={isPending}
+                    className="flex flex-1 flex-col items-center gap-1.5 rounded-lg border-2 border-orange-200 bg-orange-50 px-4 py-4 transition-colors hover:border-orange-400 hover:bg-orange-100 disabled:opacity-50 dark:border-orange-800 dark:bg-orange-950/30 dark:hover:border-orange-600 dark:hover:bg-orange-950/50"
+                  >
+                    <span className="text-sm font-semibold">{selectedMatchup.entrant2?.name ?? 'TBD'}</span>
+                    <span className="text-lg font-bold text-orange-600 dark:text-orange-400">{e2Votes} vote{e2Votes !== 1 ? 's' : ''}</span>
+                  </button>
+                )}
+              </div>
+
+              <button
+                onClick={() => setSelectedMatchupId(null)}
+                className="mt-4 w-full rounded-md py-2 text-xs text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+              >
+                Cancel
+              </button>
             </div>
           </div>
+        )
+      })()}
+
+      {/* Main content: diagram + sidebar */}
+      <div className="flex flex-1 gap-3 overflow-hidden">
+        {/* Bracket diagram */}
+        <div className="flex-1 overflow-auto rounded-lg border bg-card p-4">
+          <BracketDiagram
+            matchups={currentMatchups}
+            totalRounds={totalRounds}
+            voteLabels={voteLabels}
+            onMatchupClick={handleMatchupClick}
+            selectedMatchupId={selectedMatchupId}
+          />
         </div>
 
-        {/* Right: Participation sidebar */}
+        {/* Participation sidebar */}
         <ParticipationSidebar
           participants={participants}
           connectedIds={connectedIds}
@@ -278,16 +447,6 @@ export function LiveDashboard({
           isOpen={sidebarOpen}
         />
       </div>
-
-      {/* Bottom: Round advancement controls */}
-      <RoundAdvancementControls
-        bracketId={bracket.id}
-        matchups={currentMatchups}
-        selectedMatchupId={selectedMatchupId}
-        voteCounts={mergedVoteCounts}
-        currentRound={currentRound}
-        onSelectMatchup={setSelectedMatchupId}
-      />
     </div>
   )
 }

@@ -19,16 +19,17 @@ interface ActivityCardProps {
 export function ActivityCard({ activity, onClick }: ActivityCardProps) {
   return (
     <Card
-      className="cursor-pointer transition-shadow hover:shadow-md"
+      className="cursor-pointer transition-all hover:shadow-md hover:border-primary/30"
       onClick={onClick}
     >
-      <CardContent className="flex items-center gap-4 py-4">
-        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10">
+      <CardContent className="flex flex-col items-center gap-3 px-4 py-5 text-center">
+        {/* Icon */}
+        <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10">
           {activity.type === 'bracket' ? (
             <svg
               xmlns="http://www.w3.org/2000/svg"
-              width="20"
-              height="20"
+              width="22"
+              height="22"
               viewBox="0 0 24 24"
               fill="none"
               stroke="currentColor"
@@ -43,8 +44,8 @@ export function ActivityCard({ activity, onClick }: ActivityCardProps) {
           ) : (
             <svg
               xmlns="http://www.w3.org/2000/svg"
-              width="20"
-              height="20"
+              width="22"
+              height="22"
               viewBox="0 0 24 24"
               fill="none"
               stroke="currentColor"
@@ -60,9 +61,10 @@ export function ActivityCard({ activity, onClick }: ActivityCardProps) {
           )}
         </div>
 
-        <div className="flex-1 min-w-0">
-          <h3 className="font-medium truncate">{activity.name}</h3>
-          <p className="text-sm text-muted-foreground">
+        {/* Name + meta */}
+        <div className="w-full min-w-0">
+          <h3 className="font-medium leading-snug line-clamp-2">{activity.name}</h3>
+          <p className="mt-1 text-xs text-muted-foreground">
             {activity.type === 'bracket' ? 'Bracket' : 'Poll'}
             {' '}&middot;{' '}
             {activity.participantCount} participant
@@ -70,6 +72,7 @@ export function ActivityCard({ activity, onClick }: ActivityCardProps) {
           </p>
         </div>
 
+        {/* Voted badge */}
         {activity.hasVoted && (
           <div className="flex items-center gap-1 rounded-full bg-green-100 px-2.5 py-1 text-xs font-medium text-green-700 dark:bg-green-900/30 dark:text-green-400">
             <svg
