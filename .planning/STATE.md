@@ -5,23 +5,23 @@
 See: .planning/PROJECT.md (updated 2026-01-28)
 
 **Core value:** Teachers can instantly engage any classroom through voting -- on any topic, in any format -- and see participation happen in real time.
-**Current focus:** Phase 5 gap closure -- Fixing UAT failures (poll update hang, polls 404, session assignment)
+**Current focus:** Phase 5 complete -- All poll plans + gap closure executed (schema, DAL, actions, teacher UI, student UI, results, navigation, image upload, fixes, session assignment)
 
 ## Current Position
 
 Phase: 5 of 10 (Polls)
-Plan: 7 of 8 in current phase (gap closure)
-Status: In progress
-Last activity: 2026-01-31 -- Completed 05-07-PLAN.md (UAT Gap Closure: Poll Update Hang + Polls 404)
+Plan: 8 of 8 in current phase (gap closure complete)
+Status: Phase complete
+Last activity: 2026-01-31 -- Completed 05-08-PLAN.md (Poll Session Assignment UI)
 
-Progress: [######....] 61% (32/52 plans)
+Progress: [######....] 63% (33/52 plans)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 32
-- Average duration: ~5.6 min
-- Total execution time: ~2.97 hours
+- Total plans completed: 33
+- Average duration: ~5.5 min
+- Total execution time: ~2.99 hours
 
 **By Phase:**
 
@@ -31,11 +31,11 @@ Progress: [######....] 61% (32/52 plans)
 | 02-student-join-flow | 6/6 | ~13m | ~2.2m |
 | 03-bracket-creation-management | 7/7 | ~15.8m | ~2.3m |
 | 04-voting-and-real-time | 6/6 | ~45.6m | ~7.6m |
-| 05-polls | 7/8 | ~20.2m | ~2.9m |
+| 05-polls | 8/8 | ~22.2m | ~2.8m |
 
 **Recent Trend:**
-- Last 5 plans: 05-03 (~3.0m), 05-04 (~2.7m), 05-05 (~4.1m), 05-06 (~3.1m), 05-07 (~1.3m)
-- Trend: 05-07 fastest plan yet (gap closure, 2 targeted fixes)
+- Last 5 plans: 05-04 (~2.7m), 05-05 (~4.1m), 05-06 (~3.1m), 05-07 (~1.3m), 05-08 (~2.0m)
+- Trend: Gap closure plans consistently fast (~1.7m avg for 05-07/05-08)
 
 *Updated after each plan completion*
 
@@ -149,6 +149,8 @@ Recent decisions affecting current work:
 - [05-06]: Canvas API image compression (max 800px, JPEG 0.8) for poll option images
 - [05-07]: try/catch/finally pattern for isSubmitting state reset ensures all exit paths reset the button
 - [05-07]: Polls index page follows exact /brackets page pattern (server component, auth guard, serialized data, grid cards)
+- [05-08]: Nullable sessionId in assignPollToSession schema matches bracket pattern exactly
+- [05-08]: Session assignment UI placed inline (not sidebar) since polls have no diagram
 
 ### Pending Todos
 
@@ -163,5 +165,5 @@ Recent decisions affecting current work:
 ## Session Continuity
 
 Last session: 2026-01-31
-Stopped at: Completed 05-07-PLAN.md (UAT Gap Closure: Poll Update Hang + Polls 404)
+Stopped at: Completed 05-08-PLAN.md (Poll Session Assignment UI) -- Phase 5 gap closure complete
 Resume file: None
