@@ -5,23 +5,23 @@
 See: .planning/PROJECT.md (updated 2026-01-28)
 
 **Core value:** Teachers can instantly engage any classroom through voting -- on any topic, in any format -- and see participation happen in real time.
-**Current focus:** Phase 5 in progress -- Poll Backend complete
+**Current focus:** Phase 5 in progress -- Student Poll Voting UI complete
 
 ## Current Position
 
 Phase: 5 of 10 (Polls)
-Plan: 2 of 6 in current phase
+Plan: 4 of 6 in current phase
 Status: In progress
-Last activity: 2026-01-31 -- Completed 05-02-PLAN.md (Poll Backend)
+Last activity: 2026-01-31 -- Completed 05-04-PLAN.md (Student Poll Voting UI)
 
-Progress: [#####.....] 52% (27/52 plans)
+Progress: [######....] 56% (29/52 plans)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 27
-- Average duration: ~6.1 min
-- Total execution time: ~2.75 hours
+- Total plans completed: 29
+- Average duration: ~5.9 min
+- Total execution time: ~2.81 hours
 
 **By Phase:**
 
@@ -31,11 +31,11 @@ Progress: [#####.....] 52% (27/52 plans)
 | 02-student-join-flow | 6/6 | ~13m | ~2.2m |
 | 03-bracket-creation-management | 7/7 | ~15.8m | ~2.3m |
 | 04-voting-and-real-time | 6/6 | ~45.6m | ~7.6m |
-| 05-polls | 2/6 | ~6m | ~3m |
+| 05-polls | 4/6 | ~11.7m | ~2.9m |
 
 **Recent Trend:**
-- Last 5 plans: 04-05 (~4m), 04-06 (~25m incl. E2E testing), 05-01 (~2.9m), 05-02 (~3.1m)
-- Trend: Backend-only plans (DAL + actions, no UI) consistently fast (~3m)
+- Last 5 plans: 04-06 (~25m incl. E2E testing), 05-01 (~2.9m), 05-02 (~3.1m), 05-04 (~2.7m)
+- Trend: Phase 5 plans consistently fast (~3m) for both backend and UI
 
 *Updated after each plan completion*
 
@@ -131,6 +131,9 @@ Recent decisions affecting current work:
 - [05-02]: Ranked poll broadcasts Borda scores as voteCounts for real-time leaderboard updates
 - [05-02]: maxPollOptions added to TIER_LIMITS: free=6, pro=12, pro_plus=32
 - [05-02]: /api/polls/ routes added as public pages in proxy for student polling access
+- [05-04]: Single usePollVote hook serves both simple and ranked polls with pollType parameter
+- [05-04]: Rank badges use gold/silver/bronze (amber-400, gray-300, amber-600) for top 3
+- [05-04]: Student poll page reads localStorage for participantId, matching 04-04 bracket page pattern
 
 ### Pending Todos
 
@@ -144,5 +147,5 @@ Recent decisions affecting current work:
 ## Session Continuity
 
 Last session: 2026-01-31
-Stopped at: Completed 05-02-PLAN.md (Poll Backend)
+Stopped at: Completed 05-04-PLAN.md (Student Poll Voting UI)
 Resume file: None
