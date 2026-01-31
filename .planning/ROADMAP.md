@@ -15,7 +15,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 1: Foundation & Auth** - Project scaffolding, database schema, teacher accounts, and session management
 - [x] **Phase 2: Student Join Flow** - Anonymous student participation via class codes with device fingerprinting and fun names
 - [x] **Phase 3: Bracket Creation & Management** - Teachers create, edit, and manage single-elimination brackets with entrant tools
-- [ ] **Phase 4: Voting & Real-Time** - Students vote on matchups with live updating dashboard and real-time bracket state
+- [x] **Phase 4: Voting & Real-Time** - Students vote on matchups with live updating dashboard and real-time bracket state
 - [ ] **Phase 5: Polls** - Simple and ranked polls with real-time results display
 - [ ] **Phase 6: Billing & Subscriptions** - Stripe integration, tier enforcement, and upgrade prompts
 - [ ] **Phase 7: Advanced Brackets** - Double-elimination, round-robin, predictive brackets, and non-power-of-two support
@@ -98,12 +98,12 @@ Plans:
 **Plans**: 6 plans
 
 Plans:
-- [ ] 04-01-PLAN.md — Schema updates (Vote model, Matchup.status, Bracket voting fields), Vote DAL, server-side Broadcast helper
-- [ ] 04-02-PLAN.md — Bracket advancement engine TDD (winner propagation, undo, round completion)
-- [ ] 04-03-PLAN.md — Vote + advancement server actions, real-time hooks, transport fallback, bracket state API
-- [ ] 04-04-PLAN.md — Student voting interface (simple + advanced modes, optimistic vote feedback)
-- [ ] 04-05-PLAN.md — Live teacher dashboard (vote counts, participation sidebar, round controls, timer)
-- [ ] 04-06-PLAN.md — Winner reveal animations, celebration screen, full integration wiring
+- [x] 04-01-PLAN.md — Schema updates (Vote model, Matchup.status, Bracket voting fields), Vote DAL, server-side Broadcast helper
+- [x] 04-02-PLAN.md — Bracket advancement engine TDD (winner propagation, undo, round completion)
+- [x] 04-03-PLAN.md — Vote + advancement server actions, real-time hooks, transport fallback, bracket state API
+- [x] 04-04-PLAN.md — Student voting interface (simple + advanced modes, optimistic vote feedback)
+- [x] 04-05-PLAN.md — Live teacher dashboard (vote counts, participation sidebar, round controls, timer)
+- [x] 04-06-PLAN.md — Winner reveal animations, celebration screen, full integration wiring
 
 ### Phase 5: Polls
 **Goal**: Teachers can create simple and ranked polls that students vote on with results displayed in real time
@@ -226,7 +226,7 @@ Note: Phase 3 depends only on Phase 1 (not Phase 2), so Phases 2 and 3 could the
 | 1. Foundation & Auth | 5/5 | ✓ Complete | 2026-01-29 |
 | 2. Student Join Flow | 6/6 | ✓ Complete | 2026-01-29 |
 | 3. Bracket Creation & Management | 7/7 | ✓ Complete | 2026-01-30 |
-| 4. Voting & Real-Time | 0/6 | Planned | - |
+| 4. Voting & Real-Time | 6/6 | ✓ Complete | 2026-01-31 |
 | 5. Polls | 0/4 | Not started | - |
 | 6. Billing & Subscriptions | 0/5 | Not started | - |
 | 7. Advanced Brackets | 0/6 | Not started | - |

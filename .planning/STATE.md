@@ -5,23 +5,23 @@
 See: .planning/PROJECT.md (updated 2026-01-28)
 
 **Core value:** Teachers can instantly engage any classroom through voting -- on any topic, in any format -- and see participation happen in real time.
-**Current focus:** Phase 4 in progress — Voting and Real-Time
+**Current focus:** Phase 4 complete — ready for Phase 5 (Polls)
 
 ## Current Position
 
-Phase: 4 of 10 (Voting and Real-Time)
-Plan: 5 of 6 in current phase
-Status: In progress
-Last activity: 2026-01-31 -- Completed 04-04-PLAN.md (Student Voting UI)
+Phase: 4 of 10 (Voting and Real-Time) -- COMPLETE
+Plan: 6 of 6 in current phase
+Status: Phase complete
+Last activity: 2026-01-31 -- Completed 04-06-PLAN.md (Winner Reveal & Integration Wiring)
 
-Progress: [#####.....] 46% (24/52 plans)
+Progress: [#####.....] 48% (25/52 plans)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 24
-- Average duration: ~6.4 min
-- Total execution time: ~2.6 hours
+- Total plans completed: 25
+- Average duration: ~6.5 min
+- Total execution time: ~2.7 hours
 
 **By Phase:**
 
@@ -30,11 +30,11 @@ Progress: [#####.....] 46% (24/52 plans)
 | 01-foundation-and-auth | 5/5 | ~1.5h | ~18m |
 | 02-student-join-flow | 6/6 | ~13m | ~2.2m |
 | 03-bracket-creation-management | 7/7 | ~15.8m | ~2.3m |
-| 04-voting-and-real-time | 5/6 | ~20.6m | ~4.1m |
+| 04-voting-and-real-time | 6/6 | ~45.6m | ~7.6m |
 
 **Recent Trend:**
-- Last 5 plans: 04-01 (~4.8m), 04-02 (~4m), 04-03 (~3.8m), 04-04 (~5m), 04-05 (~4m)
-- Trend: Stable
+- Last 5 plans: 04-02 (~4m), 04-03 (~3.8m), 04-04 (~5m), 04-05 (~4m), 04-06 (~25m incl. E2E testing)
+- Trend: 04-06 was longer due to iterative E2E user acceptance testing (11 bugs found and fixed)
 
 *Updated after each plan completion*
 
@@ -116,6 +116,11 @@ Recent decisions affecting current work:
 - [04-05]: Vote count overlays as interactive card grid below diagram (not inline SVG overlays)
 - [04-05]: Client-side timer with persistence to bracket.votingTimerSeconds via server action
 - [04-05]: ParticipationSidebar sorts tiles voted > connected > disconnected
+- [04-06]: 4-second delay between WinnerReveal and CelebrationScreen to prevent overlay stacking
+- [04-06]: CelebrationScreen onDismiss clears both celebration AND reveal state
+- [04-06]: QR code as compact chip with expandable dropdown on live dashboard
+- [04-06]: AnimatePresence mode="wait" for sequential card transitions in simple voting
+- [04-06]: prisma db push (not migrate) for cascade fix due to migration drift
 
 ### Pending Todos
 
@@ -125,10 +130,9 @@ Recent decisions affecting current work:
 
 - [Research]: Sports API provider selection is LOW confidence -- needs deep research before Phase 8
 - [Research]: Device fingerprinting collision rates on identical school hardware need real-world validation in Phase 2
-- [Research]: WebSocket transport reliability in school networks needs testing in Phase 4
 
 ## Session Continuity
 
 Last session: 2026-01-31
-Stopped at: Completed 04-04-PLAN.md (Student Voting UI)
+Stopped at: Phase 4 complete -- ready for Phase 5
 Resume file: None
