@@ -20,6 +20,7 @@ model Teacher {
 
   classSessions ClassSession[]
   brackets      Bracket[]
+  polls         Poll[]
 
   @@map("teachers")
 }
@@ -37,6 +38,7 @@ model ClassSession {
 
   participants StudentParticipant[]
   brackets     Bracket[]
+  polls        Poll[]
 
   @@index([code, status])
   @@map("class_sessions")
@@ -55,7 +57,8 @@ model StudentParticipant {
   sessionId    String    @map("session_id")
   session      ClassSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
 
-  votes Vote[]
+  votes     Vote[]
+  pollVotes PollVote[]
 
   @@unique([sessionId, deviceId])
   @@unique([sessionId, funName])
@@ -148,4 +151,64 @@ model Vote {
   @@index([matchupId])
   @@index([participantId])
   @@map("votes")
+}
+
+model Poll {
+  id              String        @id @default(uuid())
+  question        String
+  description     String?
+  pollType        String        @default("simple") @map("poll_type")
+  status          String        @default("draft")
+  allowVoteChange Boolean       @default(true) @map("allow_vote_change")
+  showLiveResults Boolean       @default(false) @map("show_live_results")
+  rankingDepth    Int?          @map("ranking_depth")
+  teacherId       String        @map("teacher_id")
+  teacher         Teacher       @relation(fields: [teacherId], references: [id])
+  sessionId       String?       @map("session_id")
+  session         ClassSession? @relation(fields: [sessionId], references: [id])
+  createdAt       DateTime      @default(now()) @map("created_at")
+  updatedAt       DateTime      @updatedAt @map("updated_at")
+
+  options PollOption[]
+  votes   PollVote[]
+
+  @@index([teacherId])
+  @@index([sessionId])
+  @@index([status])
+  @@map("polls")
+}
+
+model PollOption {
+  id        String   @id @default(uuid())
+  text      String
+  imageUrl  String?  @map("image_url")
+  position  Int
+  pollId    String   @map("poll_id")
+  poll      Poll     @relation(fields: [pollId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  votes PollVote[]
+
+  @@unique([pollId, position])
+  @@index([pollId])
+  @@map("poll_options")
+}
+
+model PollVote {
+  id            String             @id @default(uuid())
+  pollId        String             @map("poll_id")
+  poll          Poll               @relation(fields: [pollId], references: [id], onDelete: Cascade)
+  participantId String             @map("participant_id")
+  participant   StudentParticipant @relation(fields: [participantId], references: [id], onDelete: Cascade)
+  optionId      String             @map("option_id")
+  option        PollOption         @relation(fields: [optionId], references: [id], onDelete: Cascade)
+  rank          Int                @default(1)
+  createdAt     DateTime           @default(now()) @map("created_at")
+  updatedAt     DateTime           @updatedAt @map("updated_at")
+
+  @@unique([pollId, participantId, rank])
+  @@index([pollId])
+  @@index([participantId])
+  @@index([optionId])
+  @@map("poll_votes")
 }
