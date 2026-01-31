@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation'
 import { getAuthenticatedTeacher } from '@/lib/dal/auth'
 import { getPollByIdDAL } from '@/lib/dal/poll'
+import { prisma } from '@/lib/prisma'
 import { PollDetailView } from '@/components/poll/poll-detail-view'
 import type { PollStatus } from '@/lib/poll/types'
 
@@ -22,6 +23,19 @@ export default async function PollDetailPage({
   if (!poll || poll.teacherId !== teacher.id) {
     redirect('/activities')
   }
+
+  // Fetch teacher's active sessions for session assignment
+  const sessions = await prisma.classSession.findMany({
+    where: { teacherId: teacher.id, status: 'active' },
+    select: { id: true, code: true, createdAt: true },
+    orderBy: { createdAt: 'desc' },
+  })
+
+  const serializedSessions = sessions.map((s) => ({
+    id: s.id,
+    code: s.code,
+    createdAt: s.createdAt.toISOString(),
+  }))
 
   // Serialize dates for client component
   const serialized = {
@@ -46,5 +60,5 @@ export default async function PollDetailPage({
     })),
   }
 
-  return <PollDetailView poll={serialized} />
+  return <PollDetailView poll={serialized} sessions={serializedSessions} />
 }

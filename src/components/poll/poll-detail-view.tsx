@@ -11,6 +11,8 @@ import {
   Copy,
   Trash2,
   Radio,
+  Link2,
+  Unlink,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
@@ -20,6 +22,7 @@ import {
   updatePollStatus,
   deletePoll,
   duplicatePoll,
+  assignPollToSession,
 } from '@/actions/poll'
 import type { PollStatus } from '@/lib/poll/types'
 
@@ -45,8 +48,15 @@ interface PollDetailData {
   }[]
 }
 
+interface SessionInfo {
+  id: string
+  code: string
+  createdAt: string
+}
+
 interface PollDetailViewProps {
   poll: PollDetailData
+  sessions: SessionInfo[]
 }
 
 // Status transition buttons configuration
@@ -87,11 +97,28 @@ const STATUS_ACTIONS: Record<
   archived: [],
 }
 
-export function PollDetailView({ poll }: PollDetailViewProps) {
+export function PollDetailView({ poll, sessions }: PollDetailViewProps) {
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
   const [error, setError] = useState<string | null>(null)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+  const [currentSessionId, setCurrentSessionId] = useState<string | null>(poll.sessionId)
+  const [sessionError, setSessionError] = useState<string | null>(null)
+
+  function handleSessionAssign(sessionId: string | null) {
+    setSessionError(null)
+    setCurrentSessionId(sessionId)
+    startTransition(async () => {
+      const result = await assignPollToSession({
+        pollId: poll.id,
+        sessionId,
+      })
+      if (result && 'error' in result) {
+        setSessionError(result.error as string)
+        setCurrentSessionId(poll.sessionId) // revert on error
+      }
+    })
+  }
 
   function handleStatusChange(newStatus: PollStatus) {
     setError(null)
@@ -204,6 +231,50 @@ export function PollDetailView({ poll }: PollDetailViewProps) {
             Delete
           </Button>
         </div>
+      </div>
+
+      {/* Session assignment */}
+      <div className="rounded-lg border p-3">
+        <h2 className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Session</h2>
+        {sessionError && (
+          <p className="mb-2 text-xs text-red-600">{sessionError}</p>
+        )}
+        {sessions.length === 0 ? (
+          <p className="text-xs text-muted-foreground">No active sessions. Create a session first to assign this poll.</p>
+        ) : (
+          <div className="flex items-center gap-3">
+            <select
+              value={currentSessionId ?? ''}
+              onChange={(e) => handleSessionAssign(e.target.value || null)}
+              disabled={isPending}
+              className="flex-1 rounded-md border bg-background px-2 py-1.5 text-xs"
+            >
+              <option value="">No session</option>
+              {sessions.map((s) => (
+                <option key={s.id} value={s.id}>
+                  Session {s.code}
+                </option>
+              ))}
+            </select>
+            {currentSessionId && (
+              <button
+                type="button"
+                onClick={() => handleSessionAssign(null)}
+                disabled={isPending}
+                className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
+              >
+                <Unlink className="h-3 w-3" />
+                Unlink
+              </button>
+            )}
+            {currentSessionId && (
+              <span className="inline-flex items-center gap-1 text-xs text-green-600">
+                <Link2 className="h-3 w-3" />
+                Linked
+              </span>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Error */}
