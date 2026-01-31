@@ -131,6 +131,10 @@ Recent decisions affecting current work:
 - [05-02]: Ranked poll broadcasts Borda scores as voteCounts for real-time leaderboard updates
 - [05-02]: maxPollOptions added to TIER_LIMITS: free=6, pro=12, pro_plus=32
 - [05-02]: /api/polls/ routes added as public pages in proxy for student polling access
+- [05-03]: 18 curated poll templates across 5 categories (Icebreakers, Classroom Decisions, Academic Debates, Fun & Trivia, Feedback)
+- [05-03]: PollForm supports both create and edit mode via existingPoll prop (single component, two flows)
+- [05-03]: STATUS_ACTIONS Record keyed by PollStatus for clean conditional status transition button rendering
+- [05-03]: Quick Create and Step-by-Step as tabbed modes on same page, not separate routes
 - [05-04]: Single usePollVote hook serves both simple and ranked polls with pollType parameter
 - [05-04]: Rank badges use gold/silver/bronze (amber-400, gray-300, amber-600) for top 3
 - [05-04]: Student poll page reads localStorage for participantId, matching 04-04 bracket page pattern
@@ -147,5 +151,5 @@ Recent decisions affecting current work:
 ## Session Continuity
 
 Last session: 2026-01-31
-Stopped at: Completed 05-04-PLAN.md (Student Poll Voting UI)
+Stopped at: Completed 05-03-PLAN.md (Teacher Poll UI)
 Resume file: None
