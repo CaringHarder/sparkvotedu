@@ -111,7 +111,7 @@ describe('advanceMatchupWinner', () => {
 
     // Odd position (1) -> entrant1Id
     expect(nextMatchupUpdateArgs).not.toBeNull()
-    const data = (nextMatchupUpdateArgs as Record<string, unknown>).data as Record<string, unknown>
+    const data = (nextMatchupUpdateArgs as unknown as Record<string, unknown>).data as Record<string, unknown>
     expect(data.entrant1Id).toBe('entrant-a')
   })
 
@@ -145,7 +145,7 @@ describe('advanceMatchupWinner', () => {
 
     // Even position (2) -> entrant2Id
     expect(nextMatchupUpdateArgs).not.toBeNull()
-    const data = (nextMatchupUpdateArgs as Record<string, unknown>).data as Record<string, unknown>
+    const data = (nextMatchupUpdateArgs as unknown as Record<string, unknown>).data as Record<string, unknown>
     expect(data.entrant2Id).toBe('entrant-a')
   })
 
@@ -273,7 +273,7 @@ describe('undoMatchupAdvancement', () => {
     await undoMatchupAdvancement('matchup-1', 'bracket-1')
 
     expect(nextMatchupUpdateArgs).not.toBeNull()
-    const data = (nextMatchupUpdateArgs as Record<string, unknown>).data as Record<string, unknown>
+    const data = (nextMatchupUpdateArgs as unknown as Record<string, unknown>).data as Record<string, unknown>
     expect(data.entrant1Id).toBeNull()
   })
 
@@ -310,7 +310,7 @@ describe('undoMatchupAdvancement', () => {
     await undoMatchupAdvancement('matchup-1', 'bracket-1')
 
     expect(nextMatchupUpdateArgs).not.toBeNull()
-    const data = (nextMatchupUpdateArgs as Record<string, unknown>).data as Record<string, unknown>
+    const data = (nextMatchupUpdateArgs as unknown as Record<string, unknown>).data as Record<string, unknown>
     expect(data.entrant2Id).toBeNull()
   })
 
