@@ -1,10 +1,12 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { useParams } from 'next/navigation'
 import Link from 'next/link'
 import { SimplePollVote } from '@/components/student/simple-poll-vote'
 import { RankedPollVote } from '@/components/student/ranked-poll-vote'
+import { useRealtimePoll } from '@/hooks/use-realtime-poll'
+import { PollReveal } from '@/components/poll/poll-reveal'
 import type { PollWithOptions, PollOptionData } from '@/lib/poll/types'
 
 /**
@@ -49,6 +51,8 @@ type PageState =
  * 2. Fetches poll data from GET /api/polls/[pollId]/state
  * 3. Fetches existing votes for vote restoration via query param ?pid=
  * 4. Routes to SimplePollVote or RankedPollVote based on poll type
+ * 5. Subscribes to real-time poll events via useRealtimePoll hook
+ * 6. Shows PollReveal animation when teacher closes the poll live
  *
  * Handles edge cases: poll not found, not active, closed with results, no identity.
  */
@@ -58,6 +62,61 @@ export default function StudentPollVotingPage() {
   const pollId = params.pollId
 
   const [state, setState] = useState<PageState>({ type: 'loading' })
+
+  // Real-time subscription -- called unconditionally (React rules of hooks)
+  const { pollStatus, voteCounts, bordaScores } = useRealtimePoll(pollId)
+
+  // Reveal animation state
+  const [showReveal, setShowReveal] = useState(false)
+  const [closedDetected, setClosedDetected] = useState(false)
+  const prevPollStatusRef = useRef(pollStatus)
+
+  // Detect live active->closed transition for reveal trigger
+  useEffect(() => {
+    const prev = prevPollStatusRef.current
+    prevPollStatusRef.current = pollStatus
+
+    // Only trigger reveal when transitioning FROM a non-closed status TO closed
+    // AND the student was actively viewing the poll (state is 'ready')
+    if (
+      pollStatus === 'closed' &&
+      prev !== 'closed' &&
+      prev !== 'draft' && // draft is the hook's initial state before first fetch
+      state.type === 'ready'
+    ) {
+      setShowReveal(true)
+      setClosedDetected(true)
+    }
+  }, [pollStatus, state.type])
+
+  // Compute winner text for reveal animation
+  const winnerText = (() => {
+    if (state.type !== 'ready') return 'Results are in!'
+    const { poll } = state
+
+    // Ranked poll: use top Borda score
+    if (poll.pollType === 'ranked' && bordaScores && bordaScores.length > 0) {
+      const topId = bordaScores[0].optionId
+      const opt = poll.options.find((o) => o.id === topId)
+      return opt?.text ?? 'Results are in!'
+    }
+
+    // Simple poll: highest vote count from real-time hook
+    const counts = Object.keys(voteCounts).length > 0 ? voteCounts : {}
+    let maxCount = 0
+    let winnerId = ''
+    for (const opt of poll.options) {
+      const c = counts[opt.id] ?? 0
+      if (c > maxCount) {
+        maxCount = c
+        winnerId = opt.id
+      }
+    }
+
+    if (!winnerId) return 'Results are in!'
+    const opt = poll.options.find((o) => o.id === winnerId)
+    return opt?.text ?? 'Results are in!'
+  })()
 
   useEffect(() => {
     async function loadPoll() {
@@ -196,7 +255,7 @@ export default function StudentPollVotingPage() {
     )
   }
 
-  // Poll not active (draft, closed, or archived)
+  // Poll not active (draft, closed, or archived) -- loaded in this state on mount
   if (state.type === 'not-active') {
     const { status, poll } = state
 
@@ -236,8 +295,26 @@ export default function StudentPollVotingPage() {
     )
   }
 
-  // Ready state: render appropriate voting component
+  // Ready state: render appropriate voting component (or closed state after live transition)
   const { poll, participantId, existingVotes } = state
+
+  // After reveal dismissed: show clean "poll closed" state (live transition, not initial load)
+  if (closedDetected && !showReveal) {
+    return (
+      <div className="container mx-auto px-4 py-6">
+        {backLink}
+        <div className="flex flex-col items-center py-8">
+          <h2 className="text-xl font-bold">{poll.question}</h2>
+          <div className="mt-4 rounded-lg bg-muted/50 px-6 py-4 text-center">
+            <p className="text-sm font-medium">This poll has been closed</p>
+            <p className="mt-3 text-lg font-semibold text-primary">
+              {winnerText}
+            </p>
+          </div>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="container mx-auto px-4 py-6">
@@ -257,6 +334,12 @@ export default function StudentPollVotingPage() {
           />
         )}
       </div>
+      {showReveal && (
+        <PollReveal
+          winnerText={winnerText}
+          onDismiss={() => setShowReveal(false)}
+        />
+      )}
     </div>
   )
 }
