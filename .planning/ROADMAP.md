@@ -138,14 +138,14 @@ Plans:
   3. Teacher can manage their subscription (upgrade, downgrade, cancel) through the Stripe Customer Portal
   4. Locked features (e.g., double-elimination, CSV export) show an upgrade prompt rather than being hidden
   5. Feature limits are enforced server-side so bypassing the UI does not grant access to paid features
-**Plans**: TBD
+**Plans**: 5 plans
 
 Plans:
-- [ ] 06-01: Stripe integration (Checkout Sessions, webhooks, Customer Portal)
-- [ ] 06-02: Subscription tier sync and database state management
-- [ ] 06-03: Server-side feature gating enforcement (middleware + DAL)
-- [ ] 06-04: UI tier gates and upgrade prompts
-- [ ] 06-05: Tier limit enforcement (bracket count, entrant count, feature access)
+- [ ] 06-01-PLAN.md — Stripe SDK, Subscription model, pricing config, webhook route handler
+- [ ] 06-02-PLAN.md — Billing DAL and server actions (createCheckout, createPortalSession)
+- [ ] 06-03-PLAN.md — Pricing page UI (cards, toggle, public /pricing, in-app /billing)
+- [ ] 06-04-PLAN.md — Upgrade prompts, welcome page, plan badge, sidebar billing nav
+- [ ] 06-05-PLAN.md — Server-side tier enforcement in bracket/poll actions, TIER_LIMITS reconciliation
 
 ### Phase 7: Advanced Brackets
 **Goal**: Teachers on Pro Plus can create double-elimination, round-robin, and predictive brackets, including non-power-of-two sizes with automatic byes
@@ -234,7 +234,7 @@ Note: Phase 3 depends only on Phase 1 (not Phase 2), so Phases 2 and 3 could the
 | 3. Bracket Creation & Management | 7/7 | Complete | 2026-01-30 |
 | 4. Voting & Real-Time | 6/6 | Complete | 2026-01-31 |
 | 5. Polls | 10/10 | Complete | 2026-01-31 |
-| 6. Billing & Subscriptions | 0/5 | Not started | - |
+| 6. Billing & Subscriptions | 0/5 | Planned | - |
 | 7. Advanced Brackets | 0/6 | Not started | - |
 | 8. Sports Integration | 0/5 | Not started | - |
 | 9. Analytics | 0/4 | Not started | - |
