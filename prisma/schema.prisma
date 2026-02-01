@@ -58,8 +58,9 @@ model StudentParticipant {
   sessionId    String    @map("session_id")
   session      ClassSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
 
-  votes     Vote[]
-  pollVotes PollVote[]
+  votes       Vote[]
+  pollVotes   PollVote[]
+  predictions Prediction[]
 
   @@unique([sessionId, deviceId])
   @@unique([sessionId, funName])
@@ -78,15 +79,24 @@ model Bracket {
   viewingMode        String       @default("advanced") @map("viewing_mode")
   showVoteCounts     Boolean      @default(true) @map("show_vote_counts")
   votingTimerSeconds Int?         @map("voting_timer_seconds")
-  teacherId          String       @map("teacher_id")
-  teacher            Teacher      @relation(fields: [teacherId], references: [id])
-  sessionId          String?      @map("session_id")
-  session            ClassSession? @relation(fields: [sessionId], references: [id])
-  createdAt          DateTime     @default(now()) @map("created_at")
-  updatedAt          DateTime     @updatedAt @map("updated_at")
+  teacherId                String       @map("teacher_id")
+  teacher                  Teacher      @relation(fields: [teacherId], references: [id])
+  sessionId                String?      @map("session_id")
+  session                  ClassSession? @relation(fields: [sessionId], references: [id])
+  predictionStatus         String?      @map("prediction_status")
+  roundRobinPacing         String?      @map("round_robin_pacing")
+  roundRobinVotingStyle    String?      @map("round_robin_voting_style")
+  roundRobinStandingsMode  String?      @map("round_robin_standings_mode")
+  predictiveMode           String?      @map("predictive_mode")
+  predictiveResolutionMode String?      @map("predictive_resolution_mode")
+  playInEnabled            Boolean      @default(false) @map("play_in_enabled")
+  maxEntrants              Int?         @map("max_entrants")
+  createdAt                DateTime     @default(now()) @map("created_at")
+  updatedAt                DateTime     @updatedAt @map("updated_at")
 
-  entrants BracketEntrant[]
-  matchups Matchup[]
+  entrants    BracketEntrant[]
+  matchups    Matchup[]
+  predictions Prediction[]
 
   @@index([teacherId])
   @@index([sessionId])
@@ -102,10 +112,11 @@ model BracketEntrant {
   bracket      Bracket  @relation(fields: [bracketId], references: [id], onDelete: Cascade)
   createdAt    DateTime @default(now()) @map("created_at")
 
-  matchupsAsEntrant1 Matchup[] @relation("entrant1")
-  matchupsAsEntrant2 Matchup[] @relation("entrant2")
-  matchupsAsWinner   Matchup[] @relation("winner")
-  votesReceived      Vote[]
+  matchupsAsEntrant1    Matchup[] @relation("entrant1")
+  matchupsAsEntrant2    Matchup[] @relation("entrant2")
+  matchupsAsWinner      Matchup[] @relation("winner")
+  votesReceived         Vote[]
+  predictionsForWinner  Prediction[] @relation("predictedWinner")
 
   @@unique([bracketId, seedPosition])
   @@index([bracketId])
@@ -128,9 +139,13 @@ model Matchup {
   nextMatchupId    String?         @map("next_matchup_id")
   nextMatchup      Matchup?        @relation("advancement", fields: [nextMatchupId], references: [id])
   previousMatchups Matchup[]       @relation("advancement")
+  bracketRegion    String?         @map("bracket_region")
+  isBye            Boolean         @default(false) @map("is_bye")
+  roundRobinRound  Int?            @map("round_robin_round")
   createdAt        DateTime        @default(now()) @map("created_at")
 
-  votes Vote[]
+  votes       Vote[]
+  predictions Prediction[]
 
   @@unique([bracketId, round, position])
   @@index([bracketId])
@@ -228,4 +243,23 @@ model Subscription {
 
   @@index([stripeSubscriptionId])
   @@map("subscriptions")
+}
+
+model Prediction {
+  id                String             @id @default(uuid())
+  bracketId         String             @map("bracket_id")
+  bracket           Bracket            @relation(fields: [bracketId], references: [id], onDelete: Cascade)
+  participantId     String             @map("participant_id")
+  participant       StudentParticipant @relation(fields: [participantId], references: [id], onDelete: Cascade)
+  matchupId         String             @map("matchup_id")
+  matchup           Matchup            @relation(fields: [matchupId], references: [id], onDelete: Cascade)
+  predictedWinnerId String             @map("predicted_winner_id")
+  predictedWinner   BracketEntrant     @relation("predictedWinner", fields: [predictedWinnerId], references: [id])
+  createdAt         DateTime           @default(now()) @map("created_at")
+  updatedAt         DateTime           @updatedAt @map("updated_at")
+
+  @@unique([bracketId, participantId, matchupId])
+  @@index([bracketId])
+  @@index([participantId])
+  @@map("predictions")
 }
