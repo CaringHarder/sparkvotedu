@@ -29,11 +29,11 @@ Requirements for initial release. Each maps to roadmap phases.
 ### Brackets
 
 - [x] **BRKT-01**: Teacher can create single-elimination brackets (4, 8, 16 teams)
-- [ ] **BRKT-02**: Teacher can create double-elimination brackets (Pro Plus)
-- [ ] **BRKT-03**: Teacher can create round-robin brackets (Pro Plus)
-- [ ] **BRKT-04**: Teacher can create predictive brackets where students predict outcomes (Pro Plus)
-- [ ] **BRKT-05**: Predictive brackets display a scored leaderboard ranking student accuracy (Pro Plus)
-- [ ] **BRKT-06**: Teacher can create non-power-of-two brackets with auto-byes (Pro Plus)
+- [x] **BRKT-02**: Teacher can create double-elimination brackets (Pro Plus)
+- [x] **BRKT-03**: Teacher can create round-robin brackets (Pro Plus)
+- [x] **BRKT-04**: Teacher can create predictive brackets where students predict outcomes (Pro Plus)
+- [x] **BRKT-05**: Predictive brackets display a scored leaderboard ranking student accuracy (Pro Plus)
+- [x] **BRKT-06**: Teacher can create non-power-of-two brackets with auto-byes (Pro Plus)
 - [x] **BRKT-07**: Bracket displays as a visual tournament diagram (not just text lists)
 - [x] **BRKT-08**: Bracket updates in real-time as votes come in and winners advance
 - [x] **BRKT-09**: Teacher can set bracket as draft, active, or completed
@@ -157,11 +157,11 @@ Which phases cover which requirements. Updated during roadmap creation.
 | STUD-05 | Phase 2: Student Join Flow | Complete |
 | STUD-06 | Phase 2: Student Join Flow | Complete |
 | BRKT-01 | Phase 3: Bracket Creation & Management | Complete |
-| BRKT-02 | Phase 7: Advanced Brackets | Pending |
-| BRKT-03 | Phase 7: Advanced Brackets | Pending |
-| BRKT-04 | Phase 7: Advanced Brackets | Pending |
-| BRKT-05 | Phase 7: Advanced Brackets | Pending |
-| BRKT-06 | Phase 7: Advanced Brackets | Pending |
+| BRKT-02 | Phase 7: Advanced Brackets | Complete |
+| BRKT-03 | Phase 7: Advanced Brackets | Complete |
+| BRKT-04 | Phase 7: Advanced Brackets | Complete |
+| BRKT-05 | Phase 7: Advanced Brackets | Complete |
+| BRKT-06 | Phase 7: Advanced Brackets | Complete |
 | BRKT-07 | Phase 3: Bracket Creation & Management | Complete |
 | BRKT-08 | Phase 4: Voting & Real-Time | Complete |
 | BRKT-09 | Phase 3: Bracket Creation & Management | Complete |
