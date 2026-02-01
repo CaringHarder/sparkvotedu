@@ -31,7 +31,14 @@ export type ForgotPasswordInput = z.infer<typeof forgotPasswordSchema>
 export type UpdatePasswordInput = z.infer<typeof updatePasswordSchema>
 
 // Bracket validation schemas
-export const bracketSizeSchema = z.union([z.literal(4), z.literal(8), z.literal(16)])
+export const bracketSizeSchema = z.number().int().min(3).max(128)
+
+export const bracketTypeSchema = z.enum([
+  'single_elimination',
+  'double_elimination',
+  'round_robin',
+  'predictive',
+])
 
 export const createBracketSchema = z.object({
   name: z
@@ -43,7 +50,17 @@ export const createBracketSchema = z.object({
     .max(500, 'Description must be 500 characters or less')
     .optional(),
   size: bracketSizeSchema,
+  bracketType: bracketTypeSchema.default('single_elimination'),
   sessionId: z.string().uuid().optional(),
+  // Round-robin options (only used when bracketType is round_robin)
+  roundRobinPacing: z.enum(['round_by_round', 'all_at_once']).optional(),
+  roundRobinVotingStyle: z.enum(['simple', 'advanced']).optional(),
+  roundRobinStandingsMode: z.enum(['live', 'suspenseful']).optional(),
+  // Predictive options (only used when bracketType is predictive)
+  predictiveMode: z.enum(['simple', 'advanced']).optional(),
+  predictiveResolutionMode: z.enum(['manual', 'vote_based']).optional(),
+  // Play-in option (only used for double_elimination)
+  playInEnabled: z.boolean().optional(),
 })
 
 export const entrantSchema = z.object({
@@ -58,8 +75,8 @@ export const updateEntrantsSchema = z.object({
   bracketId: z.string().uuid(),
   entrants: z
     .array(entrantSchema)
-    .min(4, 'At least 4 entrants required')
-    .max(16, 'Maximum 16 entrants'),
+    .min(3, 'At least 3 entrants required')
+    .max(128, 'Maximum 128 entrants'),
 })
 
 export const updateBracketStatusSchema = z.object({
@@ -106,6 +123,32 @@ export type CastVoteInput = z.infer<typeof castVoteSchema>
 export type AdvanceMatchupInput = z.infer<typeof advanceMatchupSchema>
 export type OpenVotingInput = z.infer<typeof openVotingSchema>
 export type UpdateBracketVotingSettingsInput = z.infer<typeof updateBracketVotingSettingsSchema>
+
+// Prediction validation schemas
+export const submitPredictionSchema = z.object({
+  bracketId: z.string().uuid(),
+  participantId: z.string().uuid(),
+  predictions: z.array(z.object({
+    matchupId: z.string().uuid(),
+    predictedWinnerId: z.string().uuid(),
+  })).min(1),
+})
+
+export const updatePredictionStatusSchema = z.object({
+  bracketId: z.string().uuid(),
+  status: z.enum(['predictions_open', 'active']),
+})
+
+// Round-robin validation schemas
+export const recordRoundRobinResultSchema = z.object({
+  bracketId: z.string().uuid(),
+  matchupId: z.string().uuid(),
+  winnerId: z.string().uuid().nullable(), // null = tie
+})
+
+export type SubmitPredictionInput = z.infer<typeof submitPredictionSchema>
+export type UpdatePredictionStatusInput = z.infer<typeof updatePredictionStatusSchema>
+export type RecordRoundRobinResultInput = z.infer<typeof recordRoundRobinResultSchema>
 
 // Poll validation schemas
 export const createPollSchema = z.object({
