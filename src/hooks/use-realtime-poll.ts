@@ -77,7 +77,7 @@ export function useRealtimePoll(pollId: string, batchIntervalMs = 2000) {
 
       // Flush pending updates into state
       if (keys.length > 0) {
-        setVoteCounts((prev) => ({ ...prev, ...pending }))
+        setVoteCounts(pending)
         pendingVoteCounts.current = {}
       }
       if (pendingTotalVotes.current !== null) {

@@ -332,16 +332,27 @@ export async function castRankedPollVoteDAL(
 export async function getSimplePollVoteCounts(
   pollId: string
 ): Promise<Record<string, number>> {
+  // Fetch all option IDs for this poll to ensure zeros are included
+  const options = await prisma.pollOption.findMany({
+    where: { pollId },
+    select: { id: true },
+  })
+
   const groups = await prisma.pollVote.groupBy({
     by: ['optionId'],
     where: { pollId, rank: 1 },
     _count: { id: true },
   })
 
-  return groups.reduce<Record<string, number>>((acc, g) => {
-    acc[g.optionId] = g._count.id
-    return acc
-  }, {})
+  // Start with all options at zero, then overlay actual counts
+  const counts: Record<string, number> = {}
+  for (const opt of options) {
+    counts[opt.id] = 0
+  }
+  for (const g of groups) {
+    counts[g.optionId] = g._count.id
+  }
+  return counts
 }
 
 /**
