@@ -24,10 +24,12 @@ export default async function BracketDetailPage({
   }
 
   // For round-robin, totalRounds is N-1 (even) or N (odd), not log2
+  // For single-elim/predictive with byes, use maxEntrants (effective bracket size)
   const isRoundRobin = bracket.bracketType === 'round_robin'
+  const effectiveSize = bracket.maxEntrants ?? bracket.size
   const totalRounds = isRoundRobin
     ? (bracket.size % 2 === 0 ? bracket.size - 1 : bracket.size)
-    : Math.log2(bracket.size)
+    : Math.ceil(Math.log2(effectiveSize))
 
   // Fetch standings for round-robin brackets
   const standings = isRoundRobin ? await getRoundRobinStandings(bracket.id) : []

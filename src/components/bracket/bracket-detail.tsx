@@ -7,6 +7,7 @@ import type { BracketWithDetails, RoundRobinStanding } from '@/lib/bracket/types
 import { BracketDiagram } from '@/components/bracket/bracket-diagram'
 import { RoundRobinStandings } from '@/components/bracket/round-robin-standings'
 import { RoundRobinMatchups } from '@/components/bracket/round-robin-matchups'
+import { PredictiveBracket } from '@/components/bracket/predictive-bracket'
 import { BracketStatusBadge, BracketLifecycleControls } from '@/components/bracket/bracket-status'
 import { assignBracketToSession } from '@/actions/bracket'
 import { recordResult, advanceRound } from '@/actions/round-robin'
@@ -31,6 +32,7 @@ export function BracketDetail({ bracket, totalRounds, sessions, standings = [] }
   const [showEntrants, setShowEntrants] = useState(false)
 
   const isRoundRobin = bracket.bracketType === 'round_robin'
+  const isPredictive = bracket.bracketType === 'predictive'
   const pacing = (bracket.roundRobinPacing ?? 'round_by_round') as 'round_by_round' | 'all_at_once'
   const isLive = bracket.roundRobinStandingsMode === 'live'
 
@@ -142,7 +144,13 @@ export function BracketDetail({ bracket, totalRounds, sessions, standings = [] }
       <div className="flex gap-4">
         {/* Main content area */}
         <div className="min-w-0 flex-1 space-y-4">
-          {isRoundRobin ? (
+          {isPredictive ? (
+            <PredictiveBracket
+              bracket={bracket}
+              participantId=""
+              isTeacher={true}
+            />
+          ) : isRoundRobin ? (
             <>
               {/* Standings table */}
               <div>
