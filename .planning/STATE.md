@@ -5,23 +5,23 @@
 See: .planning/PROJECT.md (updated 2026-01-28)
 
 **Core value:** Teachers can instantly engage any classroom through voting -- on any topic, in any format -- and see participation happen in real time.
-**Current focus:** Phase 5 complete -- All poll plans + gap closure + UAT round 2 bug fixes executed
+**Current focus:** Phase 5 complete -- All poll plans + gap closure + UAT rounds + student reveal fix executed
 
 ## Current Position
 
 Phase: 5 of 10 (Polls)
-Plan: 9 of 9 in current phase (UAT round 2 fixes complete)
+Plan: 10 of 10 in current phase (student poll reveal gap closure complete)
 Status: Phase complete
-Last activity: 2026-01-31 -- Completed 05-09-PLAN.md (UAT Round 2 Bug Fixes)
+Last activity: 2026-01-31 -- Completed 05-10-PLAN.md (Student Poll Reveal Gap Closure)
 
-Progress: [######....] 64% (34/53 plans)
+Progress: [######....] 65% (35/53 plans)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 34
-- Average duration: ~5.4 min
-- Total execution time: ~3.02 hours
+- Total plans completed: 35
+- Average duration: ~5.3 min
+- Total execution time: ~3.05 hours
 
 **By Phase:**
 
@@ -31,11 +31,11 @@ Progress: [######....] 64% (34/53 plans)
 | 02-student-join-flow | 6/6 | ~13m | ~2.2m |
 | 03-bracket-creation-management | 7/7 | ~15.8m | ~2.3m |
 | 04-voting-and-real-time | 6/6 | ~45.6m | ~7.6m |
-| 05-polls | 9/9 | ~24.2m | ~2.7m |
+| 05-polls | 10/10 | ~26.0m | ~2.6m |
 
 **Recent Trend:**
-- Last 5 plans: 05-05 (~4.1m), 05-06 (~3.1m), 05-07 (~1.3m), 05-08 (~2.0m), 05-09 (~2.0m)
-- Trend: Gap closure and bug fix plans consistently fast (~1.8m avg for 05-07/08/09)
+- Last 5 plans: 05-06 (~3.1m), 05-07 (~1.3m), 05-08 (~2.0m), 05-09 (~2.0m), 05-10 (~1.8m)
+- Trend: Gap closure and bug fix plans consistently fast (~1.8m avg for 05-07/08/09/10)
 
 *Updated after each plan completion*
 
@@ -154,6 +154,8 @@ Recent decisions affecting current work:
 - [05-09]: forceReveal prop replaces racy status transition detection for winner reveal animation
 - [05-09]: getSimplePollVoteCounts returns zeros for all options (not just options with votes)
 - [05-09]: Real-time hook flush uses full replacement since DAL now returns complete vote state
+- [05-10]: Student poll page wires useRealtimePoll hook for live poll_closed detection and PollReveal animation
+- [05-10]: prevPollStatusRef guards against spurious reveal on initial mount (draft is hook's default before first fetch)
 
 ### Pending Todos
 
@@ -168,5 +170,5 @@ Recent decisions affecting current work:
 ## Session Continuity
 
 Last session: 2026-01-31
-Stopped at: Completed 05-09-PLAN.md (UAT Round 2 Bug Fixes) -- Phase 5 fully complete
+Stopped at: Completed 05-10-PLAN.md (Student Poll Reveal Gap Closure) -- Phase 5 fully complete
 Resume file: None
