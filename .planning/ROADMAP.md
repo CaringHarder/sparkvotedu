@@ -157,15 +157,22 @@ Plans:
   3. Teacher can create a predictive bracket where students submit predictions and a scored leaderboard ranks accuracy
   4. Teacher can create a bracket with a non-power-of-two number of entrants (e.g., 5, 6, 7, 10) and byes are placed automatically and fairly
   5. Predictive bracket leaderboard shows each student's scoring breakdown (points per correct pick by round)
-**Plans**: TBD
+**Plans**: 13 plans
 
 Plans:
-- [ ] 07-01: Double-elimination bracket engine and visualization
-- [ ] 07-02: Round-robin bracket engine and standings display
-- [ ] 07-03: Predictive bracket engine (prediction phase, resolution, scoring)
-- [ ] 07-04: Predictive bracket leaderboard with scoring breakdown
-- [ ] 07-05: Non-power-of-two bracket support with automatic bye placement
-- [ ] 07-06: Advanced bracket integration testing (all types, all sizes)
+- [ ] 07-01-PLAN.md — Schema evolution, TypeScript types, and Zod validation for all bracket types
+- [ ] 07-02-PLAN.md — Bye placement algorithm (TDD)
+- [ ] 07-03-PLAN.md — Double-elimination bracket engine (TDD)
+- [ ] 07-04-PLAN.md — Round-robin bracket engine (TDD)
+- [ ] 07-05-PLAN.md — Predictive bracket scoring engine (TDD)
+- [ ] 07-06-PLAN.md — Bracket form update (type selector, custom sizing, pan/zoom)
+- [ ] 07-07-PLAN.md — Bye DAL integration and bracket diagram BYE rendering
+- [ ] 07-08-PLAN.md — Double-elimination DAL, server actions, and advancement logic
+- [ ] 07-09-PLAN.md — Double-elimination tabbed visualization
+- [ ] 07-10-PLAN.md — Round-robin DAL, actions, standings, and matchup UI
+- [ ] 07-11-PLAN.md — Predictive bracket DAL, actions, and prediction submission UI
+- [ ] 07-12-PLAN.md — Predictive bracket leaderboard (student + teacher views)
+- [ ] 07-13-PLAN.md — Integration verification and end-to-end testing
 
 ### Phase 8: Sports Integration
 **Goal**: Teachers can browse real sports tournaments, import them as classroom prediction brackets, and results update automatically from live game data
@@ -235,7 +242,7 @@ Note: Phase 3 depends only on Phase 1 (not Phase 2), so Phases 2 and 3 could the
 | 4. Voting & Real-Time | 6/6 | Complete | 2026-01-31 |
 | 5. Polls | 10/10 | Complete | 2026-01-31 |
 | 6. Billing & Subscriptions | 5/5 | Complete | 2026-02-01 |
-| 7. Advanced Brackets | 0/6 | Not started | - |
+| 7. Advanced Brackets | 0/13 | Not started | - |
 | 8. Sports Integration | 0/5 | Not started | - |
 | 9. Analytics | 0/4 | Not started | - |
 | 10. Landing Page & Polish | 0/5 | Not started | - |
