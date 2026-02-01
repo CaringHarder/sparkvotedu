@@ -1,6 +1,26 @@
 import { prisma } from '@/lib/prisma'
 import { generateMatchups } from '@/lib/bracket/engine'
-import type { MatchupSeed } from '@/lib/bracket/types'
+import {
+  generateMatchupsWithByes,
+  calculateBracketSizeWithByes,
+} from '@/lib/bracket/byes'
+import type { MatchupSeed, MatchupSeedWithBye } from '@/lib/bracket/types'
+
+/**
+ * Check whether a number is a power of two using bitwise AND.
+ */
+function isPowerOfTwo(n: number): boolean {
+  return n > 0 && (n & (n - 1)) === 0
+}
+
+/**
+ * Determine which slot a matchup feeds into in the next round.
+ * Odd positions (1, 3, 5...) -> entrant1Id, even positions (2, 4, 6...) -> entrant2Id.
+ * Mirrors the logic in advancement.ts getSlotForPosition.
+ */
+function getSlotForPosition(position: number): 'entrant1Id' | 'entrant2Id' {
+  return position % 2 === 1 ? 'entrant1Id' : 'entrant2Id'
+}
 
 /**
  * Helper: Create matchup records and wire nextMatchupId within a transaction.
@@ -8,22 +28,27 @@ import type { MatchupSeed } from '@/lib/bracket/types'
  * 1. Creates all matchup records WITHOUT nextMatchupId.
  * 2. Builds a round-position -> matchupId lookup map.
  * 3. Updates each matchup's nextMatchupId via the map.
+ * 4. Auto-advances bye matchups (sets winnerId + status, propagates to next round).
+ *
+ * Accepts both MatchupSeed and MatchupSeedWithBye -- isBye defaults to false.
  */
 async function createMatchupsInTransaction(
   tx: Parameters<Parameters<typeof prisma.$transaction>[0]>[0],
   bracketId: string,
-  matchupSeeds: MatchupSeed[],
+  matchupSeeds: (MatchupSeed | MatchupSeedWithBye)[],
   entrantIdBySeed: Map<number, string>
 ) {
   // Step 1: Create all matchup records (no nextMatchupId yet)
   const createdMatchups: { id: string; round: number; position: number }[] = []
 
   for (const seed of matchupSeeds) {
+    const isBye = ('isBye' in seed && seed.isBye) ?? false
     const matchup = await tx.matchup.create({
       data: {
         bracketId,
         round: seed.round,
         position: seed.position,
+        isBye,
         entrant1Id: seed.entrant1Seed
           ? (entrantIdBySeed.get(seed.entrant1Seed) ?? null)
           : null,
@@ -55,6 +80,46 @@ async function createMatchupsInTransaction(
           data: { nextMatchupId: nextId },
         })
       }
+    }
+  }
+
+  // Step 4: Auto-advance bye matchups
+  // Find bye matchups where one entrant is present and the other is null
+  for (let i = 0; i < matchupSeeds.length; i++) {
+    const seed = matchupSeeds[i]
+    const isBye = ('isBye' in seed && seed.isBye) ?? false
+    if (!isBye) continue
+
+    // Re-fetch the matchup to get entrant IDs and nextMatchupId
+    const byeMatchup = await tx.matchup.findUnique({
+      where: { id: createdMatchups[i].id },
+      select: {
+        id: true,
+        entrant1Id: true,
+        entrant2Id: true,
+        nextMatchupId: true,
+        position: true,
+      },
+    })
+    if (!byeMatchup) continue
+
+    // The present entrant is the winner (the other slot is null)
+    const winnerId = byeMatchup.entrant1Id ?? byeMatchup.entrant2Id
+    if (!winnerId) continue
+
+    // Set winner and status to decided
+    await tx.matchup.update({
+      where: { id: byeMatchup.id },
+      data: { winnerId, status: 'decided' },
+    })
+
+    // Propagate winner to next matchup
+    if (byeMatchup.nextMatchupId) {
+      const slot = getSlotForPosition(byeMatchup.position)
+      await tx.matchup.update({
+        where: { id: byeMatchup.nextMatchupId },
+        data: { [slot]: winnerId },
+      })
     }
   }
 }
@@ -100,23 +165,35 @@ export async function createBracketDAL(
   },
   entrants: { name: string; seedPosition: number }[]
 ) {
-  // Validate entrants count matches bracket size
+  // Validate entrants count matches bracket size (actual entrants, not bracket size including byes)
   if (entrants.length !== data.size) {
     return {
       error: `Expected ${data.size} entrants, got ${entrants.length}`,
     }
   }
 
-  // Generate matchup structure from engine
-  const matchupSeeds = generateMatchups(data.size)
+  // Determine if byes are needed and generate appropriate matchup structure
+  const needsByes = !isPowerOfTwo(data.size)
+  let matchupSeeds: (MatchupSeed | MatchupSeedWithBye)[]
+  let effectiveBracketSize: number | null = null
+
+  if (needsByes) {
+    const { bracketSize } = calculateBracketSizeWithByes(data.size)
+    effectiveBracketSize = bracketSize
+    matchupSeeds = generateMatchupsWithByes(data.size)
+  } else {
+    matchupSeeds = generateMatchups(data.size)
+  }
 
   const bracket = await prisma.$transaction(async (tx) => {
     // 1. Create the bracket record
+    // size = actual entrant count; maxEntrants = full bracket size (for diagram layout)
     const created = await tx.bracket.create({
       data: {
         name: data.name,
         description: data.description ?? null,
         size: data.size,
+        maxEntrants: effectiveBracketSize,
         status: 'draft',
         teacherId,
         sessionId: data.sessionId ?? null,
@@ -285,8 +362,18 @@ export async function updateBracketEntrantsDAL(
     }
   }
 
-  // Generate new matchup structure
-  const matchupSeeds = generateMatchups(bracket.size)
+  // Determine if byes are needed and generate appropriate matchup structure
+  const needsByes = !isPowerOfTwo(bracket.size)
+  let matchupSeeds: (MatchupSeed | MatchupSeedWithBye)[]
+  let effectiveBracketSize: number | null = null
+
+  if (needsByes) {
+    const { bracketSize } = calculateBracketSizeWithByes(bracket.size)
+    effectiveBracketSize = bracketSize
+    matchupSeeds = generateMatchupsWithByes(bracket.size)
+  } else {
+    matchupSeeds = generateMatchups(bracket.size)
+  }
 
   await prisma.$transaction(async (tx) => {
     // 1. Delete existing matchups (must delete before entrants due to FK)
@@ -294,6 +381,14 @@ export async function updateBracketEntrantsDAL(
 
     // 2. Delete existing entrants
     await tx.bracketEntrant.deleteMany({ where: { bracketId } })
+
+    // 2b. Update maxEntrants if byes needed
+    if (effectiveBracketSize !== null) {
+      await tx.bracket.update({
+        where: { id: bracketId },
+        data: { maxEntrants: effectiveBracketSize },
+      })
+    }
 
     // 3. Create new entrants and build seed -> id map
     const entrantIdBySeed = new Map<number, string>()
@@ -308,7 +403,7 @@ export async function updateBracketEntrantsDAL(
       entrantIdBySeed.set(entrant.seedPosition, record.id)
     }
 
-    // 4. Create new matchups and wire nextMatchupId
+    // 4. Create new matchups, wire nextMatchupId, and auto-advance byes
     await createMatchupsInTransaction(tx, bracketId, matchupSeeds, entrantIdBySeed)
   })
 
