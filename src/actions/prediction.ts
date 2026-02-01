@@ -5,6 +5,7 @@ import {
   submitPredictions,
   getParticipantPredictions,
   scoreBracketPredictions,
+  getAllMatchupPredictionStats,
   updatePredictionStatusDAL,
 } from '@/lib/dal/prediction'
 import { canUseBracketType } from '@/lib/gates/features'
@@ -113,6 +114,27 @@ export async function getLeaderboard(bracketId: string) {
     return { scores }
   } catch {
     return { error: 'Failed to get leaderboard' }
+  }
+}
+
+/**
+ * Get prediction stats for all resolved matchups in a bracket.
+ *
+ * Returns per-matchup prediction distribution (how many predicted each entrant).
+ * Only includes resolved matchups -- prediction data is hidden until resolution.
+ */
+export async function getMatchupStats(bracketId: string) {
+  const idSchema = z.string().uuid()
+  const parsed = idSchema.safeParse(bracketId)
+  if (!parsed.success) {
+    return { error: 'Invalid bracket ID' }
+  }
+
+  try {
+    const stats = await getAllMatchupPredictionStats(bracketId)
+    return { stats }
+  } catch {
+    return { error: 'Failed to get matchup stats' }
   }
 }
 

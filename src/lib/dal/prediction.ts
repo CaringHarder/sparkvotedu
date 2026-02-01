@@ -242,6 +242,101 @@ export async function getMatchupPredictionStats(
 }
 
 /**
+ * Get prediction stats for all resolved matchups in a bracket.
+ *
+ * Returns a Record keyed by matchupId with prediction distribution per entrant.
+ * Only includes resolved (decided) matchups -- prediction distributions are hidden until resolution.
+ */
+export async function getAllMatchupPredictionStats(
+  bracketId: string
+): Promise<
+  Record<
+    string,
+    {
+      entrant1Id: string | null
+      entrant2Id: string | null
+      entrant1Name: string | null
+      entrant2Name: string | null
+      winnerId: string | null
+      entrant1Predictions: number
+      entrant2Predictions: number
+      totalPredictions: number
+    }
+  >
+> {
+  // Fetch all resolved matchups
+  const resolvedMatchups = await prisma.matchup.findMany({
+    where: {
+      bracketId,
+      status: 'decided',
+      winnerId: { not: null },
+      isBye: false,
+    },
+    select: {
+      id: true,
+      entrant1Id: true,
+      entrant2Id: true,
+      winnerId: true,
+      entrant1: { select: { name: true } },
+      entrant2: { select: { name: true } },
+    },
+  })
+
+  if (resolvedMatchups.length === 0) return {}
+
+  // Fetch all predictions for resolved matchups in one query
+  const matchupIds = resolvedMatchups.map((m) => m.id)
+  const predictions = await prisma.prediction.groupBy({
+    by: ['matchupId', 'predictedWinnerId'],
+    where: { bracketId, matchupId: { in: matchupIds } },
+    _count: { id: true },
+  })
+
+  // Build prediction count map: matchupId -> predictedWinnerId -> count
+  const countMap = new Map<string, Map<string, number>>()
+  for (const group of predictions) {
+    if (!countMap.has(group.matchupId)) {
+      countMap.set(group.matchupId, new Map())
+    }
+    countMap.get(group.matchupId)!.set(group.predictedWinnerId, group._count.id)
+  }
+
+  // Build result
+  const result: Record<
+    string,
+    {
+      entrant1Id: string | null
+      entrant2Id: string | null
+      entrant1Name: string | null
+      entrant2Name: string | null
+      winnerId: string | null
+      entrant1Predictions: number
+      entrant2Predictions: number
+      totalPredictions: number
+    }
+  > = {}
+
+  for (const matchup of resolvedMatchups) {
+    const counts = countMap.get(matchup.id) ?? new Map()
+    const e1Count = matchup.entrant1Id ? (counts.get(matchup.entrant1Id) ?? 0) : 0
+    const e2Count = matchup.entrant2Id ? (counts.get(matchup.entrant2Id) ?? 0) : 0
+
+    result[matchup.id] = {
+      entrant1Id: matchup.entrant1Id,
+      entrant2Id: matchup.entrant2Id,
+      entrant1Name: matchup.entrant1?.name ?? null,
+      entrant2Name: matchup.entrant2?.name ?? null,
+      winnerId: matchup.winnerId,
+      entrant1Predictions: e1Count,
+      entrant2Predictions: e2Count,
+      totalPredictions: e1Count + e2Count,
+    }
+  }
+
+  return result
+}
+
+/**
  * Valid prediction status transitions.
  *
  * - draft -> predictions_open (teacher opens predictions)
