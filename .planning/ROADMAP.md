@@ -16,7 +16,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 2: Student Join Flow** - Anonymous student participation via class codes with device fingerprinting and fun names
 - [x] **Phase 3: Bracket Creation & Management** - Teachers create, edit, and manage single-elimination brackets with entrant tools
 - [x] **Phase 4: Voting & Real-Time** - Students vote on matchups with live updating dashboard and real-time bracket state
-- [x] **Phase 5: Polls** - Simple and ranked polls with real-time results display
+- [ ] **Phase 5: Polls** - Simple and ranked polls with real-time results display
 - [ ] **Phase 6: Billing & Subscriptions** - Stripe integration, tier enforcement, and upgrade prompts
 - [ ] **Phase 7: Advanced Brackets** - Double-elimination, round-robin, predictive brackets, and non-power-of-two support
 - [ ] **Phase 8: Sports Integration** - Real sports tournament brackets from external APIs for classroom prediction competitions
@@ -114,7 +114,7 @@ Plans:
   2. Teacher can create a ranked poll where students order options by preference, with aggregated rankings displayed (Borda count or instant-runoff)
   3. Teacher can set a poll to draft, active, or closed and delete polls they no longer need
   4. Poll results update in real time as students submit their votes (no page refresh needed)
-**Plans**: 9 plans
+**Plans**: 10 plans
 
 Plans:
 - [x] 05-01-PLAN.md — Schema, types, validation, Borda count algorithm
@@ -126,6 +126,7 @@ Plans:
 - [x] 05-07-PLAN.md — Gap closure: fix update button hang + polls 404 page
 - [x] 05-08-PLAN.md — Gap closure: session assignment UI for polls
 - [x] 05-09-PLAN.md — Gap closure: fix winner reveal race condition + vote retabulation
+- [ ] 05-10-PLAN.md — Gap closure: student poll page winner reveal on poll close
 
 ### Phase 6: Billing & Subscriptions
 **Goal**: Teachers can subscribe to Pro or Pro Plus tiers via Stripe, with features gated and upgrade prompts shown for locked capabilities
@@ -232,7 +233,7 @@ Note: Phase 3 depends only on Phase 1 (not Phase 2), so Phases 2 and 3 could the
 | 2. Student Join Flow | 6/6 | Complete | 2026-01-29 |
 | 3. Bracket Creation & Management | 7/7 | Complete | 2026-01-30 |
 | 4. Voting & Real-Time | 6/6 | Complete | 2026-01-31 |
-| 5. Polls | 9/9 | Complete | 2026-01-31 |
+| 5. Polls | 9/10 | In progress | - |
 | 6. Billing & Subscriptions | 0/5 | Not started | - |
 | 7. Advanced Brackets | 0/6 | Not started | - |
 | 8. Sports Integration | 0/5 | Not started | - |
