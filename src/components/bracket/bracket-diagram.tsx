@@ -2,6 +2,7 @@
 
 import { useMemo } from 'react'
 import type { MatchupData, BracketEntrantData } from '@/lib/bracket/types'
+import { BracketZoomWrapper } from '@/components/bracket/bracket-zoom-wrapper'
 
 // --- Layout constants ---
 const MATCH_WIDTH = 160
@@ -20,6 +21,8 @@ interface BracketDiagramProps {
   matchups: MatchupData[]
   totalRounds: number
   className?: string
+  /** Actual entrant count (used to determine if zoom wrapper is needed for 32+ brackets) */
+  bracketSize?: number
   /** When provided, entrant halves in "voting" matchups become clickable */
   onEntrantClick?: (matchupId: string, entrantId: string) => void
   /** Set of matchup IDs the student has already voted in */
@@ -117,22 +120,51 @@ function MatchupBox({
   onMatchupClick?: (matchupId: string) => void
   isSelected?: boolean
 }) {
-  const entrant1Name = getEntrantName(matchup.entrant1)
-  const entrant2Name = getEntrantName(matchup.entrant2)
+  const isByeMatchup = matchup.isBye === true
+  // For bye matchups: show "BYE" for the null slot, real entrant name for the other
+  const isBye1 = isByeMatchup && matchup.entrant1 == null
+  const isBye2 = isByeMatchup && matchup.entrant2 == null
+  const entrant1Name = isBye1 ? 'BYE' : getEntrantName(matchup.entrant1)
+  const entrant2Name = isBye2 ? 'BYE' : getEntrantName(matchup.entrant2)
   const isEntrant1Winner = matchup.winnerId != null && matchup.winnerId === matchup.entrant1Id
   const isEntrant2Winner = matchup.winnerId != null && matchup.winnerId === matchup.entrant2Id
-  const isTBD1 = matchup.entrant1 == null
-  const isTBD2 = matchup.entrant2 == null
+  const isTBD1 = !isBye1 && matchup.entrant1 == null
+  const isTBD2 = !isBye2 && matchup.entrant2 == null
 
   const isVoting = matchup.status === 'voting'
-  const isClickable = isVoting && onEntrantClick
+  const isClickable = isVoting && onEntrantClick && !isByeMatchup
   const voted1 = votedEntrantId === matchup.entrant1Id
   const voted2 = votedEntrantId === matchup.entrant2Id
 
   return (
     <g>
+      {/* BYE slot background for top half */}
+      {isBye1 && (
+        <rect
+          x={x + 1}
+          y={y + 1}
+          width={MATCH_WIDTH - 2}
+          height={MATCH_HEIGHT / 2 - 1}
+          rx={6}
+          ry={6}
+          style={{ fill: 'var(--muted)' }}
+        />
+      )}
+      {/* BYE slot background for bottom half */}
+      {isBye2 && (
+        <rect
+          x={x + 1}
+          y={y + MATCH_HEIGHT / 2}
+          width={MATCH_WIDTH - 2}
+          height={MATCH_HEIGHT / 2 - 1}
+          rx={6}
+          ry={6}
+          style={{ fill: 'var(--muted)' }}
+        />
+      )}
+
       {/* Winner highlight background for top half */}
-      {isEntrant1Winner && (
+      {isEntrant1Winner && !isBye1 && (
         <rect
           x={x + 1}
           y={y + 1}
@@ -144,7 +176,7 @@ function MatchupBox({
         />
       )}
       {/* Winner highlight background for bottom half */}
-      {isEntrant2Winner && (
+      {isEntrant2Winner && !isBye2 && (
         <rect
           x={x + 1}
           y={y + MATCH_HEIGHT / 2}
@@ -254,15 +286,17 @@ function MatchupBox({
         x={x + 8}
         y={y + 19}
         style={{
-          fill: isTBD1
+          fill: isBye1
             ? 'var(--muted-foreground)'
-            : voted1
-              ? 'var(--primary)'
-              : 'var(--foreground)',
+            : isTBD1
+              ? 'var(--muted-foreground)'
+              : voted1
+                ? 'var(--primary)'
+                : 'var(--foreground)',
           fontSize: 11,
           fontFamily: 'inherit',
-          fontWeight: isEntrant1Winner || voted1 ? 700 : 400,
-          fontStyle: isTBD1 ? 'italic' : 'normal',
+          fontWeight: isEntrant1Winner || voted1 ? 700 : isBye1 ? 400 : 400,
+          fontStyle: isTBD1 || isBye1 ? 'italic' : 'normal',
           pointerEvents: 'none',
         }}
       >
@@ -319,15 +353,17 @@ function MatchupBox({
         x={x + 8}
         y={y + 44}
         style={{
-          fill: isTBD2
+          fill: isBye2
             ? 'var(--muted-foreground)'
-            : voted2
-              ? 'var(--primary)'
-              : 'var(--foreground)',
+            : isTBD2
+              ? 'var(--muted-foreground)'
+              : voted2
+                ? 'var(--primary)'
+                : 'var(--foreground)',
           fontSize: 11,
           fontFamily: 'inherit',
-          fontWeight: isEntrant2Winner || voted2 ? 700 : 400,
-          fontStyle: isTBD2 ? 'italic' : 'normal',
+          fontWeight: isEntrant2Winner || voted2 ? 700 : isBye2 ? 400 : 400,
+          fontStyle: isTBD2 || isBye2 ? 'italic' : 'normal',
           pointerEvents: 'none',
         }}
       >
@@ -356,7 +392,7 @@ function MatchupBox({
 }
 
 // --- Main BracketDiagram component ---
-export function BracketDiagram({ matchups, totalRounds, className, onEntrantClick, votedEntrantIds, voteLabels, onMatchupClick, selectedMatchupId }: BracketDiagramProps) {
+export function BracketDiagram({ matchups, totalRounds, className, bracketSize, onEntrantClick, votedEntrantIds, voteLabels, onMatchupClick, selectedMatchupId }: BracketDiagramProps) {
   const roundLabels = useMemo(() => getRoundLabels(totalRounds), [totalRounds])
 
   // Pre-compute positions for all matchups
@@ -385,7 +421,11 @@ export function BracketDiagram({ matchups, totalRounds, className, onEntrantClic
     round1Matches * MATCH_HEIGHT +
     (round1Matches - 1) * MATCH_V_GAP
 
-  return (
+  // Determine effective size for zoom wrapper (use maxEntrants bracket size if available)
+  const effectiveSize = bracketSize ?? Math.pow(2, totalRounds)
+  const needsZoom = effectiveSize >= 32
+
+  const svgContent = (
     <div className={className ?? ''} style={{ width: '100%' }}>
       <svg
         viewBox={`0 0 ${svgWidth} ${svgHeight}`}
@@ -422,6 +462,7 @@ export function BracketDiagram({ matchups, totalRounds, className, onEntrantClic
           const next = matchupById.get(matchup.nextMatchupId)
           if (!next) return null
 
+          const isByeConnector = matchup.isBye === true
           const path = getConnectorPath(pos, next.pos)
           return (
             <path
@@ -431,6 +472,8 @@ export function BracketDiagram({ matchups, totalRounds, className, onEntrantClic
                 stroke: 'var(--border)',
                 strokeWidth: 1.5,
                 fill: 'none',
+                opacity: isByeConnector ? 0.4 : 1,
+                strokeDasharray: isByeConnector ? '4 3' : undefined,
               }}
             />
           )
@@ -453,4 +496,16 @@ export function BracketDiagram({ matchups, totalRounds, className, onEntrantClic
       </svg>
     </div>
   )
+
+  if (needsZoom) {
+    return (
+      <BracketZoomWrapper
+        options={effectiveSize >= 64 ? { initialScale: 0.75 } : undefined}
+      >
+        {svgContent}
+      </BracketZoomWrapper>
+    )
+  }
+
+  return svgContent
 }
