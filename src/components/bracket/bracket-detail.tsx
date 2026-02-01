@@ -136,6 +136,7 @@ export function BracketDetail({ bracket, totalRounds, sessions, standings = [], 
             bracketId={bracket.id}
             status={bracket.status}
             bracketName={bracket.name}
+            bracketType={bracket.bracketType}
           />
         </div>
       </div>

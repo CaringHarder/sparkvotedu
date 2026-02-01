@@ -30,12 +30,14 @@ interface LifecycleControlsProps {
   bracketId: string
   status: string
   bracketName: string
+  bracketType?: string
 }
 
 export function BracketLifecycleControls({
   bracketId,
   status,
   bracketName,
+  bracketType,
 }: LifecycleControlsProps) {
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
@@ -70,7 +72,7 @@ export function BracketLifecycleControls({
   return (
     <div className="flex flex-col gap-2">
       <div className="flex items-center gap-2">
-        {status === 'draft' && (
+        {status === 'draft' && bracketType !== 'predictive' && (
           <button
             onClick={() => handleStatusChange('active')}
             disabled={isPending}
