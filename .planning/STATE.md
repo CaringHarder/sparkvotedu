@@ -10,17 +10,17 @@ See: .planning/PROJECT.md (updated 2026-01-28)
 ## Current Position
 
 Phase: 7 of 10 (Advanced Brackets)
-Plan: 11 of 13 in current phase
+Plan: 12 of 13 in current phase
 Status: In progress
-Last activity: 2026-02-01 -- Completed 07-09-PLAN.md (Double-Elim Bracket Visualization)
+Last activity: 2026-02-01 -- Completed 07-12-PLAN.md (Predictive Bracket Leaderboard)
 
-Progress: [#########.] 94% (50/53 plans)
+Progress: [#########.] 96% (51/53 plans)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 50
-- Average duration: ~4.4 min
+- Total plans completed: 51
+- Average duration: ~4.3 min
 - Total execution time: ~4.1 hours
 
 **By Phase:**
@@ -34,11 +34,11 @@ Progress: [#########.] 94% (50/53 plans)
 | 05-polls | 10/10 | ~26.0m | ~2.6m |
 | 06-billing-and-subscriptions | 5/5 | ~17.0m | ~3.4m |
 
-| 07-advanced-brackets | 11/13 | ~40.7m | ~3.7m |
+| 07-advanced-brackets | 12/13 | ~43.7m | ~3.6m |
 
 **Recent Trend:**
-- Last 5 plans: 07-07 (~4.0m), 07-10 (~4.4m), 07-11 (~5.0m), 07-08 (~6.0m), 07-09 (~3.0m)
-- Trend: 07-09 fast execution -- visualization component with clear patterns from prior BracketDiagram work
+- Last 5 plans: 07-10 (~4.4m), 07-11 (~5.0m), 07-08 (~6.0m), 07-09 (~3.0m), 07-12 (~3.0m)
+- Trend: 07-12 fast execution -- leaderboard component with clear patterns from prior scoring engine + prediction hook
 
 *Updated after each plan completion*
 
@@ -226,6 +226,10 @@ Recent decisions affecting current work:
 - [07-09]: Grand Finals rendered as centered card layout (not SVG bracket) since only 1-2 matchups
 - [07-09]: Overview tab computes entrant status from matchup data (no separate status field needed)
 - [07-09]: BracketZoomWrapper applied per-tab for Winners/Losers when 32+ entrants
+- [07-12]: Bulk getAllMatchupPredictionStats uses single groupBy query with matchupId+predictedWinnerId
+- [07-12]: Gold/silver/bronze rank badges match 05-04 poll leaderboard pattern (amber-400, gray-300, amber-600)
+- [07-12]: Leaderboard renders only when bracket status is active or completed (not during draft/predictions_open)
+- [07-12]: Server-side score prefetch as initialScores prop, with client-side real-time updates via usePredictions
 
 ### Pending Todos
 
@@ -243,5 +247,5 @@ Recent decisions affecting current work:
 ## Session Continuity
 
 Last session: 2026-02-01
-Stopped at: Completed 07-09-PLAN.md (Double-Elim Bracket Visualization) -- Phase 7 plan 11 of 13
+Stopped at: Completed 07-12-PLAN.md (Predictive Bracket Leaderboard) -- Phase 7 plan 12 of 13
 Resume file: None
