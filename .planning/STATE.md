@@ -10,17 +10,17 @@ See: .planning/PROJECT.md (updated 2026-01-28)
 ## Current Position
 
 Phase: 7 of 10 (Advanced Brackets)
-Plan: 1 of 13 in current phase
+Plan: 2 of 13 in current phase
 Status: In progress
-Last activity: 2026-02-01 -- Completed 07-01-PLAN.md (Schema Evolution)
+Last activity: 2026-02-01 -- Completed 07-02-PLAN.md (Bye Placement Algorithm)
 
-Progress: [########..] 75% (40/53 plans)
+Progress: [########..] 77% (41/53 plans)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 40
-- Average duration: ~4.9 min
+- Total plans completed: 41
+- Average duration: ~4.8 min
 - Total execution time: ~3.4 hours
 
 **By Phase:**
@@ -34,11 +34,11 @@ Progress: [########..] 75% (40/53 plans)
 | 05-polls | 10/10 | ~26.0m | ~2.6m |
 | 06-billing-and-subscriptions | 5/5 | ~17.0m | ~3.4m |
 
-| 07-advanced-brackets | 1/13 | ~4.0m | ~4.0m |
+| 07-advanced-brackets | 2/13 | ~6.0m | ~3.0m |
 
 **Recent Trend:**
-- Last 5 plans: 06-03 (~3.0m), 06-04 (~3.0m), 06-05 (~4.0m), 07-01 (~4.0m)
-- Trend: Phase 7 started; schema evolution plan at expected pace
+- Last 5 plans: 06-04 (~3.0m), 06-05 (~4.0m), 07-01 (~4.0m), 07-02 (~2.0m)
+- Trend: TDD plan executed fast; pure function algorithms are efficient
 
 *Updated after each plan completion*
 
@@ -184,6 +184,9 @@ Recent decisions affecting current work:
 - [07-01]: All new Bracket/Matchup fields optional or have defaults -- zero migration risk for existing data
 - [07-01]: bracketTypeSchema uses .default('single_elimination') so existing create flows work unchanged
 - [07-01]: updateEntrantsSchema min lowered from 4 to 3 to match bracketSizeSchema.min(3)
+- [07-02]: Top seeds receive byes by natural seeding order (seed 1 vs bracketSize is first bye)
+- [07-02]: Bye matchups set phantom seed to null and isBye=true; auto-advancement at DB layer not engine
+- [07-02]: generateMatchupsWithByes composes on generateMatchups rather than building separate algorithm
 
 ### Pending Todos
 
@@ -201,5 +204,5 @@ Recent decisions affecting current work:
 ## Session Continuity
 
 Last session: 2026-02-01
-Stopped at: Completed 07-01-PLAN.md (Schema Evolution) -- Phase 7 plan 1 of 13
+Stopped at: Completed 07-02-PLAN.md (Bye Placement Algorithm) -- Phase 7 plan 2 of 13
 Resume file: None
