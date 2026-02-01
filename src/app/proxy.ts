@@ -2,7 +2,7 @@ import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
 const AUTH_PAGES = ['/login', '/signup', '/forgot-password', '/update-password', '/auth']
-const PUBLIC_PAGES = ['/', '/join']
+const PUBLIC_PAGES = ['/', '/join', '/pricing']
 
 function isAuthPage(pathname: string): boolean {
   return AUTH_PAGES.some((page) => pathname === page || pathname.startsWith(`${page}/`))
