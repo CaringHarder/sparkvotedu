@@ -1,5 +1,5 @@
 ---
-status: complete
+status: diagnosed
 phase: 05-polls
 source: [05-01-SUMMARY.md, 05-02-SUMMARY.md, 05-03-SUMMARY.md, 05-04-SUMMARY.md, 05-05-SUMMARY.md, 05-06-SUMMARY.md, 05-07-SUMMARY.md, 05-08-SUMMARY.md]
 started: 2026-01-31T18:50:00Z
@@ -78,7 +78,27 @@ skipped: 0
   reason: "User reported: no animation showed on student or teacher page"
   severity: major
   test: 7
-  root_cause: ""
-  artifacts: []
-  missing: []
-  debug_session: ""
+  root_cause: "Race condition: router.refresh() after updatePollStatus causes page to re-render with status='closed' before real-time broadcast arrives. prevStatusRef initializes to 'closed' so transition from 'active' to 'closed' is never detected."
+  artifacts:
+    - path: "src/components/poll/poll-results.tsx"
+      issue: "Lines 46-59: prevStatusRef initialized to server prop (already 'closed' after refresh), transition detection fails"
+    - path: "src/app/(dashboard)/polls/[pollId]/live/client.tsx"
+      issue: "Line 72: router.refresh() causes premature server-side status update"
+  missing:
+    - "Track closing intent in local state before refresh, use flag to trigger reveal"
+  debug_session: ".planning/debug/poll-winner-reveal-missing.md"
+
+- truth: "Vote counts correctly retabulate when student changes vote"
+  status: failed
+  reason: "User reported: changed votes aren't correctly retabulating on teacher live view (presentation view correct)"
+  severity: major
+  test: 4
+  root_cause: "getSimplePollVoteCounts returns sparse object (only options with votes>0). Real-time batch merge uses spread ({...prev, ...pending}) which preserves stale keys. Options dropping to 0 votes are omitted from broadcast, so old count persists."
+  artifacts:
+    - path: "src/lib/dal/poll.ts"
+      issue: "Lines 332-345: getSimplePollVoteCounts returns only options with votes, omits zero-count options"
+    - path: "src/hooks/use-realtime-poll.ts"
+      issue: "Lines 73-86: Batch merge preserves stale keys not in pending update"
+  missing:
+    - "Return complete vote counts including zeros for all poll options"
+  debug_session: ".planning/debug/poll-winner-reveal-missing.md"
