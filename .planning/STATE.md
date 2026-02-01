@@ -5,22 +5,22 @@
 See: .planning/PROJECT.md (updated 2026-01-28)
 
 **Core value:** Teachers can instantly engage any classroom through voting -- on any topic, in any format -- and see participation happen in real time.
-**Current focus:** Phase 7 gap closure -- Fixing bracket type routing for student page and state API
+**Current focus:** Phase 7 gap closure -- Large bracket timeout fix and predictive lifecycle button conflict resolved
 
 ## Current Position
 
 Phase: 7 of 10 (Advanced Brackets - Gap Closure)
-Plan: 14 of 16 in current phase (gap closure plans 14-16)
+Plan: 16 of 16 in current phase (gap closure plans 14-16; plan 15 remaining)
 Status: In progress (gap closure)
-Last activity: 2026-02-01 -- Completed 07-14-PLAN.md (Bracket Type Routing)
+Last activity: 2026-02-01 -- Completed 07-16-PLAN.md (Large Bracket Timeout + Predictive Lifecycle Fix)
 
-Progress: [##########] 100% (53/55 plans)
+Progress: [##########] 100% (54/55 plans)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 53
-- Average duration: ~4.2 min
+- Total plans completed: 54
+- Average duration: ~4.1 min
 - Total execution time: ~4.1 hours
 
 **By Phase:**
@@ -34,10 +34,10 @@ Progress: [##########] 100% (53/55 plans)
 | 05-polls | 10/10 | ~26.0m | ~2.6m |
 | 06-billing-and-subscriptions | 5/5 | ~17.0m | ~3.4m |
 
-| 07-advanced-brackets | 14/16 | ~48.3m | ~3.5m |
+| 07-advanced-brackets | 15/16 | ~50.3m | ~3.4m |
 
 **Recent Trend:**
-- Last 5 plans: 07-08 (~6.0m), 07-09 (~3.0m), 07-12 (~3.0m), 07-13 (~2.0m), 07-14 (~2.6m)
+- Last 5 plans: 07-09 (~3.0m), 07-12 (~3.0m), 07-13 (~2.0m), 07-14 (~2.6m), 07-16 (~2.0m)
 - Trend: Gap closure plans executing fast -- targeted fixes with clear diagnosis
 
 *Updated after each plan completion*
@@ -235,6 +235,8 @@ Recent decisions affecting current work:
 - [07-13]: Double-elim max of 64 enforced at form level, matching pro tier entrant limit
 - [07-14]: Student RR page passes empty standings array; RoundRobinStandings handles empty gracefully
 - [07-14]: Predictive brackets with predictions_open + draft status enter ready state for student prediction submission
+- [07-16]: 30s transaction timeout for large bracket creation (not batching optimization -- minimal fix)
+- [07-16]: Hide Activate button for predictive brackets; Complete and Delete remain for all types
 
 ### Pending Todos
 
@@ -252,5 +254,5 @@ Recent decisions affecting current work:
 ## Session Continuity
 
 Last session: 2026-02-01
-Stopped at: Completed 07-14-PLAN.md (Bracket Type Routing gap closure) -- Plans 15-16 remaining
+Stopped at: Completed 07-16-PLAN.md (Large Bracket Timeout + Predictive Lifecycle Fix) -- Plan 15 remaining
 Resume file: None
