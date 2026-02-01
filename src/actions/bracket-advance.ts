@@ -4,6 +4,7 @@ import { prisma } from '@/lib/prisma'
 import { getAuthenticatedTeacher } from '@/lib/dal/auth'
 import {
   advanceMatchupWinner,
+  advanceDoubleElimMatchup,
   undoMatchupAdvancement,
   isBracketComplete,
 } from '@/lib/bracket/advancement'
@@ -42,20 +43,26 @@ export async function advanceMatchup(input: unknown) {
     // Verify bracket ownership
     const bracket = await prisma.bracket.findFirst({
       where: { id: bracketId, teacherId: teacher.id },
-      select: { id: true, sessionId: true },
+      select: { id: true, sessionId: true, bracketType: true },
     })
 
     if (!bracket) {
       return { error: 'Bracket not found or not owned by you' }
     }
 
-    // Advance the matchup winner via advancement engine
-    await advanceMatchupWinner(matchupId, winnerId, bracketId)
+    // Route to the correct advancement function based on bracket type
+    let result: { winnerId: string | null; status: string; resetCreated?: boolean }
+    if (bracket.bracketType === 'double_elimination') {
+      result = await advanceDoubleElimMatchup(matchupId, winnerId, bracketId)
+    } else {
+      result = await advanceMatchupWinner(matchupId, winnerId, bracketId)
+    }
 
     // Broadcast winner selection
     broadcastBracketUpdate(bracketId, 'winner_selected', {
       matchupId,
       winnerId,
+      resetCreated: result.resetCreated ?? false,
     }).catch(console.error)
 
     // Check if bracket is now complete
@@ -74,7 +81,7 @@ export async function advanceMatchup(input: unknown) {
     revalidatePath(`/brackets/${bracketId}`)
     revalidatePath(`/brackets/${bracketId}/live`)
 
-    return { success: true }
+    return { success: true, resetCreated: result.resetCreated ?? false }
   } catch {
     return { error: 'Failed to advance matchup' }
   }
