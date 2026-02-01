@@ -10,18 +10,18 @@ See: .planning/PROJECT.md (updated 2026-01-28)
 ## Current Position
 
 Phase: 7 of 10 (Advanced Brackets)
-Plan: 11 of 13 in current phase
+Plan: 10 of 13 in current phase
 Status: In progress
-Last activity: 2026-02-01 -- Completed 07-11-PLAN.md (Predictive Bracket Pipeline)
+Last activity: 2026-02-01 -- Completed 07-08-PLAN.md (Double-Elim DAL & Advancement)
 
-Progress: [#########.] 91% (48/53 plans)
+Progress: [#########.] 92% (49/53 plans)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 48
+- Total plans completed: 49
 - Average duration: ~4.5 min
-- Total execution time: ~3.9 hours
+- Total execution time: ~4.0 hours
 
 **By Phase:**
 
@@ -34,11 +34,11 @@ Progress: [#########.] 91% (48/53 plans)
 | 05-polls | 10/10 | ~26.0m | ~2.6m |
 | 06-billing-and-subscriptions | 5/5 | ~17.0m | ~3.4m |
 
-| 07-advanced-brackets | 9/13 | ~31.7m | ~3.5m |
+| 07-advanced-brackets | 10/13 | ~37.7m | ~3.8m |
 
 **Recent Trend:**
-- Last 5 plans: 07-04 (~3.0m), 07-06 (~4.8m), 07-07 (~4.0m), 07-10 (~4.4m), 07-11 (~5.0m)
-- Trend: Full vertical slice plans (DAL + actions + UI + page integration) average ~4.4m; 07-11 slightly longer due to dual-mode UI
+- Last 5 plans: 07-06 (~4.8m), 07-07 (~4.0m), 07-10 (~4.4m), 07-11 (~5.0m), 07-08 (~6.0m)
+- Trend: 07-08 slightly longer due to complex cross-region advancement logic and round offset design
 
 *Updated after each plan completion*
 
@@ -211,6 +211,12 @@ Recent decisions affecting current work:
 - [07-10]: Matchup position is globally unique within bracket (incrementing across all rounds)
 - [07-10]: Round advancement opens next round by setting pending matchups to voting status
 - [07-10]: Standings fetched server-side on bracket detail page and passed as prop
+- [07-08]: Round offsets for DE unique constraint: WB unmodified, LB offset by wbRounds, GF offset by wbRounds+lbRounds
+- [07-08]: WB R1 losers fill both LB R1 entrant slots (2 per matchup); WB R2+ losers fill entrant2 in LB major rounds
+- [07-08]: LB final -> GF uses explicit entrant2 override (not position parity) for correct WB/LB champion placement
+- [07-08]: Play-in count fixed at 8 extra entrants (4 play-in matches) for NCAA First Four model
+- [07-08]: advanceMatchup server action detects bracketType and routes to correct advancement function
+- [07-08]: Dynamic GF reset match created at runtime when LB champion wins GF match 1 (not pre-created)
 - [07-11]: Delete + createMany for prediction upsert (not individual upserts) -- guarantees clean state on edit
 - [07-11]: Bye matchups filtered at DAL layer (isBye=false) before scoring -- never included in prediction UI or scoring
 - [07-11]: prediction_status_changed added to BracketUpdateType for prediction lifecycle broadcasts
@@ -233,5 +239,5 @@ Recent decisions affecting current work:
 ## Session Continuity
 
 Last session: 2026-02-01
-Stopped at: Completed 07-11-PLAN.md (Predictive Bracket Pipeline) -- Phase 7 plan 11 of 13
+Stopped at: Completed 07-08-PLAN.md (Double-Elim DAL & Advancement) -- Phase 7 plan 10 of 13
 Resume file: None
