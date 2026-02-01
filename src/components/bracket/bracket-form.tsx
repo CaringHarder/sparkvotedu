@@ -106,7 +106,7 @@ export function BracketForm() {
   const [error, setError] = useState<string | null>(null)
 
   // Computed values
-  const maxSize = bracketType === 'round_robin' ? 8 : 128
+  const maxSize = bracketType === 'round_robin' ? 8 : bracketType === 'double_elimination' ? 64 : 128
   const minSize = 3
 
   const byeInfo = useMemo(() => {
@@ -126,7 +126,8 @@ export function BracketForm() {
     (newType: BracketType) => {
       setBracketType(newType)
       // Reset size if it exceeds new type's max
-      if (newType === 'round_robin' && size !== null && size > 8) {
+      const newMax = newType === 'round_robin' ? 8 : newType === 'double_elimination' ? 64 : 128
+      if (size !== null && size > newMax) {
         setSize(null)
         setUseCustomSize(false)
         setCustomSizeInput('')

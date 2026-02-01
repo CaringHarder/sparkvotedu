@@ -14,10 +14,17 @@ interface BracketCardProps {
     description: string | null
     size: number
     status: string
+    bracketType: string
     createdAt: string
     _count?: { entrants: number }
     sessionCode: string | null
   }
+}
+
+const BRACKET_TYPE_LABELS: Record<string, string> = {
+  double_elimination: 'Double Elim',
+  round_robin: 'Round Robin',
+  predictive: 'Predictive',
 }
 
 function formatDate(dateStr: string): string {
@@ -109,7 +116,14 @@ export function BracketCard({ bracket }: BracketCardProps) {
           <h3 className="truncate text-sm font-semibold text-card-foreground group-hover:text-primary">
             {bracket.name}
           </h3>
-          <BracketStatusBadge status={bracket.status} />
+          <div className="flex items-center gap-1.5">
+            {BRACKET_TYPE_LABELS[bracket.bracketType] && (
+              <span className="whitespace-nowrap rounded-full bg-violet-100 px-2 py-0.5 text-[10px] font-medium text-violet-700 dark:bg-violet-900/40 dark:text-violet-300">
+                {BRACKET_TYPE_LABELS[bracket.bracketType]}
+              </span>
+            )}
+            <BracketStatusBadge status={bracket.status} />
+          </div>
         </div>
 
         {bracket.description && (
