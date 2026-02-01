@@ -4,8 +4,13 @@ import {
   generateMatchupsWithByes,
   calculateBracketSizeWithByes,
 } from '@/lib/bracket/byes'
+import {
+  generateDoubleElimMatchups,
+  generatePlayInRound,
+  findR1PositionForSeed,
+} from '@/lib/bracket/double-elim'
 import { createRoundRobinBracketDAL } from '@/lib/dal/round-robin'
-import type { MatchupSeed, MatchupSeedWithBye } from '@/lib/bracket/types'
+import type { MatchupSeed, MatchupSeedWithBye, BracketRegion } from '@/lib/bracket/types'
 
 /**
  * Check whether a number is a power of two using bitwise AND.
@@ -32,24 +37,39 @@ function getSlotForPosition(position: number): 'entrant1Id' | 'entrant2Id' {
  * 4. Auto-advances bye matchups (sets winnerId + status, propagates to next round).
  *
  * Accepts both MatchupSeed and MatchupSeedWithBye -- isBye defaults to false.
+ *
+ * @param extraFields - Optional fields applied to every matchup in this batch
+ *   (e.g., bracketRegion). Per-seed overrides from MatchupSeedWithBye take precedence.
+ * @param roundOffset - Optional offset added to each matchup's round number before
+ *   persisting. Used to avoid unique constraint collisions when storing multiple
+ *   bracket regions (winners, losers, grand_finals) under the same bracketId.
+ *   The nextMatchupPosition round references are also offset.
  */
 async function createMatchupsInTransaction(
   tx: Parameters<Parameters<typeof prisma.$transaction>[0]>[0],
   bracketId: string,
   matchupSeeds: (MatchupSeed | MatchupSeedWithBye)[],
-  entrantIdBySeed: Map<number, string>
+  entrantIdBySeed: Map<number, string>,
+  extraFields?: Record<string, unknown>,
+  roundOffset?: number
 ) {
+  const offset = roundOffset ?? 0
+
   // Step 1: Create all matchup records (no nextMatchupId yet)
   const createdMatchups: { id: string; round: number; position: number }[] = []
 
   for (const seed of matchupSeeds) {
     const isBye = ('isBye' in seed && seed.isBye) ?? false
+    const bracketRegion = ('bracketRegion' in seed && seed.bracketRegion)
+      ? seed.bracketRegion
+      : (extraFields?.bracketRegion ?? null)
     const matchup = await tx.matchup.create({
       data: {
         bracketId,
-        round: seed.round,
+        round: seed.round + offset,
         position: seed.position,
         isBye,
+        bracketRegion: bracketRegion as string | null,
         entrant1Id: seed.entrant1Seed
           ? (entrantIdBySeed.get(seed.entrant1Seed) ?? null)
           : null,
@@ -63,6 +83,7 @@ async function createMatchupsInTransaction(
   }
 
   // Step 2: Build lookup map: "${round}-${position}" -> matchupId
+  // Round values in the map are already offset (from DB)
   const matchupMap = new Map<string, string>()
   for (const m of createdMatchups) {
     matchupMap.set(`${m.round}-${m.position}`, m.id)
@@ -72,8 +93,9 @@ async function createMatchupsInTransaction(
   for (let i = 0; i < matchupSeeds.length; i++) {
     const seed = matchupSeeds[i]
     if (seed.nextMatchupPosition) {
+      const nextRound = seed.nextMatchupPosition.round + offset
       const nextId = matchupMap.get(
-        `${seed.nextMatchupPosition.round}-${seed.nextMatchupPosition.position}`
+        `${nextRound}-${seed.nextMatchupPosition.position}`
       )
       if (nextId) {
         await tx.matchup.update({
@@ -123,6 +145,8 @@ async function createMatchupsInTransaction(
       })
     }
   }
+
+  return createdMatchups
 }
 
 /**
@@ -176,6 +200,11 @@ export async function createBracketDAL(
   // Route round-robin brackets to their dedicated DAL
   if (data.bracketType === 'round_robin') {
     return createRoundRobinBracketDAL(teacherId, data, entrants)
+  }
+
+  // Route double-elimination brackets to dedicated creation logic
+  if (data.bracketType === 'double_elimination') {
+    return createDoubleElimBracketDAL(teacherId, data, entrants)
   }
 
   // Determine if byes are needed and generate appropriate matchup structure
@@ -233,6 +262,221 @@ export async function createBracketDAL(
       matchupSeeds,
       entrantIdBySeed
     )
+
+    return created
+  })
+
+  // Return full bracket with relations
+  return prisma.bracket.findFirst({
+    where: { id: bracket.id, teacherId },
+    include: {
+      entrants: { orderBy: { seedPosition: 'asc' } },
+      matchups: {
+        include: { entrant1: true, entrant2: true, winner: true },
+        orderBy: [{ round: 'asc' }, { position: 'asc' }],
+      },
+    },
+  })
+}
+
+/**
+ * Create a double-elimination bracket with winners, losers, and grand finals regions.
+ *
+ * Structure:
+ * - Winners bracket: standard single-elim structure (with byes if non-power-of-two)
+ * - Losers bracket: alternating minor/major rounds (all entrant slots null, filled during advancement)
+ * - Grand finals: single matchup (both slots null, filled by WB and LB champions)
+ *
+ * Round numbering uses offsets to avoid unique constraint collisions:
+ * - Winners: rounds 1..wbRounds (no offset)
+ * - Losers: rounds (wbRounds+1)..(wbRounds+lbRounds) (offset by wbRounds)
+ * - Grand finals: round (wbRounds+lbRounds+1) (offset by wbRounds+lbRounds)
+ *
+ * Play-in support (playInEnabled=true):
+ * - Adds round 0 matchups for lowest seeds that wire into WB R1
+ * - Play-in matchups have real entrants (not auto-advanced)
+ */
+async function createDoubleElimBracketDAL(
+  teacherId: string,
+  data: {
+    name: string
+    description?: string
+    size: number
+    sessionId?: string
+    bracketType?: string
+    roundRobinPacing?: string
+    roundRobinVotingStyle?: string
+    roundRobinStandingsMode?: string
+    predictiveMode?: string
+    predictiveResolutionMode?: string
+    playInEnabled?: boolean
+  },
+  entrants: { name: string; seedPosition: number }[]
+) {
+  // Determine effective WB size (next power of 2 for byes)
+  const needsByes = !isPowerOfTwo(data.size)
+  const mainBracketSize = needsByes
+    ? Math.pow(2, Math.ceil(Math.log2(data.size)))
+    : data.size
+
+  // Generate the three bracket regions
+  const { winners, losers, grandFinals } = generateDoubleElimMatchups(mainBracketSize)
+
+  // Generate bye-aware WB matchups if needed (replaces plain winners with bye-marked versions)
+  let wbSeeds: (MatchupSeed | MatchupSeedWithBye)[]
+  if (needsByes) {
+    wbSeeds = generateMatchupsWithByes(data.size)
+  } else {
+    wbSeeds = winners
+  }
+
+  // Calculate round offsets for unique constraint compliance
+  const wbRounds = Math.log2(mainBracketSize) // e.g., 3 for 8-team
+  const lbRounds = losers.length > 0
+    ? Math.max(...losers.map((m) => m.round))
+    : 0
+  const losersRoundOffset = wbRounds
+  const gfRoundOffset = wbRounds + lbRounds
+
+  // Handle play-in
+  const playInEnabled = data.playInEnabled ?? false
+  const playInCount = playInEnabled ? 8 : 0 // 8 extra entrants = 4 play-in matches
+  const actualEntrantCount = playInEnabled ? data.size : data.size
+
+  const bracket = await prisma.$transaction(async (tx) => {
+    // 1. Create the bracket record
+    const created = await tx.bracket.create({
+      data: {
+        name: data.name,
+        description: data.description ?? null,
+        size: actualEntrantCount,
+        maxEntrants: mainBracketSize,
+        status: 'draft',
+        teacherId,
+        sessionId: data.sessionId ?? null,
+        bracketType: 'double_elimination',
+        playInEnabled,
+      },
+    })
+
+    // 2. Create all entrant records and build seed -> id map
+    const entrantIdBySeed = new Map<number, string>()
+    for (const entrant of entrants) {
+      const record = await tx.bracketEntrant.create({
+        data: {
+          name: entrant.name,
+          seedPosition: entrant.seedPosition,
+          bracketId: created.id,
+        },
+      })
+      entrantIdBySeed.set(entrant.seedPosition, record.id)
+    }
+
+    // 3a. Create winners bracket matchups (round offset = 0)
+    const wbMatchups = await createMatchupsInTransaction(
+      tx,
+      created.id,
+      wbSeeds,
+      entrantIdBySeed,
+      { bracketRegion: 'winners' as BracketRegion },
+      0
+    )
+
+    // 3b. Create losers bracket matchups (all entrants null, offset by wbRounds)
+    const emptyEntrantMap = new Map<number, string>()
+    const lbMatchups = await createMatchupsInTransaction(
+      tx,
+      created.id,
+      losers,
+      emptyEntrantMap,
+      { bracketRegion: 'losers' as BracketRegion },
+      losersRoundOffset
+    )
+
+    // 3c. Create grand finals matchup (offset by wbRounds + lbRounds)
+    const gfMatchups = await createMatchupsInTransaction(
+      tx,
+      created.id,
+      grandFinals,
+      emptyEntrantMap,
+      { bracketRegion: 'grand_finals' as BracketRegion },
+      gfRoundOffset
+    )
+
+    // 3d. Wire LB final to grand finals
+    // The LB final is the last losers bracket matchup (null nextMatchupPosition)
+    // Find LB matchup with highest round and position 1
+    if (lbMatchups.length > 0 && gfMatchups.length > 0) {
+      const lbFinalDbRound = lbRounds + losersRoundOffset
+      const lbFinal = lbMatchups.find(
+        (m) => m.round === lbFinalDbRound && m.position === 1
+      )
+      if (lbFinal) {
+        await tx.matchup.update({
+          where: { id: lbFinal.id },
+          data: { nextMatchupId: gfMatchups[0].id },
+        })
+      }
+    }
+
+    // 3e. Wire WB final to grand finals
+    // The WB final is the last winners bracket matchup (highest round, position 1)
+    if (wbMatchups.length > 0 && gfMatchups.length > 0) {
+      const wbFinalDbRound = wbRounds
+      const wbFinal = wbMatchups.find(
+        (m) => m.round === wbFinalDbRound && m.position === 1
+      )
+      if (wbFinal) {
+        await tx.matchup.update({
+          where: { id: wbFinal.id },
+          data: { nextMatchupId: gfMatchups[0].id },
+        })
+      }
+    }
+
+    // 3f. Handle play-in rounds if enabled
+    if (playInEnabled && playInCount > 0) {
+      const { playInMatchups, mainBracketSlotsToFill } = generatePlayInRound(
+        mainBracketSize,
+        playInCount
+      )
+
+      // Create play-in matchups at round 0 (no offset needed, round 0 is unique)
+      const playInCreated = await createMatchupsInTransaction(
+        tx,
+        created.id,
+        playInMatchups,
+        entrantIdBySeed,
+        { bracketRegion: 'winners' as BracketRegion },
+        0 // round 0 doesn't collide with WB rounds which start at 1
+      )
+
+      // Wire each play-in matchup to the correct WB R1 matchup
+      for (let i = 0; i < mainBracketSlotsToFill.length; i++) {
+        const { mainBracketSeed } = mainBracketSlotsToFill[i]
+        const r1Info = findR1PositionForSeed(mainBracketSeed, mainBracketSize)
+        if (!r1Info) continue
+
+        // Find the WB R1 matchup at this position (round 1, position = r1Info.position)
+        const targetWbMatchup = wbMatchups.find(
+          (m) => m.round === 1 && m.position === r1Info.position
+        )
+        if (!targetWbMatchup) continue
+
+        // Wire the play-in matchup to the WB R1 matchup
+        await tx.matchup.update({
+          where: { id: playInCreated[i].id },
+          data: { nextMatchupId: targetWbMatchup.id },
+        })
+
+        // Clear the entrant slot that the play-in winner will fill
+        const slotToClear = r1Info.slot === 1 ? 'entrant1Id' : 'entrant2Id'
+        await tx.matchup.update({
+          where: { id: targetWbMatchup.id },
+          data: { [slotToClear]: null },
+        })
+      }
+    }
 
     return created
   })
