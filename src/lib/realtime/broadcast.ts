@@ -83,6 +83,7 @@ type BracketUpdateType =
   | 'matchup_opened'
   | 'bracket_completed'
   | 'voting_opened'
+  | 'prediction_status_changed'
 
 /**
  * Broadcast a bracket state change to a bracket channel.
