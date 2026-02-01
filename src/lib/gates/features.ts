@@ -9,7 +9,7 @@
  *
  * Usage:
  *   const tier = teacher.subscriptionTier; // from database
- *   const result = canAccess(tier, 'analytics');
+ *   const result = canAccess(tier, 'csvExport');
  *   if (!result.allowed) {
  *     // show upgrade prompt with result.reason and result.upgradeTarget
  *   }
@@ -138,6 +138,42 @@ export function canUseEntrantCount(tier: SubscriptionTier, entrantCount: number)
     return {
       allowed: false,
       reason: `Entrant limit is ${limit}. Upgrade to ${upgradeTarget} for more entrants.`,
+      upgradeTarget,
+    };
+  }
+
+  return { allowed: true };
+}
+
+/**
+ * Check if a tier can create another live bracket given the current live count.
+ */
+export function canCreateLiveBracket(tier: SubscriptionTier, currentLiveCount: number): AccessResult {
+  const limit = TIER_LIMITS[tier].maxLiveBrackets;
+
+  if (currentLiveCount >= limit) {
+    const upgradeTarget: SubscriptionTier = tier === 'free' ? 'pro' : 'pro_plus';
+    return {
+      allowed: false,
+      reason: `Live bracket limit reached (${limit}). Complete or archive a bracket, or upgrade to ${upgradeTarget}.`,
+      upgradeTarget,
+    };
+  }
+
+  return { allowed: true };
+}
+
+/**
+ * Check if a tier can create another draft bracket given the current draft count.
+ */
+export function canCreateDraftBracket(tier: SubscriptionTier, currentDraftCount: number): AccessResult {
+  const limit = TIER_LIMITS[tier].maxDraftBrackets;
+
+  if (currentDraftCount >= limit) {
+    const upgradeTarget: SubscriptionTier = tier === 'free' ? 'pro' : 'pro_plus';
+    return {
+      allowed: false,
+      reason: `Draft bracket limit reached (${limit}). Delete a draft or upgrade to ${upgradeTarget}.`,
       upgradeTarget,
     };
   }

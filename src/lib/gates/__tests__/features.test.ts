@@ -1,14 +1,19 @@
 import { describe, it, expect } from 'vitest';
-import { canAccess, canCreateBracket, canUseBracketType, canUseEntrantCount } from '../features';
+import { canAccess, canCreateBracket, canCreateLiveBracket, canCreateDraftBracket, canUseBracketType, canUseEntrantCount } from '../features';
 
 // ─── canAccess() ─────────────────────────────────────────────────────────────
 
 describe('canAccess', () => {
   // Free tier: boolean features that are false
-  it('free tier cannot access analytics', () => {
-    const result = canAccess('free', 'analytics');
+  it('free tier cannot access csvExport', () => {
+    const result = canAccess('free', 'csvExport');
     expect(result.allowed).toBe(false);
     expect(result.upgradeTarget).toBe('pro');
+  });
+
+  it('free tier can access basicAnalytics', () => {
+    const result = canAccess('free', 'basicAnalytics');
+    expect(result.allowed).toBe(true);
   });
 
   it('free tier cannot access sports integration (upgrade target is pro_plus, not pro)', () => {
@@ -29,9 +34,9 @@ describe('canAccess', () => {
     expect(result.upgradeTarget).toBe('pro');
   });
 
-  // Pro tier: has analytics and csvUpload, but not sportsIntegration
-  it('pro tier can access analytics', () => {
-    const result = canAccess('pro', 'analytics');
+  // Pro tier: has csvExport and csvUpload, but not sportsIntegration
+  it('pro tier can access csvExport', () => {
+    const result = canAccess('pro', 'csvExport');
     expect(result.allowed).toBe(true);
     expect(result.upgradeTarget).toBeUndefined();
   });
@@ -58,8 +63,13 @@ describe('canAccess', () => {
     expect(result.allowed).toBe(true);
   });
 
-  it('pro_plus tier can access analytics', () => {
-    const result = canAccess('pro_plus', 'analytics');
+  it('pro_plus tier can access csvExport', () => {
+    const result = canAccess('pro_plus', 'csvExport');
+    expect(result.allowed).toBe(true);
+  });
+
+  it('pro_plus tier can access basicAnalytics', () => {
+    const result = canAccess('pro_plus', 'basicAnalytics');
     expect(result.allowed).toBe(true);
   });
 
@@ -76,8 +86,8 @@ describe('canAccess', () => {
 
   // Reason message includes feature name and target tier
   it('includes descriptive reason when access denied', () => {
-    const result = canAccess('free', 'analytics');
-    expect(result.reason).toContain('analytics');
+    const result = canAccess('free', 'csvExport');
+    expect(result.reason).toContain('csvExport');
     expect(result.reason).toContain('pro');
   });
 });
@@ -251,6 +261,98 @@ describe('canUseEntrantCount', () => {
   it('includes entrant limit in reason when denied', () => {
     const result = canUseEntrantCount('free', 20);
     expect(result.reason).toContain('16');
+    expect(result.reason).toContain('pro');
+  });
+});
+
+// ─── canCreateLiveBracket() ─────────────────────────────────────────────────
+
+describe('canCreateLiveBracket', () => {
+  // Free tier: maxLiveBrackets = 2
+  it('free tier can create live bracket when at 0', () => {
+    const result = canCreateLiveBracket('free', 0);
+    expect(result.allowed).toBe(true);
+  });
+
+  it('free tier can create live bracket when at 1', () => {
+    const result = canCreateLiveBracket('free', 1);
+    expect(result.allowed).toBe(true);
+  });
+
+  it('free tier cannot create 3rd live bracket (at limit of 2)', () => {
+    const result = canCreateLiveBracket('free', 2);
+    expect(result.allowed).toBe(false);
+    expect(result.upgradeTarget).toBe('pro');
+  });
+
+  // Pro tier: maxLiveBrackets = 10
+  it('pro tier can create live bracket when at 9', () => {
+    const result = canCreateLiveBracket('pro', 9);
+    expect(result.allowed).toBe(true);
+  });
+
+  it('pro tier cannot create 11th live bracket (at limit of 10)', () => {
+    const result = canCreateLiveBracket('pro', 10);
+    expect(result.allowed).toBe(false);
+    expect(result.upgradeTarget).toBe('pro_plus');
+  });
+
+  // Pro Plus tier: maxLiveBrackets = Infinity
+  it('pro_plus tier can create live bracket at any count', () => {
+    const result = canCreateLiveBracket('pro_plus', 1000);
+    expect(result.allowed).toBe(true);
+  });
+
+  // Reason message
+  it('includes live bracket limit in reason when denied', () => {
+    const result = canCreateLiveBracket('free', 2);
+    expect(result.reason).toContain('2');
+    expect(result.reason).toContain('pro');
+  });
+});
+
+// ─── canCreateDraftBracket() ────────────────────────────────────────────────
+
+describe('canCreateDraftBracket', () => {
+  // Free tier: maxDraftBrackets = 2
+  it('free tier can create draft bracket when at 0', () => {
+    const result = canCreateDraftBracket('free', 0);
+    expect(result.allowed).toBe(true);
+  });
+
+  it('free tier can create draft bracket when at 1', () => {
+    const result = canCreateDraftBracket('free', 1);
+    expect(result.allowed).toBe(true);
+  });
+
+  it('free tier cannot create 3rd draft bracket (at limit of 2)', () => {
+    const result = canCreateDraftBracket('free', 2);
+    expect(result.allowed).toBe(false);
+    expect(result.upgradeTarget).toBe('pro');
+  });
+
+  // Pro tier: maxDraftBrackets = 15
+  it('pro tier can create draft bracket when at 14', () => {
+    const result = canCreateDraftBracket('pro', 14);
+    expect(result.allowed).toBe(true);
+  });
+
+  it('pro tier cannot create 16th draft bracket (at limit of 15)', () => {
+    const result = canCreateDraftBracket('pro', 15);
+    expect(result.allowed).toBe(false);
+    expect(result.upgradeTarget).toBe('pro_plus');
+  });
+
+  // Pro Plus tier: maxDraftBrackets = Infinity
+  it('pro_plus tier can create draft bracket at any count', () => {
+    const result = canCreateDraftBracket('pro_plus', 1000);
+    expect(result.allowed).toBe(true);
+  });
+
+  // Reason message
+  it('includes draft bracket limit in reason when denied', () => {
+    const result = canCreateDraftBracket('free', 2);
+    expect(result.reason).toContain('2');
     expect(result.reason).toContain('pro');
   });
 });
