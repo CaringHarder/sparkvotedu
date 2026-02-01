@@ -7,6 +7,7 @@ import {
   updateBracketStatusDAL,
   updateBracketEntrantsDAL,
   deleteBracketDAL,
+  getTeacherBracketCounts,
 } from '@/lib/dal/bracket'
 import {
   createBracketSchema,
@@ -15,6 +16,14 @@ import {
   updateEntrantsSchema,
   deleteBracketSchema,
 } from '@/lib/utils/validation'
+import {
+  canCreateBracket,
+  canCreateLiveBracket,
+  canCreateDraftBracket,
+  canUseBracketType,
+  canUseEntrantCount,
+} from '@/lib/gates/features'
+import type { SubscriptionTier } from '@/lib/gates/tiers'
 import { revalidatePath } from 'next/cache'
 import { z } from 'zod'
 
@@ -51,6 +60,35 @@ export async function createBracket(input: unknown) {
     }
   }
 
+  // Feature gate checks (server-side enforcement)
+  const tier = (teacher.subscriptionTier ?? 'free') as SubscriptionTier
+  const counts = await getTeacherBracketCounts(teacher.id)
+
+  // Check total bracket limit
+  const totalCheck = canCreateBracket(tier, counts.total)
+  if (!totalCheck.allowed) {
+    return { error: totalCheck.reason }
+  }
+
+  // Check draft bracket limit (new brackets are always created as draft)
+  const draftCheck = canCreateDraftBracket(tier, counts.draft)
+  if (!draftCheck.allowed) {
+    return { error: draftCheck.reason }
+  }
+
+  // Check bracket type (currently defaults to single_elimination; schema will include bracketType when multi-type UI is added)
+  const bracketType = (bracketData as Record<string, unknown>).bracketType as string | undefined ?? 'single_elimination'
+  const typeCheck = canUseBracketType(tier, bracketType)
+  if (!typeCheck.allowed) {
+    return { error: typeCheck.reason }
+  }
+
+  // Check entrant count
+  const entrantCheck = canUseEntrantCount(tier, bracketData.size)
+  if (!entrantCheck.allowed) {
+    return { error: entrantCheck.reason }
+  }
+
   try {
     const result = await createBracketDAL(teacher.id, bracketData, entrants)
 
@@ -83,6 +121,16 @@ export async function updateBracketStatus(input: unknown) {
     return {
       error: 'Invalid status update data',
       issues: parsed.error.issues,
+    }
+  }
+
+  // Feature gate: check live bracket limit when activating (draft -> active)
+  if (parsed.data.status === 'active') {
+    const tier = (teacher.subscriptionTier ?? 'free') as SubscriptionTier
+    const counts = await getTeacherBracketCounts(teacher.id)
+    const liveCheck = canCreateLiveBracket(tier, counts.live)
+    if (!liveCheck.allowed) {
+      return { error: liveCheck.reason }
     }
   }
 

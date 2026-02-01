@@ -60,6 +60,24 @@ async function createMatchupsInTransaction(
 }
 
 /**
+ * Get bracket counts for a teacher, grouped by status.
+ * Returns { live, draft, total } for feature gate checks.
+ */
+export async function getTeacherBracketCounts(teacherId: string): Promise<{
+  live: number
+  draft: number
+  total: number
+}> {
+  const [live, draft, total] = await Promise.all([
+    prisma.bracket.count({ where: { teacherId, status: 'active' } }),
+    prisma.bracket.count({ where: { teacherId, status: 'draft' } }),
+    prisma.bracket.count({ where: { teacherId } }),
+  ])
+
+  return { live, draft, total }
+}
+
+/**
  * Create a new bracket with entrants and generated matchup structure.
  *
  * Uses the bracket engine to generate matchup seeds, then persists

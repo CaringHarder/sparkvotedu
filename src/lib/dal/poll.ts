@@ -8,6 +8,14 @@ const VALID_POLL_TRANSITIONS: Record<string, string[]> = {
 }
 
 /**
+ * Get total poll count for a teacher.
+ * Used for feature gate checks.
+ */
+export async function getTeacherPollCount(teacherId: string): Promise<number> {
+  return prisma.poll.count({ where: { teacherId } })
+}
+
+/**
  * Create a new poll with options in a single transaction.
  * Follows createBracketDAL pattern: transaction for poll + options.
  */

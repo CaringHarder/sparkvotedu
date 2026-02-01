@@ -106,6 +106,15 @@ export async function updatePoll(input: unknown) {
 
   const { pollId, ...data } = parsed.data
 
+  // Feature gate: check poll type if changing
+  if (data.pollType) {
+    const tier = (teacher.subscriptionTier ?? 'free') as SubscriptionTier
+    const typeCheck = canUsePollType(tier, data.pollType)
+    if (!typeCheck.allowed) {
+      return { error: typeCheck.reason }
+    }
+  }
+
   try {
     const result = await updatePollDAL(pollId, teacher.id, data)
     if (!result) {
