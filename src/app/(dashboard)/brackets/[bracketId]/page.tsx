@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation'
 import { getAuthenticatedTeacher } from '@/lib/dal/auth'
 import { getBracketWithDetails } from '@/lib/dal/bracket'
+import { getRoundRobinStandings } from '@/lib/dal/round-robin'
 import { prisma } from '@/lib/prisma'
 import { BracketDetail } from '@/components/bracket/bracket-detail'
 import type { BracketStatus } from '@/lib/bracket/types'
@@ -22,7 +23,14 @@ export default async function BracketDetailPage({
     redirect('/brackets')
   }
 
-  const totalRounds = Math.log2(bracket.size)
+  // For round-robin, totalRounds is N-1 (even) or N (odd), not log2
+  const isRoundRobin = bracket.bracketType === 'round_robin'
+  const totalRounds = isRoundRobin
+    ? (bracket.size % 2 === 0 ? bracket.size - 1 : bracket.size)
+    : Math.log2(bracket.size)
+
+  // Fetch standings for round-robin brackets
+  const standings = isRoundRobin ? await getRoundRobinStandings(bracket.id) : []
 
   // Fetch teacher's active sessions for session assignment
   const sessions = await prisma.classSession.findMany({
@@ -91,5 +99,5 @@ export default async function BracketDetailPage({
     })),
   }
 
-  return <BracketDetail bracket={serialized} totalRounds={totalRounds} sessions={serializedSessions} />
+  return <BracketDetail bracket={serialized} totalRounds={totalRounds} sessions={serializedSessions} standings={standings} />
 }

@@ -2,11 +2,14 @@
 
 import { useState, useTransition } from 'react'
 import Link from 'next/link'
-import { ArrowLeft, Pencil, Radio, Link2, Unlink, ChevronDown, ChevronUp } from 'lucide-react'
-import type { BracketWithDetails } from '@/lib/bracket/types'
+import { ArrowLeft, Pencil, Radio, Link2, Unlink, ChevronDown, ChevronUp, Play } from 'lucide-react'
+import type { BracketWithDetails, RoundRobinStanding } from '@/lib/bracket/types'
 import { BracketDiagram } from '@/components/bracket/bracket-diagram'
+import { RoundRobinStandings } from '@/components/bracket/round-robin-standings'
+import { RoundRobinMatchups } from '@/components/bracket/round-robin-matchups'
 import { BracketStatusBadge, BracketLifecycleControls } from '@/components/bracket/bracket-status'
 import { assignBracketToSession } from '@/actions/bracket'
+import { recordResult, advanceRound } from '@/actions/round-robin'
 
 interface SessionInfo {
   id: string
@@ -18,13 +21,54 @@ interface BracketDetailProps {
   bracket: BracketWithDetails
   totalRounds: number
   sessions: SessionInfo[]
+  standings?: RoundRobinStanding[]
 }
 
-export function BracketDetail({ bracket, totalRounds, sessions }: BracketDetailProps) {
+export function BracketDetail({ bracket, totalRounds, sessions, standings = [] }: BracketDetailProps) {
   const [isPending, startTransition] = useTransition()
   const [currentSessionId, setCurrentSessionId] = useState<string | null>(bracket.sessionId)
   const [sessionError, setSessionError] = useState<string | null>(null)
   const [showEntrants, setShowEntrants] = useState(false)
+
+  const isRoundRobin = bracket.bracketType === 'round_robin'
+  const pacing = (bracket.roundRobinPacing ?? 'round_by_round') as 'round_by_round' | 'all_at_once'
+  const isLive = bracket.roundRobinStandingsMode === 'live'
+
+  // Determine current round: the first round with non-decided matchups
+  const currentRound = isRoundRobin
+    ? (bracket.matchups.find((m) => m.status !== 'decided')?.roundRobinRound ?? 1)
+    : 1
+
+  // Check if current round has any voting matchups (to show advance button)
+  const currentRoundMatchups = isRoundRobin
+    ? bracket.matchups.filter((m) => m.roundRobinRound === currentRound)
+    : []
+  const currentRoundAllDecided = currentRoundMatchups.length > 0 &&
+    currentRoundMatchups.every((m) => m.status === 'decided')
+  const nextRoundExists = isRoundRobin &&
+    bracket.matchups.some((m) => (m.roundRobinRound ?? 0) > currentRound)
+  const canAdvanceRound = isRoundRobin && pacing === 'round_by_round' &&
+    currentRoundAllDecided && nextRoundExists
+
+  function handleRecordResult(matchupId: string, winnerId: string | null) {
+    startTransition(async () => {
+      await recordResult({
+        bracketId: bracket.id,
+        matchupId,
+        winnerId,
+      })
+    })
+  }
+
+  function handleAdvanceRound() {
+    const nextRound = currentRound + 1
+    startTransition(async () => {
+      await advanceRound({
+        bracketId: bracket.id,
+        roundNumber: nextRound,
+      })
+    })
+  }
 
   function handleSessionAssign(sessionId: string | null) {
     setSessionError(null)
@@ -94,14 +138,59 @@ export function BracketDetail({ bracket, totalRounds, sessions }: BracketDetailP
         <p className="text-sm text-muted-foreground">{bracket.description}</p>
       )}
 
-      {/* Main content: diagram + sidebar */}
+      {/* Main content: diagram/round-robin + sidebar */}
       <div className="flex gap-4">
-        {/* Bracket diagram — takes most of the space */}
-        <div className="min-w-0 flex-1 rounded-lg border p-3">
-          <BracketDiagram
-            matchups={bracket.matchups}
-            totalRounds={totalRounds}
-          />
+        {/* Main content area */}
+        <div className="min-w-0 flex-1 space-y-4">
+          {isRoundRobin ? (
+            <>
+              {/* Standings table */}
+              <div>
+                <h2 className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                  Standings
+                </h2>
+                <RoundRobinStandings
+                  standings={standings}
+                  isLive={isLive}
+                />
+              </div>
+
+              {/* Matchup grid */}
+              <div>
+                <div className="mb-2 flex items-center justify-between">
+                  <h2 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                    Matchups
+                  </h2>
+                  {canAdvanceRound && (
+                    <button
+                      type="button"
+                      onClick={handleAdvanceRound}
+                      disabled={isPending}
+                      className="inline-flex items-center gap-1.5 rounded-md bg-blue-600 px-3 py-1.5 text-xs font-medium text-white shadow-sm transition-colors hover:bg-blue-700 disabled:opacity-50"
+                    >
+                      <Play className="h-3 w-3" />
+                      Open Round {currentRound + 1}
+                    </button>
+                  )}
+                </div>
+                <RoundRobinMatchups
+                  matchups={bracket.matchups}
+                  entrants={bracket.entrants}
+                  currentRound={currentRound}
+                  pacing={pacing}
+                  isTeacher={true}
+                  onRecordResult={handleRecordResult}
+                />
+              </div>
+            </>
+          ) : (
+            <div className="rounded-lg border p-3">
+              <BracketDiagram
+                matchups={bracket.matchups}
+                totalRounds={totalRounds}
+              />
+            </div>
+          )}
         </div>
 
         {/* Compact sidebar for settings */}
