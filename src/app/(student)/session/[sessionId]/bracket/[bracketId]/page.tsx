@@ -5,11 +5,15 @@ import { useParams } from 'next/navigation'
 import Link from 'next/link'
 import { SimpleVotingView } from '@/components/student/simple-voting-view'
 import { AdvancedVotingView } from '@/components/student/advanced-voting-view'
+import { DoubleElimDiagram } from '@/components/bracket/double-elim-diagram'
+import { RoundRobinStandings } from '@/components/bracket/round-robin-standings'
+import { RoundRobinMatchups } from '@/components/bracket/round-robin-matchups'
+import { PredictiveBracket } from '@/components/bracket/predictive-bracket'
 import type { BracketWithDetails, MatchupData, BracketEntrantData } from '@/lib/bracket/types'
 
 /**
  * Bracket state from the /api/brackets/[bracketId]/state endpoint.
- * Matches the shape returned by the existing state API.
+ * Matches the shape returned by the enriched state API.
  */
 interface BracketStateResponse {
   id: string
@@ -18,6 +22,14 @@ interface BracketStateResponse {
   viewingMode: string
   showVoteCounts: boolean
   votingTimerSeconds: number | null
+  bracketType: string
+  predictionStatus: string | null
+  predictiveMode: string | null
+  roundRobinPacing: string | null
+  roundRobinVotingStyle: string | null
+  roundRobinStandingsMode: string | null
+  maxEntrants: number | null
+  playInEnabled: boolean
   matchups: Array<{
     id: string
     round: number
@@ -30,6 +42,10 @@ interface BracketStateResponse {
     entrant2: { id: string; name: string; seedPosition: number } | null
     winner: { id: string; name: string; seedPosition: number } | null
     voteCounts?: Record<string, number>
+    bracketRegion: string | null
+    isBye: boolean
+    roundRobinRound: number | null
+    nextMatchupId: string | null
   }>
   entrants: { id: string; name: string; seedPosition: number }[]
 }
@@ -50,7 +66,11 @@ type PageState =
  * 1. Reads participant identity from localStorage (established Phase 2 pattern)
  * 2. Fetches bracket state from /api/brackets/[bracketId]/state
  * 3. Fetches participant's initial votes from /api/brackets/[bracketId]/votes
- * 4. Routes to SimpleVotingView or AdvancedVotingView based on viewingMode
+ * 4. Routes to correct bracket view based on bracketType:
+ *    - double_elimination: DoubleElimDiagram with Winners/Losers/Grand Finals tabs
+ *    - round_robin: RoundRobinStandings + RoundRobinMatchups grid
+ *    - predictive: PredictiveBracket prediction UI
+ *    - single_elimination: SimpleVotingView or AdvancedVotingView based on viewingMode
  *
  * Handles edge cases: bracket not found, wrong session, draft status, completed bracket.
  */
@@ -99,6 +119,17 @@ export default function StudentBracketVotingPage() {
 
         // Handle bracket status
         if (bracketData.status === 'draft') {
+          // For predictive brackets with predictions_open, show PredictiveBracket
+          // (predictionStatus controls lifecycle separately from bracket status)
+          if (bracketData.bracketType === 'predictive' && bracketData.predictionStatus === 'predictions_open') {
+            setState({
+              type: 'ready',
+              bracket,
+              participantId,
+              initialVotes: {},
+            })
+            return
+          }
           setState({ type: 'draft' })
           return
         }
@@ -210,27 +241,129 @@ export default function StudentBracketVotingPage() {
     )
   }
 
-  // Completed bracket (show read-only bracket)
+  // Completed bracket (show read-only bracket based on type)
   if (state.type === 'completed') {
+    const { bracket } = state
     return (
       <div>
         {backLink}
         <div className="px-4 py-6 text-center">
-          <h1 className="mb-2 text-2xl font-bold">{state.bracket.name}</h1>
+          <h1 className="mb-2 text-2xl font-bold">{bracket.name}</h1>
           <p className="mb-6 text-sm text-muted-foreground">This bracket has been completed!</p>
-          <AdvancedVotingView
-            bracket={state.bracket}
-            participantId=""
-            initialVotes={{}}
+          {bracket.bracketType === 'double_elimination' ? (
+            <DoubleElimDiagram
+              bracket={bracket}
+              entrants={bracket.entrants}
+              matchups={bracket.matchups}
+              isTeacher={false}
+            />
+          ) : bracket.bracketType === 'round_robin' ? (
+            <div className="space-y-4 text-left">
+              <RoundRobinStandings
+                standings={[]}
+                isLive={bracket.roundRobinStandingsMode === 'live'}
+              />
+              <RoundRobinMatchups
+                matchups={bracket.matchups}
+                entrants={bracket.entrants}
+                currentRound={1}
+                pacing={(bracket.roundRobinPacing ?? 'round_by_round') as 'round_by_round' | 'all_at_once'}
+                isTeacher={false}
+              />
+            </div>
+          ) : bracket.bracketType === 'predictive' ? (
+            <PredictiveBracket
+              bracket={bracket}
+              participantId=""
+              isTeacher={false}
+            />
+          ) : (
+            <AdvancedVotingView
+              bracket={bracket}
+              participantId=""
+              initialVotes={{}}
+            />
+          )}
+        </div>
+      </div>
+    )
+  }
+
+  // Ready state: render appropriate view based on bracketType
+  const { bracket, participantId, initialVotes } = state
+
+  // Predictive brackets: show prediction UI when predictions are open, or live bracket otherwise
+  if (bracket.bracketType === 'predictive') {
+    if (bracket.predictionStatus === 'predictions_open') {
+      return (
+        <div>
+          {backLink}
+          <PredictiveBracket
+            bracket={bracket}
+            participantId={participantId}
+            isTeacher={false}
+          />
+        </div>
+      )
+    }
+    // Predictions closed, bracket is active -- show live resolving view
+    return (
+      <div>
+        {backLink}
+        <AdvancedVotingView
+          bracket={bracket}
+          participantId={participantId}
+          initialVotes={initialVotes}
+        />
+      </div>
+    )
+  }
+
+  // Round-robin brackets: standings table + matchup grid
+  if (bracket.bracketType === 'round_robin') {
+    const currentRound = bracket.matchups.find((m) => m.status !== 'decided')?.roundRobinRound ?? 1
+    return (
+      <div>
+        {backLink}
+        <div className="px-4 py-6">
+          <h1 className="mb-4 text-2xl font-bold">{bracket.name}</h1>
+          <div className="space-y-4">
+            <RoundRobinStandings
+              standings={[]}
+              isLive={bracket.roundRobinStandingsMode === 'live'}
+            />
+            <RoundRobinMatchups
+              matchups={bracket.matchups}
+              entrants={bracket.entrants}
+              currentRound={currentRound}
+              pacing={(bracket.roundRobinPacing ?? 'round_by_round') as 'round_by_round' | 'all_at_once'}
+              isTeacher={false}
+            />
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  // Double-elimination brackets: tabbed Winners/Losers/Grand Finals diagram
+  if (bracket.bracketType === 'double_elimination') {
+    return (
+      <div>
+        {backLink}
+        <div className="px-4 py-6">
+          <h1 className="mb-4 text-2xl font-bold">{bracket.name}</h1>
+          <DoubleElimDiagram
+            bracket={bracket}
+            entrants={bracket.entrants}
+            matchups={bracket.matchups}
+            isTeacher={false}
           />
         </div>
       </div>
     )
   }
 
-  // Ready state: render appropriate view based on viewingMode
-  const { bracket, participantId, initialVotes } = state
-
+  // Single-elimination (default): viewingMode routing
   if (bracket.viewingMode === 'simple') {
     return (
       <div>
@@ -261,7 +394,7 @@ export default function StudentBracketVotingPage() {
 
 /**
  * Convert bracket state API response to BracketWithDetails type.
- * Fills in required fields that the state API doesn't return.
+ * Maps enriched API fields to the internal type, with safe fallbacks.
  */
 function toBracketWithDetails(
   data: BracketStateResponse,
@@ -276,10 +409,10 @@ function toBracketWithDetails(
     entrant1Id: m.entrant1Id,
     entrant2Id: m.entrant2Id,
     winnerId: m.winnerId,
-    nextMatchupId: null, // Not needed for student view rendering
-    bracketRegion: null,
-    isBye: false,
-    roundRobinRound: null,
+    nextMatchupId: m.nextMatchupId ?? null,
+    bracketRegion: m.bracketRegion ?? null,
+    isBye: m.isBye ?? false,
+    roundRobinRound: m.roundRobinRound ?? null,
     entrant1: m.entrant1
       ? { ...m.entrant1, bracketId }
       : null,
@@ -303,7 +436,7 @@ function toBracketWithDetails(
     id: data.id,
     name: data.name,
     description: null,
-    bracketType: 'single_elimination',
+    bracketType: data.bracketType ?? 'single_elimination',
     size,
     status: data.status as 'draft' | 'active' | 'completed',
     viewingMode: data.viewingMode,
@@ -311,14 +444,14 @@ function toBracketWithDetails(
     votingTimerSeconds: data.votingTimerSeconds,
     teacherId: '', // Not available from public API (and not needed for student view)
     sessionId: null,
-    predictionStatus: null,
-    roundRobinPacing: null,
-    roundRobinVotingStyle: null,
-    roundRobinStandingsMode: null,
-    predictiveMode: null,
-    predictiveResolutionMode: null,
-    playInEnabled: false,
-    maxEntrants: null,
+    predictionStatus: data.predictionStatus ?? null,
+    roundRobinPacing: data.roundRobinPacing ?? null,
+    roundRobinVotingStyle: data.roundRobinVotingStyle ?? null,
+    roundRobinStandingsMode: data.roundRobinStandingsMode ?? null,
+    predictiveMode: data.predictiveMode ?? null,
+    predictiveResolutionMode: null, // Not in API (teacher-only field)
+    playInEnabled: data.playInEnabled ?? false,
+    maxEntrants: data.maxEntrants ?? null,
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
     entrants,
