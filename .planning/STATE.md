@@ -5,23 +5,23 @@
 See: .planning/PROJECT.md (updated 2026-01-28)
 
 **Core value:** Teachers can instantly engage any classroom through voting -- on any topic, in any format -- and see participation happen in real time.
-**Current focus:** Phase 6 in progress -- Pricing pages, billing management, and dashboard integration complete (06-03, 06-04)
+**Current focus:** Phase 6 complete -- All billing infrastructure, UI, and server-side feature gating done
 
 ## Current Position
 
 Phase: 6 of 10 (Billing & Subscriptions)
-Plan: 4 of 5 in current phase (06-01, 06-02, 06-03, 06-04 complete)
-Status: In progress
-Last activity: 2026-02-01 -- Completed 06-03-PLAN.md (Pricing Page UI & Billing Management)
+Plan: 5 of 5 in current phase (all complete)
+Status: Phase complete
+Last activity: 2026-02-01 -- Completed 06-05-PLAN.md (Server-Side Feature Gating)
 
-Progress: [########..] 74% (39/53 plans)
+Progress: [########..] 75% (39/53 plans)
 
 ## Performance Metrics
 
 **Velocity:**
 - Total plans completed: 39
 - Average duration: ~4.9 min
-- Total execution time: ~3.25 hours
+- Total execution time: ~3.3 hours
 
 **By Phase:**
 
@@ -32,11 +32,11 @@ Progress: [########..] 74% (39/53 plans)
 | 03-bracket-creation-management | 7/7 | ~15.8m | ~2.3m |
 | 04-voting-and-real-time | 6/6 | ~45.6m | ~7.6m |
 | 05-polls | 10/10 | ~26.0m | ~2.6m |
-| 06-billing-and-subscriptions | 4/5 | ~13.0m | ~3.25m |
+| 06-billing-and-subscriptions | 5/5 | ~17.0m | ~3.4m |
 
 **Recent Trend:**
-- Last 5 plans: 06-01 (~5.0m), 06-02 (~2.0m), 06-03 (~3.0m), 06-04 (~3.0m)
-- Trend: Phase 6 maintaining consistent ~3min pace for component and integration plans
+- Last 5 plans: 06-02 (~2.0m), 06-03 (~3.0m), 06-04 (~3.0m), 06-05 (~4.0m)
+- Trend: Phase 6 complete at consistent ~3.4min pace
 
 *Updated after each plan completion*
 
@@ -174,6 +174,10 @@ Recent decisions affecting current work:
 - [06-04]: TIER_ORDER index comparison as safety guard in UpgradePrompt to prevent showing when user has access
 - [06-04]: Welcome page reads Stripe Checkout Session directly to avoid webhook race condition
 - [06-04]: Parallel Promise.all for sessions + billing overview in dashboard shell
+- [06-05]: Split analytics into basicAnalytics (true for all) and csvExport (false for free) to reconcile BILL-01/BILL-02
+- [06-05]: Bracket type gate uses safe fallback to single_elimination since schema does not yet include bracketType field
+- [06-05]: New brackets always created as draft; createBracket checks draft limit, updateBracketStatus checks live limit on activation
+- [06-05]: Gate-before-mutation pattern: all server actions check tier limits before any prisma call
 
 ### Pending Todos
 
@@ -191,5 +195,5 @@ Recent decisions affecting current work:
 ## Session Continuity
 
 Last session: 2026-02-01
-Stopped at: Completed 06-03-PLAN.md (Pricing Page UI & Billing Management)
+Stopped at: Completed 06-05-PLAN.md (Server-Side Feature Gating) -- Phase 6 complete
 Resume file: None
