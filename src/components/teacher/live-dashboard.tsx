@@ -4,12 +4,16 @@ import { useState, useMemo, useCallback, useEffect, useRef, useTransition } from
 import { useRealtimeBracket } from '@/hooks/use-realtime-bracket'
 import { useSessionPresence } from '@/hooks/use-student-session'
 import { BracketDiagram } from '@/components/bracket/bracket-diagram'
+import { DoubleElimDiagram } from '@/components/bracket/double-elim-diagram'
+import { RoundRobinStandings } from '@/components/bracket/round-robin-standings'
+import { RoundRobinMatchups } from '@/components/bracket/round-robin-matchups'
 import { WinnerReveal } from '@/components/bracket/winner-reveal'
 import { CelebrationScreen } from '@/components/bracket/celebration-screen'
 import { ParticipationSidebar } from '@/components/teacher/participation-sidebar'
 import { QRCodeDisplay } from '@/components/teacher/qr-code-display'
 import { openMatchupsForVoting, advanceMatchup, batchAdvanceRound } from '@/actions/bracket-advance'
-import type { BracketWithDetails, MatchupData } from '@/lib/bracket/types'
+import { recordResult, advanceRound } from '@/actions/round-robin'
+import type { BracketWithDetails, MatchupData, RoundRobinStanding } from '@/lib/bracket/types'
 import type { VoteCounts } from '@/types/vote'
 
 interface LiveDashboardProps {
@@ -19,6 +23,7 @@ interface LiveDashboardProps {
   initialVoteCounts: Record<string, VoteCounts>
   initialVoterIds: Record<string, string[]>
   sessionCode?: string | null
+  standings?: RoundRobinStanding[]
 }
 
 interface RevealState {
@@ -36,6 +41,7 @@ export function LiveDashboard({
   initialVoteCounts,
   initialVoterIds,
   sessionCode,
+  standings = [],
 }: LiveDashboardProps) {
   const [selectedMatchupId, setSelectedMatchupId] = useState<string | null>(null)
   const [sidebarOpen, setSidebarOpen] = useState(true)
@@ -43,6 +49,11 @@ export function LiveDashboard({
   const [showCelebration, setShowCelebration] = useState(false)
   const [isPending, startTransition] = useTransition()
   const [error, setError] = useState<string | null>(null)
+
+  // Bracket type detection
+  const isDoubleElim = bracket.bracketType === 'double_elimination'
+  const isRoundRobin = bracket.bracketType === 'round_robin'
+  const isPredictive = bracket.bracketType === 'predictive'
 
   // Track previous matchup statuses for detecting newly decided matchups
   const prevMatchupStatusRef = useRef<Record<string, string>>({})
@@ -241,6 +252,47 @@ export function LiveDashboard({
     })
   }, [bracket.id, currentRound])
 
+  // Round-robin: current round, advance logic, and handlers
+  const currentRoundRobinRound = useMemo(() => {
+    if (!isRoundRobin) return 1
+    const rrMatchup = currentMatchups.find((m) => m.status !== 'decided' && m.roundRobinRound != null)
+    return rrMatchup?.roundRobinRound ?? 1
+  }, [isRoundRobin, currentMatchups])
+
+  const canAdvanceRoundRobin = useMemo(() => {
+    if (!isRoundRobin) return false
+    const pacing = (bracket.roundRobinPacing ?? 'round_by_round') as 'round_by_round' | 'all_at_once'
+    if (pacing !== 'round_by_round') return false
+    const currentRoundMatchups = currentMatchups.filter((m) => m.roundRobinRound === currentRoundRobinRound)
+    const allDecided = currentRoundMatchups.length > 0 && currentRoundMatchups.every((m) => m.status === 'decided')
+    const nextRoundExists = currentMatchups.some((m) => (m.roundRobinRound ?? 0) > currentRoundRobinRound)
+    return allDecided && nextRoundExists
+  }, [isRoundRobin, currentMatchups, currentRoundRobinRound, bracket.roundRobinPacing])
+
+  const handleRecordRoundRobinResult = useCallback((matchupId: string, winnerId: string | null) => {
+    setError(null)
+    startTransition(async () => {
+      const result = await recordResult({
+        bracketId: bracket.id,
+        matchupId,
+        winnerId,
+      })
+      if (result && 'error' in result) setError(result.error as string)
+    })
+  }, [bracket.id])
+
+  const handleAdvanceRoundRobin = useCallback(() => {
+    setError(null)
+    const nextRound = currentRoundRobinRound + 1
+    startTransition(async () => {
+      const result = await advanceRound({
+        bracketId: bracket.id,
+        roundNumber: nextRound,
+      })
+      if (result && 'error' in result) setError(result.error as string)
+    })
+  }, [bracket.id, currentRoundRobinRound])
+
   // Click matchup in diagram to select it for per-matchup actions
   const handleMatchupClick = useCallback((matchupId: string) => {
     setSelectedMatchupId((prev) => (prev === matchupId ? null : matchupId))
@@ -302,34 +354,43 @@ export function LiveDashboard({
           LIVE
         </span>
 
-        {/* Round tabs */}
-        <div className="flex gap-1">
-          {Array.from({ length: totalRounds }, (_, i) => i + 1).map((round) => {
-            const s = roundStatus[round]
-            const isActive = round === currentRound
-            const isComplete = s && s.decided === s.total && s.total > 0
-            return (
-              <span
-                key={round}
-                className={`rounded px-2 py-0.5 text-xs font-medium ${
-                  isActive
-                    ? 'bg-primary text-primary-foreground'
-                    : isComplete
-                      ? 'bg-green-100 text-green-700'
-                      : 'bg-muted text-muted-foreground'
-                }`}
-              >
-                {getRoundLabel(round)}
-                {isComplete && ' ✓'}
-              </span>
-            )
-          })}
-        </div>
+        {/* Round tabs (SE / DE only) */}
+        {!isRoundRobin && (
+          <div className="flex gap-1">
+            {Array.from({ length: totalRounds }, (_, i) => i + 1).map((round) => {
+              const s = roundStatus[round]
+              const isActive = round === currentRound
+              const isComplete = s && s.decided === s.total && s.total > 0
+              return (
+                <span
+                  key={round}
+                  className={`rounded px-2 py-0.5 text-xs font-medium ${
+                    isActive
+                      ? 'bg-primary text-primary-foreground'
+                      : isComplete
+                        ? 'bg-green-100 text-green-700'
+                        : 'bg-muted text-muted-foreground'
+                  }`}
+                >
+                  {getRoundLabel(round)}
+                  {isComplete && ' ✓'}
+                </span>
+              )
+            })}
+          </div>
+        )}
+
+        {/* Round-robin: current round indicator */}
+        {isRoundRobin && (
+          <span className="rounded px-2 py-0.5 text-xs font-medium bg-primary text-primary-foreground">
+            Round {currentRoundRobinRound}
+          </span>
+        )}
 
         <div className="flex-1" />
 
-        {/* Primary action buttons */}
-        {hasPending && (
+        {/* Primary action buttons (SE / DE) */}
+        {!isRoundRobin && hasPending && (
           <button
             onClick={handleOpenVoting}
             disabled={isPending}
@@ -339,7 +400,7 @@ export function LiveDashboard({
           </button>
         )}
 
-        {hasVoting && (
+        {!isRoundRobin && hasVoting && (
           <button
             onClick={handleCloseAndAdvance}
             disabled={isPending}
@@ -349,7 +410,7 @@ export function LiveDashboard({
           </button>
         )}
 
-        {allRoundDecided && !bracketDone && (
+        {!isRoundRobin && allRoundDecided && !bracketDone && (
           <button
             onClick={handleAdvanceRound}
             disabled={isPending}
@@ -359,9 +420,20 @@ export function LiveDashboard({
           </button>
         )}
 
-        {bracketDone && (
+        {/* Round-robin advance button in top bar */}
+        {isRoundRobin && canAdvanceRoundRobin && (
+          <button
+            onClick={handleAdvanceRoundRobin}
+            disabled={isPending}
+            className="rounded-md bg-blue-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+          >
+            {isPending ? 'Opening...' : `Open Round ${currentRoundRobinRound + 1}`}
+          </button>
+        )}
+
+        {!isRoundRobin && bracketDone && (
           <span className="flex items-center gap-1.5 rounded-md bg-green-50 px-3 py-1.5 text-xs font-semibold text-green-700 dark:bg-green-900/20 dark:text-green-400">
-            🏆 Complete!
+            Complete!
           </span>
         )}
 
@@ -426,15 +498,53 @@ export function LiveDashboard({
 
       {/* Main content: diagram + sidebar */}
       <div className="flex flex-1 gap-3 overflow-hidden">
-        {/* Bracket diagram */}
+        {/* Bracket diagram / type-specific view */}
         <div className="flex-1 overflow-auto rounded-lg border bg-card p-4">
-          <BracketDiagram
-            matchups={currentMatchups}
-            totalRounds={totalRounds}
-            voteLabels={voteLabels}
-            onMatchupClick={handleMatchupClick}
-            selectedMatchupId={selectedMatchupId}
-          />
+          {isDoubleElim ? (
+            <DoubleElimDiagram
+              bracket={bracket}
+              entrants={bracket.entrants}
+              matchups={currentMatchups}
+              isTeacher={true}
+            />
+          ) : isRoundRobin ? (
+            <div className="space-y-6">
+              {/* Standings table */}
+              <div>
+                <h2 className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                  Standings
+                </h2>
+                <RoundRobinStandings
+                  standings={standings}
+                  isLive={bracket.roundRobinStandingsMode === 'live'}
+                />
+              </div>
+
+              {/* Matchup grid */}
+              <div>
+                <h2 className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                  Matchups
+                </h2>
+                <RoundRobinMatchups
+                  matchups={currentMatchups}
+                  entrants={bracket.entrants}
+                  currentRound={currentRoundRobinRound}
+                  pacing={(bracket.roundRobinPacing ?? 'round_by_round') as 'round_by_round' | 'all_at_once'}
+                  isTeacher={true}
+                  onRecordResult={handleRecordRoundRobinResult}
+                />
+              </div>
+            </div>
+          ) : (
+            /* SE and Predictive: standard bracket diagram with vote counts */
+            <BracketDiagram
+              matchups={currentMatchups}
+              totalRounds={totalRounds}
+              voteLabels={voteLabels}
+              onMatchupClick={handleMatchupClick}
+              selectedMatchupId={selectedMatchupId}
+            />
+          )}
         </div>
 
         {/* Participation sidebar */}
