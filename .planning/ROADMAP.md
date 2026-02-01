@@ -18,7 +18,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 4: Voting & Real-Time** - Students vote on matchups with live updating dashboard and real-time bracket state
 - [x] **Phase 5: Polls** - Simple and ranked polls with real-time results display
 - [x] **Phase 6: Billing & Subscriptions** - Stripe integration, tier enforcement, and upgrade prompts
-- [x] **Phase 7: Advanced Brackets** - Double-elimination, round-robin, predictive brackets, and non-power-of-two support
+- [ ] **Phase 7: Advanced Brackets** - Double-elimination, round-robin, predictive brackets, and non-power-of-two support (gap closure in progress)
 - [ ] **Phase 8: Sports Integration** - Real sports tournament brackets from external APIs for classroom prediction competitions
 - [ ] **Phase 9: Analytics** - Participation metrics, vote distribution views, CSV export, and predictive leaderboard scoring
 - [ ] **Phase 10: Landing Page & Polish** - Public landing page, responsive design audit, and interface refinement
@@ -157,7 +157,7 @@ Plans:
   3. Teacher can create a predictive bracket where students submit predictions and a scored leaderboard ranks accuracy
   4. Teacher can create a bracket with a non-power-of-two number of entrants (e.g., 5, 6, 7, 10) and byes are placed automatically and fairly
   5. Predictive bracket leaderboard shows each student's scoring breakdown (points per correct pick by round)
-**Plans**: 13 plans
+**Plans**: 16 plans
 
 Plans:
 - [x] 07-01-PLAN.md — Schema evolution, TypeScript types, and Zod validation for all bracket types
@@ -173,6 +173,9 @@ Plans:
 - [x] 07-11-PLAN.md — Predictive bracket DAL, actions, and prediction submission UI
 - [x] 07-12-PLAN.md — Predictive bracket leaderboard (student + teacher views)
 - [x] 07-13-PLAN.md — Integration verification and end-to-end testing
+- [ ] 07-14-PLAN.md — Gap closure: State API enrichment + student page bracket type routing
+- [ ] 07-15-PLAN.md — Gap closure: LiveDashboard bracket type routing for DE and RR
+- [ ] 07-16-PLAN.md — Gap closure: Large bracket creation timeout + predictive lifecycle controls
 
 ### Phase 8: Sports Integration
 **Goal**: Teachers can browse real sports tournaments, import them as classroom prediction brackets, and results update automatically from live game data
@@ -242,7 +245,7 @@ Note: Phase 3 depends only on Phase 1 (not Phase 2), so Phases 2 and 3 could the
 | 4. Voting & Real-Time | 6/6 | Complete | 2026-01-31 |
 | 5. Polls | 10/10 | Complete | 2026-01-31 |
 | 6. Billing & Subscriptions | 5/5 | Complete | 2026-02-01 |
-| 7. Advanced Brackets | 13/13 | Complete | 2026-02-01 |
+| 7. Advanced Brackets | 13/16 | Gap closure | - |
 | 8. Sports Integration | 0/5 | Not started | - |
 | 9. Analytics | 0/4 | Not started | - |
 | 10. Landing Page & Polish | 0/5 | Not started | - |
