@@ -10,17 +10,17 @@ See: .planning/PROJECT.md (updated 2026-01-28)
 ## Current Position
 
 Phase: 7 of 10 (Advanced Brackets)
-Plan: 3 of 13 in current phase
+Plan: 5 of 13 in current phase
 Status: In progress
-Last activity: 2026-02-01 -- Completed 07-03-PLAN.md (Double-Elimination Bracket Engine)
+Last activity: 2026-02-01 -- Completed 07-05-PLAN.md (Predictive Bracket Scoring Engine)
 
-Progress: [########..] 79% (42/53 plans)
+Progress: [########..] 81% (43/53 plans)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 42
-- Average duration: ~4.7 min
+- Total plans completed: 43
+- Average duration: ~4.6 min
 - Total execution time: ~3.5 hours
 
 **By Phase:**
@@ -34,10 +34,10 @@ Progress: [########..] 79% (42/53 plans)
 | 05-polls | 10/10 | ~26.0m | ~2.6m |
 | 06-billing-and-subscriptions | 5/5 | ~17.0m | ~3.4m |
 
-| 07-advanced-brackets | 3/13 | ~8.5m | ~2.8m |
+| 07-advanced-brackets | 5/13 | ~10.5m | ~2.1m |
 
 **Recent Trend:**
-- Last 5 plans: 06-05 (~4.0m), 07-01 (~4.0m), 07-02 (~2.0m), 07-03 (~2.5m)
+- Last 5 plans: 07-01 (~4.0m), 07-02 (~2.0m), 07-03 (~2.5m), 07-05 (~2.0m)
 - Trend: TDD plans executing fast; pure function algorithms are efficient
 
 *Updated after each plan completion*
@@ -191,6 +191,10 @@ Recent decisions affecting current work:
 - [07-03]: LB final has null nextMatchupPosition; DAL layer wires it to grand finals during persistence
 - [07-03]: Grand finals uses round=1, position=1 with null seeds (filled by WB and LB champions)
 - [07-03]: seedLosersFromWinnersRound uses split-and-reverse for 3+ losers to avoid rematches
+- [07-05]: getPointsForRound takes only round number (no totalRounds) -- standard doubling is round-independent
+- [07-05]: scorePredictions returns empty array (not error) for empty inputs or no resolved matchups
+- [07-05]: participantName set to empty string by engine; DAL fills from DB on read
+- [07-05]: Tiebreaker uses correctPicks descending after totalPoints descending
 
 ### Pending Todos
 
@@ -208,5 +212,5 @@ Recent decisions affecting current work:
 ## Session Continuity
 
 Last session: 2026-02-01
-Stopped at: Completed 07-03-PLAN.md (Double-Elimination Bracket Engine) -- Phase 7 plan 3 of 13
+Stopped at: Completed 07-05-PLAN.md (Predictive Bracket Scoring Engine) -- Phase 7 plan 5 of 13
 Resume file: None
