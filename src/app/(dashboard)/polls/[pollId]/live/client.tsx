@@ -40,6 +40,7 @@ export function PollLiveClient({
   const [error, setError] = useState<string | null>(null)
   const [presenting, setPresenting] = useState(false)
   const [currentStatus, setCurrentStatus] = useState<PollStatus>(poll.status)
+  const [forceReveal, setForceReveal] = useState(false)
 
   // Keyboard shortcut: F key toggles presentation mode
   useEffect(() => {
@@ -69,6 +70,9 @@ export function PollLiveClient({
         setError(result.error as string)
       } else {
         setCurrentStatus(newStatus)
+        if (newStatus === 'closed') {
+          setForceReveal(true)
+        }
         router.refresh()
       }
     })
@@ -80,6 +84,8 @@ export function PollLiveClient({
       initialVoteCounts={initialVoteCounts}
       initialTotalVotes={initialTotalVotes}
       connectedStudents={participantCount}
+      forceReveal={forceReveal}
+      onRevealDismissed={() => setForceReveal(false)}
     />
   )
 

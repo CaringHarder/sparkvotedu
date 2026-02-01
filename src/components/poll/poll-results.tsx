@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect } from 'react'
 import { BarChart3, PieChart } from 'lucide-react'
 import { useRealtimePoll } from '@/hooks/use-realtime-poll'
 import { AnimatedBarChart } from '@/components/poll/bar-chart'
@@ -23,6 +23,8 @@ interface PollResultsProps {
   initialVoteCounts: Record<string, number>
   initialTotalVotes: number
   connectedStudents: number
+  forceReveal?: boolean
+  onRevealDismissed?: () => void
 }
 
 /**
@@ -37,26 +39,26 @@ export function PollResults({
   initialVoteCounts,
   initialTotalVotes,
   connectedStudents,
+  forceReveal,
+  onRevealDismissed,
 }: PollResultsProps) {
   const { voteCounts, totalVotes, pollStatus, bordaScores, transport } =
     useRealtimePoll(poll.id)
 
   const [chartType, setChartType] = useState<ChartType>('bar')
   const [showReveal, setShowReveal] = useState(false)
-  const prevStatusRef = useRef(poll.status)
 
   // Use real-time data if available, fall back to initial
   const liveVoteCounts = Object.keys(voteCounts).length > 0 ? voteCounts : initialVoteCounts
   const liveTotalVotes = totalVotes > 0 ? totalVotes : initialTotalVotes
   const liveStatus = pollStatus !== 'draft' ? pollStatus : poll.status
 
-  // Detect poll close for reveal animation
+  // Trigger reveal from parent's forceReveal prop (eliminates race condition)
   useEffect(() => {
-    if (prevStatusRef.current === 'active' && liveStatus === 'closed') {
+    if (forceReveal) {
       setShowReveal(true)
     }
-    prevStatusRef.current = liveStatus
-  }, [liveStatus])
+  }, [forceReveal])
 
   // Map options to chart data
   const chartData = poll.options.map((opt, i) => ({
@@ -195,7 +197,10 @@ export function PollResults({
       {showReveal && (
         <PollReveal
           winnerText={winnerText}
-          onDismiss={() => setShowReveal(false)}
+          onDismiss={() => {
+            setShowReveal(false)
+            onRevealDismissed?.()
+          }}
         />
       )}
     </div>
