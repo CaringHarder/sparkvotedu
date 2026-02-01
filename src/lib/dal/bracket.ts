@@ -90,6 +90,13 @@ export async function createBracketDAL(
     description?: string
     size: number
     sessionId?: string
+    bracketType?: string
+    roundRobinPacing?: string
+    roundRobinVotingStyle?: string
+    roundRobinStandingsMode?: string
+    predictiveMode?: string
+    predictiveResolutionMode?: string
+    playInEnabled?: boolean
   },
   entrants: { name: string; seedPosition: number }[]
 ) {
@@ -113,6 +120,13 @@ export async function createBracketDAL(
         status: 'draft',
         teacherId,
         sessionId: data.sessionId ?? null,
+        bracketType: data.bracketType ?? 'single_elimination',
+        roundRobinPacing: data.roundRobinPacing ?? null,
+        roundRobinVotingStyle: data.roundRobinVotingStyle ?? null,
+        roundRobinStandingsMode: data.roundRobinStandingsMode ?? null,
+        predictiveMode: data.predictiveMode ?? null,
+        predictiveResolutionMode: data.predictiveResolutionMode ?? null,
+        playInEnabled: data.playInEnabled ?? false,
       },
     })
 

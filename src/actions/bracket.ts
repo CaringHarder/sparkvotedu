@@ -76,9 +76,8 @@ export async function createBracket(input: unknown) {
     return { error: draftCheck.reason }
   }
 
-  // Check bracket type (currently defaults to single_elimination; schema will include bracketType when multi-type UI is added)
-  const bracketType = (bracketData as Record<string, unknown>).bracketType as string | undefined ?? 'single_elimination'
-  const typeCheck = canUseBracketType(tier, bracketType)
+  // Check bracket type gate (server-side enforcement)
+  const typeCheck = canUseBracketType(tier, bracketData.bracketType)
   if (!typeCheck.allowed) {
     return { error: typeCheck.reason }
   }

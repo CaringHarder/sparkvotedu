@@ -1,9 +1,20 @@
 'use client'
 
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import { nanoid } from 'nanoid'
-import { Trophy, Plus, Upload, List, ChevronLeft, ChevronRight, Loader2 } from 'lucide-react'
+import {
+  Trophy,
+  Plus,
+  Upload,
+  List,
+  ChevronLeft,
+  ChevronRight,
+  Loader2,
+  Swords,
+  Grid3X3,
+  Brain,
+} from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -12,7 +23,8 @@ import { EntrantList } from '@/components/bracket/entrant-list'
 import { CSVUpload } from '@/components/bracket/csv-upload'
 import { TopicPicker } from '@/components/bracket/topic-picker'
 import { createBracket } from '@/actions/bracket'
-import type { BracketSize } from '@/lib/bracket/types'
+import { calculateBracketSizeWithByes } from '@/lib/bracket/byes'
+import type { BracketType, RoundRobinPacing, RoundRobinVotingStyle, RoundRobinStandingsMode, PredictiveMode, PredictiveResolutionMode } from '@/lib/bracket/types'
 
 // Entrant with client-side temp ID
 interface FormEntrant {
@@ -23,7 +35,44 @@ interface FormEntrant {
 
 type EntrantTab = 'manual' | 'csv' | 'topics'
 
-const BRACKET_SIZES: BracketSize[] = [4, 8, 16]
+const PRESET_SIZES = [4, 8, 16, 32, 64] as const
+
+// Type card config
+const BRACKET_TYPE_OPTIONS: {
+  value: BracketType
+  label: string
+  description: string
+  icon: typeof Trophy
+  badge?: string
+}[] = [
+  {
+    value: 'single_elimination',
+    label: 'Single Elimination',
+    description: 'Standard tournament bracket',
+    icon: Trophy,
+  },
+  {
+    value: 'double_elimination',
+    label: 'Double Elimination',
+    description: 'Two chances before elimination',
+    icon: Swords,
+    badge: 'Pro+',
+  },
+  {
+    value: 'round_robin',
+    label: 'Round Robin',
+    description: 'Everyone plays everyone',
+    icon: Grid3X3,
+    badge: 'Pro+',
+  },
+  {
+    value: 'predictive',
+    label: 'Predictive',
+    description: 'Students predict outcomes',
+    icon: Brain,
+    badge: 'Pro Plus',
+  },
+]
 
 export function BracketForm() {
   const router = useRouter()
@@ -34,7 +83,18 @@ export function BracketForm() {
   // Step 1: Bracket info
   const [name, setName] = useState('')
   const [description, setDescription] = useState('')
-  const [size, setSize] = useState<BracketSize | null>(null)
+  const [bracketType, setBracketType] = useState<BracketType>('single_elimination')
+  const [size, setSize] = useState<number | null>(null)
+  const [useCustomSize, setUseCustomSize] = useState(false)
+  const [customSizeInput, setCustomSizeInput] = useState('')
+
+  // Type-specific options
+  const [roundRobinPacing, setRoundRobinPacing] = useState<RoundRobinPacing>('round_by_round')
+  const [roundRobinVotingStyle, setRoundRobinVotingStyle] = useState<RoundRobinVotingStyle>('simple')
+  const [roundRobinStandingsMode, setRoundRobinStandingsMode] = useState<RoundRobinStandingsMode>('live')
+  const [predictiveMode, setPredictiveMode] = useState<PredictiveMode>('simple')
+  const [predictiveResolutionMode, setPredictiveResolutionMode] = useState<PredictiveResolutionMode>('manual')
+  const [playInEnabled, setPlayInEnabled] = useState(false)
 
   // Step 2: Entrants
   const [entrants, setEntrants] = useState<FormEntrant[]>([])
@@ -45,12 +105,45 @@ export function BracketForm() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
+  // Computed values
+  const maxSize = bracketType === 'round_robin' ? 8 : 128
+  const minSize = 3
+
+  const byeInfo = useMemo(() => {
+    if (!size || bracketType === 'round_robin') return null
+    const info = calculateBracketSizeWithByes(size)
+    return info.numByes > 0 ? info : null
+  }, [size, bracketType])
+
   // --- Step 1 handlers ---
-  const canProceedStep1 = name.trim().length > 0 && size !== null
+  const canProceedStep1 =
+    name.trim().length > 0 &&
+    size !== null &&
+    size >= minSize &&
+    (bracketType !== 'round_robin' || size <= 8)
+
+  const handleTypeChange = useCallback(
+    (newType: BracketType) => {
+      setBracketType(newType)
+      // Reset size if it exceeds new type's max
+      if (newType === 'round_robin' && size !== null && size > 8) {
+        setSize(null)
+        setUseCustomSize(false)
+        setCustomSizeInput('')
+      }
+      // Reset play-in if switching away from double-elim
+      if (newType !== 'double_elimination') {
+        setPlayInEnabled(false)
+      }
+    },
+    [size]
+  )
 
   const handleSizeChange = useCallback(
-    (newSize: BracketSize) => {
+    (newSize: number) => {
       setSize(newSize)
+      setUseCustomSize(false)
+      setCustomSizeInput('')
       // Truncate entrants if exceeding new size
       if (entrants.length > newSize) {
         setEntrants((prev) =>
@@ -60,6 +153,31 @@ export function BracketForm() {
     },
     [entrants.length]
   )
+
+  const handleCustomSizeChange = useCallback(
+    (value: string) => {
+      setCustomSizeInput(value)
+      const num = parseInt(value, 10)
+      if (!isNaN(num) && num >= minSize && num <= maxSize) {
+        setSize(num)
+        // Truncate entrants if exceeding new size
+        if (entrants.length > num) {
+          setEntrants((prev) =>
+            prev.slice(0, num).map((e, i) => ({ ...e, seedPosition: i + 1 }))
+          )
+        }
+      } else {
+        setSize(null)
+      }
+    },
+    [maxSize, entrants.length]
+  )
+
+  const handleCustomToggle = useCallback(() => {
+    setUseCustomSize(true)
+    setSize(null)
+    setCustomSizeInput('')
+  }, [])
 
   // --- Step 2 handlers ---
   const addManualEntrant = useCallback(() => {
@@ -135,12 +253,29 @@ export function BracketForm() {
     setError(null)
 
     try {
+      const bracketData: Record<string, unknown> = {
+        name: name.trim(),
+        description: description.trim() || undefined,
+        size,
+        bracketType,
+      }
+
+      // Add type-specific options
+      if (bracketType === 'round_robin') {
+        bracketData.roundRobinPacing = roundRobinPacing
+        bracketData.roundRobinVotingStyle = roundRobinVotingStyle
+        bracketData.roundRobinStandingsMode = roundRobinStandingsMode
+      }
+      if (bracketType === 'predictive') {
+        bracketData.predictiveMode = predictiveMode
+        bracketData.predictiveResolutionMode = predictiveResolutionMode
+      }
+      if (bracketType === 'double_elimination') {
+        bracketData.playInEnabled = playInEnabled
+      }
+
       const result = await createBracket({
-        bracket: {
-          name: name.trim(),
-          description: description.trim() || undefined,
-          size,
-        },
+        bracket: bracketData,
         entrants: entrants.map((e) => ({
           name: e.name,
           seedPosition: e.seedPosition,
@@ -160,7 +295,24 @@ export function BracketForm() {
       setError('An unexpected error occurred. Please try again.')
       setIsSubmitting(false)
     }
-  }, [size, canProceedStep2, name, description, entrants, router])
+  }, [
+    size,
+    canProceedStep2,
+    name,
+    description,
+    bracketType,
+    roundRobinPacing,
+    roundRobinVotingStyle,
+    roundRobinStandingsMode,
+    predictiveMode,
+    predictiveResolutionMode,
+    playInEnabled,
+    entrants,
+    router,
+  ])
+
+  // Type label for review
+  const typeLabel = BRACKET_TYPE_OPTIONS.find((t) => t.value === bracketType)?.label ?? bracketType
 
   return (
     <div className="mx-auto max-w-2xl">
@@ -202,7 +354,8 @@ export function BracketForm() {
               Bracket Info
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="space-y-6">
+            {/* Name */}
             <div className="space-y-2">
               <Label htmlFor="bracket-name">Name</Label>
               <Input
@@ -217,6 +370,7 @@ export function BracketForm() {
               </p>
             </div>
 
+            {/* Description */}
             <div className="space-y-2">
               <Label htmlFor="bracket-description">
                 Description <span className="text-muted-foreground">(optional)</span>
@@ -234,25 +388,222 @@ export function BracketForm() {
               </p>
             </div>
 
+            {/* Bracket Type Selector */}
+            <div className="space-y-2">
+              <Label>Bracket Type</Label>
+              <div className="grid grid-cols-2 gap-3">
+                {BRACKET_TYPE_OPTIONS.map((option) => {
+                  const Icon = option.icon
+                  const isSelected = bracketType === option.value
+                  return (
+                    <button
+                      key={option.value}
+                      type="button"
+                      onClick={() => handleTypeChange(option.value)}
+                      className={`relative flex flex-col items-center gap-1.5 rounded-lg border p-4 text-center transition-colors ${
+                        isSelected
+                          ? 'border-primary bg-primary/5 ring-1 ring-primary'
+                          : 'border-input bg-background hover:bg-accent hover:text-accent-foreground'
+                      }`}
+                    >
+                      {option.badge && (
+                        <span className="absolute right-2 top-2 rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-semibold text-amber-800 dark:bg-amber-900/40 dark:text-amber-300">
+                          {option.badge}
+                        </span>
+                      )}
+                      <Icon className="h-6 w-6" />
+                      <span className="text-sm font-medium">{option.label}</span>
+                      <span className="text-xs text-muted-foreground">{option.description}</span>
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+
+            {/* Bracket Size Selector */}
             <div className="space-y-2">
               <Label>Bracket Size</Label>
-              <div className="flex gap-2">
-                {BRACKET_SIZES.map((s) => (
+              {bracketType === 'round_robin' && (
+                <p className="text-xs text-muted-foreground">
+                  Round-robin supports 3-8 entrants
+                </p>
+              )}
+              <div className="flex flex-wrap gap-2">
+                {PRESET_SIZES.filter((s) => s <= maxSize).map((s) => (
                   <button
                     key={s}
                     type="button"
                     onClick={() => handleSizeChange(s)}
-                    className={`flex-1 rounded-md border px-4 py-3 text-center font-medium transition-colors ${
-                      size === s
+                    className={`min-w-[64px] rounded-md border px-4 py-3 text-center font-medium transition-colors ${
+                      size === s && !useCustomSize
                         ? 'border-primary bg-primary text-primary-foreground'
                         : 'border-input bg-background hover:bg-accent hover:text-accent-foreground'
                     }`}
                   >
-                    {s} entrants
+                    {s}
                   </button>
                 ))}
+                <button
+                  type="button"
+                  onClick={handleCustomToggle}
+                  className={`min-w-[64px] rounded-md border px-4 py-3 text-center font-medium transition-colors ${
+                    useCustomSize
+                      ? 'border-primary bg-primary text-primary-foreground'
+                      : 'border-input bg-background hover:bg-accent hover:text-accent-foreground'
+                  }`}
+                >
+                  Custom
+                </button>
               </div>
+
+              {useCustomSize && (
+                <div className="mt-2">
+                  <Input
+                    type="number"
+                    min={minSize}
+                    max={maxSize}
+                    placeholder={`Enter size (${minSize}-${maxSize})`}
+                    value={customSizeInput}
+                    onChange={(e) => handleCustomSizeChange(e.target.value)}
+                    className="max-w-[200px]"
+                  />
+                  {customSizeInput && size === null && (
+                    <p className="mt-1 text-xs text-destructive">
+                      Size must be between {minSize} and {maxSize}
+                    </p>
+                  )}
+                </div>
+              )}
             </div>
+
+            {/* Type-specific options */}
+            {bracketType === 'double_elimination' && (
+              <div className="space-y-3 rounded-lg border p-4">
+                <h4 className="text-sm font-medium">Double Elimination Options</h4>
+                <label className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    checked={playInEnabled}
+                    onChange={(e) => setPlayInEnabled(e.target.checked)}
+                    className="h-4 w-4 rounded border-gray-300"
+                  />
+                  <span className="text-sm">
+                    Add 8 play-in entrants (NCAA March Madness style)
+                  </span>
+                </label>
+              </div>
+            )}
+
+            {bracketType === 'round_robin' && (
+              <div className="space-y-4 rounded-lg border p-4">
+                <h4 className="text-sm font-medium">Round Robin Options</h4>
+
+                {/* Pacing */}
+                <div className="space-y-2">
+                  <Label className="text-xs text-muted-foreground">Pacing</Label>
+                  <div className="flex gap-3">
+                    {(['round_by_round', 'all_at_once'] as const).map((value) => (
+                      <label key={value} className="flex items-center gap-1.5">
+                        <input
+                          type="radio"
+                          name="rr-pacing"
+                          checked={roundRobinPacing === value}
+                          onChange={() => setRoundRobinPacing(value)}
+                          className="h-4 w-4"
+                        />
+                        <span className="text-sm">
+                          {value === 'round_by_round' ? 'Round by Round' : 'All at Once'}
+                        </span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Voting Style */}
+                <div className="space-y-2">
+                  <Label className="text-xs text-muted-foreground">Voting Style</Label>
+                  <div className="flex gap-3">
+                    {(['simple', 'advanced'] as const).map((value) => (
+                      <label key={value} className="flex items-center gap-1.5">
+                        <input
+                          type="radio"
+                          name="rr-voting"
+                          checked={roundRobinVotingStyle === value}
+                          onChange={() => setRoundRobinVotingStyle(value)}
+                          className="h-4 w-4"
+                        />
+                        <span className="text-sm capitalize">{value}</span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Standings Mode */}
+                <div className="space-y-2">
+                  <Label className="text-xs text-muted-foreground">Standings Mode</Label>
+                  <div className="flex gap-3">
+                    {(['live', 'suspenseful'] as const).map((value) => (
+                      <label key={value} className="flex items-center gap-1.5">
+                        <input
+                          type="radio"
+                          name="rr-standings"
+                          checked={roundRobinStandingsMode === value}
+                          onChange={() => setRoundRobinStandingsMode(value)}
+                          className="h-4 w-4"
+                        />
+                        <span className="text-sm capitalize">{value}</span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {bracketType === 'predictive' && (
+              <div className="space-y-4 rounded-lg border p-4">
+                <h4 className="text-sm font-medium">Predictive Options</h4>
+
+                {/* Prediction Mode */}
+                <div className="space-y-2">
+                  <Label className="text-xs text-muted-foreground">Prediction Mode</Label>
+                  <div className="flex gap-3">
+                    {(['simple', 'advanced'] as const).map((value) => (
+                      <label key={value} className="flex items-center gap-1.5">
+                        <input
+                          type="radio"
+                          name="pred-mode"
+                          checked={predictiveMode === value}
+                          onChange={() => setPredictiveMode(value)}
+                          className="h-4 w-4"
+                        />
+                        <span className="text-sm capitalize">{value}</span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Resolution Mode */}
+                <div className="space-y-2">
+                  <Label className="text-xs text-muted-foreground">Resolution Mode</Label>
+                  <div className="flex gap-3">
+                    {(['manual', 'vote_based'] as const).map((value) => (
+                      <label key={value} className="flex items-center gap-1.5">
+                        <input
+                          type="radio"
+                          name="pred-resolution"
+                          checked={predictiveResolutionMode === value}
+                          onChange={() => setPredictiveResolutionMode(value)}
+                          className="h-4 w-4"
+                        />
+                        <span className="text-sm">
+                          {value === 'manual' ? 'Manual' : 'Vote Based'}
+                        </span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
 
             <div className="flex justify-end pt-4">
               <Button
@@ -275,6 +626,11 @@ export function BracketForm() {
             <p className="text-sm text-muted-foreground">
               Add {size} entrants to your bracket using any method below.
             </p>
+            {byeInfo && (
+              <p className="text-sm text-amber-600 dark:text-amber-400">
+                {byeInfo.numByes} bye slot{byeInfo.numByes > 1 ? 's' : ''} will be added automatically
+              </p>
+            )}
           </CardHeader>
           <CardContent className="space-y-4">
             {/* Tab buttons */}
@@ -375,13 +731,22 @@ export function BracketForm() {
               )}
             </div>
 
-            {/* Entrant list */}
+            {/* Entrant list with bye info */}
             <EntrantList
               entrants={entrants}
               onReorder={handleReorder}
               onRemove={handleRemove}
               onEdit={handleEdit}
+              bracketType={bracketType}
+              totalEntrants={size}
             />
+
+            {/* Bye helper text */}
+            {byeInfo && entrants.length > 0 && (
+              <p className="text-xs text-muted-foreground">
+                Entrants at positions 1-{byeInfo.numByes} will receive first-round byes.
+              </p>
+            )}
 
             {/* Navigation */}
             <div className="flex justify-between pt-4">
@@ -423,9 +788,41 @@ export function BracketForm() {
                 </div>
               )}
               <div>
-                <span className="text-sm font-medium text-muted-foreground">Size</span>
-                <p className="font-medium">{size} entrants</p>
+                <span className="text-sm font-medium text-muted-foreground">Type</span>
+                <p className="font-medium">{typeLabel}</p>
               </div>
+              <div>
+                <span className="text-sm font-medium text-muted-foreground">Size</span>
+                <p className="font-medium">
+                  {size} entrants
+                  {byeInfo ? ` (${byeInfo.numByes} bye${byeInfo.numByes > 1 ? 's' : ''})` : ''}
+                </p>
+              </div>
+              {bracketType === 'round_robin' && (
+                <div>
+                  <span className="text-sm font-medium text-muted-foreground">Options</span>
+                  <p className="text-sm">
+                    Pacing: {roundRobinPacing === 'round_by_round' ? 'Round by Round' : 'All at Once'} /
+                    Voting: {roundRobinVotingStyle} /
+                    Standings: {roundRobinStandingsMode}
+                  </p>
+                </div>
+              )}
+              {bracketType === 'predictive' && (
+                <div>
+                  <span className="text-sm font-medium text-muted-foreground">Options</span>
+                  <p className="text-sm">
+                    Mode: {predictiveMode} /
+                    Resolution: {predictiveResolutionMode === 'vote_based' ? 'Vote Based' : 'Manual'}
+                  </p>
+                </div>
+              )}
+              {bracketType === 'double_elimination' && playInEnabled && (
+                <div>
+                  <span className="text-sm font-medium text-muted-foreground">Options</span>
+                  <p className="text-sm">Play-in round enabled (+8 entrants)</p>
+                </div>
+              )}
             </div>
 
             {/* Entrant list (read-only) */}
@@ -438,6 +835,8 @@ export function BracketForm() {
                 onReorder={handleReorder}
                 onRemove={handleRemove}
                 onEdit={handleEdit}
+                bracketType={bracketType}
+                totalEntrants={size}
                 disabled
               />
             </div>

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useMemo } from 'react'
 import {
   GripVertical,
   X,
@@ -11,6 +11,8 @@ import {
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { calculateBracketSizeWithByes } from '@/lib/bracket/byes'
+import type { BracketType } from '@/lib/bracket/types'
 
 interface EntrantItem {
   id: string
@@ -24,6 +26,10 @@ interface EntrantListProps {
   onRemove: (id: string) => void
   onEdit: (id: string, newName: string) => void
   disabled?: boolean
+  /** Bracket type for bye calculation (defaults to single_elimination) */
+  bracketType?: BracketType
+  /** Total entrant count for the bracket (used for bye calculation) */
+  totalEntrants?: number
 }
 
 export function EntrantList({
@@ -32,11 +38,23 @@ export function EntrantList({
   onRemove,
   onEdit,
   disabled = false,
+  bracketType = 'single_elimination',
+  totalEntrants,
 }: EntrantListProps) {
   const [dragIndex, setDragIndex] = useState<number | null>(null)
   const [dragOverIndex, setDragOverIndex] = useState<number | null>(null)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [editValue, setEditValue] = useState('')
+
+  // Calculate bye seeds based on total entrant count
+  // Round-robin doesn't use byes (inherent in schedule)
+  const byeSeeds = useMemo(() => {
+    if (bracketType === 'round_robin' || !totalEntrants || totalEntrants < 3) {
+      return new Set<number>()
+    }
+    const { byeSeeds: seeds } = calculateBracketSizeWithByes(totalEntrants)
+    return new Set(seeds)
+  }, [bracketType, totalEntrants])
 
   // --- Drag handlers ---
   const handleDragStart = useCallback(
@@ -154,6 +172,7 @@ export function EntrantList({
         const isDragging = dragIndex === index
         const isDragOver = dragOverIndex === index
         const isEditing = editingId === entrant.id
+        const hasBye = byeSeeds.has(entrant.seedPosition)
 
         return (
           <div
@@ -204,6 +223,13 @@ export function EntrantList({
               </div>
             ) : (
               <span className="flex-1 truncate text-sm">{entrant.name}</span>
+            )}
+
+            {/* Bye badge */}
+            {hasBye && !isEditing && (
+              <span className="shrink-0 rounded bg-amber-100 px-1.5 py-0.5 text-[10px] font-semibold uppercase text-amber-800 dark:bg-amber-900/40 dark:text-amber-300">
+                BYE
+              </span>
             )}
 
             {/* Actions */}
