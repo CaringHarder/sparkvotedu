@@ -21,6 +21,7 @@ model Teacher {
   classSessions ClassSession[]
   brackets      Bracket[]
   polls         Poll[]
+  subscription  Subscription?
 
   @@map("teachers")
 }
@@ -211,4 +212,20 @@ model PollVote {
   @@index([participantId])
   @@index([optionId])
   @@map("poll_votes")
+}
+
+model Subscription {
+  id                     String   @id @default(uuid())
+  teacherId              String   @unique @map("teacher_id")
+  teacher                Teacher  @relation(fields: [teacherId], references: [id])
+  stripeSubscriptionId   String   @unique @map("stripe_subscription_id")
+  stripePriceId          String   @map("stripe_price_id")
+  stripeCurrentPeriodEnd DateTime @map("stripe_current_period_end")
+  status                 String   // active, past_due, canceled, unpaid, incomplete
+  cancelAtPeriodEnd      Boolean  @default(false) @map("cancel_at_period_end")
+  createdAt              DateTime @default(now()) @map("created_at")
+  updatedAt              DateTime @updatedAt @map("updated_at")
+
+  @@index([stripeSubscriptionId])
+  @@map("subscriptions")
 }
