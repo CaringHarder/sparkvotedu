@@ -55,7 +55,6 @@ export function generateDoubleElimMatchups(size: number): DoubleElimMatchups {
     // Major round: currentFieldSize matchups
     // LB survivors (currentFieldSize) + WB dropdowns (currentFieldSize) = currentFieldSize matchups
     for (let pos = 1; pos <= currentFieldSize; pos++) {
-      const isLastWBRound = wbRoundIdx === wbRounds
       const hasMinorRoundAfter = currentFieldSize > 1
 
       let nextPos: { round: number; position: number } | null = null
