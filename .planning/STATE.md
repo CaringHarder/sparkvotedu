@@ -10,18 +10,18 @@ See: .planning/PROJECT.md (updated 2026-01-28)
 ## Current Position
 
 Phase: 7 of 10 (Advanced Brackets)
-Plan: 6 of 13 in current phase
+Plan: 7 of 13 in current phase
 Status: In progress
-Last activity: 2026-02-01 -- Completed 07-06-PLAN.md (Bracket Creation Wizard & Pan/Zoom)
+Last activity: 2026-02-01 -- Completed 07-07-PLAN.md (Bye Integration & Diagram Rendering)
 
-Progress: [########..] 85% (45/53 plans)
+Progress: [########..] 87% (46/53 plans)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 45
+- Total plans completed: 46
 - Average duration: ~4.5 min
-- Total execution time: ~3.6 hours
+- Total execution time: ~3.7 hours
 
 **By Phase:**
 
@@ -34,11 +34,11 @@ Progress: [########..] 85% (45/53 plans)
 | 05-polls | 10/10 | ~26.0m | ~2.6m |
 | 06-billing-and-subscriptions | 5/5 | ~17.0m | ~3.4m |
 
-| 07-advanced-brackets | 6/13 | ~18.3m | ~3.1m |
+| 07-advanced-brackets | 7/13 | ~22.3m | ~3.2m |
 
 **Recent Trend:**
-- Last 5 plans: 07-02 (~2.0m), 07-03 (~2.5m), 07-05 (~2.0m), 07-04 (~3.0m), 07-06 (~4.8m)
-- Trend: UI plans take slightly longer than pure algorithm plans; still well within expected range
+- Last 5 plans: 07-03 (~2.5m), 07-05 (~2.0m), 07-04 (~3.0m), 07-06 (~4.8m), 07-07 (~4.0m)
+- Trend: Integration plans (DAL + UI) take slightly longer than pure algorithm plans; still well within expected range
 
 *Updated after each plan completion*
 
@@ -203,6 +203,10 @@ Recent decisions affecting current work:
 - [07-06]: 2x2 grid card layout for bracket type selector with tier badges as visual indicators
 - [07-06]: BYE badge computed via useMemo from calculateBracketSizeWithByes on each reorder
 - [07-06]: Pan/zoom uses CSS transforms with useRef-based event listeners for zero re-renders during drag
+- [07-07]: getSlotForPosition duplicated as local helper in DAL (not exported from advancement.ts) to avoid coupling
+- [07-07]: maxEntrants set on Bracket record for diagram layout; size remains actual entrant count
+- [07-07]: BYE text in italic muted style with muted background fill; bye connectors dashed at 0.4 opacity
+- [07-07]: bracketSize prop optional on BracketDiagram; falls back to 2^totalRounds for zoom detection
 
 ### Pending Todos
 
@@ -220,5 +224,5 @@ Recent decisions affecting current work:
 ## Session Continuity
 
 Last session: 2026-02-01
-Stopped at: Completed 07-06-PLAN.md (Bracket Creation Wizard & Pan/Zoom) -- Phase 7 plan 6 of 13
+Stopped at: Completed 07-07-PLAN.md (Bye Integration & Diagram Rendering) -- Phase 7 plan 7 of 13
 Resume file: None
