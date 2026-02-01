@@ -18,6 +18,8 @@ function isPublicPage(pathname: string): boolean {
   if (pathname.startsWith('/api/brackets/')) return true
   // Poll state API for polling fallback (same pattern as brackets)
   if (pathname.startsWith('/api/polls/')) return true
+  // Webhook endpoints (Stripe) -- signature verification handles auth
+  if (pathname.startsWith('/api/webhooks/')) return true
   return false
 }
 
