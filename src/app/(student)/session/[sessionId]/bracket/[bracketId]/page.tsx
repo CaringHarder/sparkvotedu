@@ -277,6 +277,9 @@ function toBracketWithDetails(
     entrant2Id: m.entrant2Id,
     winnerId: m.winnerId,
     nextMatchupId: null, // Not needed for student view rendering
+    bracketRegion: null,
+    isBye: false,
+    roundRobinRound: null,
     entrant1: m.entrant1
       ? { ...m.entrant1, bracketId }
       : null,
@@ -308,6 +311,14 @@ function toBracketWithDetails(
     votingTimerSeconds: data.votingTimerSeconds,
     teacherId: '', // Not available from public API (and not needed for student view)
     sessionId: null,
+    predictionStatus: null,
+    roundRobinPacing: null,
+    roundRobinVotingStyle: null,
+    roundRobinStandingsMode: null,
+    predictiveMode: null,
+    predictiveResolutionMode: null,
+    playInEnabled: false,
+    maxEntrants: null,
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
     entrants,

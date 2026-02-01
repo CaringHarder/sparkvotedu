@@ -50,6 +50,14 @@ export default async function BracketDetailPage({
     votingTimerSeconds: bracket.votingTimerSeconds,
     teacherId: bracket.teacherId,
     sessionId: bracket.sessionId,
+    predictionStatus: bracket.predictionStatus,
+    roundRobinPacing: bracket.roundRobinPacing,
+    roundRobinVotingStyle: bracket.roundRobinVotingStyle,
+    roundRobinStandingsMode: bracket.roundRobinStandingsMode,
+    predictiveMode: bracket.predictiveMode,
+    predictiveResolutionMode: bracket.predictiveResolutionMode,
+    playInEnabled: bracket.playInEnabled,
+    maxEntrants: bracket.maxEntrants,
     createdAt: bracket.createdAt.toISOString(),
     updatedAt: bracket.updatedAt.toISOString(),
     entrants: bracket.entrants.map((e) => ({
@@ -68,6 +76,9 @@ export default async function BracketDetailPage({
       entrant2Id: m.entrant2Id,
       winnerId: m.winnerId,
       nextMatchupId: m.nextMatchupId,
+      bracketRegion: m.bracketRegion,
+      isBye: m.isBye,
+      roundRobinRound: m.roundRobinRound,
       entrant1: m.entrant1
         ? { id: m.entrant1.id, name: m.entrant1.name, seedPosition: m.entrant1.seedPosition, bracketId: m.entrant1.bracketId }
         : null,

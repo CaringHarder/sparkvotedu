@@ -1,8 +1,65 @@
-// Bracket sizes allowed in Phase 3 (single-elimination only)
-export type BracketSize = 4 | 8 | 16
+// Bracket size type -- widened from 4|8|16 to number for Phase 7 non-power-of-two support
+// Validation is handled by Zod schema (bracketSizeSchema: 3-128 range)
+export type BracketSize = number
 
 // Bracket lifecycle statuses
 export type BracketStatus = 'draft' | 'active' | 'completed'
+
+// Bracket type discriminator for all bracket formats
+export type BracketType = 'single_elimination' | 'double_elimination' | 'round_robin' | 'predictive'
+
+// Bracket region for double-elimination matchups
+export type BracketRegion = 'winners' | 'losers' | 'grand_finals'
+
+// Prediction status for predictive brackets
+export type PredictionStatus = 'predictions_open' | 'active'
+
+// Round-robin configuration types
+export type RoundRobinPacing = 'round_by_round' | 'all_at_once'
+export type RoundRobinVotingStyle = 'simple' | 'advanced'
+export type RoundRobinStandingsMode = 'live' | 'suspenseful'
+
+// Round-robin round structure (output of circle method schedule generation)
+export interface RoundRobinRound {
+  roundNumber: number
+  matchups: Array<{ entrant1Seed: number; entrant2Seed: number }>
+}
+
+// Round-robin standings entry
+export interface RoundRobinStanding {
+  entrantId: string
+  entrantName: string
+  wins: number
+  losses: number
+  ties: number
+  points: number
+  rank: number
+}
+
+// Predictive bracket configuration types
+export type PredictiveMode = 'simple' | 'advanced'
+export type PredictiveResolutionMode = 'manual' | 'vote_based'
+
+// Prediction data (serialized from Prisma Prediction model)
+export interface PredictionData {
+  id: string
+  bracketId: string
+  participantId: string
+  matchupId: string
+  predictedWinnerId: string
+  createdAt: string
+  updatedAt: string
+}
+
+// Prediction scoring result
+export interface PredictionScore {
+  participantId: string
+  participantName: string
+  totalPoints: number
+  correctPicks: number
+  totalPicks: number
+  pointsByRound: Record<number, { correct: number; total: number; points: number }>
+}
 
 // Serialized bracket data (matches Prisma model shape for client use)
 export interface BracketData {
@@ -17,6 +74,14 @@ export interface BracketData {
   votingTimerSeconds: number | null
   teacherId: string
   sessionId: string | null
+  predictionStatus: string | null
+  roundRobinPacing: string | null
+  roundRobinVotingStyle: string | null
+  roundRobinStandingsMode: string | null
+  predictiveMode: string | null
+  predictiveResolutionMode: string | null
+  playInEnabled: boolean
+  maxEntrants: number | null
   createdAt: string // ISO string for serialization
   updatedAt: string
 }
@@ -40,6 +105,9 @@ export interface MatchupData {
   entrant2Id: string | null
   winnerId: string | null
   nextMatchupId: string | null
+  bracketRegion: string | null
+  isBye: boolean
+  roundRobinRound: number | null
   entrant1: BracketEntrantData | null
   entrant2: BracketEntrantData | null
   winner: BracketEntrantData | null
@@ -52,6 +120,19 @@ export interface MatchupSeed {
   entrant1Seed: number | null // seed position of entrant 1 (first round only)
   entrant2Seed: number | null // seed position of entrant 2 (first round only)
   nextMatchupPosition: { round: number; position: number } | null
+}
+
+// Extended matchup seed with bye and region data
+export interface MatchupSeedWithBye extends MatchupSeed {
+  isBye?: boolean
+  bracketRegion?: BracketRegion
+}
+
+// Double-elimination matchup structure (output of double-elim engine)
+export interface DoubleElimMatchups {
+  winners: MatchupSeed[]
+  losers: MatchupSeed[]
+  grandFinals: MatchupSeed[]
 }
 
 // Full bracket with relations for detail view
