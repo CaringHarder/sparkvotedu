@@ -4,6 +4,7 @@ import {
   generateMatchupsWithByes,
   calculateBracketSizeWithByes,
 } from '@/lib/bracket/byes'
+import { createRoundRobinBracketDAL } from '@/lib/dal/round-robin'
 import type { MatchupSeed, MatchupSeedWithBye } from '@/lib/bracket/types'
 
 /**
@@ -170,6 +171,11 @@ export async function createBracketDAL(
     return {
       error: `Expected ${data.size} entrants, got ${entrants.length}`,
     }
+  }
+
+  // Route round-robin brackets to their dedicated DAL
+  if (data.bracketType === 'round_robin') {
+    return createRoundRobinBracketDAL(teacherId, data, entrants)
   }
 
   // Determine if byes are needed and generate appropriate matchup structure
