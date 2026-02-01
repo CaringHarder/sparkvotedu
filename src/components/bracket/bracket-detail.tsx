@@ -3,11 +3,12 @@
 import { useState, useTransition } from 'react'
 import Link from 'next/link'
 import { ArrowLeft, Pencil, Radio, Link2, Unlink, ChevronDown, ChevronUp, Play } from 'lucide-react'
-import type { BracketWithDetails, RoundRobinStanding } from '@/lib/bracket/types'
+import type { BracketWithDetails, RoundRobinStanding, PredictionScore } from '@/lib/bracket/types'
 import { BracketDiagram } from '@/components/bracket/bracket-diagram'
 import { RoundRobinStandings } from '@/components/bracket/round-robin-standings'
 import { RoundRobinMatchups } from '@/components/bracket/round-robin-matchups'
 import { PredictiveBracket } from '@/components/bracket/predictive-bracket'
+import { PredictionLeaderboard } from '@/components/bracket/prediction-leaderboard'
 import { DoubleElimDiagram } from '@/components/bracket/double-elim-diagram'
 import { BracketStatusBadge, BracketLifecycleControls } from '@/components/bracket/bracket-status'
 import { assignBracketToSession } from '@/actions/bracket'
@@ -24,9 +25,10 @@ interface BracketDetailProps {
   totalRounds: number
   sessions: SessionInfo[]
   standings?: RoundRobinStanding[]
+  predictionScores?: PredictionScore[]
 }
 
-export function BracketDetail({ bracket, totalRounds, sessions, standings = [] }: BracketDetailProps) {
+export function BracketDetail({ bracket, totalRounds, sessions, standings = [], predictionScores = [] }: BracketDetailProps) {
   const [isPending, startTransition] = useTransition()
   const [currentSessionId, setCurrentSessionId] = useState<string | null>(bracket.sessionId)
   const [sessionError, setSessionError] = useState<string | null>(null)
@@ -147,11 +149,21 @@ export function BracketDetail({ bracket, totalRounds, sessions, standings = [] }
         {/* Main content area */}
         <div className="min-w-0 flex-1 space-y-4">
           {isPredictive ? (
-            <PredictiveBracket
-              bracket={bracket}
-              participantId=""
-              isTeacher={true}
-            />
+            <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+              <PredictiveBracket
+                bracket={bracket}
+                participantId=""
+                isTeacher={true}
+              />
+              {(bracket.status === 'active' || bracket.status === 'completed') && (
+                <PredictionLeaderboard
+                  bracketId={bracket.id}
+                  initialScores={predictionScores}
+                  totalRounds={totalRounds}
+                  isTeacher={true}
+                />
+              )}
+            </div>
           ) : isRoundRobin ? (
             <>
               {/* Standings table */}

@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation'
 import { getAuthenticatedTeacher } from '@/lib/dal/auth'
 import { getBracketWithDetails } from '@/lib/dal/bracket'
 import { getRoundRobinStandings } from '@/lib/dal/round-robin'
+import { scoreBracketPredictions } from '@/lib/dal/prediction'
 import { prisma } from '@/lib/prisma'
 import { BracketDetail } from '@/components/bracket/bracket-detail'
 import type { BracketStatus } from '@/lib/bracket/types'
@@ -33,6 +34,13 @@ export default async function BracketDetailPage({
 
   // Fetch standings for round-robin brackets
   const standings = isRoundRobin ? await getRoundRobinStandings(bracket.id) : []
+
+  // Fetch prediction leaderboard for predictive brackets (active or completed)
+  const isPredictive = bracket.bracketType === 'predictive'
+  const predictionScores =
+    isPredictive && (bracket.status === 'active' || bracket.status === 'completed')
+      ? await scoreBracketPredictions(bracket.id)
+      : []
 
   // Fetch teacher's active sessions for session assignment
   const sessions = await prisma.classSession.findMany({
@@ -101,5 +109,13 @@ export default async function BracketDetailPage({
     })),
   }
 
-  return <BracketDetail bracket={serialized} totalRounds={totalRounds} sessions={serializedSessions} standings={standings} />
+  return (
+    <BracketDetail
+      bracket={serialized}
+      totalRounds={totalRounds}
+      sessions={serializedSessions}
+      standings={standings}
+      predictionScores={predictionScores}
+    />
+  )
 }
