@@ -5,23 +5,23 @@
 See: .planning/PROJECT.md (updated 2026-01-28)
 
 **Core value:** Teachers can instantly engage any classroom through voting -- on any topic, in any format -- and see participation happen in real time.
-**Current focus:** Phase 5 complete -- All poll plans + gap closure + UAT rounds + student reveal fix executed
+**Current focus:** Phase 6 in progress -- Stripe foundation and webhook handler complete (06-01)
 
 ## Current Position
 
-Phase: 5 of 10 (Polls)
-Plan: 10 of 10 in current phase (student poll reveal gap closure complete)
-Status: Phase complete
-Last activity: 2026-01-31 -- Completed 05-10-PLAN.md (Student Poll Reveal Gap Closure)
+Phase: 6 of 10 (Billing & Subscriptions)
+Plan: 1 of 5 in current phase (Stripe foundation + webhook handler complete)
+Status: In progress
+Last activity: 2026-01-31 -- Completed 06-01-PLAN.md (Stripe Foundation & Webhook Handler)
 
-Progress: [######....] 65% (35/53 plans)
+Progress: [######....] 67% (36/53 plans)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 35
-- Average duration: ~5.3 min
-- Total execution time: ~3.05 hours
+- Total plans completed: 36
+- Average duration: ~5.2 min
+- Total execution time: ~3.13 hours
 
 **By Phase:**
 
@@ -32,10 +32,11 @@ Progress: [######....] 65% (35/53 plans)
 | 03-bracket-creation-management | 7/7 | ~15.8m | ~2.3m |
 | 04-voting-and-real-time | 6/6 | ~45.6m | ~7.6m |
 | 05-polls | 10/10 | ~26.0m | ~2.6m |
+| 06-billing-and-subscriptions | 1/5 | ~5.0m | ~5.0m |
 
 **Recent Trend:**
-- Last 5 plans: 05-06 (~3.1m), 05-07 (~1.3m), 05-08 (~2.0m), 05-09 (~2.0m), 05-10 (~1.8m)
-- Trend: Gap closure and bug fix plans consistently fast (~1.8m avg for 05-07/08/09/10)
+- Last 5 plans: 05-08 (~2.0m), 05-09 (~2.0m), 05-10 (~1.8m), 06-01 (~5.0m)
+- Trend: Phase 6 start slightly longer due to Stripe v20 API type adaptations
 
 *Updated after each plan completion*
 
@@ -156,11 +157,20 @@ Recent decisions affecting current work:
 - [05-09]: Real-time hook flush uses full replacement since DAL now returns complete vote state
 - [05-10]: Student poll page wires useRealtimePoll hook for live poll_closed detection and PollReveal animation
 - [05-10]: prevPollStatusRef guards against spurious reveal on initial mount (draft is hook's default before first fetch)
+- [06-01]: Stripe v20 API (2026-01-28.clover): current_period_end on subscription items, not subscription object
+- [06-01]: Invoice subscription ID accessed via invoice.parent.subscription_details.subscription (v20 structure)
+- [06-01]: past_due status preserves paid tier access (grace period via Stripe dunning settings)
+- [06-01]: Webhook returns 200 even on processing errors to prevent Stripe retries for app-level bugs
+- [06-01]: Upsert for all subscription DB writes ensures idempotent webhook processing
+- [06-01]: Per-operation try/catch in webhooks prevents partial failure from blocking acknowledgment
 
 ### Pending Todos
 
 - Configure Google, Microsoft, Apple OAuth providers in external consoles and Supabase dashboard (non-blocking, code complete)
 - Create 'poll-images' bucket in Supabase Storage dashboard for poll option image uploads
+- Configure production Stripe webhook URL (https://yourdomain.com/api/webhooks/stripe) in Stripe Dashboard when deploying (using Stripe CLI for local dev)
+- Create Stripe Products (Pro, Pro Plus) with Monthly/Annual prices and add Price IDs to .env.local
+- Add STRIPE_SECRET_KEY and STRIPE_WEBHOOK_SECRET to .env.local
 
 ### Blockers/Concerns
 
@@ -170,5 +180,5 @@ Recent decisions affecting current work:
 ## Session Continuity
 
 Last session: 2026-01-31
-Stopped at: Completed 05-10-PLAN.md (Student Poll Reveal Gap Closure) -- Phase 5 fully complete
+Stopped at: Completed 06-01-PLAN.md (Stripe Foundation & Webhook Handler)
 Resume file: None
