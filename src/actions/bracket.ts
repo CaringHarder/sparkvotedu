@@ -100,7 +100,8 @@ export async function createBracket(input: unknown) {
     return {
       bracket: result ? { id: result.id, name: result.name } : null,
     }
-  } catch {
+  } catch (err) {
+    console.error('createBracket failed:', err)
     return { error: 'Failed to create bracket' }
   }
 }

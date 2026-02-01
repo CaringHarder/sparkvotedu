@@ -264,7 +264,7 @@ export async function createBracketDAL(
     )
 
     return created
-  })
+  }, { timeout: 30000 })
 
   // Return full bracket with relations
   return prisma.bracket.findFirst({
@@ -479,7 +479,7 @@ async function createDoubleElimBracketDAL(
     }
 
     return created
-  })
+  }, { timeout: 30000 })
 
   // Return full bracket with relations
   return prisma.bracket.findFirst({
