@@ -10,18 +10,18 @@ See: .planning/PROJECT.md (updated 2026-01-28)
 ## Current Position
 
 Phase: 7 of 10 (Advanced Brackets)
-Plan: 2 of 13 in current phase
+Plan: 3 of 13 in current phase
 Status: In progress
-Last activity: 2026-02-01 -- Completed 07-02-PLAN.md (Bye Placement Algorithm)
+Last activity: 2026-02-01 -- Completed 07-03-PLAN.md (Double-Elimination Bracket Engine)
 
-Progress: [########..] 77% (41/53 plans)
+Progress: [########..] 79% (42/53 plans)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 41
-- Average duration: ~4.8 min
-- Total execution time: ~3.4 hours
+- Total plans completed: 42
+- Average duration: ~4.7 min
+- Total execution time: ~3.5 hours
 
 **By Phase:**
 
@@ -34,11 +34,11 @@ Progress: [########..] 77% (41/53 plans)
 | 05-polls | 10/10 | ~26.0m | ~2.6m |
 | 06-billing-and-subscriptions | 5/5 | ~17.0m | ~3.4m |
 
-| 07-advanced-brackets | 2/13 | ~6.0m | ~3.0m |
+| 07-advanced-brackets | 3/13 | ~8.5m | ~2.8m |
 
 **Recent Trend:**
-- Last 5 plans: 06-04 (~3.0m), 06-05 (~4.0m), 07-01 (~4.0m), 07-02 (~2.0m)
-- Trend: TDD plan executed fast; pure function algorithms are efficient
+- Last 5 plans: 06-05 (~4.0m), 07-01 (~4.0m), 07-02 (~2.0m), 07-03 (~2.5m)
+- Trend: TDD plans executing fast; pure function algorithms are efficient
 
 *Updated after each plan completion*
 
@@ -187,6 +187,10 @@ Recent decisions affecting current work:
 - [07-02]: Top seeds receive byes by natural seeding order (seed 1 vs bracketSize is first bye)
 - [07-02]: Bye matchups set phantom seed to null and isBye=true; auto-advancement at DB layer not engine
 - [07-02]: generateMatchupsWithByes composes on generateMatchups rather than building separate algorithm
+- [07-03]: Losers bracket built iteratively: R1 minor, then alternating major/minor per remaining WB round
+- [07-03]: LB final has null nextMatchupPosition; DAL layer wires it to grand finals during persistence
+- [07-03]: Grand finals uses round=1, position=1 with null seeds (filled by WB and LB champions)
+- [07-03]: seedLosersFromWinnersRound uses split-and-reverse for 3+ losers to avoid rematches
 
 ### Pending Todos
 
@@ -204,5 +208,5 @@ Recent decisions affecting current work:
 ## Session Continuity
 
 Last session: 2026-02-01
-Stopped at: Completed 07-02-PLAN.md (Bye Placement Algorithm) -- Phase 7 plan 2 of 13
+Stopped at: Completed 07-03-PLAN.md (Double-Elimination Bracket Engine) -- Phase 7 plan 3 of 13
 Resume file: None
