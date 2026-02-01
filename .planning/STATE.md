@@ -5,23 +5,23 @@
 See: .planning/PROJECT.md (updated 2026-01-28)
 
 **Core value:** Teachers can instantly engage any classroom through voting -- on any topic, in any format -- and see participation happen in real time.
-**Current focus:** Phase 6 in progress -- Billing UI components and dashboard integration complete (06-04)
+**Current focus:** Phase 6 in progress -- Pricing pages, billing management, and dashboard integration complete (06-03, 06-04)
 
 ## Current Position
 
 Phase: 6 of 10 (Billing & Subscriptions)
-Plan: 3 of 5 in current phase (06-01, 06-02, 06-04 complete)
+Plan: 4 of 5 in current phase (06-01, 06-02, 06-03, 06-04 complete)
 Status: In progress
-Last activity: 2026-02-01 -- Completed 06-04-PLAN.md (Billing UI Components & Dashboard Integration)
+Last activity: 2026-02-01 -- Completed 06-03-PLAN.md (Pricing Page UI & Billing Management)
 
-Progress: [########..] 71% (38/53 plans)
+Progress: [########..] 74% (39/53 plans)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 38
-- Average duration: ~5.0 min
-- Total execution time: ~3.2 hours
+- Total plans completed: 39
+- Average duration: ~4.9 min
+- Total execution time: ~3.25 hours
 
 **By Phase:**
 
@@ -32,10 +32,10 @@ Progress: [########..] 71% (38/53 plans)
 | 03-bracket-creation-management | 7/7 | ~15.8m | ~2.3m |
 | 04-voting-and-real-time | 6/6 | ~45.6m | ~7.6m |
 | 05-polls | 10/10 | ~26.0m | ~2.6m |
-| 06-billing-and-subscriptions | 3/5 | ~10.0m | ~3.3m |
+| 06-billing-and-subscriptions | 4/5 | ~13.0m | ~3.25m |
 
 **Recent Trend:**
-- Last 5 plans: 05-10 (~1.8m), 06-01 (~5.0m), 06-02 (~2.0m), 06-04 (~3.0m)
+- Last 5 plans: 06-01 (~5.0m), 06-02 (~2.0m), 06-03 (~3.0m), 06-04 (~3.0m)
 - Trend: Phase 6 maintaining consistent ~3min pace for component and integration plans
 
 *Updated after each plan completion*
@@ -167,6 +167,9 @@ Recent decisions affecting current work:
 - [06-02]: Promise.all for billing overview queries (parallel teacher+subscription, bracket counts, poll count)
 - [06-02]: PRICE_IDS.includes(priceId) guard before Stripe API call to prevent arbitrary price injection
 - [06-02]: allow_promotion_codes enabled on checkout sessions for future promo code support
+- [06-03]: Inline 'use server' wrapper for createPortalSession to satisfy form action void return type
+- [06-03]: TIER_ORDER index comparison for clean upgrade/downgrade/current tier detection in PricingCards
+- [06-03]: /pricing added to PUBLIC_PAGES in proxy.ts for unauthenticated visitor access
 - [06-04]: CSS-only tooltip (invisible group-hover:visible) for UpgradePrompt hover interaction
 - [06-04]: TIER_ORDER index comparison as safety guard in UpgradePrompt to prevent showing when user has access
 - [06-04]: Welcome page reads Stripe Checkout Session directly to avoid webhook race condition
@@ -188,5 +191,5 @@ Recent decisions affecting current work:
 ## Session Continuity
 
 Last session: 2026-02-01
-Stopped at: Completed 06-04-PLAN.md (Billing UI Components & Dashboard Integration)
+Stopped at: Completed 06-03-PLAN.md (Pricing Page UI & Billing Management)
 Resume file: None
