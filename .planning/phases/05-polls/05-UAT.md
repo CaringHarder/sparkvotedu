@@ -1,5 +1,5 @@
 ---
-status: complete
+status: diagnosed
 phase: 05-polls
 source: [05-01-SUMMARY.md, 05-02-SUMMARY.md, 05-03-SUMMARY.md, 05-04-SUMMARY.md, 05-05-SUMMARY.md, 05-06-SUMMARY.md, 05-07-SUMMARY.md, 05-08-SUMMARY.md, 05-09-SUMMARY.md]
 started: 2026-01-31T18:50:00Z
@@ -39,7 +39,16 @@ skipped: 0
   reason: "User reported: worked on teacher page but not student page"
   severity: major
   test: 1
-  root_cause: ""
-  artifacts: []
-  missing: []
+  root_cause: "Student poll page has no real-time subscription to poll status changes. It fetches poll state once on mount via GET /api/polls/{pollId}/state. When teacher closes poll, student page never detects the status change. PollResults (with PollReveal animation) is only rendered on teacher live page, not student page. Student voting components (SimplePollVote, RankedPollVote) have no reveal animation logic."
+  artifacts:
+    - path: "src/app/(student)/session/[sessionId]/poll/[pollId]/page.tsx"
+      issue: "No real-time subscription, no PollReveal component, static closed state only"
+    - path: "src/components/poll/poll-results.tsx"
+      issue: "Only used on teacher page, not embedded in student page"
+    - path: "src/hooks/use-realtime-poll.ts"
+      issue: "Available but not used by student poll page"
+  missing:
+    - "Add real-time subscription to student poll page to detect poll_closed events"
+    - "Show PollReveal animation on student page when poll closes"
+    - "Transition student from voting UI to results/reveal when poll is closed"
   debug_session: ""
