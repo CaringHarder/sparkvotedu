@@ -56,6 +56,10 @@ export async function GET(
           entrant2: matchup.entrant2,
           winner: matchup.winner,
           voteCounts,
+          bracketRegion: matchup.bracketRegion,
+          isBye: matchup.isBye,
+          roundRobinRound: matchup.roundRobinRound,
+          nextMatchupId: matchup.nextMatchupId,
         }
       })
     )
@@ -67,6 +71,14 @@ export async function GET(
       viewingMode: bracket.viewingMode,
       showVoteCounts: bracket.showVoteCounts,
       votingTimerSeconds: bracket.votingTimerSeconds,
+      bracketType: bracket.bracketType,
+      predictionStatus: bracket.predictionStatus,
+      predictiveMode: bracket.predictiveMode,
+      roundRobinPacing: bracket.roundRobinPacing,
+      roundRobinVotingStyle: bracket.roundRobinVotingStyle,
+      roundRobinStandingsMode: bracket.roundRobinStandingsMode,
+      maxEntrants: bracket.maxEntrants,
+      playInEnabled: bracket.playInEnabled,
       entrants: bracket.entrants,
       matchups: matchupsWithCounts,
     })
