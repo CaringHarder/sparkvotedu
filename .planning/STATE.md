@@ -5,23 +5,23 @@
 See: .planning/PROJECT.md (updated 2026-01-28)
 
 **Core value:** Teachers can instantly engage any classroom through voting -- on any topic, in any format -- and see participation happen in real time.
-**Current focus:** Phase 5 complete -- All poll plans + gap closure executed (schema, DAL, actions, teacher UI, student UI, results, navigation, image upload, fixes, session assignment)
+**Current focus:** Phase 5 complete -- All poll plans + gap closure + UAT round 2 bug fixes executed
 
 ## Current Position
 
 Phase: 5 of 10 (Polls)
-Plan: 8 of 8 in current phase (gap closure complete)
+Plan: 9 of 9 in current phase (UAT round 2 fixes complete)
 Status: Phase complete
-Last activity: 2026-01-31 -- Completed 05-08-PLAN.md (Poll Session Assignment UI)
+Last activity: 2026-01-31 -- Completed 05-09-PLAN.md (UAT Round 2 Bug Fixes)
 
-Progress: [######....] 63% (33/52 plans)
+Progress: [######....] 64% (34/53 plans)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 33
-- Average duration: ~5.5 min
-- Total execution time: ~2.99 hours
+- Total plans completed: 34
+- Average duration: ~5.4 min
+- Total execution time: ~3.02 hours
 
 **By Phase:**
 
@@ -31,11 +31,11 @@ Progress: [######....] 63% (33/52 plans)
 | 02-student-join-flow | 6/6 | ~13m | ~2.2m |
 | 03-bracket-creation-management | 7/7 | ~15.8m | ~2.3m |
 | 04-voting-and-real-time | 6/6 | ~45.6m | ~7.6m |
-| 05-polls | 8/8 | ~22.2m | ~2.8m |
+| 05-polls | 9/9 | ~24.2m | ~2.7m |
 
 **Recent Trend:**
-- Last 5 plans: 05-04 (~2.7m), 05-05 (~4.1m), 05-06 (~3.1m), 05-07 (~1.3m), 05-08 (~2.0m)
-- Trend: Gap closure plans consistently fast (~1.7m avg for 05-07/05-08)
+- Last 5 plans: 05-05 (~4.1m), 05-06 (~3.1m), 05-07 (~1.3m), 05-08 (~2.0m), 05-09 (~2.0m)
+- Trend: Gap closure and bug fix plans consistently fast (~1.8m avg for 05-07/08/09)
 
 *Updated after each plan completion*
 
@@ -138,7 +138,7 @@ Recent decisions affecting current work:
 - [05-04]: Single usePollVote hook serves both simple and ranked polls with pollType parameter
 - [05-04]: Rank badges use gold/silver/bronze (amber-400, gray-300, amber-600) for top 3
 - [05-04]: Student poll page reads localStorage for participantId, matching 04-04 bracket page pattern
-- [05-05]: PollResults detects active->closed status change to auto-trigger reveal animation
+- [05-05]: PollResults detects active->closed status change to auto-trigger reveal animation (replaced by forceReveal prop in 05-09)
 - [05-05]: Presentation mode uses CSS class overrides ([&_*]:text-white) for dark theme without modifying child components
 - [05-05]: F key shortcut for presentation mode toggle (excluded from input fields)
 - [05-05]: BordaLeaderboardEntry derived client-side from BordaScore broadcast data with maxPossiblePoints computed from poll metadata
@@ -151,6 +151,9 @@ Recent decisions affecting current work:
 - [05-07]: Polls index page follows exact /brackets page pattern (server component, auth guard, serialized data, grid cards)
 - [05-08]: Nullable sessionId in assignPollToSession schema matches bracket pattern exactly
 - [05-08]: Session assignment UI placed inline (not sidebar) since polls have no diagram
+- [05-09]: forceReveal prop replaces racy status transition detection for winner reveal animation
+- [05-09]: getSimplePollVoteCounts returns zeros for all options (not just options with votes)
+- [05-09]: Real-time hook flush uses full replacement since DAL now returns complete vote state
 
 ### Pending Todos
 
@@ -165,5 +168,5 @@ Recent decisions affecting current work:
 ## Session Continuity
 
 Last session: 2026-01-31
-Stopped at: Completed 05-08-PLAN.md (Poll Session Assignment UI) -- Phase 5 gap closure complete
+Stopped at: Completed 05-09-PLAN.md (UAT Round 2 Bug Fixes) -- Phase 5 fully complete
 Resume file: None
