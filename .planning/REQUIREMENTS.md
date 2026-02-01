@@ -83,13 +83,13 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Billing & Subscriptions
 
-- [ ] **BILL-01**: Free tier allows single-elimination brackets (4/8/16), up to 2 live and 2 drafts, basic analytics
-- [ ] **BILL-02**: Pro tier ($12/mo) adds unlimited brackets, full analytics + CSV export, simple and ranked polls (up to 32 entrants)
-- [ ] **BILL-03**: Pro Plus tier ($20/mo) adds predictive brackets, double-elimination, round-robin, non-power-of-two, polls up to 64 entrants
-- [ ] **BILL-04**: Teacher can subscribe via Stripe Checkout
-- [ ] **BILL-05**: Teacher can manage subscription via Stripe Customer Portal (upgrade, downgrade, cancel)
-- [ ] **BILL-06**: Feature gating enforced server-side based on subscription tier
-- [ ] **BILL-07**: Locked features show upgrade prompt (visible but gated, not hidden)
+- [x] **BILL-01**: Free tier allows single-elimination brackets (4/8/16), up to 2 live and 2 drafts, basic analytics
+- [x] **BILL-02**: Pro tier ($12/mo) adds unlimited brackets, full analytics + CSV export, simple and ranked polls (up to 32 entrants)
+- [x] **BILL-03**: Pro Plus tier ($20/mo) adds predictive brackets, double-elimination, round-robin, non-power-of-two, polls up to 64 entrants
+- [x] **BILL-04**: Teacher can subscribe via Stripe Checkout
+- [x] **BILL-05**: Teacher can manage subscription via Stripe Customer Portal (upgrade, downgrade, cancel)
+- [x] **BILL-06**: Feature gating enforced server-side based on subscription tier
+- [x] **BILL-07**: Locked features show upgrade prompt (visible but gated, not hidden)
 
 ### Interface & Landing
 
@@ -193,13 +193,13 @@ Which phases cover which requirements. Updated during roadmap creation.
 | ANLYT-02 | Phase 9: Analytics | Pending |
 | ANLYT-03 | Phase 9: Analytics | Pending |
 | ANLYT-04 | Phase 9: Analytics | Pending |
-| BILL-01 | Phase 6: Billing & Subscriptions | Pending |
-| BILL-02 | Phase 6: Billing & Subscriptions | Pending |
-| BILL-03 | Phase 6: Billing & Subscriptions | Pending |
-| BILL-04 | Phase 6: Billing & Subscriptions | Pending |
-| BILL-05 | Phase 6: Billing & Subscriptions | Pending |
-| BILL-06 | Phase 6: Billing & Subscriptions | Pending |
-| BILL-07 | Phase 6: Billing & Subscriptions | Pending |
+| BILL-01 | Phase 6: Billing & Subscriptions | Complete |
+| BILL-02 | Phase 6: Billing & Subscriptions | Complete |
+| BILL-03 | Phase 6: Billing & Subscriptions | Complete |
+| BILL-04 | Phase 6: Billing & Subscriptions | Complete |
+| BILL-05 | Phase 6: Billing & Subscriptions | Complete |
+| BILL-06 | Phase 6: Billing & Subscriptions | Complete |
+| BILL-07 | Phase 6: Billing & Subscriptions | Complete |
 | UI-01 | Phase 10: Landing Page & Polish | Pending |
 | UI-02 | Phase 10: Landing Page & Polish | Pending |
 | UI-03 | Phase 10: Landing Page & Polish | Pending |

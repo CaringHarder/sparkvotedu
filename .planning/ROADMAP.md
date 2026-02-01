@@ -17,7 +17,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 3: Bracket Creation & Management** - Teachers create, edit, and manage single-elimination brackets with entrant tools
 - [x] **Phase 4: Voting & Real-Time** - Students vote on matchups with live updating dashboard and real-time bracket state
 - [x] **Phase 5: Polls** - Simple and ranked polls with real-time results display
-- [ ] **Phase 6: Billing & Subscriptions** - Stripe integration, tier enforcement, and upgrade prompts
+- [x] **Phase 6: Billing & Subscriptions** - Stripe integration, tier enforcement, and upgrade prompts
 - [ ] **Phase 7: Advanced Brackets** - Double-elimination, round-robin, predictive brackets, and non-power-of-two support
 - [ ] **Phase 8: Sports Integration** - Real sports tournament brackets from external APIs for classroom prediction competitions
 - [ ] **Phase 9: Analytics** - Participation metrics, vote distribution views, CSV export, and predictive leaderboard scoring
@@ -141,11 +141,11 @@ Plans:
 **Plans**: 5 plans
 
 Plans:
-- [ ] 06-01-PLAN.md — Stripe SDK, Subscription model, pricing config, webhook route handler
-- [ ] 06-02-PLAN.md — Billing DAL and server actions (createCheckout, createPortalSession)
-- [ ] 06-03-PLAN.md — Pricing page UI (cards, toggle, public /pricing, in-app /billing)
-- [ ] 06-04-PLAN.md — Upgrade prompts, welcome page, plan badge, sidebar billing nav
-- [ ] 06-05-PLAN.md — Server-side tier enforcement in bracket/poll actions, TIER_LIMITS reconciliation
+- [x] 06-01-PLAN.md — Stripe SDK, Subscription model, pricing config, webhook route handler
+- [x] 06-02-PLAN.md — Billing DAL and server actions (createCheckout, createPortalSession)
+- [x] 06-03-PLAN.md — Pricing page UI (cards, toggle, public /pricing, in-app /billing)
+- [x] 06-04-PLAN.md — Upgrade prompts, welcome page, plan badge, sidebar billing nav
+- [x] 06-05-PLAN.md — Server-side tier enforcement in bracket/poll actions, TIER_LIMITS reconciliation
 
 ### Phase 7: Advanced Brackets
 **Goal**: Teachers on Pro Plus can create double-elimination, round-robin, and predictive brackets, including non-power-of-two sizes with automatic byes
@@ -234,7 +234,7 @@ Note: Phase 3 depends only on Phase 1 (not Phase 2), so Phases 2 and 3 could the
 | 3. Bracket Creation & Management | 7/7 | Complete | 2026-01-30 |
 | 4. Voting & Real-Time | 6/6 | Complete | 2026-01-31 |
 | 5. Polls | 10/10 | Complete | 2026-01-31 |
-| 6. Billing & Subscriptions | 0/5 | Planned | - |
+| 6. Billing & Subscriptions | 5/5 | Complete | 2026-02-01 |
 | 7. Advanced Brackets | 0/6 | Not started | - |
 | 8. Sports Integration | 0/5 | Not started | - |
 | 9. Analytics | 0/4 | Not started | - |
