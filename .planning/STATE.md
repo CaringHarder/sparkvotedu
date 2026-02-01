@@ -12,15 +12,15 @@ See: .planning/PROJECT.md (updated 2026-01-28)
 Phase: 7 of 10 (Advanced Brackets)
 Plan: 5 of 13 in current phase
 Status: In progress
-Last activity: 2026-02-01 -- Completed 07-05-PLAN.md (Predictive Bracket Scoring Engine)
+Last activity: 2026-02-01 -- Completed 07-04-PLAN.md (Round-Robin Engine)
 
-Progress: [########..] 81% (43/53 plans)
+Progress: [########..] 83% (44/53 plans)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 43
-- Average duration: ~4.6 min
+- Total plans completed: 44
+- Average duration: ~4.5 min
 - Total execution time: ~3.5 hours
 
 **By Phase:**
@@ -34,10 +34,10 @@ Progress: [########..] 81% (43/53 plans)
 | 05-polls | 10/10 | ~26.0m | ~2.6m |
 | 06-billing-and-subscriptions | 5/5 | ~17.0m | ~3.4m |
 
-| 07-advanced-brackets | 5/13 | ~10.5m | ~2.1m |
+| 07-advanced-brackets | 5/13 | ~13.5m | ~2.7m |
 
 **Recent Trend:**
-- Last 5 plans: 07-01 (~4.0m), 07-02 (~2.0m), 07-03 (~2.5m), 07-05 (~2.0m)
+- Last 5 plans: 07-01 (~4.0m), 07-02 (~2.0m), 07-03 (~2.5m), 07-05 (~2.0m), 07-04 (~3.0m)
 - Trend: TDD plans executing fast; pure function algorithms are efficient
 
 *Updated after each plan completion*
@@ -191,6 +191,10 @@ Recent decisions affecting current work:
 - [07-03]: LB final has null nextMatchupPosition; DAL layer wires it to grand finals during persistence
 - [07-03]: Grand finals uses round=1, position=1 with null seeds (filled by WB and LB champions)
 - [07-03]: seedLosersFromWinnersRound uses split-and-reverse for 3+ losers to avoid rematches
+- [07-04]: Circle method fixes seed 1 and rotates [2..N]; pairs i with N-1-i for balanced round-robin scheduling
+- [07-04]: Odd entrant counts add phantom BYE_SEED=N+1, filtered from output matchups (one bye per round)
+- [07-04]: Win=3, Tie=1, Loss=0 scoring; rank by points desc then wins desc with head-to-head tiebreaker
+- [07-04]: Circular head-to-head ties (a>b>c>a) assign equal rank; only pairwise h2h resolves
 - [07-05]: getPointsForRound takes only round number (no totalRounds) -- standard doubling is round-independent
 - [07-05]: scorePredictions returns empty array (not error) for empty inputs or no resolved matchups
 - [07-05]: participantName set to empty string by engine; DAL fills from DB on read
@@ -212,5 +216,5 @@ Recent decisions affecting current work:
 ## Session Continuity
 
 Last session: 2026-02-01
-Stopped at: Completed 07-05-PLAN.md (Predictive Bracket Scoring Engine) -- Phase 7 plan 5 of 13
+Stopped at: Completed 07-04-PLAN.md (Round-Robin Engine) -- Phase 7 plan 5 of 13
 Resume file: None
