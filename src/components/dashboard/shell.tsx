@@ -1,8 +1,11 @@
 import { getAuthenticatedTeacher } from '@/lib/dal/auth'
 import { getTeacherSessions } from '@/lib/dal/class-session'
+import { getTeacherBillingOverview } from '@/lib/dal/billing'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { Plus, ArrowRight } from 'lucide-react'
+import { PlanBadge } from '@/components/billing/plan-badge'
+import { TIER_LIMITS, type SubscriptionTier } from '@/lib/gates/tiers'
 
 export async function DashboardShell() {
   const teacher = await getAuthenticatedTeacher()
@@ -12,8 +15,13 @@ export async function DashboardShell() {
   }
 
   const displayName = teacher.name || teacher.email
-  const sessions = await getTeacherSessions(teacher.id)
+  const [sessions, billing] = await Promise.all([
+    getTeacherSessions(teacher.id),
+    getTeacherBillingOverview(teacher.id),
+  ])
   const activeSessions = sessions.filter(s => s.status === 'active')
+  const tier = (billing.tier || 'free') as SubscriptionTier
+  const limits = TIER_LIMITS[tier]
 
   return (
     <div className="flex flex-col gap-6">
@@ -27,13 +35,7 @@ export async function DashboardShell() {
       </div>
 
       <div className="flex items-center gap-2">
-        <span className="inline-flex items-center rounded-full bg-muted px-2.5 py-0.5 text-xs font-medium text-muted-foreground">
-          {teacher.subscriptionTier === 'free'
-            ? 'Free'
-            : teacher.subscriptionTier === 'pro'
-              ? 'Pro'
-              : 'Pro Plus'}
-        </span>
+        <PlanBadge tier={tier} />
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2">
@@ -49,6 +51,45 @@ export async function DashboardShell() {
             <p className="text-sm text-muted-foreground">Start a new class session</p>
           </div>
         </Link>
+
+        <div className="rounded-lg border bg-card p-4">
+          <div className="flex items-center justify-between">
+            <p className="text-sm font-medium text-muted-foreground">
+              Plan &amp; Usage
+            </p>
+            <PlanBadge tier={tier} />
+          </div>
+          <div className="mt-3 space-y-1.5 text-sm">
+            {limits.maxLiveBrackets === Infinity ? (
+              <p>
+                <span className="font-medium">{billing.usage.liveBrackets}</span>{' '}
+                live brackets
+              </p>
+            ) : (
+              <p>
+                <span className="font-medium">{billing.usage.liveBrackets}</span>{' '}
+                of {limits.maxLiveBrackets} live brackets
+              </p>
+            )}
+            {limits.maxDraftBrackets === Infinity ? (
+              <p>
+                <span className="font-medium">{billing.usage.draftBrackets}</span>{' '}
+                draft brackets
+              </p>
+            ) : (
+              <p>
+                <span className="font-medium">{billing.usage.draftBrackets}</span>{' '}
+                of {limits.maxDraftBrackets} draft brackets
+              </p>
+            )}
+          </div>
+          <Link
+            href="/billing"
+            className="mt-3 inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline"
+          >
+            View Plan <ArrowRight className="h-3 w-3" />
+          </Link>
+        </div>
       </div>
 
       {activeSessions.length > 0 && (

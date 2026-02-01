@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { LayoutDashboard, Users, Zap, Trophy, BarChart3 } from 'lucide-react'
+import { LayoutDashboard, Users, Zap, Trophy, BarChart3, CreditCard } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 
 interface NavItem {
@@ -22,6 +22,7 @@ interface NavSection {
 const navItems: NavItem[] = [
   { label: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
   { label: 'Sessions', href: '/sessions', icon: Users },
+  { label: 'Billing', href: '/billing', icon: CreditCard },
 ]
 
 const activitiesSection: NavSection = {
