@@ -8,6 +8,7 @@ import { BracketDiagram } from '@/components/bracket/bracket-diagram'
 import { RoundRobinStandings } from '@/components/bracket/round-robin-standings'
 import { RoundRobinMatchups } from '@/components/bracket/round-robin-matchups'
 import { PredictiveBracket } from '@/components/bracket/predictive-bracket'
+import { DoubleElimDiagram } from '@/components/bracket/double-elim-diagram'
 import { BracketStatusBadge, BracketLifecycleControls } from '@/components/bracket/bracket-status'
 import { assignBracketToSession } from '@/actions/bracket'
 import { recordResult, advanceRound } from '@/actions/round-robin'
@@ -33,6 +34,7 @@ export function BracketDetail({ bracket, totalRounds, sessions, standings = [] }
 
   const isRoundRobin = bracket.bracketType === 'round_robin'
   const isPredictive = bracket.bracketType === 'predictive'
+  const isDoubleElim = bracket.bracketType === 'double_elimination'
   const pacing = (bracket.roundRobinPacing ?? 'round_by_round') as 'round_by_round' | 'all_at_once'
   const isLive = bracket.roundRobinStandingsMode === 'live'
 
@@ -191,6 +193,13 @@ export function BracketDetail({ bracket, totalRounds, sessions, standings = [] }
                 />
               </div>
             </>
+          ) : isDoubleElim ? (
+            <DoubleElimDiagram
+              bracket={bracket}
+              entrants={bracket.entrants}
+              matchups={bracket.matchups}
+              isTeacher={true}
+            />
           ) : (
             <div className="rounded-lg border p-3">
               <BracketDiagram
