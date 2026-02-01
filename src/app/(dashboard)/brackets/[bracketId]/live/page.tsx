@@ -2,9 +2,10 @@ import { redirect, notFound } from 'next/navigation'
 import { getAuthenticatedTeacher } from '@/lib/dal/auth'
 import { getBracketWithDetails } from '@/lib/dal/bracket'
 import { getMatchupVoteSummary, getVoterParticipantIds } from '@/lib/dal/vote'
+import { getRoundRobinStandings } from '@/lib/dal/round-robin'
 import { prisma } from '@/lib/prisma'
 import { LiveDashboard } from '@/components/teacher/live-dashboard'
-import type { BracketStatus } from '@/lib/bracket/types'
+import type { BracketStatus, RoundRobinStanding } from '@/lib/bracket/types'
 import type { VoteCounts } from '@/types/vote'
 import type { Metadata } from 'next'
 
@@ -76,7 +77,22 @@ export default async function LiveDashboardPage({ params }: PageProps) {
     })
   )
 
-  const totalRounds = Math.log2(bracket.size)
+  // Type-aware totalRounds calculation
+  let totalRounds: number
+  if (bracket.bracketType === 'round_robin') {
+    // RR doesn't use totalRounds in LiveDashboard (matchups grouped by roundRobinRound)
+    totalRounds = 1
+  } else {
+    // SE / DE / Predictive: use maxEntrants for bye bracket support, else size
+    const effectiveSize = bracket.maxEntrants ?? bracket.size
+    totalRounds = Math.ceil(Math.log2(effectiveSize))
+  }
+
+  // Fetch standings for round-robin brackets
+  let standings: RoundRobinStanding[] = []
+  if (bracket.bracketType === 'round_robin') {
+    standings = await getRoundRobinStandings(bracketId)
+  }
 
   // Serialize all data for client component
   const serializedBracket = {
@@ -146,6 +162,7 @@ export default async function LiveDashboardPage({ params }: PageProps) {
       initialVoteCounts={initialVoteCounts}
       initialVoterIds={initialVoterIds}
       sessionCode={sessionCode}
+      standings={standings}
     />
   )
 }
