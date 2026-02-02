@@ -11,6 +11,10 @@ interface DoubleElimDiagramProps {
   entrants: BracketEntrantData[]
   matchups: MatchupData[]
   isTeacher?: boolean
+  /** When provided, entrant halves in "voting" matchups become clickable */
+  onEntrantClick?: (matchupId: string, entrantId: string) => void
+  /** Map of matchupId -> voted entrantId for showing which entrant was picked */
+  votedEntrantIds?: Record<string, string | null>
 }
 
 type DETab = 'winners' | 'losers' | 'grand_finals' | 'overview'
@@ -61,11 +65,23 @@ function TabBadge({ count }: { count: number }) {
 }
 
 // --- Grand Finals card ---
-function GrandFinalsCard({ matchup }: { matchup: MatchupData }) {
+function GrandFinalsCard({
+  matchup,
+  onEntrantClick,
+  votedEntrantIds,
+}: {
+  matchup: MatchupData
+  onEntrantClick?: (matchupId: string, entrantId: string) => void
+  votedEntrantIds?: Record<string, string | null>
+}) {
   const e1Name = matchup.entrant1?.name ?? 'TBD'
   const e2Name = matchup.entrant2?.name ?? 'TBD'
   const isDecided = matchup.winnerId != null
   const isVoting = matchup.status === 'voting'
+  const isClickable = isVoting && !!onEntrantClick
+
+  const voted1 = votedEntrantIds?.[matchup.id] === matchup.entrant1Id && matchup.entrant1Id != null
+  const voted2 = votedEntrantIds?.[matchup.id] === matchup.entrant2Id && matchup.entrant2Id != null
 
   return (
     <div
@@ -83,13 +99,20 @@ function GrandFinalsCard({ matchup }: { matchup: MatchupData }) {
       <div className="flex items-center gap-3">
         {/* Entrant 1 (WB Champion) */}
         <div
-          className={`flex-1 rounded-md border p-3 text-center text-sm font-medium ${
-            matchup.winnerId === matchup.entrant1Id
-              ? 'border-green-500 bg-green-50 text-green-800 dark:bg-green-950 dark:text-green-300'
-              : matchup.entrant1 ? '' : 'text-muted-foreground italic'
+          className={`flex-1 rounded-md border p-3 text-center text-sm font-medium transition-colors ${
+            voted1
+              ? 'border-primary bg-primary/10 text-primary font-bold'
+              : matchup.winnerId === matchup.entrant1Id
+                ? 'border-green-500 bg-green-50 text-green-800 dark:bg-green-950 dark:text-green-300'
+                : isClickable && matchup.entrant1
+                  ? 'cursor-pointer hover:border-primary/50 hover:bg-primary/5'
+                  : matchup.entrant1 ? '' : 'text-muted-foreground italic'
           }`}
+          onClick={isClickable && matchup.entrant1Id ? () => onEntrantClick(matchup.id, matchup.entrant1Id!) : undefined}
+          role={isClickable && matchup.entrant1Id ? 'button' : undefined}
+          tabIndex={isClickable && matchup.entrant1Id ? 0 : undefined}
         >
-          {e1Name}
+          {e1Name}{voted1 ? ' \u2713' : ''}
           {matchup.entrant1 && (
             <div className="mt-0.5 text-[10px] text-muted-foreground">WB Champion</div>
           )}
@@ -99,13 +122,20 @@ function GrandFinalsCard({ matchup }: { matchup: MatchupData }) {
 
         {/* Entrant 2 (LB Champion) */}
         <div
-          className={`flex-1 rounded-md border p-3 text-center text-sm font-medium ${
-            matchup.winnerId === matchup.entrant2Id
-              ? 'border-green-500 bg-green-50 text-green-800 dark:bg-green-950 dark:text-green-300'
-              : matchup.entrant2 ? '' : 'text-muted-foreground italic'
+          className={`flex-1 rounded-md border p-3 text-center text-sm font-medium transition-colors ${
+            voted2
+              ? 'border-primary bg-primary/10 text-primary font-bold'
+              : matchup.winnerId === matchup.entrant2Id
+                ? 'border-green-500 bg-green-50 text-green-800 dark:bg-green-950 dark:text-green-300'
+                : isClickable && matchup.entrant2
+                  ? 'cursor-pointer hover:border-primary/50 hover:bg-primary/5'
+                  : matchup.entrant2 ? '' : 'text-muted-foreground italic'
           }`}
+          onClick={isClickable && matchup.entrant2Id ? () => onEntrantClick(matchup.id, matchup.entrant2Id!) : undefined}
+          role={isClickable && matchup.entrant2Id ? 'button' : undefined}
+          tabIndex={isClickable && matchup.entrant2Id ? 0 : undefined}
         >
-          {e2Name}
+          {e2Name}{voted2 ? ' \u2713' : ''}
           {matchup.entrant2 && (
             <div className="mt-0.5 text-[10px] text-muted-foreground">LB Champion</div>
           )}
@@ -113,7 +143,7 @@ function GrandFinalsCard({ matchup }: { matchup: MatchupData }) {
       </div>
       {isVoting && (
         <div className="mt-2 text-center text-xs font-medium text-primary">
-          Voting in progress
+          {isClickable ? 'Tap to vote' : 'Voting in progress'}
         </div>
       )}
       {isDecided && (
@@ -131,6 +161,8 @@ export function DoubleElimDiagram({
   entrants,
   matchups,
   isTeacher = false,
+  onEntrantClick,
+  votedEntrantIds,
 }: DoubleElimDiagramProps) {
   const [activeTab, setActiveTab] = useState<DETab>('winners')
 
@@ -282,6 +314,8 @@ export function DoubleElimDiagram({
                     matchups={normalizedWinners}
                     totalRounds={winnersTotalRounds}
                     bracketSize={effectiveSize}
+                    onEntrantClick={onEntrantClick}
+                    votedEntrantIds={votedEntrantIds}
                   />
                 </BracketZoomWrapper>
               ) : (
@@ -289,6 +323,8 @@ export function DoubleElimDiagram({
                   matchups={normalizedWinners}
                   totalRounds={winnersTotalRounds}
                   bracketSize={effectiveSize}
+                  onEntrantClick={onEntrantClick}
+                  votedEntrantIds={votedEntrantIds}
                 />
               )}
             </div>
@@ -313,6 +349,8 @@ export function DoubleElimDiagram({
                     matchups={normalizedLosers}
                     totalRounds={losersTotalRounds}
                     bracketSize={effectiveSize}
+                    onEntrantClick={onEntrantClick}
+                    votedEntrantIds={votedEntrantIds}
                   />
                 </BracketZoomWrapper>
               ) : (
@@ -320,6 +358,8 @@ export function DoubleElimDiagram({
                   matchups={normalizedLosers}
                   totalRounds={losersTotalRounds}
                   bracketSize={effectiveSize}
+                  onEntrantClick={onEntrantClick}
+                  votedEntrantIds={votedEntrantIds}
                 />
               )}
             </div>
@@ -336,7 +376,12 @@ export function DoubleElimDiagram({
           </h3>
           <div className="space-y-4 py-4">
             {grandFinalsMatchups.map((m) => (
-              <GrandFinalsCard key={m.id} matchup={m} />
+              <GrandFinalsCard
+                key={m.id}
+                matchup={m}
+                onEntrantClick={onEntrantClick}
+                votedEntrantIds={votedEntrantIds}
+              />
             ))}
           </div>
         </div>
