@@ -169,10 +169,16 @@ export async function updateMatchupStatus(
 export async function openMatchupsForVoting(
   matchupIds: string[]
 ): Promise<{ opened: number }> {
+  // Only open matchups that have both entrants populated.
+  // In double-elimination, later-round matchups may be pending but
+  // waiting for entrants from another region (e.g., Losers R2 waiting
+  // for Winners R2 losers to drop down).
   const result = await prisma.matchup.updateMany({
     where: {
       id: { in: matchupIds },
       status: 'pending',
+      entrant1Id: { not: null },
+      entrant2Id: { not: null },
     },
     data: { status: 'voting' },
   })

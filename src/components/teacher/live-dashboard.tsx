@@ -340,8 +340,11 @@ export function LiveDashboard({
 
     if (isDoubleElim) {
       // Filter pending matchups in the active DE region's current DB round
+      // IMPORTANT: Only include matchups with both entrants populated.
+      // In DE, later-round matchups may be "pending" but waiting for entrants
+      // from another region (e.g., Losers R2 waiting for Winners R2 losers).
       pendingIds = deActiveRegionMatchups
-        .filter((m) => m.round === deCurrentDbRound && m.status === 'pending')
+        .filter((m) => m.round === deCurrentDbRound && m.status === 'pending' && m.entrant1Id && m.entrant2Id)
         .map((m) => m.id)
     } else {
       pendingIds = currentMatchups
@@ -560,7 +563,21 @@ export function LiveDashboard({
     : null
   const deAllRegionRoundDecided = deRs && deRs.decided === deRs.total && deRs.total > 0
   const deHasVoting = deRs && deRs.voting > 0
-  const deHasPending = deRs && deRs.pending > 0
+  // DE: only count pending matchups that have both entrants (ready to vote)
+  const deReadyPendingCount = isDoubleElim && deActiveRegionInfo
+    ? deActiveRegionMatchups.filter(
+        (m) => m.round === (deActiveRegionInfo.minRound + deActiveRegionInfo.currentDisplayRound - 1)
+          && m.status === 'pending' && m.entrant1Id && m.entrant2Id
+      ).length
+    : 0
+  const deHasPending = deReadyPendingCount > 0
+  // Count pending matchups waiting for entrants (blocked by another region)
+  const deWaitingForEntrants = isDoubleElim && deActiveRegionInfo
+    ? deActiveRegionMatchups.filter(
+        (m) => m.round === (deActiveRegionInfo.minRound + deActiveRegionInfo.currentDisplayRound - 1)
+          && m.status === 'pending' && (!m.entrant1Id || !m.entrant2Id)
+      ).length
+    : 0
   // DE region round is "done" when all rounds in that region are decided
   const deRegionAllDone = isDoubleElim && deActiveRegionInfo
     ? Object.values(deRegionRoundStatus).every((s) => s.decided === s.total && s.total > 0)
@@ -709,8 +726,15 @@ export function LiveDashboard({
             disabled={isPending}
             className="rounded-md bg-blue-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-blue-700 disabled:opacity-50"
           >
-            {isPending ? 'Opening...' : `Open Voting (${deRs!.pending})`}
+            {isPending ? 'Opening...' : `Open Voting (${deReadyPendingCount})`}
           </button>
+        )}
+
+        {/* DE: show hint when matchups are waiting for entrants from another region */}
+        {isDoubleElim && !deHasPending && !deHasVoting && !deAllRegionRoundDecided && !deRegionAllDone && deWaitingForEntrants > 0 && (
+          <span className="rounded-md bg-amber-50 px-3 py-1.5 text-xs font-medium text-amber-700 dark:bg-amber-900/20 dark:text-amber-400">
+            {deWaitingForEntrants} matchup{deWaitingForEntrants > 1 ? 's' : ''} waiting for {deRegion === 'losers' ? 'Winners' : 'Losers'} bracket results
+          </span>
         )}
 
         {isDoubleElim && deHasVoting && (
