@@ -13,7 +13,8 @@ import { ParticipationSidebar } from '@/components/teacher/participation-sidebar
 import { QRCodeDisplay } from '@/components/teacher/qr-code-display'
 import { openMatchupsForVoting, advanceMatchup, batchAdvanceRound } from '@/actions/bracket-advance'
 import { recordResult, advanceRound } from '@/actions/round-robin'
-import type { BracketWithDetails, MatchupData, RoundRobinStanding } from '@/lib/bracket/types'
+import { PredictionLeaderboard } from '@/components/bracket/prediction-leaderboard'
+import type { BracketWithDetails, MatchupData, RoundRobinStanding, PredictionScore } from '@/lib/bracket/types'
 import type { VoteCounts } from '@/types/vote'
 
 type DERegion = 'winners' | 'losers' | 'grand_finals'
@@ -26,6 +27,7 @@ interface LiveDashboardProps {
   initialVoterIds: Record<string, string[]>
   sessionCode?: string | null
   standings?: RoundRobinStanding[]
+  predictionScores?: PredictionScore[]
 }
 
 interface RevealState {
@@ -44,6 +46,7 @@ export function LiveDashboard({
   initialVoterIds,
   sessionCode,
   standings = [],
+  predictionScores = [],
 }: LiveDashboardProps) {
   const [selectedMatchupId, setSelectedMatchupId] = useState<string | null>(null)
   const [sidebarOpen, setSidebarOpen] = useState(true)
@@ -629,8 +632,7 @@ export function LiveDashboard({
     ? deBracketDone
     : (currentRound === totalRounds && allRoundDecided)
 
-  // Suppress unused variable warnings for type detection booleans
-  void isPredictive
+  // isPredictive is now used for PredictionLeaderboard rendering
 
   return (
     <div className="flex h-full flex-col gap-3">
@@ -971,6 +973,18 @@ export function LiveDashboard({
               onMatchupClick={handleMatchupClick}
               selectedMatchupId={selectedMatchupId}
             />
+          )}
+
+          {/* Prediction leaderboard for predictive brackets */}
+          {isPredictive && (
+            <div className="mt-4 border-t pt-4">
+              <PredictionLeaderboard
+                bracketId={bracket.id}
+                initialScores={predictionScores}
+                totalRounds={totalRounds}
+                isTeacher={true}
+              />
+            </div>
           )}
         </div>
 

@@ -511,6 +511,7 @@ function AdvancedPredictionMode({
           bracketSize={bracket.maxEntrants ?? bracket.size}
           onEntrantClick={(matchupId, entrantId) => handleSelect(matchupId, entrantId)}
           votedEntrantIds={votedEntrantIds}
+          allowPendingClick
         />
       </div>
 

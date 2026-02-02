@@ -9,6 +9,7 @@ import { DoubleElimDiagram } from '@/components/bracket/double-elim-diagram'
 import { RoundRobinStandings } from '@/components/bracket/round-robin-standings'
 import { RoundRobinMatchups } from '@/components/bracket/round-robin-matchups'
 import { PredictiveBracket } from '@/components/bracket/predictive-bracket'
+import { PredictionLeaderboard } from '@/components/bracket/prediction-leaderboard'
 import { WinnerReveal } from '@/components/bracket/winner-reveal'
 import { CelebrationScreen } from '@/components/bracket/celebration-screen'
 import { useRealtimeBracket } from '@/hooks/use-realtime-bracket'
@@ -583,7 +584,7 @@ function RRLiveView({
 
 /**
  * PredictiveLiveView: Predictive bracket live view with real-time subscription.
- * Shows AdvancedVotingView with real-time matchup updates.
+ * Shows AdvancedVotingView with real-time matchup updates + prediction leaderboard.
  */
 function PredictiveLiveView({
   bracket,
@@ -602,12 +603,23 @@ function PredictiveLiveView({
     ? { ...bracket, matchups: realtimeMatchups as MatchupData[] }
     : bracket
 
+  const totalRounds = Math.ceil(Math.log2(bracket.maxEntrants ?? bracket.size))
+
   return (
-    <AdvancedVotingView
-      bracket={liveBracket}
-      participantId={participantId}
-      initialVotes={initialVotes}
-    />
+    <div className="space-y-6">
+      <AdvancedVotingView
+        bracket={liveBracket}
+        participantId={participantId}
+        initialVotes={initialVotes}
+      />
+      <PredictionLeaderboard
+        bracketId={bracket.id}
+        initialScores={[]}
+        totalRounds={totalRounds}
+        isTeacher={false}
+        participantId={participantId}
+      />
+    </div>
   )
 }
 

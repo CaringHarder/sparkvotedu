@@ -41,6 +41,8 @@ interface BracketDiagramProps {
    * consecutive rounds have the same matchup count (e.g. LB minor→major).
    */
   compactVertical?: boolean
+  /** Allow entrant clicks on pending matchups (used by prediction mode) */
+  allowPendingClick?: boolean
 }
 
 // --- Round label mapping ---
@@ -116,6 +118,7 @@ function MatchupBox({
   voteLabel,
   onMatchupClick,
   isSelected,
+  allowPendingClick,
 }: {
   matchup: MatchupData
   x: number
@@ -125,6 +128,7 @@ function MatchupBox({
   voteLabel?: { e1: number; e2: number }
   onMatchupClick?: (matchupId: string) => void
   isSelected?: boolean
+  allowPendingClick?: boolean
 }) {
   const isByeMatchup = matchup.isBye === true
   // For bye matchups: show "BYE" for the null slot, real entrant name for the other
@@ -138,7 +142,7 @@ function MatchupBox({
   const isTBD2 = !isBye2 && matchup.entrant2 == null
 
   const isVoting = matchup.status === 'voting'
-  const isClickable = isVoting && onEntrantClick && !isByeMatchup
+  const isClickable = (isVoting || (allowPendingClick && matchup.status === 'pending')) && onEntrantClick && !isByeMatchup
   const voted1 = votedEntrantId === matchup.entrant1Id
   const voted2 = votedEntrantId === matchup.entrant2Id
 
@@ -443,7 +447,7 @@ function getCompactPositions(
 }
 
 // --- Main BracketDiagram component ---
-export function BracketDiagram({ matchups, totalRounds, className, bracketSize, onEntrantClick, votedEntrantIds, voteLabels, onMatchupClick, selectedMatchupId, compactVertical }: BracketDiagramProps) {
+export function BracketDiagram({ matchups, totalRounds, className, bracketSize, onEntrantClick, votedEntrantIds, voteLabels, onMatchupClick, selectedMatchupId, compactVertical, allowPendingClick }: BracketDiagramProps) {
   const roundLabels = useMemo(() => getRoundLabels(totalRounds), [totalRounds])
 
   // Compact positioning for non-SE structures (e.g. losers bracket)
@@ -559,6 +563,7 @@ export function BracketDiagram({ matchups, totalRounds, className, bracketSize, 
             voteLabel={voteLabels?.[matchup.id]}
             onMatchupClick={onMatchupClick}
             isSelected={selectedMatchupId === matchup.id}
+            allowPendingClick={allowPendingClick}
           />
         ))}
       </svg>

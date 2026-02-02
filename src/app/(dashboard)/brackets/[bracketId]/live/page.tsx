@@ -3,9 +3,10 @@ import { getAuthenticatedTeacher } from '@/lib/dal/auth'
 import { getBracketWithDetails } from '@/lib/dal/bracket'
 import { getMatchupVoteSummary, getVoterParticipantIds } from '@/lib/dal/vote'
 import { getRoundRobinStandings } from '@/lib/dal/round-robin'
+import { scoreBracketPredictions } from '@/lib/dal/prediction'
 import { prisma } from '@/lib/prisma'
 import { LiveDashboard } from '@/components/teacher/live-dashboard'
-import type { BracketStatus, RoundRobinStanding } from '@/lib/bracket/types'
+import type { BracketStatus, RoundRobinStanding, PredictionScore } from '@/lib/bracket/types'
 import type { VoteCounts } from '@/types/vote'
 import type { Metadata } from 'next'
 
@@ -110,6 +111,12 @@ export default async function LiveDashboardPage({ params }: PageProps) {
     standings = await getRoundRobinStandings(bracketId)
   }
 
+  // Fetch prediction scores for predictive brackets
+  let predictionScores: PredictionScore[] = []
+  if (bracket.bracketType === 'predictive') {
+    predictionScores = await scoreBracketPredictions(bracketId)
+  }
+
   // Serialize all data for client component
   const serializedBracket = {
     id: bracket.id,
@@ -179,6 +186,7 @@ export default async function LiveDashboardPage({ params }: PageProps) {
       initialVoterIds={initialVoterIds}
       sessionCode={sessionCode}
       standings={standings}
+      predictionScores={predictionScores}
     />
   )
 }
