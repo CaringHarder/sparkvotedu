@@ -5,7 +5,10 @@ import {
   recordRoundRobinResult,
   advanceRoundRobinRound,
   getRoundRobinStandings,
+  isRoundRobinComplete,
 } from '@/lib/dal/round-robin'
+import { broadcastBracketUpdate } from '@/lib/realtime/broadcast'
+import { prisma } from '@/lib/prisma'
 import { recordRoundRobinResultSchema } from '@/lib/utils/validation'
 import { revalidatePath } from 'next/cache'
 import { z } from 'zod'
@@ -43,6 +46,21 @@ export async function recordResult(input: unknown) {
     }
 
     revalidatePath(`/brackets/${parsed.data.bracketId}`)
+
+    // Check if all RR matchups are now decided (bracket complete)
+    const rrWinnerId = await isRoundRobinComplete(parsed.data.bracketId)
+    if (rrWinnerId) {
+      // Update bracket status to completed
+      await prisma.bracket.update({
+        where: { id: parsed.data.bracketId },
+        data: { status: 'completed' },
+      })
+
+      // Broadcast completion for student celebration
+      broadcastBracketUpdate(parsed.data.bracketId, 'bracket_completed', {
+        winnerId: rrWinnerId,
+      }).catch(console.error)
+    }
 
     return { success: true }
   } catch {
