@@ -248,6 +248,8 @@ Recent decisions affecting current work:
 - [07-18]: Open Round 1 fallback button for brackets activated before auto-open fix
 - [07-18]: Student vote buttons replace static entrant names during voting -- contextual UI
 - [07-18]: visibleRounds filtering hides future rounds for students in round_by_round pacing
+- [07-20]: Fix at child level not hook level -- setPointerCapture essential for reliable drag-to-pan; children opt out via stopPropagation
+- [07-20]: Conditional stopPropagation on matchup rect -- only prevents propagation when onMatchupClick provided (teacher view)
 
 ### Pending Todos
 
@@ -264,6 +266,6 @@ Recent decisions affecting current work:
 
 ## Session Continuity
 
-Last session: 2026-02-01
-Stopped at: Completed 07-18-PLAN.md (RR Live Controls + Student Voting UI)
+Last session: 2026-02-02
+Stopped at: Completed 07-20-PLAN.md (Zoom Controls & Entrant Click Fix)
 Resume file: None
