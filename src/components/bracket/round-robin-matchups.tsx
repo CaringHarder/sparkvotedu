@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { ChevronDown, ChevronRight, Trophy, Minus, Clock } from 'lucide-react'
 import type { MatchupData, BracketEntrantData } from '@/lib/bracket/types'
 
@@ -79,6 +79,44 @@ export function RoundRobinMatchups({
     })
   }
 
+  // Simple mode: track which matchup is currently shown per round
+  const [simpleMatchupIndex, setSimpleMatchupIndex] = useState<Record<number, number>>({})
+
+  const getMatchupIndex = (roundNumber: number, totalMatchups: number) => {
+    const idx = simpleMatchupIndex[roundNumber] ?? 0
+    return Math.min(idx, totalMatchups - 1) // Clamp to valid range
+  }
+
+  const navigateMatchup = (roundNumber: number, direction: 'prev' | 'next', totalMatchups: number) => {
+    setSimpleMatchupIndex((prev) => {
+      const current = prev[roundNumber] ?? 0
+      let next: number
+      if (direction === 'next') {
+        next = current >= totalMatchups - 1 ? 0 : current + 1 // Wrap around
+      } else {
+        next = current <= 0 ? totalMatchups - 1 : current - 1 // Wrap around
+      }
+      return { ...prev, [roundNumber]: next }
+    })
+  }
+
+  // Auto-advance to next undecided matchup when current one is decided (simple mode)
+  useEffect(() => {
+    if (votingStyle !== 'simple') return
+    Object.entries(simpleMatchupIndex).forEach(([roundStr, idx]) => {
+      const roundNum = Number(roundStr)
+      const roundMs = matchups.filter((m) => (m.roundRobinRound ?? m.round) === roundNum)
+      if (roundMs.length === 0) return
+      const current = roundMs[Math.min(idx, roundMs.length - 1)]
+      if (current?.status === 'decided') {
+        const nextUndecided = roundMs.findIndex((m, i) => i > idx && m.status !== 'decided')
+        if (nextUndecided !== -1) {
+          setSimpleMatchupIndex((prev) => ({ ...prev, [roundNum]: nextUndecided }))
+        }
+      }
+    })
+  }, [matchups, votingStyle, simpleMatchupIndex])
+
   function getEntrantName(id: string | null): string {
     if (!id) return 'TBD'
     return nameById.get(id) ?? 'Unknown'
@@ -146,21 +184,70 @@ export function RoundRobinMatchups({
 
             {/* Round matchups */}
             {isExpanded && (
-              <div className="border-t px-3 pb-3 pt-2 space-y-2">
-                {roundMatchups.map((matchup) => (
-                  <MatchupCard
-                    key={matchup.id}
-                    matchup={matchup}
-                    entrant1Name={getEntrantName(matchup.entrant1Id)}
-                    entrant2Name={getEntrantName(matchup.entrant2Id)}
-                    isTeacher={isTeacher}
-                    onRecordResult={onRecordResult}
-                    onStudentVote={onStudentVote}
-                    votedMatchupId={votedMatchups?.[matchup.id] ?? null}
-                    voteCounts={voteCounts?.[matchup.id]}
-                    votingStyle={votingStyle}
-                  />
-                ))}
+              <div className="border-t px-3 pb-3 pt-2">
+                {votingStyle === 'simple' && roundMatchups.length > 1 ? (
+                  // Simple mode: show one matchup at a time with navigation
+                  <div className="space-y-2">
+                    {/* Navigation bar */}
+                    <div className="flex items-center justify-between text-xs text-muted-foreground">
+                      <button
+                        type="button"
+                        onClick={() => navigateMatchup(roundNumber, 'prev', roundMatchups.length)}
+                        className="rounded px-2 py-1 hover:bg-muted transition-colors"
+                      >
+                        &larr; Prev
+                      </button>
+                      <span className="font-medium">
+                        Matchup {getMatchupIndex(roundNumber, roundMatchups.length) + 1} of {roundMatchups.length}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => navigateMatchup(roundNumber, 'next', roundMatchups.length)}
+                        className="rounded px-2 py-1 hover:bg-muted transition-colors"
+                      >
+                        Next &rarr;
+                      </button>
+                    </div>
+
+                    {/* Single matchup card */}
+                    {(() => {
+                      const idx = getMatchupIndex(roundNumber, roundMatchups.length)
+                      const m = roundMatchups[idx]
+                      return (
+                        <MatchupCard
+                          key={m.id}
+                          matchup={m}
+                          entrant1Name={getEntrantName(m.entrant1Id)}
+                          entrant2Name={getEntrantName(m.entrant2Id)}
+                          isTeacher={isTeacher}
+                          onRecordResult={onRecordResult}
+                          onStudentVote={onStudentVote}
+                          votedMatchupId={votedMatchups?.[m.id] ?? null}
+                          voteCounts={voteCounts?.[m.id]}
+                          votingStyle={votingStyle}
+                        />
+                      )
+                    })()}
+                  </div>
+                ) : (
+                  // Advanced mode (or single matchup): show all matchups
+                  <div className="space-y-2">
+                    {roundMatchups.map((matchup) => (
+                      <MatchupCard
+                        key={matchup.id}
+                        matchup={matchup}
+                        entrant1Name={getEntrantName(matchup.entrant1Id)}
+                        entrant2Name={getEntrantName(matchup.entrant2Id)}
+                        isTeacher={isTeacher}
+                        onRecordResult={onRecordResult}
+                        onStudentVote={onStudentVote}
+                        votedMatchupId={votedMatchups?.[matchup.id] ?? null}
+                        voteCounts={voteCounts?.[matchup.id]}
+                        votingStyle={votingStyle}
+                      />
+                    ))}
+                  </div>
+                )}
               </div>
             )}
           </div>
