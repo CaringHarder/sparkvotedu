@@ -1,7 +1,7 @@
 import { prisma } from '@/lib/prisma'
 import { scorePredictions } from '@/lib/bracket/predictive'
 import { calculateBracketSizeWithByes } from '@/lib/bracket/byes'
-import { broadcastBracketUpdate } from '@/lib/realtime/broadcast'
+import { broadcastBracketUpdate, broadcastActivityUpdate } from '@/lib/realtime/broadcast'
 import type { PredictionData, PredictionScore } from '@/lib/bracket/types'
 
 /**
@@ -388,9 +388,15 @@ export async function updatePredictionStatusDAL(
     }
   }
 
-  // When transitioning to 'active', also set the bracket status to 'active'
+  // Set bracket status alongside prediction status transitions:
+  // - predictions_open: auto-activate so bracket appears in student session activities
+  // - active: bracket stays active (predictions closed, live play begins)
+  // - completed: bracket is done
   const updateData: { predictionStatus: string; status?: string } = {
     predictionStatus: status,
+  }
+  if (status === 'predictions_open') {
+    updateData.status = 'active'
   }
   if (status === 'active') {
     updateData.status = 'active'
@@ -404,10 +410,15 @@ export async function updatePredictionStatusDAL(
     data: updateData,
   })
 
-  // Broadcast prediction status change
+  // Broadcast prediction status change to bracket subscribers
   broadcastBracketUpdate(bracketId, 'prediction_status_changed', {
     predictionStatus: status,
   }).catch(console.error)
+
+  // When predictions open, also broadcast activity update so student session page refreshes
+  if (status === 'predictions_open' && bracket.sessionId) {
+    broadcastActivityUpdate(bracket.sessionId).catch(console.error)
+  }
 
   return { success: true }
 }
