@@ -297,25 +297,12 @@ export default function StudentBracketVotingPage() {
   // Ready state: render appropriate view based on bracketType
   const { bracket, participantId, initialVotes } = state
 
-  // Predictive brackets: show prediction UI when predictions are open, or live bracket otherwise
+  // Predictive brackets: unified component handles prediction → live transition in real-time
   if (bracket.bracketType === 'predictive') {
-    if (bracket.predictionStatus === 'predictions_open') {
-      return (
-        <div>
-          {backLink}
-          <PredictiveBracket
-            bracket={bracket}
-            participantId={participantId}
-            isTeacher={false}
-          />
-        </div>
-      )
-    }
-    // Predictions closed, bracket is active -- show live resolving view with real-time
     return (
       <div>
         {backLink}
-        <PredictiveLiveView
+        <PredictiveStudentView
           bracket={bracket}
           participantId={participantId}
           initialVotes={initialVotes}
@@ -583,10 +570,13 @@ function RRLiveView({
 }
 
 /**
- * PredictiveLiveView: Predictive bracket live view with real-time subscription.
- * Shows AdvancedVotingView with real-time matchup updates + prediction leaderboard.
+ * PredictiveStudentView: Handles the full predictive bracket lifecycle.
+ *
+ * - predictions_open: shows PredictiveBracket for submitting predictions
+ * - active: shows tabbed interface with Bracket (voting) + Results (leaderboard)
+ * - Automatically transitions when teacher closes predictions via real-time broadcast
  */
-function PredictiveLiveView({
+function PredictiveStudentView({
   bracket,
   participantId,
   initialVotes,
@@ -595,30 +585,78 @@ function PredictiveLiveView({
   participantId: string
   initialVotes: Record<string, string | null>
 }) {
-  // Real-time bracket updates
-  const { matchups: realtimeMatchups } = useRealtimeBracket(bracket.id)
+  const [activeTab, setActiveTab] = useState<'bracket' | 'results'>('bracket')
 
-  // Merge real-time matchups into bracket for AdvancedVotingView
+  // Real-time bracket updates (includes predictionStatus tracking)
+  const { matchups: realtimeMatchups, predictionStatus: realtimePredictionStatus } =
+    useRealtimeBracket(bracket.id)
+
+  // Use real-time prediction status if available, otherwise initial
+  const effectiveStatus = realtimePredictionStatus ?? bracket.predictionStatus ?? 'draft'
+
+  // Merge real-time matchups into bracket
   const liveBracket = realtimeMatchups
     ? { ...bracket, matchups: realtimeMatchups as MatchupData[] }
     : bracket
 
   const totalRounds = Math.ceil(Math.log2(bracket.maxEntrants ?? bracket.size))
 
-  return (
-    <div className="space-y-6">
-      <AdvancedVotingView
-        bracket={liveBracket}
+  // Predictions still open: show prediction submission UI
+  if (effectiveStatus === 'predictions_open' || effectiveStatus === 'draft') {
+    return (
+      <PredictiveBracket
+        bracket={bracket}
         participantId={participantId}
-        initialVotes={initialVotes}
-      />
-      <PredictionLeaderboard
-        bracketId={bracket.id}
-        initialScores={[]}
-        totalRounds={totalRounds}
         isTeacher={false}
-        participantId={participantId}
       />
+    )
+  }
+
+  // Predictions closed: tabbed view with Bracket + Results
+  return (
+    <div className="space-y-3">
+      {/* Tab bar */}
+      <div className="flex gap-1 rounded-lg bg-muted p-1">
+        <button
+          type="button"
+          onClick={() => setActiveTab('bracket')}
+          className={`flex-1 rounded-md px-3 py-2 text-sm font-medium transition-colors ${
+            activeTab === 'bracket'
+              ? 'bg-background text-foreground shadow-sm'
+              : 'text-muted-foreground hover:text-foreground'
+          }`}
+        >
+          Bracket
+        </button>
+        <button
+          type="button"
+          onClick={() => setActiveTab('results')}
+          className={`flex-1 rounded-md px-3 py-2 text-sm font-medium transition-colors ${
+            activeTab === 'results'
+              ? 'bg-background text-foreground shadow-sm'
+              : 'text-muted-foreground hover:text-foreground'
+          }`}
+        >
+          Predictions
+        </button>
+      </div>
+
+      {/* Tab content */}
+      {activeTab === 'bracket' ? (
+        <AdvancedVotingView
+          bracket={liveBracket}
+          participantId={participantId}
+          initialVotes={initialVotes}
+        />
+      ) : (
+        <PredictionLeaderboard
+          bracketId={bracket.id}
+          initialScores={[]}
+          totalRounds={totalRounds}
+          isTeacher={false}
+          participantId={participantId}
+        />
+      )}
     </div>
   )
 }

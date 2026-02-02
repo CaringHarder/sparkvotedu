@@ -33,6 +33,7 @@ interface BracketStateResponse {
   viewingMode: string
   showVoteCounts: boolean
   votingTimerSeconds: number | null
+  predictionStatus?: string | null
   matchups: MatchupState[]
   entrants: { id: string; name: string; seedPosition: number }[]
 }
@@ -57,6 +58,7 @@ export function useRealtimeBracket(bracketId: string, batchIntervalMs = 2000) {
   const [voteCounts, setVoteCounts] = useState<VoteCounts>({})
   const [matchups, setMatchups] = useState<MatchupState[] | null>(null)
   const [bracketCompleted, setBracketCompleted] = useState(false)
+  const [predictionStatus, setPredictionStatus] = useState<string | null>(null)
   const [transport, setTransport] = useState<'websocket' | 'polling'>('websocket')
 
   // Ref for batching vote updates -- accumulates between flushes
@@ -82,6 +84,11 @@ export function useRealtimeBracket(bracketId: string, batchIntervalMs = 2000) {
         }
       }
       setVoteCounts(counts)
+
+      // Track prediction status changes
+      if (data.predictionStatus != null) {
+        setPredictionStatus(data.predictionStatus)
+      }
 
       // Check if bracket is complete
       if (data.status === 'completed') {
@@ -131,7 +138,8 @@ export function useRealtimeBracket(bracketId: string, batchIntervalMs = 2000) {
           type === 'winner_selected' ||
           type === 'round_advanced' ||
           type === 'voting_opened' ||
-          type === 'bracket_completed'
+          type === 'bracket_completed' ||
+          type === 'prediction_status_changed'
         ) {
           fetchBracketState()
         }
@@ -168,5 +176,5 @@ export function useRealtimeBracket(bracketId: string, batchIntervalMs = 2000) {
     }
   }, [bracketId, supabase, batchIntervalMs, fetchBracketState])
 
-  return { voteCounts, matchups, bracketCompleted, transport, refetch: fetchBracketState }
+  return { voteCounts, matchups, bracketCompleted, predictionStatus, transport, refetch: fetchBracketState }
 }
