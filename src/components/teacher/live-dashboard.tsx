@@ -203,6 +203,13 @@ export function LiveDashboard({
     return gf.length > 0 && gf.every((m) => m.status === 'decided')
   }, [isDoubleElim, deMatchupsByRegion])
 
+  // Auto-navigate to GF tab when DE bracket completes
+  useEffect(() => {
+    if (deBracketDone) {
+      setDeRegion('grand_finals')
+    }
+  }, [deBracketDone])
+
   // Per-region status badge counts (for region tabs)
   const deRegionBadges = useMemo(() => {
     if (!isDoubleElim) return { winners: 0, losers: 0, grand_finals: 0 }
@@ -429,6 +436,16 @@ export function LiveDashboard({
       if (tiedCount.value > 0) parts.push(`${tiedCount.value} tied`)
       if (noVoteCount.value > 0) parts.push(`${noVoteCount.value} with no votes`)
       setError(`All matchups need manual resolution (${parts.join(', ')}). Click a matchup to pick a winner.`)
+      // Auto-open pick-winner for first unresolved matchup
+      const firstUnresolved = votingMatchups.find((m) => {
+        const counts = mergedVoteCounts[m.id] ?? {}
+        const e1 = m.entrant1Id ? (counts[m.entrant1Id] ?? 0) : 0
+        const e2 = m.entrant2Id ? (counts[m.entrant2Id] ?? 0) : 0
+        return e1 === e2
+      })
+      if (firstUnresolved) {
+        setSelectedMatchupId(firstUnresolved.id)
+      }
       return
     }
 
@@ -442,6 +459,16 @@ export function LiveDashboard({
         if (tiedCount.value > 0) parts.push(`${tiedCount.value} tied`)
         if (noVoteCount.value > 0) parts.push(`${noVoteCount.value} with no votes`)
         setError(`${advanceList.length} advanced. ${parts.join(', ')} -- click matchup to pick winner.`)
+        // Auto-open pick-winner for first unresolved matchup
+        const firstUnresolved = votingMatchups.find((m) => {
+          const counts = mergedVoteCounts[m.id] ?? {}
+          const e1 = m.entrant1Id ? (counts[m.entrant1Id] ?? 0) : 0
+          const e2 = m.entrant2Id ? (counts[m.entrant2Id] ?? 0) : 0
+          return e1 === e2
+        })
+        if (firstUnresolved) {
+          setSelectedMatchupId(firstUnresolved.id)
+        }
       }
     })
   }, [isDoubleElim, deActiveRegionMatchups, deCurrentDbRound, currentMatchups, currentRound, mergedVoteCounts, bracket.id])
