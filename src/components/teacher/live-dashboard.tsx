@@ -401,6 +401,7 @@ export function LiveDashboard({
 
     const advanceList: Array<{ matchupId: string; winnerId: string }> = []
     const tiedCount = { value: 0 }
+    const noVoteCount = { value: 0 }
 
     for (const m of votingMatchups) {
       const counts = mergedVoteCounts[m.id] ?? {}
@@ -412,11 +413,18 @@ export function LiveDashboard({
         advanceList.push({ matchupId: m.id, winnerId: m.entrant2Id })
       } else if (e1 > 0) {
         tiedCount.value++
+      } else {
+        // No votes cast on this matchup
+        noVoteCount.value++
       }
     }
 
-    if (tiedCount.value > 0 && advanceList.length === 0) {
-      setError('All matchups are tied. Click a matchup in the bracket to break ties.')
+    const unresolvedCount = tiedCount.value + noVoteCount.value
+    if (unresolvedCount > 0 && advanceList.length === 0) {
+      const parts: string[] = []
+      if (tiedCount.value > 0) parts.push(`${tiedCount.value} tied`)
+      if (noVoteCount.value > 0) parts.push(`${noVoteCount.value} with no votes`)
+      setError(`All matchups need manual resolution (${parts.join(', ')}). Click a matchup to pick a winner.`)
       return
     }
 
@@ -425,8 +433,11 @@ export function LiveDashboard({
         const result = await advanceMatchup({ bracketId: bracket.id, matchupId, winnerId })
         if (result && 'error' in result) { setError(result.error as string); return }
       }
-      if (tiedCount.value > 0) {
-        setError(`${advanceList.length} advanced. ${tiedCount.value} tied -- click matchup to break tie.`)
+      if (unresolvedCount > 0) {
+        const parts: string[] = []
+        if (tiedCount.value > 0) parts.push(`${tiedCount.value} tied`)
+        if (noVoteCount.value > 0) parts.push(`${noVoteCount.value} with no votes`)
+        setError(`${advanceList.length} advanced. ${parts.join(', ')} -- click matchup to pick winner.`)
       }
     })
   }, [isDoubleElim, deActiveRegionMatchups, deCurrentDbRound, currentMatchups, currentRound, mergedVoteCounts, bracket.id])

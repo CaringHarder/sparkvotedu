@@ -37,9 +37,11 @@ export default async function LiveDashboardPage({ params }: PageProps) {
     notFound()
   }
 
-  // Redirect to bracket detail if not active
+  // Redirect to bracket detail if bracket is still in draft
+  // Allow 'active' AND 'completed' — the LiveDashboard handles completion
+  // with winner reveal and celebration animations before the teacher navigates away.
   const status = bracket.status as BracketStatus
-  if (status !== 'active') {
+  if (status === 'draft') {
     redirect(`/brackets/${bracketId}`)
   }
 
