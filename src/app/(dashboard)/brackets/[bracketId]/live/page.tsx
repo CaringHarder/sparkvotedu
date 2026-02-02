@@ -82,8 +82,22 @@ export default async function LiveDashboardPage({ params }: PageProps) {
   if (bracket.bracketType === 'round_robin') {
     // RR doesn't use totalRounds in LiveDashboard (matchups grouped by roundRobinRound)
     totalRounds = 1
+  } else if (bracket.bracketType === 'double_elimination') {
+    // DE: totalRounds = WB rounds + LB rounds + GF rounds
+    // The LiveDashboard uses region-based navigation, but totalRounds is still used for fallback checks
+    const wbMatchups = bracket.matchups.filter((m) => m.bracketRegion === 'winners')
+    const lbMatchups = bracket.matchups.filter((m) => m.bracketRegion === 'losers')
+    const gfMatchups = bracket.matchups.filter((m) => m.bracketRegion === 'grand_finals')
+    const wbRounds = wbMatchups.length > 0 ? Math.max(...wbMatchups.map((m) => m.round)) : 0
+    const lbRounds = lbMatchups.length > 0
+      ? Math.max(...lbMatchups.map((m) => m.round)) - Math.min(...lbMatchups.map((m) => m.round)) + 1
+      : 0
+    const gfRounds = gfMatchups.length > 0
+      ? Math.max(...gfMatchups.map((m) => m.round)) - Math.min(...gfMatchups.map((m) => m.round)) + 1
+      : 0
+    totalRounds = wbRounds + lbRounds + gfRounds
   } else {
-    // SE / DE / Predictive: use maxEntrants for bye bracket support, else size
+    // SE / Predictive: use maxEntrants for bye bracket support, else size
     const effectiveSize = bracket.maxEntrants ?? bracket.size
     totalRounds = Math.ceil(Math.log2(effectiveSize))
   }

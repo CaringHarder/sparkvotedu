@@ -197,14 +197,34 @@ export async function checkRoundComplete(
 
 /**
  * Check if the bracket is complete (final matchup has a winner).
- * The final matchup is the one with the highest round number and position 1.
  *
- * Returns the winnerId if complete, null otherwise.
+ * For double_elimination brackets: only complete when the highest-round
+ * grand_finals matchup has a winnerId. If no GF matchups exist yet, returns null.
+ *
+ * For all other bracket types: the final matchup is the one with the highest
+ * round number. Returns winnerId if complete, null otherwise.
  */
 export async function isBracketComplete(
-  bracketId: string
+  bracketId: string,
+  bracketType?: string
 ): Promise<string | null> {
-  // Get all matchups ordered by round descending to find the final
+  if (bracketType === 'double_elimination') {
+    // For DE, only the grand finals determine completion
+    const gfMatchups = await prisma.matchup.findMany({
+      where: { bracketId, bracketRegion: 'grand_finals' },
+      orderBy: { round: 'desc' },
+    })
+
+    if (gfMatchups.length === 0) {
+      return null // GF not yet created
+    }
+
+    // The highest-round GF matchup is the decisive one (could be reset match)
+    const finalGf = gfMatchups[0]
+    return finalGf.winnerId ?? null
+  }
+
+  // SE / Predictive / RR: highest-round matchup with winnerId
   const matchups = await prisma.matchup.findMany({
     where: { bracketId },
     orderBy: { round: 'desc' },

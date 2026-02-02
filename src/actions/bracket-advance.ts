@@ -65,8 +65,8 @@ export async function advanceMatchup(input: unknown) {
       resetCreated: result.resetCreated ?? false,
     }).catch(console.error)
 
-    // Check if bracket is now complete
-    const completionWinner = await isBracketComplete(bracketId)
+    // Check if bracket is now complete (pass bracketType for DE-aware check)
+    const completionWinner = await isBracketComplete(bracketId, bracket.bracketType ?? undefined)
     if (completionWinner) {
       broadcastBracketUpdate(bracketId, 'bracket_completed', {
         winnerId: completionWinner,
@@ -216,7 +216,7 @@ export async function batchAdvanceRound(input: unknown) {
     // Verify bracket ownership
     const bracket = await prisma.bracket.findFirst({
       where: { id: bracketId, teacherId: teacher.id },
-      select: { id: true, sessionId: true },
+      select: { id: true, sessionId: true, bracketType: true },
     })
 
     if (!bracket) {
@@ -245,8 +245,8 @@ export async function batchAdvanceRound(input: unknown) {
       round,
     }).catch(console.error)
 
-    // Check if bracket is now complete
-    const completionWinner = await isBracketComplete(bracketId)
+    // Check if bracket is now complete (pass bracketType for DE-aware check)
+    const completionWinner = await isBracketComplete(bracketId, bracket.bracketType ?? undefined)
     if (completionWinner) {
       broadcastBracketUpdate(bracketId, 'bracket_completed', {
         winnerId: completionWinner,
