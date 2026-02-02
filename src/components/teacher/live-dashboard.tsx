@@ -252,10 +252,11 @@ export function LiveDashboard({
             })
           }
         } else if (
+          !isRoundRobin &&
           matchup.round === totalRounds &&
           matchup.position === 1
         ) {
-          // SE/Predictive: highest round, position 1
+          // SE/Predictive: highest round, position 1 (guarded against RR misfiring)
           hasShownRevealRef.current = true
           setRevealState({
             winnerName: matchup.winner.name,
@@ -274,7 +275,7 @@ export function LiveDashboard({
     prevMatchupStatusRef.current = newStatuses
   }, [currentMatchups, totalRounds, isDoubleElim])
 
-  // Fallback: when bracketCompleted fires for DE, ensure winner reveal triggers.
+  // Fallback: DE-only. RR brackets use CelebrationScreen directly (no WinnerReveal).
   // The status-transition-based detection above may miss the GF decision if the
   // real-time refetch and prevMatchupStatusRef update race each other.
   // Uses hasShownRevealRef to prevent re-triggering after the reveal auto-dismisses.
@@ -1009,6 +1010,7 @@ export function LiveDashboard({
                   onRecordResult={handleRecordRoundRobinResult}
                   voteCounts={mergedVoteCounts}
                   onBatchDecideByVotes={handleBatchDecideByVotes}
+                  votingStyle={(bracket.roundRobinVotingStyle ?? 'simple') as 'simple' | 'advanced'}
                 />
               </div>
             </div>

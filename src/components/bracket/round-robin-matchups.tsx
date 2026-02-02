@@ -15,6 +15,7 @@ interface RoundRobinMatchupsProps {
   votedMatchups?: Record<string, string> // matchupId -> voted entrantId
   voteCounts?: Record<string, Record<string, number>> // matchupId -> { entrantId: voteCount }
   onBatchDecideByVotes?: () => void
+  votingStyle?: 'simple' | 'advanced' // simple = compact cards, advanced = expanded with vote counts
 }
 
 /**
@@ -35,6 +36,7 @@ export function RoundRobinMatchups({
   votedMatchups,
   voteCounts,
   onBatchDecideByVotes,
+  votingStyle = 'simple',
 }: RoundRobinMatchupsProps) {
   // Group matchups by roundRobinRound
   const roundsMap = new Map<number, MatchupData[]>()
@@ -80,12 +82,13 @@ export function RoundRobinMatchups({
     return nameById.get(id) ?? 'Unknown'
   }
 
-  // Hide future rounds from students in round_by_round pacing
+  // Hide future rounds from students in round_by_round pacing.
+  // Only show rounds with at least one non-pending matchup (defense-in-depth:
+  // the fixed currentRound computation already prevents future rounds from matching).
   const visibleRounds = !isTeacher && pacing === 'round_by_round'
     ? roundNumbers.filter((rn) => {
         const rm = roundsMap.get(rn) ?? []
-        // Show rounds that have at least one non-pending matchup, OR are the current round
-        return rm.some((m) => m.status !== 'pending') || rn === currentRound
+        return rm.some((m) => m.status !== 'pending')
       })
     : roundNumbers
 
@@ -151,6 +154,7 @@ export function RoundRobinMatchups({
                     onStudentVote={onStudentVote}
                     votedMatchupId={votedMatchups?.[matchup.id] ?? null}
                     voteCounts={voteCounts?.[matchup.id]}
+                    votingStyle={votingStyle}
                   />
                 ))}
               </div>
@@ -175,6 +179,7 @@ interface MatchupCardProps {
   onStudentVote?: (matchupId: string, entrantId: string) => void
   votedMatchupId?: string | null // The entrant ID the student voted for in this matchup
   voteCounts?: Record<string, number> // entrantId -> count for this matchup
+  votingStyle?: 'simple' | 'advanced'
 }
 
 function MatchupCard({
@@ -186,6 +191,7 @@ function MatchupCard({
   onStudentVote,
   votedMatchupId,
   voteCounts,
+  votingStyle = 'simple',
 }: MatchupCardProps) {
   const isDecided = matchup.status === 'decided'
   const isVoting = matchup.status === 'voting'
@@ -197,13 +203,17 @@ function MatchupCard({
   // Student voting mode: show vote buttons instead of static entrant names
   const showStudentVote = isVoting && !isTeacher && !!onStudentVote
 
+  const isAdvanced = votingStyle === 'advanced'
+
   return (
     <div
-      className={`rounded-md border p-2.5 transition-colors ${
+      className={`rounded-${isAdvanced ? 'lg' : 'md'} ${isAdvanced ? 'border-2 p-4 shadow-sm' : 'border p-2.5'} transition-colors ${
         isDecided
           ? 'bg-muted/30 border-muted'
           : isVoting
-            ? 'border-blue-200 bg-blue-50/30'
+            ? isAdvanced
+              ? 'border-blue-300 bg-gradient-to-r from-blue-50/40 to-blue-50/20'
+              : 'border-blue-200 bg-blue-50/30'
             : ''
       }`}
     >
@@ -366,6 +376,15 @@ function MatchupCard({
           })()}
         </div>
       </div>
+
+      {/* Advanced mode: show vote counts below the matchup */}
+      {isAdvanced && voteCounts && !isTeacher && (
+        <div className="mt-2 flex gap-2 text-xs text-muted-foreground">
+          <span>{entrant1Name}: {voteCounts[matchup.entrant1Id ?? ''] ?? 0}</span>
+          <span>vs</span>
+          <span>{entrant2Name}: {voteCounts[matchup.entrant2Id ?? ''] ?? 0}</span>
+        </div>
+      )}
     </div>
   )
 }
