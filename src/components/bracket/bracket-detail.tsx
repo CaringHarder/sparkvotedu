@@ -114,7 +114,7 @@ export function BracketDetail({ bracket, totalRounds, sessions, standings = [], 
 
         {/* Actions */}
         <div className="flex items-center gap-2">
-          {bracket.status === 'active' && (
+          {bracket.status === 'active' && !(isPredictive && bracket.predictionStatus === 'predictions_open') && (
             <Link
               href={`/brackets/${bracket.id}/live`}
               className="inline-flex items-center gap-1.5 rounded-md bg-green-600 px-3 py-1.5 text-xs font-medium text-white shadow-sm transition-colors hover:bg-green-700"

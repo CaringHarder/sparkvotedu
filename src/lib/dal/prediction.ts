@@ -410,6 +410,28 @@ export async function updatePredictionStatusDAL(
     data: updateData,
   })
 
+  // When predictions close (status='active'), auto-open Round 1 matchups for voting
+  // so the teacher can immediately go live and students can vote.
+  if (status === 'active') {
+    const round1Matchups = await prisma.matchup.findMany({
+      where: { bracketId, round: 1, status: 'pending' },
+      select: { id: true, entrant1Id: true, entrant2Id: true },
+    })
+    const readyIds = round1Matchups
+      .filter((m) => m.entrant1Id != null && m.entrant2Id != null)
+      .map((m) => m.id)
+    if (readyIds.length > 0) {
+      await prisma.matchup.updateMany({
+        where: { id: { in: readyIds }, status: 'pending' },
+        data: { status: 'voting' },
+      })
+      // Broadcast voting opened so student pages update
+      broadcastBracketUpdate(bracketId, 'voting_opened', {
+        matchupIds: readyIds,
+      }).catch(console.error)
+    }
+  }
+
   // Broadcast prediction status change to bracket subscribers
   broadcastBracketUpdate(bracketId, 'prediction_status_changed', {
     predictionStatus: status,
