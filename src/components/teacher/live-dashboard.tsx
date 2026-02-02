@@ -719,14 +719,14 @@ export function LiveDashboard({
 
         <div className="flex-1" />
 
-        {/* DE primary action buttons */}
+        {/* DE primary action buttons — include region label for clarity */}
         {isDoubleElim && deHasPending && (
           <button
             onClick={handleOpenVoting}
             disabled={isPending}
             className="rounded-md bg-blue-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-blue-700 disabled:opacity-50"
           >
-            {isPending ? 'Opening...' : `Open Voting (${deReadyPendingCount})`}
+            {isPending ? 'Opening...' : `Open ${getRegionDisplayName(deRegion)} Voting (${deReadyPendingCount})`}
           </button>
         )}
 
@@ -743,7 +743,7 @@ export function LiveDashboard({
             disabled={isPending}
             className="rounded-md bg-orange-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-orange-700 disabled:opacity-50"
           >
-            {isPending ? 'Closing...' : `Close & Advance (${deRs!.voting})`}
+            {isPending ? 'Closing...' : `Close ${getRegionDisplayName(deRegion)} & Advance (${deRs!.voting})`}
           </button>
         )}
 

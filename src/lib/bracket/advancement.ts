@@ -347,15 +347,6 @@ export async function advanceDoubleElimMatchup(
       data: { winnerId, status: 'decided' },
     })
 
-    // Propagate winner to the next matchup in the same region (via nextMatchupId)
-    if (matchup.nextMatchupId) {
-      const slot = getSlotForPosition(matchup.position)
-      await tx.matchup.update({
-        where: { id: matchup.nextMatchupId },
-        data: { [slot]: winnerId },
-      })
-    }
-
     // --- Region-specific logic ---
 
     // Determine bracket structure info
@@ -378,6 +369,39 @@ export async function advanceDoubleElimMatchup(
     const gfMatchups = allMatchups
       .filter((m) => m.bracketRegion === 'grand_finals')
       .sort((a, b) => a.round - b.round)
+
+    // Propagate winner to the next matchup in the same region (via nextMatchupId)
+    if (matchup.nextMatchupId) {
+      let slot: 'entrant1Id' | 'entrant2Id'
+
+      if (region === 'losers') {
+        // In losers bracket, "major" rounds receive WB dropdowns into entrant2Id.
+        // LB survivors from minor rounds must always go into entrant1Id to avoid
+        // a slot collision with WB dropdowns.
+        // Detect 1-to-1 transitions (minor→major): source and target rounds have
+        // the same number of matchups.
+        const nextMatchup = allMatchups.find((m) => m.id === matchup.nextMatchupId)
+        const currentRoundCount = lbMatchups.filter((m) => m.round === matchup.round).length
+        const nextRoundCount = nextMatchup
+          ? lbMatchups.filter((m) => m.round === nextMatchup.round).length
+          : 0
+
+        if (currentRoundCount === nextRoundCount) {
+          // 1-to-1 (minor→major): always use entrant1Id for LB survivors
+          slot = 'entrant1Id'
+        } else {
+          // 2-to-1 (major→minor): standard position-based slot assignment
+          slot = getSlotForPosition(matchup.position)
+        }
+      } else {
+        slot = getSlotForPosition(matchup.position)
+      }
+
+      await tx.matchup.update({
+        where: { id: matchup.nextMatchupId },
+        data: { [slot]: winnerId },
+      })
+    }
 
     const wbMaxRound = Math.max(...wbMatchups.map((m) => m.round))
     const lbMinRound = lbMatchups.length > 0 ? Math.min(...lbMatchups.map((m) => m.round)) : 0
