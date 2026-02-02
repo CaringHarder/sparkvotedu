@@ -5,14 +5,14 @@
 See: .planning/PROJECT.md (updated 2026-01-28)
 
 **Core value:** Teachers can instantly engage any classroom through voting -- on any topic, in any format -- and see participation happen in real time.
-**Current focus:** Phase 7 gap closure R4 in progress
+**Current focus:** Phase 7 gap closure R4 -- Wave 2 complete
 
 ## Current Position
 
 Phase: 7 of 10 (Advanced Brackets - Gap Closure R4)
-Plan: 27 of 27 in current phase (gap closure R4 plans 25-27)
+Plan: 27 of 27 in current phase (gap closure R4 plans 25-27 all complete)
 Status: In progress
-Last activity: 2026-02-02 -- Completed 07-27-PLAN.md (Zoom Scoping, Section Nav, SE Viewing Mode)
+Last activity: 2026-02-02 -- Completed 07-26-PLAN.md (RR Student Experience: Celebration, Tabs, Standings, VotingStyle)
 
 Progress: [##########] 100% (66/66 plans)
 
@@ -37,8 +37,8 @@ Progress: [##########] 100% (66/66 plans)
 | 07-advanced-brackets | 27/27 | ~74.3m | ~2.8m |
 
 **Recent Trend:**
-- Last 5 plans: 07-24 (~1.2m), 07-25 (~1.7m), 07-26 (~2.0m), 07-27 (~2.7m)
-- Trend: Phase 7 gap closure R4 complete -- all 27 plans executed
+- Last 5 plans: 07-24 (~1.2m), 07-25 (~1.7m), 07-27 (~2.7m), 07-26 (~3.4m)
+- Trend: Phase 7 gap closure R4 Wave 2 complete (07-26 executed after 07-25 and 07-27)
 
 *Updated after each plan completion*
 
@@ -275,6 +275,9 @@ Recent decisions affecting current work:
 - [07-27]: Top/Bottom for 32+, quadrant TL/TR/BL/BR for 64+ section navigation buttons
 - [07-27]: viewingMode defaults to 'advanced' for backwards compatibility with existing SE brackets
 - [07-27]: touch-action: pan-x pan-y on bracket container prevents browser zoom on mobile pinch
+- [07-26]: Client-side standings via calculateRoundRobinStandings -- updates instantly on every realtime matchup change without state API modification
+- [07-26]: Direct CelebrationScreen for RR (no WinnerReveal countdown) -- RR has no dramatic final matchup
+- [07-26]: !isRoundRobin guard on SE winner detection prevents totalRounds=1 misfiring for RR matchups
 
 ### Pending Todos
 
@@ -292,5 +295,5 @@ Recent decisions affecting current work:
 ## Session Continuity
 
 Last session: 2026-02-02
-Stopped at: Completed 07-27-PLAN.md (Zoom Scoping, Section Nav, SE Viewing Mode) -- Phase 7 gap closure R4 plan 27 of 27
+Stopped at: Completed 07-26-PLAN.md (RR Student Experience: Celebration, Tabs, Standings, VotingStyle) -- Phase 7 gap closure R4 Wave 2 complete
 Resume file: None
