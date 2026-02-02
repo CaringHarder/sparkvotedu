@@ -30,6 +30,7 @@ interface BracketStateResponse {
   bracketType: string
   predictionStatus: string | null
   predictiveMode: string | null
+  predictiveResolutionMode: string | null
   roundRobinPacing: string | null
   roundRobinVotingStyle: string | null
   roundRobinStandingsMode: string | null
@@ -600,6 +601,7 @@ function PredictiveStudentView({
     : bracket
 
   const totalRounds = Math.ceil(Math.log2(bracket.maxEntrants ?? bracket.size))
+  const isManualMode = bracket.predictiveResolutionMode === 'manual'
 
   // Predictions still open: show prediction submission UI
   if (effectiveStatus === 'predictions_open' || effectiveStatus === 'draft') {
@@ -615,6 +617,13 @@ function PredictiveStudentView({
   // Predictions closed: tabbed view with Bracket + Results
   return (
     <div className="space-y-3">
+      {/* Manual mode notice */}
+      {isManualMode && (
+        <div className="rounded-lg border border-blue-200 bg-blue-50 px-4 py-2.5 text-center text-sm text-blue-700 dark:border-blue-800 dark:bg-blue-950/30 dark:text-blue-300">
+          Your teacher is revealing results. Watch the bracket update live!
+        </div>
+      )}
+
       {/* Tab bar */}
       <div className="flex gap-1 rounded-lg bg-muted p-1">
         <button
@@ -718,7 +727,7 @@ function toBracketWithDetails(
     roundRobinVotingStyle: data.roundRobinVotingStyle ?? null,
     roundRobinStandingsMode: data.roundRobinStandingsMode ?? null,
     predictiveMode: data.predictiveMode ?? null,
-    predictiveResolutionMode: null, // Not in API (teacher-only field)
+    predictiveResolutionMode: data.predictiveResolutionMode ?? null,
     playInEnabled: data.playInEnabled ?? false,
     maxEntrants: data.maxEntrants ?? null,
     createdAt: new Date().toISOString(),

@@ -74,6 +74,7 @@ export async function GET(
       bracketType: bracket.bracketType,
       predictionStatus: bracket.predictionStatus,
       predictiveMode: bracket.predictiveMode,
+      predictiveResolutionMode: bracket.predictiveResolutionMode,
       roundRobinPacing: bracket.roundRobinPacing,
       roundRobinVotingStyle: bracket.roundRobinVotingStyle,
       roundRobinStandingsMode: bracket.roundRobinStandingsMode,

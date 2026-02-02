@@ -62,6 +62,7 @@ export function LiveDashboard({
   const isDoubleElim = bracket.bracketType === 'double_elimination'
   const isRoundRobin = bracket.bracketType === 'round_robin'
   const isPredictive = bracket.bracketType === 'predictive'
+  const isPredictiveManual = isPredictive && bracket.predictiveResolutionMode === 'manual'
 
   // Track previous matchup statuses for detecting newly decided matchups
   const prevMatchupStatusRef = useRef<Record<string, string>>({})
@@ -796,8 +797,15 @@ export function LiveDashboard({
           </button>
         )}
 
-        {/* SE / Predictive primary action buttons (NOT DE, NOT RR) */}
-        {!isRoundRobin && !isDoubleElim && hasPending && (
+        {/* Predictive manual mode: hint to click matchups */}
+        {isPredictiveManual && !bracketDone && (
+          <span className="rounded-md bg-blue-50 px-3 py-1.5 text-xs font-medium text-blue-700 dark:bg-blue-900/20 dark:text-blue-400">
+            Click a matchup to pick the winner
+          </span>
+        )}
+
+        {/* SE / Predictive (vote_based) primary action buttons (NOT DE, NOT RR, NOT manual) */}
+        {!isRoundRobin && !isDoubleElim && !isPredictiveManual && hasPending && (
           <button
             onClick={handleOpenVoting}
             disabled={isPending}
@@ -807,7 +815,7 @@ export function LiveDashboard({
           </button>
         )}
 
-        {!isRoundRobin && !isDoubleElim && hasVoting && (
+        {!isRoundRobin && !isDoubleElim && !isPredictiveManual && hasVoting && (
           <button
             onClick={handleCloseAndAdvance}
             disabled={isPending}
@@ -817,7 +825,7 @@ export function LiveDashboard({
           </button>
         )}
 
-        {!isRoundRobin && !isDoubleElim && allRoundDecided && !bracketDone && (
+        {!isRoundRobin && !isDoubleElim && !isPredictiveManual && allRoundDecided && !bracketDone && (
           <button
             onClick={handleAdvanceRound}
             disabled={isPending}
@@ -872,8 +880,8 @@ export function LiveDashboard({
         </div>
       )}
 
-      {/* Pick winner modal */}
-      {selectedMatchup && selectedMatchup.status === 'voting' && (() => {
+      {/* Pick winner modal — shown for voting matchups, or pending matchups in manual mode */}
+      {selectedMatchup && (selectedMatchup.status === 'voting' || (isPredictiveManual && selectedMatchup.status === 'pending')) && selectedMatchup.entrant1Id && selectedMatchup.entrant2Id && (() => {
         const votes = voteLabels[selectedMatchup.id]
         const e1Votes = votes?.e1 ?? 0
         const e2Votes = votes?.e2 ?? 0
@@ -883,7 +891,9 @@ export function LiveDashboard({
             <div className="mx-4 w-full max-w-sm rounded-xl border bg-card p-6 shadow-lg" onClick={(e) => e.stopPropagation()}>
               <h2 className="mb-1 text-center text-base font-bold">Pick Winner</h2>
               <p className="mb-5 text-center text-xs text-muted-foreground">
-                {isTied ? 'Tied -- teacher breaks the tie' : 'Override or confirm the vote leader'}
+                {isPredictiveManual
+                  ? 'Select the winner for this matchup'
+                  : isTied ? 'Tied -- teacher breaks the tie' : 'Override or confirm the vote leader'}
               </p>
 
               <div className="flex gap-3">
@@ -894,7 +904,9 @@ export function LiveDashboard({
                     className="flex flex-1 flex-col items-center gap-1.5 rounded-lg border-2 border-blue-200 bg-blue-50 px-4 py-4 transition-colors hover:border-blue-400 hover:bg-blue-100 disabled:opacity-50 dark:border-blue-800 dark:bg-blue-950/30 dark:hover:border-blue-600 dark:hover:bg-blue-950/50"
                   >
                     <span className="text-sm font-semibold">{selectedMatchup.entrant1?.name ?? 'TBD'}</span>
-                    <span className="text-lg font-bold text-blue-600 dark:text-blue-400">{e1Votes} vote{e1Votes !== 1 ? 's' : ''}</span>
+                    {!isPredictiveManual && (
+                      <span className="text-lg font-bold text-blue-600 dark:text-blue-400">{e1Votes} vote{e1Votes !== 1 ? 's' : ''}</span>
+                    )}
                   </button>
                 )}
                 {selectedMatchup.entrant2Id && (
@@ -904,7 +916,9 @@ export function LiveDashboard({
                     className="flex flex-1 flex-col items-center gap-1.5 rounded-lg border-2 border-orange-200 bg-orange-50 px-4 py-4 transition-colors hover:border-orange-400 hover:bg-orange-100 disabled:opacity-50 dark:border-orange-800 dark:bg-orange-950/30 dark:hover:border-orange-600 dark:hover:bg-orange-950/50"
                   >
                     <span className="text-sm font-semibold">{selectedMatchup.entrant2?.name ?? 'TBD'}</span>
-                    <span className="text-lg font-bold text-orange-600 dark:text-orange-400">{e2Votes} vote{e2Votes !== 1 ? 's' : ''}</span>
+                    {!isPredictiveManual && (
+                      <span className="text-lg font-bold text-orange-600 dark:text-orange-400">{e2Votes} vote{e2Votes !== 1 ? 's' : ''}</span>
+                    )}
                   </button>
                 )}
               </div>

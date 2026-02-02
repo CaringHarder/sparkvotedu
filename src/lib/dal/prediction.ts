@@ -365,6 +365,7 @@ export async function updatePredictionStatusDAL(
       id: true,
       bracketType: true,
       predictionStatus: true,
+      predictiveResolutionMode: true,
       status: true,
       sessionId: true,
     },
@@ -410,9 +411,9 @@ export async function updatePredictionStatusDAL(
     data: updateData,
   })
 
-  // When predictions close (status='active'), auto-open Round 1 matchups for voting
-  // so the teacher can immediately go live and students can vote.
-  if (status === 'active') {
+  // When predictions close (status='active') in vote_based mode, auto-open Round 1
+  // matchups for voting. In manual mode, matchups stay pending -- teacher picks winners directly.
+  if (status === 'active' && bracket.predictiveResolutionMode !== 'manual') {
     const round1Matchups = await prisma.matchup.findMany({
       where: { bracketId, round: 1, status: 'pending' },
       select: { id: true, entrant1Id: true, entrant2Id: true },
