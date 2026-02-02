@@ -253,10 +253,16 @@ export function LiveDashboard({
   }, [bracket.id, currentRound])
 
   // Round-robin: current round, advance logic, and handlers
+  // Current round = the highest RR round that has been opened (voting or decided).
+  // This ensures that when round 1 is all decided, we stay on round 1 (not jump to pending round 2)
+  // so that canAdvanceRoundRobin can detect completion and show the "Open Round 2" button.
   const currentRoundRobinRound = useMemo(() => {
     if (!isRoundRobin) return 1
-    const rrMatchup = currentMatchups.find((m) => m.status !== 'decided' && m.roundRobinRound != null)
-    return rrMatchup?.roundRobinRound ?? 1
+    const activeRounds = currentMatchups
+      .filter((m) => m.roundRobinRound != null && m.status !== 'pending')
+      .map((m) => m.roundRobinRound!)
+    if (activeRounds.length === 0) return 1
+    return Math.max(...activeRounds)
   }, [isRoundRobin, currentMatchups])
 
   // Check if round 1 needs opening (fallback for brackets activated before auto-open fix)
@@ -299,6 +305,41 @@ export function LiveDashboard({
       if (result && 'error' in result) setError(result.error as string)
     })
   }, [bracket.id, currentRoundRobinRound])
+
+  // Round-robin: batch decide all voting matchups in current round by vote majority
+  const handleBatchDecideByVotes = useCallback(() => {
+    setError(null)
+    const votingMatchups = currentMatchups.filter(
+      (m) => m.roundRobinRound === currentRoundRobinRound && m.status === 'voting'
+    )
+    if (votingMatchups.length === 0) return
+
+    startTransition(async () => {
+      for (const m of votingMatchups) {
+        const counts = mergedVoteCounts[m.id] ?? {}
+        const e1 = m.entrant1Id ? (counts[m.entrant1Id] ?? 0) : 0
+        const e2 = m.entrant2Id ? (counts[m.entrant2Id] ?? 0) : 0
+
+        let winnerId: string | null = null
+        if (e1 > e2 && m.entrant1Id) {
+          winnerId = m.entrant1Id
+        } else if (e2 > e1 && m.entrant2Id) {
+          winnerId = m.entrant2Id
+        }
+        // Tied or no votes -> winnerId stays null (tie)
+
+        const result = await recordResult({
+          bracketId: bracket.id,
+          matchupId: m.id,
+          winnerId,
+        })
+        if (result && 'error' in result) {
+          setError(result.error as string)
+          return
+        }
+      }
+    })
+  }, [currentMatchups, currentRoundRobinRound, mergedVoteCounts, bracket.id])
 
   // Click matchup in diagram to select it for per-matchup actions
   const handleMatchupClick = useCallback((matchupId: string) => {
@@ -556,6 +597,8 @@ export function LiveDashboard({
                   pacing={(bracket.roundRobinPacing ?? 'round_by_round') as 'round_by_round' | 'all_at_once'}
                   isTeacher={true}
                   onRecordResult={handleRecordRoundRobinResult}
+                  voteCounts={mergedVoteCounts}
+                  onBatchDecideByVotes={handleBatchDecideByVotes}
                 />
               </div>
             </div>
