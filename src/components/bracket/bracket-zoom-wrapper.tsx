@@ -1,61 +1,88 @@
 'use client'
 
 import type { ReactNode } from 'react'
+import { useRef, useState } from 'react'
 import { ZoomIn, ZoomOut, Maximize } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { usePanZoom } from '@/hooks/use-pan-zoom'
-import type { UsePanZoomOptions } from '@/hooks/use-pan-zoom'
+
+/**
+ * Options for the BracketZoomWrapper.
+ * Kept compatible with the previous UsePanZoomOptions interface
+ * so existing consumers don't need changes.
+ */
+export interface BracketZoomWrapperOptions {
+  minScale?: number
+  maxScale?: number
+  initialScale?: number
+  scaleStep?: number
+}
 
 interface BracketZoomWrapperProps {
   children: ReactNode
-  /** Optional pan/zoom configuration */
-  options?: UsePanZoomOptions
+  /** Optional zoom configuration (backwards-compatible with UsePanZoomOptions) */
+  options?: BracketZoomWrapperOptions
   /** Additional CSS class for the outer container */
   className?: string
 }
 
 /**
- * Wrapper component that applies pan/zoom interactions to its children.
+ * Wrapper component that provides scrollable bracket viewing with zoom controls.
  *
- * Provides:
- * - Wheel zoom, drag pan, and touch pinch-to-zoom via usePanZoom hook
- * - Floating zoom control buttons (zoom in, zoom out, fit/reset)
- * - overflow-hidden container with touch-action: none for proper touch handling
- * - transform-origin: 0 0 for predictable scaling behavior
+ * Replaces the previous pointer-capture pan/zoom approach with:
+ * - Native `overflow: auto` scrolling (no wheel event hijacking)
+ * - State-driven CSS scale transform for zoom in/out/reset
+ * - No pointer capture -- all child click events work naturally
+ * - Floating zoom controls outside the scroll interaction area
+ *
+ * This fixes:
+ * - GAP-R3-04: Zoom buttons not working
+ * - Two-finger scroll hijacked for zoom
+ * - Students unable to click entrants within the wrapper
  */
 export function BracketZoomWrapper({
   children,
   options,
   className = '',
 }: BracketZoomWrapperProps) {
-  const { containerRef, transform, zoomIn, zoomOut, resetZoom, state } =
-    usePanZoom(options)
+  const containerRef = useRef<HTMLDivElement>(null)
+  const initialScale = options?.initialScale ?? 1
+  const minScale = options?.minScale ?? 0.25
+  const maxScale = options?.maxScale ?? 3
+  const [scale, setScale] = useState(initialScale)
 
-  // Display zoom percentage for accessibility
-  const zoomPercent = Math.round(state.scale * 100)
+  const zoomIn = () => setScale((s) => Math.min(maxScale, s * 1.2))
+  const zoomOut = () => setScale((s) => Math.max(minScale, s / 1.2))
+  const resetZoom = () => {
+    setScale(initialScale)
+    if (containerRef.current) {
+      containerRef.current.scrollLeft = 0
+      containerRef.current.scrollTop = 0
+    }
+  }
+
+  const zoomPercent = Math.round(scale * 100)
 
   return (
-    <div
-      ref={containerRef}
-      className={`relative overflow-hidden rounded-lg border bg-background ${className}`}
-      style={{ touchAction: 'none' }}
-    >
-      {/* Zoomable content area */}
+    <div className={`relative ${className}`}>
+      {/* Scrollable bracket area -- no pointer capture, no wheel hijack */}
       <div
-        style={{
-          transform,
-          transformOrigin: '0 0',
-          willChange: 'transform',
-        }}
+        ref={containerRef}
+        className="overflow-auto rounded-lg border bg-background"
+        style={{ maxHeight: '70vh' }}
       >
-        {children}
+        <div
+          style={{
+            transform: `scale(${scale})`,
+            transformOrigin: '0 0',
+            willChange: 'transform',
+          }}
+        >
+          {children}
+        </div>
       </div>
 
-      {/* Floating zoom controls */}
-      <div
-        className="absolute bottom-3 right-3 flex items-center gap-1 rounded-lg border bg-background/90 p-1 shadow-sm backdrop-blur-sm"
-        onPointerDown={(e) => e.stopPropagation()}
-      >
+      {/* Floating zoom controls (outside the scrollable area) */}
+      <div className="absolute bottom-3 right-3 flex items-center gap-1 rounded-lg border bg-background/90 p-1 shadow-sm backdrop-blur-sm">
         <Button
           variant="ghost"
           size="icon"
@@ -87,7 +114,7 @@ export function BracketZoomWrapper({
           size="icon"
           className="h-8 w-8"
           onClick={resetZoom}
-          title="Fit to screen"
+          title="Reset"
         >
           <Maximize className="h-4 w-4" />
         </Button>
