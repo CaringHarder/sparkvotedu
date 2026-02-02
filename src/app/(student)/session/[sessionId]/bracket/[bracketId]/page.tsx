@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback, useTransition } from 'react'
 import { useParams } from 'next/navigation'
 import Link from 'next/link'
 import { SimpleVotingView } from '@/components/student/simple-voting-view'
@@ -9,6 +9,8 @@ import { DoubleElimDiagram } from '@/components/bracket/double-elim-diagram'
 import { RoundRobinStandings } from '@/components/bracket/round-robin-standings'
 import { RoundRobinMatchups } from '@/components/bracket/round-robin-matchups'
 import { PredictiveBracket } from '@/components/bracket/predictive-bracket'
+import { useRealtimeBracket } from '@/hooks/use-realtime-bracket'
+import { castVote } from '@/actions/vote'
 import type { BracketWithDetails, MatchupData, BracketEntrantData } from '@/lib/bracket/types'
 
 /**
@@ -306,11 +308,11 @@ export default function StudentBracketVotingPage() {
         </div>
       )
     }
-    // Predictions closed, bracket is active -- show live resolving view
+    // Predictions closed, bracket is active -- show live resolving view with real-time
     return (
       <div>
         {backLink}
-        <AdvancedVotingView
+        <PredictiveLiveView
           bracket={bracket}
           participantId={participantId}
           initialVotes={initialVotes}
@@ -319,46 +321,29 @@ export default function StudentBracketVotingPage() {
     )
   }
 
-  // Round-robin brackets: standings table + matchup grid
+  // Round-robin brackets: standings table + matchup grid with real-time + voting
   if (bracket.bracketType === 'round_robin') {
-    const currentRound = bracket.matchups.find((m) => m.status !== 'decided')?.roundRobinRound ?? 1
     return (
       <div>
         {backLink}
-        <div className="px-4 py-6">
-          <h1 className="mb-4 text-2xl font-bold">{bracket.name}</h1>
-          <div className="space-y-4">
-            <RoundRobinStandings
-              standings={[]}
-              isLive={bracket.roundRobinStandingsMode === 'live'}
-            />
-            <RoundRobinMatchups
-              matchups={bracket.matchups}
-              entrants={bracket.entrants}
-              currentRound={currentRound}
-              pacing={(bracket.roundRobinPacing ?? 'round_by_round') as 'round_by_round' | 'all_at_once'}
-              isTeacher={false}
-            />
-          </div>
-        </div>
+        <RRLiveView
+          bracket={bracket}
+          participantId={participantId}
+        />
       </div>
     )
   }
 
-  // Double-elimination brackets: tabbed Winners/Losers/Grand Finals diagram
+  // Double-elimination brackets: tabbed Winners/Losers/Grand Finals diagram with voting
   if (bracket.bracketType === 'double_elimination') {
     return (
       <div>
         {backLink}
-        <div className="px-4 py-6">
-          <h1 className="mb-4 text-2xl font-bold">{bracket.name}</h1>
-          <DoubleElimDiagram
-            bracket={bracket}
-            entrants={bracket.entrants}
-            matchups={bracket.matchups}
-            isTeacher={false}
-          />
-        </div>
+        <DEVotingView
+          bracket={bracket}
+          participantId={participantId}
+          initialVotes={initialVotes}
+        />
       </div>
     )
   }
@@ -389,6 +374,176 @@ export default function StudentBracketVotingPage() {
         initialVotes={initialVotes}
       />
     </div>
+  )
+}
+
+// --- Wrapper components for real-time + voting ---
+// These exist as separate components so hooks can be called unconditionally.
+
+/**
+ * DEVotingView: Double-elimination bracket with real-time subscription and voting.
+ * Mirrors AdvancedVotingView pattern for DE brackets.
+ */
+function DEVotingView({
+  bracket,
+  participantId,
+  initialVotes,
+}: {
+  bracket: BracketWithDetails
+  participantId: string
+  initialVotes: Record<string, string | null>
+}) {
+  const [votes, setVotes] = useState<Record<string, string | null>>(initialVotes)
+  const [isPending, startTransition] = useTransition()
+
+  // Real-time bracket updates
+  const { matchups: realtimeMatchups, transport } = useRealtimeBracket(bracket.id)
+  const currentMatchups = (realtimeMatchups as MatchupData[] | null) ?? bracket.matchups
+
+  const handleEntrantClick = useCallback(
+    (matchupId: string, entrantId: string) => {
+      // Optimistic update
+      setVotes((prev) => ({ ...prev, [matchupId]: entrantId }))
+
+      startTransition(async () => {
+        const result = await castVote({
+          matchupId,
+          participantId,
+          entrantId,
+        })
+        if (result && 'error' in result) {
+          // Revert on error
+          setVotes((prev) => ({ ...prev, [matchupId]: initialVotes[matchupId] ?? null }))
+        }
+      })
+    },
+    [participantId, initialVotes]
+  )
+
+  // Count votable matchups and voted matchups
+  const votableMatchups = currentMatchups.filter((m) => m.status === 'voting')
+  const votedCount = votableMatchups.filter((m) => votes[m.id] != null).length
+
+  return (
+    <div className="px-4 py-6">
+      <div className="mb-3 flex flex-wrap items-center gap-3">
+        <h1 className="text-2xl font-bold">{bracket.name}</h1>
+        {votableMatchups.length > 0 && (
+          <span className="rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-medium text-green-700 dark:bg-green-900/30 dark:text-green-400">
+            Tap to vote
+          </span>
+        )}
+        {votableMatchups.length > 0 && (
+          <span className="text-xs text-muted-foreground">
+            {votedCount}/{votableMatchups.length} voted
+          </span>
+        )}
+        {transport === 'polling' && (
+          <span className="text-xs text-muted-foreground">(polling)</span>
+        )}
+        {isPending && (
+          <span className="text-xs text-muted-foreground">Saving...</span>
+        )}
+      </div>
+      <DoubleElimDiagram
+        bracket={bracket}
+        entrants={bracket.entrants}
+        matchups={currentMatchups}
+        isTeacher={false}
+        onEntrantClick={handleEntrantClick}
+        votedEntrantIds={votes}
+      />
+    </div>
+  )
+}
+
+/**
+ * RRLiveView: Round-robin bracket with real-time subscription and student voting.
+ */
+function RRLiveView({
+  bracket,
+  participantId,
+}: {
+  bracket: BracketWithDetails
+  participantId: string
+}) {
+  const [votedMatchups, setVotedMatchups] = useState<Record<string, string>>({})
+
+  // Real-time bracket updates
+  const { matchups: realtimeMatchups, transport } = useRealtimeBracket(bracket.id)
+  const currentMatchups = (realtimeMatchups as MatchupData[] | null) ?? bracket.matchups
+
+  const currentRound = currentMatchups.find((m) => m.status !== 'decided')?.roundRobinRound ?? 1
+
+  const handleStudentVote = useCallback(
+    (matchupId: string, entrantId: string) => {
+      setVotedMatchups((prev) => ({ ...prev, [matchupId]: entrantId }))
+      castVote({ matchupId, participantId, entrantId }).catch(() => {
+        // Revert on error
+        setVotedMatchups((prev) => {
+          const next = { ...prev }
+          delete next[matchupId]
+          return next
+        })
+      })
+    },
+    [participantId]
+  )
+
+  return (
+    <div className="px-4 py-6">
+      <div className="mb-4 flex flex-wrap items-center gap-3">
+        <h1 className="text-2xl font-bold">{bracket.name}</h1>
+        {transport === 'polling' && (
+          <span className="text-xs text-muted-foreground">(polling)</span>
+        )}
+      </div>
+      <div className="space-y-4">
+        <RoundRobinStandings
+          standings={[]}
+          isLive={bracket.roundRobinStandingsMode === 'live'}
+        />
+        <RoundRobinMatchups
+          matchups={currentMatchups}
+          entrants={bracket.entrants}
+          currentRound={currentRound}
+          pacing={(bracket.roundRobinPacing ?? 'round_by_round') as 'round_by_round' | 'all_at_once'}
+          isTeacher={false}
+          onStudentVote={handleStudentVote}
+          votedMatchups={votedMatchups}
+        />
+      </div>
+    </div>
+  )
+}
+
+/**
+ * PredictiveLiveView: Predictive bracket live view with real-time subscription.
+ * Shows AdvancedVotingView with real-time matchup updates.
+ */
+function PredictiveLiveView({
+  bracket,
+  participantId,
+  initialVotes,
+}: {
+  bracket: BracketWithDetails
+  participantId: string
+  initialVotes: Record<string, string | null>
+}) {
+  // Real-time bracket updates
+  const { matchups: realtimeMatchups } = useRealtimeBracket(bracket.id)
+
+  // Merge real-time matchups into bracket for AdvancedVotingView
+  const liveBracket = realtimeMatchups
+    ? { ...bracket, matchups: realtimeMatchups as MatchupData[] }
+    : bracket
+
+  return (
+    <AdvancedVotingView
+      bracket={liveBracket}
+      participantId={participantId}
+      initialVotes={initialVotes}
+    />
   )
 }
 
