@@ -35,6 +35,12 @@ interface BracketDiagramProps {
   onMatchupClick?: (matchupId: string) => void
   /** Teacher view: currently selected matchup ID for highlight */
   selectedMatchupId?: string | null
+  /**
+   * Use data-driven vertical positioning instead of recursive SE centering.
+   * Prevents phantom position expansion for bracket structures where
+   * consecutive rounds have the same matchup count (e.g. LB minor→major).
+   */
+  compactVertical?: boolean
 }
 
 // --- Round label mapping ---
@@ -394,17 +400,71 @@ function MatchupBox({
   )
 }
 
+// --- Compact vertical positioning ---
+// For non-SE structures (e.g. losers bracket) where consecutive rounds can
+// have the same number of matchups. Positions each round's matchups centered
+// vertically within the total height (determined by the densest round).
+function getCompactPositions(
+  matchups: MatchupData[],
+  totalRounds: number
+): { positions: Map<string, { x: number; y: number }>; totalHeight: number } {
+  // Group matchups by round
+  const byRound: Record<number, MatchupData[]> = {}
+  for (const m of matchups) {
+    (byRound[m.round] ??= []).push(m)
+  }
+  // Sort each round by position
+  for (const r of Object.keys(byRound)) {
+    byRound[Number(r)].sort((a, b) => a.position - b.position)
+  }
+
+  // Find the round with the most matchups to determine total height
+  const maxCount = Math.max(...Object.values(byRound).map((ms) => ms.length), 1)
+  const contentHeight = maxCount * (MATCH_HEIGHT + MATCH_V_GAP) - MATCH_V_GAP
+
+  const positions = new Map<string, { x: number; y: number }>()
+
+  for (let r = 1; r <= totalRounds; r++) {
+    const roundMatchups = byRound[r] ?? []
+    const count = roundMatchups.length
+    const roundHeight = count * (MATCH_HEIGHT + MATCH_V_GAP) - MATCH_V_GAP
+    const startY = PADDING + LABEL_HEIGHT + (contentHeight - roundHeight) / 2
+    const x = PADDING + (r - 1) * (MATCH_WIDTH + ROUND_GAP)
+
+    for (let i = 0; i < roundMatchups.length; i++) {
+      positions.set(roundMatchups[i].id, {
+        x,
+        y: startY + i * (MATCH_HEIGHT + MATCH_V_GAP),
+      })
+    }
+  }
+
+  return { positions, totalHeight: PADDING * 2 + LABEL_HEIGHT + contentHeight }
+}
+
 // --- Main BracketDiagram component ---
-export function BracketDiagram({ matchups, totalRounds, className, bracketSize, onEntrantClick, votedEntrantIds, voteLabels, onMatchupClick, selectedMatchupId }: BracketDiagramProps) {
+export function BracketDiagram({ matchups, totalRounds, className, bracketSize, onEntrantClick, votedEntrantIds, voteLabels, onMatchupClick, selectedMatchupId, compactVertical }: BracketDiagramProps) {
   const roundLabels = useMemo(() => getRoundLabels(totalRounds), [totalRounds])
+
+  // Compact positioning for non-SE structures (e.g. losers bracket)
+  const compactData = useMemo(
+    () => (compactVertical ? getCompactPositions(matchups, totalRounds) : null),
+    [compactVertical, matchups, totalRounds]
+  )
 
   // Pre-compute positions for all matchups
   const positionedMatchups = useMemo(() => {
+    if (compactData) {
+      return matchups.map((m) => ({
+        matchup: m,
+        pos: compactData.positions.get(m.id) ?? { x: 0, y: 0 },
+      }))
+    }
     return matchups.map((m) => ({
       matchup: m,
       pos: getMatchPosition(m.round, m.position, totalRounds),
     }))
-  }, [matchups, totalRounds])
+  }, [matchups, totalRounds, compactData])
 
   // Build a lookup by matchup ID for connector rendering
   const matchupById = useMemo(() => {
@@ -417,12 +477,17 @@ export function BracketDiagram({ matchups, totalRounds, className, bracketSize, 
 
   // Compute SVG dimensions
   const svgWidth = PADDING * 2 + totalRounds * MATCH_WIDTH + (totalRounds - 1) * ROUND_GAP
-  const round1Matches = Math.pow(2, totalRounds - 1) // e.g. 8 entrants = 4 matches in round 1
-  const svgHeight =
-    PADDING * 2 +
-    LABEL_HEIGHT +
-    round1Matches * MATCH_HEIGHT +
-    (round1Matches - 1) * MATCH_V_GAP
+  const svgHeight = compactData
+    ? compactData.totalHeight
+    : (() => {
+        const round1Matches = Math.pow(2, totalRounds - 1)
+        return (
+          PADDING * 2 +
+          LABEL_HEIGHT +
+          round1Matches * MATCH_HEIGHT +
+          (round1Matches - 1) * MATCH_V_GAP
+        )
+      })()
 
   // Determine effective size for zoom wrapper (use maxEntrants bracket size if available)
   const effectiveSize = bracketSize ?? Math.pow(2, totalRounds)

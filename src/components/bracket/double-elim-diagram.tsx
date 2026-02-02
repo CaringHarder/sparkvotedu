@@ -341,9 +341,9 @@ export function DoubleElimDiagram({
           </h3>
           {normalizedLosers.length > 0 ? (
             <div className="rounded-lg border p-3">
-              {effectiveSize >= 32 ? (
+              {losersTotalRounds >= 4 || effectiveSize >= 32 ? (
                 <BracketZoomWrapper
-                  options={effectiveSize >= 64 ? { initialScale: 0.75 } : undefined}
+                  options={losersTotalRounds >= 6 || effectiveSize >= 64 ? { initialScale: 0.75 } : undefined}
                 >
                   <BracketDiagram
                     matchups={normalizedLosers}
@@ -351,6 +351,7 @@ export function DoubleElimDiagram({
                     bracketSize={effectiveSize}
                     onEntrantClick={onEntrantClick}
                     votedEntrantIds={votedEntrantIds}
+                    compactVertical
                   />
                 </BracketZoomWrapper>
               ) : (
@@ -360,6 +361,7 @@ export function DoubleElimDiagram({
                   bracketSize={effectiveSize}
                   onEntrantClick={onEntrantClick}
                   votedEntrantIds={votedEntrantIds}
+                  compactVertical
                 />
               )}
             </div>

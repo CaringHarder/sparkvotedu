@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useCallback, useTransition } from 'react'
+import { useEffect, useState, useCallback, useTransition, useRef } from 'react'
 import { useParams } from 'next/navigation'
 import Link from 'next/link'
 import { SimpleVotingView } from '@/components/student/simple-voting-view'
@@ -9,6 +9,8 @@ import { DoubleElimDiagram } from '@/components/bracket/double-elim-diagram'
 import { RoundRobinStandings } from '@/components/bracket/round-robin-standings'
 import { RoundRobinMatchups } from '@/components/bracket/round-robin-matchups'
 import { PredictiveBracket } from '@/components/bracket/predictive-bracket'
+import { WinnerReveal } from '@/components/bracket/winner-reveal'
+import { CelebrationScreen } from '@/components/bracket/celebration-screen'
 import { useRealtimeBracket } from '@/hooks/use-realtime-bracket'
 import { castVote } from '@/actions/vote'
 import type { BracketWithDetails, MatchupData, BracketEntrantData } from '@/lib/bracket/types'
@@ -384,6 +386,12 @@ export default function StudentBracketVotingPage() {
  * DEVotingView: Double-elimination bracket with real-time subscription and voting.
  * Mirrors AdvancedVotingView pattern for DE brackets.
  */
+interface DERevealState {
+  winnerName: string
+  entrant1Name: string
+  entrant2Name: string
+}
+
 function DEVotingView({
   bracket,
   participantId,
@@ -395,9 +403,12 @@ function DEVotingView({
 }) {
   const [votes, setVotes] = useState<Record<string, string | null>>(initialVotes)
   const [isPending, startTransition] = useTransition()
+  const [revealState, setRevealState] = useState<DERevealState | null>(null)
+  const [showCelebration, setShowCelebration] = useState(false)
+  const hasShownRevealRef = useRef(false)
 
   // Real-time bracket updates
-  const { matchups: realtimeMatchups, transport } = useRealtimeBracket(bracket.id)
+  const { matchups: realtimeMatchups, transport, bracketCompleted } = useRealtimeBracket(bracket.id)
   const currentMatchups = (realtimeMatchups as MatchupData[] | null) ?? bracket.matchups
 
   const handleEntrantClick = useCallback(
@@ -420,12 +431,65 @@ function DEVotingView({
     [participantId, initialVotes]
   )
 
+  // Trigger winner reveal when bracket completes
+  useEffect(() => {
+    if (bracketCompleted && !hasShownRevealRef.current) {
+      const gf = currentMatchups.filter((m) => m.bracketRegion === 'grand_finals')
+      const maxGfRound = gf.length > 0 ? Math.max(...gf.map((m) => m.round)) : 0
+      const finalGf = gf.find((m) => m.round === maxGfRound && m.winner)
+      if (finalGf?.winner) {
+        hasShownRevealRef.current = true
+        setRevealState({
+          winnerName: finalGf.winner.name,
+          entrant1Name: finalGf.entrant1?.name ?? 'TBD',
+          entrant2Name: finalGf.entrant2?.name ?? 'TBD',
+        })
+      }
+    }
+  }, [bracketCompleted, currentMatchups])
+
+  // Show celebration after reveal
+  useEffect(() => {
+    if (bracketCompleted) {
+      const timer = setTimeout(() => setShowCelebration(true), 4000)
+      return () => clearTimeout(timer)
+    }
+  }, [bracketCompleted])
+
+  // Champion name for celebration
+  const championName = (() => {
+    const gf = currentMatchups.filter((m) => m.bracketRegion === 'grand_finals')
+    if (gf.length === 0) return 'Champion'
+    const maxRound = Math.max(...gf.map((m) => m.round))
+    const finalGf = gf.find((m) => m.round === maxRound)
+    return finalGf?.winner?.name ?? 'Champion'
+  })()
+
   // Count votable matchups and voted matchups
   const votableMatchups = currentMatchups.filter((m) => m.status === 'voting')
   const votedCount = votableMatchups.filter((m) => votes[m.id] != null).length
 
   return (
     <div className="px-4 py-6">
+      {/* Winner Reveal overlay */}
+      {revealState && (
+        <WinnerReveal
+          winnerName={revealState.winnerName}
+          entrant1Name={revealState.entrant1Name}
+          entrant2Name={revealState.entrant2Name}
+          onComplete={() => setRevealState(null)}
+        />
+      )}
+
+      {/* Celebration Screen overlay */}
+      {showCelebration && (
+        <CelebrationScreen
+          championName={championName}
+          bracketName={bracket.name}
+          onDismiss={() => { setShowCelebration(false); setRevealState(null) }}
+        />
+      )}
+
       <div className="mb-3 flex flex-wrap items-center gap-3">
         <h1 className="text-2xl font-bold">{bracket.name}</h1>
         {votableMatchups.length > 0 && (

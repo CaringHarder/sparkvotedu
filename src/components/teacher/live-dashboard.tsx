@@ -62,6 +62,8 @@ export function LiveDashboard({
 
   // Track previous matchup statuses for detecting newly decided matchups
   const prevMatchupStatusRef = useRef<Record<string, string>>({})
+  // Guard: prevent fallback reveal from re-triggering after dismiss
+  const hasShownRevealRef = useRef(false)
 
   // Real-time vote count updates via Supabase Broadcast
   const { voteCounts: realtimeVoteCounts, matchups: realtimeMatchups, bracketCompleted } =
@@ -229,6 +231,7 @@ export function LiveDashboard({
           const gf = currentMatchups.filter((m) => m.bracketRegion === 'grand_finals')
           const maxGfRound = gf.length > 0 ? Math.max(...gf.map((m) => m.round)) : 0
           if (matchup.bracketRegion === 'grand_finals' && matchup.round === maxGfRound) {
+            hasShownRevealRef.current = true
             setRevealState({
               winnerName: matchup.winner.name,
               entrant1Name: matchup.entrant1?.name ?? 'TBD',
@@ -242,6 +245,7 @@ export function LiveDashboard({
           matchup.position === 1
         ) {
           // SE/Predictive: highest round, position 1
+          hasShownRevealRef.current = true
           setRevealState({
             winnerName: matchup.winner.name,
             entrant1Name: matchup.entrant1?.name ?? 'TBD',
@@ -262,12 +266,14 @@ export function LiveDashboard({
   // Fallback: when bracketCompleted fires for DE, ensure winner reveal triggers.
   // The status-transition-based detection above may miss the GF decision if the
   // real-time refetch and prevMatchupStatusRef update race each other.
+  // Uses hasShownRevealRef to prevent re-triggering after the reveal auto-dismisses.
   useEffect(() => {
-    if (bracketCompleted && isDoubleElim && !revealState) {
+    if (bracketCompleted && isDoubleElim && !hasShownRevealRef.current) {
       const gf = currentMatchups.filter((m) => m.bracketRegion === 'grand_finals')
       const maxGfRound = gf.length > 0 ? Math.max(...gf.map((m) => m.round)) : 0
       const finalGf = gf.find((m) => m.round === maxGfRound && m.winner)
       if (finalGf?.winner) {
+        hasShownRevealRef.current = true
         setRevealState({
           winnerName: finalGf.winner.name,
           entrant1Name: finalGf.entrant1?.name ?? 'TBD',
@@ -277,7 +283,7 @@ export function LiveDashboard({
         })
       }
     }
-  }, [bracketCompleted, isDoubleElim, currentMatchups, revealState])
+  }, [bracketCompleted, isDoubleElim, currentMatchups])
 
   // Show celebration when bracket is completed
   useEffect(() => {
