@@ -1,5 +1,5 @@
 ---
-status: complete
+status: diagnosed
 phase: 07-advanced-brackets
 source: 07-01 through 07-27 (all plans complete)
 round: R5 (gap closure verification after 07-25, 07-26, 07-27)
@@ -361,59 +361,88 @@ Pattern: Students see prediction UI but can only pick first round — winners do
   reason: "User reported: celebration still shows old celebration, then it shows the new one. Need to find old celebration code and remove it."
   severity: minor
   test: 5
-  root_cause: ""
-  artifacts: []
-  missing: []
-  debug_session: ""
+  root_cause: "Fallback celebration effect (live-dashboard.tsx lines 308-313) has race condition — fires 2s after bracketCompleted before the chained celebration (5s). hasShownRevealRef not in dependency array, so fallback doesn't re-evaluate when reveal path sets the ref."
+  artifacts:
+    - path: "src/components/teacher/live-dashboard.tsx"
+      issue: "Lines 308-313: fallback celebration effect fires before chained celebration due to timing (2s vs 5s)"
+  missing:
+    - "Add double-check of hasShownRevealRef.current inside setTimeout callback before firing fallback celebration"
+  debug_session: ".planning/debug/de-duplicate-celebration.md"
 
 - truth: "Batch decide by votes button shows loading/disabled state during action"
   status: failed
   reason: "User reported: button works but state doesn't change while actions are happening"
   severity: minor
   test: 10
-  root_cause: ""
-  artifacts: []
-  missing: []
-  debug_session: ""
+  root_cause: "Parent live-dashboard.tsx has isPending from useTransition() but never passes it to RoundRobinMatchups. Component has no isBatchDeciding prop."
+  artifacts:
+    - path: "src/components/bracket/round-robin-matchups.tsx"
+      issue: "No loading state prop accepted or rendered on batch decide button"
+    - path: "src/components/teacher/live-dashboard.tsx"
+      issue: "isPending exists but not passed to RoundRobinMatchups"
+  missing:
+    - "Add isBatchDeciding prop to RoundRobinMatchups, pass isPending from parent, disable button and show 'Deciding...' text"
+  debug_session: ".planning/debug/rr-nested-button-and-loading.md"
 
 - truth: "No nested button hydration error in round-robin matchup grid"
   status: failed
   reason: "Hydration error: <button> cannot be descendant of <button> in round-robin-matchups.tsx:130 — batch decide button inside collapsible round header button"
   severity: major
   test: 10
-  root_cause: ""
+  root_cause: "Batch decide button (line 130-140) rendered inside collapsible round header button (line 107-141), creating invalid <button><button></button></button> HTML."
   artifacts:
     - path: "src/components/bracket/round-robin-matchups.tsx"
-      issue: "Line 130: batch decide <button> rendered inside round header <button>"
-  missing: []
-  debug_session: ""
+      issue: "Line 130: batch decide <button> nested inside round header <button> (line 107)"
+  missing:
+    - "Move batch decide button outside header button as sibling element, use flexbox for visual positioning"
+  debug_session: ".planning/debug/rr-nested-button-and-loading.md"
 
 - truth: "CelebrationScreen shows on RR bracket completion for students"
   status: failed
   reason: "User reported: no celebration shown at end of third round bracket completion"
   severity: major
   test: 10
-  root_cause: ""
-  artifacts: []
-  missing: []
-  debug_session: ""
+  root_cause: "RR bracket completion is never detected or broadcast. recordRoundRobinResult and advanceRoundRobinRound never check if all matchups are decided. isBracketComplete has incorrect logic for RR (checks highest-round matchup winnerId, not all-matchups-decided). No code path updates bracket status to 'completed' or broadcasts 'bracket_completed' for RR."
+  artifacts:
+    - path: "src/lib/dal/round-robin.ts"
+      issue: "recordRoundRobinResult (lines 112-150) never checks bracket completion"
+    - path: "src/lib/bracket/advancement.ts"
+      issue: "isBracketComplete (lines 227-240) has incorrect logic for RR"
+    - path: "src/actions/round-robin.ts"
+      issue: "No completion check/broadcast after recording results"
+  missing:
+    - "Add RR-specific completion check (all matchups decided)"
+    - "Update bracket status to 'completed' when all RR matchups decided"
+    - "Broadcast 'bracket_completed' event for RR"
+  debug_session: ".planning/debug/rr-celebration-missing.md"
 
 - truth: "Simple RR matchup layout shows one matchup at a time, advanced shows entire round"
   status: failed
   reason: "User reported: no difference between simple and advanced matchup cards. Simple should show one matchup card at a time. Advanced should show the entire round."
   severity: minor
   test: 10
-  root_cause: ""
-  artifacts: []
-  missing: []
-  debug_session: ""
+  root_cause: "votingStyle prop only changes card CSS styling (border/padding/shadow), not layout behavior. roundMatchups.map() always renders ALL matchups regardless of votingStyle. No filtering or navigation logic for simple mode."
+  artifacts:
+    - path: "src/components/bracket/round-robin-matchups.tsx"
+      issue: "Lines 145-161: roundMatchups.map renders all matchups; votingStyle only affects MatchupCard CSS"
+  missing:
+    - "Add currentMatchupIndex state for simple mode with prev/next navigation"
+    - "Filter to single matchup when votingStyle=simple, show all when advanced"
+  debug_session: ".planning/debug/rr-simple-vs-advanced-layout.md"
 
 - truth: "64-entrant bracket renders in 2x2 quadrant grid layout for TL/TR/BL/BR navigation"
   status: failed
   reason: "User reported: 64-entrant bracket still renders left-to-right horizontally. Expected first 16 top-left, second 16 top-right mirrored, third 16 bottom-left, fourth 16 bottom-right mirrored."
   severity: minor
   test: 16
-  root_cause: ""
-  artifacts: []
-  missing: []
-  debug_session: ""
+  root_cause: "bracket-diagram.tsx getMatchPosition() only implements horizontal round progression. No quadrant awareness. Section nav buttons scroll corners of horizontal SVG but SVG itself is never rearranged. Needs new QuadrantBracketLayout component splitting matchups into 4 groups rendered as separate BracketDiagram instances in CSS grid."
+  artifacts:
+    - path: "src/components/bracket/bracket-diagram.tsx"
+      issue: "getMatchPosition (lines 67-89) only does horizontal layout, no quadrant support"
+    - path: "src/components/bracket/bracket-zoom-wrapper.tsx"
+      issue: "Section nav scrolls corners of horizontal SVG, not actual quadrants"
+  missing:
+    - "New QuadrantBracketLayout component with 4 BracketDiagram instances in CSS 2x2 grid"
+    - "Split matchups by position range into quadrants"
+    - "Conditional rendering at 64+ entrants in bracket-detail, live-dashboard, student page"
+  debug_session: ".planning/debug/64-entrant-quadrant-layout.md"
