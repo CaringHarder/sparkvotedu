@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useCallback, useTransition, useRef } from 'react'
+import { useEffect, useState, useCallback, useTransition, useRef, useMemo } from 'react'
 import { useParams } from 'next/navigation'
 import Link from 'next/link'
 import { SimpleVotingView } from '@/components/student/simple-voting-view'
@@ -14,6 +14,8 @@ import { WinnerReveal } from '@/components/bracket/winner-reveal'
 import { CelebrationScreen } from '@/components/bracket/celebration-screen'
 import { useRealtimeBracket } from '@/hooks/use-realtime-bracket'
 import { castVote } from '@/actions/vote'
+import { calculateRoundRobinStandings } from '@/lib/bracket/round-robin'
+import type { RoundRobinResult } from '@/lib/bracket/round-robin'
 import type { BracketWithDetails, MatchupData, BracketEntrantData } from '@/lib/bracket/types'
 
 /**
@@ -517,7 +519,8 @@ function DEVotingView({
 }
 
 /**
- * RRLiveView: Round-robin bracket with real-time subscription and student voting.
+ * RRLiveView: Round-robin bracket with real-time subscription, student voting,
+ * tabbed Voting/Results UI, client-side standings, and CelebrationScreen on completion.
  */
 function RRLiveView({
   bracket,
@@ -527,12 +530,70 @@ function RRLiveView({
   participantId: string
 }) {
   const [votedMatchups, setVotedMatchups] = useState<Record<string, string>>({})
+  const [activeTab, setActiveTab] = useState<'voting' | 'results'>('voting')
+  const [showCelebration, setShowCelebration] = useState(false)
 
   // Real-time bracket updates
-  const { matchups: realtimeMatchups, transport } = useRealtimeBracket(bracket.id)
+  const { matchups: realtimeMatchups, transport, bracketCompleted } = useRealtimeBracket(bracket.id)
   const currentMatchups = (realtimeMatchups as MatchupData[] | null) ?? bracket.matchups
 
-  const currentRound = currentMatchups.find((m) => m.status !== 'decided')?.roundRobinRound ?? 1
+  // Fix currentRound: highest round with non-pending matchups (matches teacher LiveDashboard logic)
+  const currentRound = useMemo(() => {
+    const activeRounds = currentMatchups
+      .filter((m) => m.roundRobinRound != null && m.status !== 'pending')
+      .map((m) => m.roundRobinRound!)
+    if (activeRounds.length === 0) return 1
+    return Math.max(...activeRounds)
+  }, [currentMatchups])
+
+  // Show CelebrationScreen when bracket completes (RR uses direct celebration, no WinnerReveal)
+  useEffect(() => {
+    if (bracketCompleted) {
+      const timer = setTimeout(() => setShowCelebration(true), 2000)
+      return () => clearTimeout(timer)
+    }
+  }, [bracketCompleted])
+
+  // Compute champion name from matchup wins for CelebrationScreen
+  const championName = useMemo(() => {
+    const decidedMatchups = currentMatchups.filter((m) => m.status === 'decided')
+    if (decidedMatchups.length === 0) return bracket.name
+    const wins = new Map<string, { count: number; name: string }>()
+    for (const m of decidedMatchups) {
+      if (m.winner) {
+        const prev = wins.get(m.winner.id) ?? { count: 0, name: m.winner.name }
+        wins.set(m.winner.id, { count: prev.count + 1, name: m.winner.name })
+      }
+    }
+    let maxWins = 0
+    let leader = bracket.name
+    for (const [, val] of wins) {
+      if (val.count > maxWins) {
+        maxWins = val.count
+        leader = val.name
+      }
+    }
+    return leader
+  }, [currentMatchups, bracket.name])
+
+  // Compute standings client-side from current matchups
+  const standings = useMemo(() => {
+    const decidedMatchups = currentMatchups.filter((m) => m.status === 'decided')
+    if (decidedMatchups.length === 0) return []
+    const results: RoundRobinResult[] = decidedMatchups
+      .filter((m) => m.entrant1Id && m.entrant2Id)
+      .map((m) => ({
+        entrant1Id: m.entrant1Id!,
+        entrant2Id: m.entrant2Id!,
+        winnerId: m.winnerId,
+      }))
+    const rawStandings = calculateRoundRobinStandings(results)
+    // Enrich with entrant names from bracket data
+    return rawStandings.map((s) => ({
+      ...s,
+      entrantName: bracket.entrants.find((e) => e.id === s.entrantId)?.name ?? s.entrantId,
+    }))
+  }, [currentMatchups, bracket.entrants])
 
   const handleStudentVote = useCallback(
     (matchupId: string, entrantId: string) => {
@@ -551,17 +612,48 @@ function RRLiveView({
 
   return (
     <div className="px-4 py-6">
+      {/* Celebration overlay */}
+      {showCelebration && (
+        <CelebrationScreen
+          championName={championName}
+          bracketName={bracket.name}
+          onDismiss={() => setShowCelebration(false)}
+        />
+      )}
+
       <div className="mb-4 flex flex-wrap items-center gap-3">
         <h1 className="text-2xl font-bold">{bracket.name}</h1>
         {transport === 'polling' && (
           <span className="text-xs text-muted-foreground">(polling)</span>
         )}
       </div>
-      <div className="space-y-4">
-        <RoundRobinStandings
-          standings={[]}
-          isLive={bracket.roundRobinStandingsMode === 'live'}
-        />
+
+      {/* Tab bar */}
+      <div className="mb-4 flex gap-1 rounded-lg border bg-muted/50 p-1">
+        <button
+          className={`flex-1 rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
+            activeTab === 'voting'
+              ? 'bg-background text-foreground shadow-sm'
+              : 'text-muted-foreground hover:text-foreground'
+          }`}
+          onClick={() => setActiveTab('voting')}
+        >
+          Voting
+        </button>
+        <button
+          className={`flex-1 rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
+            activeTab === 'results'
+              ? 'bg-background text-foreground shadow-sm'
+              : 'text-muted-foreground hover:text-foreground'
+          }`}
+          onClick={() => setActiveTab('results')}
+        >
+          Results
+        </button>
+      </div>
+
+      {/* Tab content */}
+      {activeTab === 'voting' ? (
         <RoundRobinMatchups
           matchups={currentMatchups}
           entrants={bracket.entrants}
@@ -570,8 +662,14 @@ function RRLiveView({
           isTeacher={false}
           onStudentVote={handleStudentVote}
           votedMatchups={votedMatchups}
+          votingStyle={(bracket.roundRobinVotingStyle ?? 'simple') as 'simple' | 'advanced'}
         />
-      </div>
+      ) : (
+        <RoundRobinStandings
+          standings={standings}
+          isLive={bracket.roundRobinStandingsMode === 'live'}
+        />
+      )}
     </div>
   )
 }
