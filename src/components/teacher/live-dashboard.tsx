@@ -296,13 +296,20 @@ export function LiveDashboard({
     }
   }, [bracketCompleted, isDoubleElim, currentMatchups])
 
-  // Show celebration when bracket is completed
+  // Chain celebration to reveal completion (not independent timer)
+  const handleRevealComplete = useCallback(() => {
+    setRevealState(null)
+    // Show celebration 1 second after reveal dismisses
+    setTimeout(() => setShowCelebration(true), 1000)
+  }, [])
+
+  // Fallback: if bracket completed but reveal never triggered, go straight to celebration
   useEffect(() => {
-    if (bracketCompleted) {
-      const timer = setTimeout(() => setShowCelebration(true), 4000)
+    if (bracketCompleted && !revealState && !hasShownRevealRef.current) {
+      const timer = setTimeout(() => setShowCelebration(true), 2000)
       return () => clearTimeout(timer)
     }
-  }, [bracketCompleted])
+  }, [bracketCompleted, revealState])
 
   // Get voter IDs for selected matchup
   const currentVoterIds = useMemo(() => {
@@ -670,7 +677,7 @@ export function LiveDashboard({
           winnerName={revealState.winnerName}
           entrant1Name={revealState.entrant1Name}
           entrant2Name={revealState.entrant2Name}
-          onComplete={() => setRevealState(null)}
+          onComplete={handleRevealComplete}
         />
       )}
 
