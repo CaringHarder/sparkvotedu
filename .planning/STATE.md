@@ -261,6 +261,10 @@ Recent decisions affecting current work:
 - [07-23]: Auto-activate predictive brackets to 'active' status when predictions opened (Option A from R3 verification)
 - [07-23]: OR condition in activities API includes predictionStatus:'predictions_open' as safety net for pre-fix brackets
 - [07-23]: broadcastActivityUpdate on session channel when predictions open for real-time student page refresh
+- [07-21]: DE region tabs in top bar independent of DoubleElimDiagram's own tab navigation (controls scope to selected region)
+- [07-21]: Display round normalization via minRound offset subtraction for LB/GF region rounds
+- [07-21]: GF tab hidden until GF matchups exist (created when WB/LB champions determined)
+- [07-21]: isBracketComplete accepts optional bracketType for DE-aware GF completion check
 - [07-24]: Native overflow:auto scrolling replaces pointer-capture drag-to-pan -- eliminates all interaction conflicts
 - [07-24]: stopPropagation calls in bracket-diagram.tsx left in place (harmless, provide safety margin)
 - [07-24]: use-pan-zoom.ts hook left in place (unused but not deleted for safety)
@@ -281,5 +285,5 @@ Recent decisions affecting current work:
 ## Session Continuity
 
 Last session: 2026-02-02
-Stopped at: Completed 07-24-PLAN.md (Zoom Controls Fix) -- Phase 7 gap closure R3 COMPLETE (24/24 plans)
+Stopped at: Completed 07-21-PLAN.md (DE Live Dashboard Region Navigation) -- Phase 7 gap closure R3 all 24 plans executed
 Resume file: None
