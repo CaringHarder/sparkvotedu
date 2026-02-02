@@ -13,6 +13,8 @@ interface RoundRobinMatchupsProps {
   onRecordResult?: (matchupId: string, winnerId: string | null) => void
   onStudentVote?: (matchupId: string, entrantId: string) => void
   votedMatchups?: Record<string, string> // matchupId -> voted entrantId
+  voteCounts?: Record<string, Record<string, number>> // matchupId -> { entrantId: voteCount }
+  onBatchDecideByVotes?: () => void
 }
 
 /**
@@ -31,6 +33,8 @@ export function RoundRobinMatchups({
   onRecordResult,
   onStudentVote,
   votedMatchups,
+  voteCounts,
+  onBatchDecideByVotes,
 }: RoundRobinMatchupsProps) {
   // Group matchups by roundRobinRound
   const roundsMap = new Map<number, MatchupData[]>()
@@ -118,6 +122,19 @@ export function RoundRobinMatchups({
                   Complete
                 </span>
               )}
+              {/* Batch decide by votes button in round header */}
+              {isTeacher && !isComplete && voteCounts && onBatchDecideByVotes && roundMatchups.some((m) => m.status === 'voting') && (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    onBatchDecideByVotes()
+                  }}
+                  className="rounded bg-violet-600 px-2 py-0.5 text-xs font-medium text-white transition-colors hover:bg-violet-700"
+                >
+                  Close All &amp; Decide by Votes
+                </button>
+              )}
             </button>
 
             {/* Round matchups */}
@@ -133,6 +150,7 @@ export function RoundRobinMatchups({
                     onRecordResult={onRecordResult}
                     onStudentVote={onStudentVote}
                     votedMatchupId={votedMatchups?.[matchup.id] ?? null}
+                    voteCounts={voteCounts?.[matchup.id]}
                   />
                 ))}
               </div>
@@ -156,6 +174,7 @@ interface MatchupCardProps {
   onRecordResult?: (matchupId: string, winnerId: string | null) => void
   onStudentVote?: (matchupId: string, entrantId: string) => void
   votedMatchupId?: string | null // The entrant ID the student voted for in this matchup
+  voteCounts?: Record<string, number> // entrantId -> count for this matchup
 }
 
 function MatchupCard({
@@ -166,6 +185,7 @@ function MatchupCard({
   onRecordResult,
   onStudentVote,
   votedMatchupId,
+  voteCounts,
 }: MatchupCardProps) {
   const isDecided = matchup.status === 'decided'
   const isVoting = matchup.status === 'voting'
@@ -294,31 +314,56 @@ function MatchupCard({
           )}
 
           {/* Teacher controls for voting matchups */}
-          {isTeacher && isVoting && onRecordResult && (
-            <div className="flex items-center gap-1">
-              <button
-                type="button"
-                onClick={() => onRecordResult(matchup.id, matchup.entrant1Id)}
-                className="rounded bg-green-600 px-2 py-0.5 text-xs font-medium text-white transition-colors hover:bg-green-700"
-              >
-                {entrant1Name} Wins
-              </button>
-              <button
-                type="button"
-                onClick={() => onRecordResult(matchup.id, null)}
-                className="rounded bg-yellow-500 px-2 py-0.5 text-xs font-medium text-white transition-colors hover:bg-yellow-600"
-              >
-                Tie
-              </button>
-              <button
-                type="button"
-                onClick={() => onRecordResult(matchup.id, matchup.entrant2Id)}
-                className="rounded bg-green-600 px-2 py-0.5 text-xs font-medium text-white transition-colors hover:bg-green-700"
-              >
-                {entrant2Name} Wins
-              </button>
-            </div>
-          )}
+          {isTeacher && isVoting && onRecordResult && (() => {
+            const e1Votes = matchup.entrant1Id && voteCounts ? (voteCounts[matchup.entrant1Id] ?? 0) : 0
+            const e2Votes = matchup.entrant2Id && voteCounts ? (voteCounts[matchup.entrant2Id] ?? 0) : 0
+            const hasVotes = e1Votes > 0 || e2Votes > 0
+            const e1Leads = e1Votes > e2Votes
+            const e2Leads = e2Votes > e1Votes
+            const isTiedVotes = hasVotes && e1Votes === e2Votes
+
+            return (
+              <div className="flex items-center gap-1">
+                <button
+                  type="button"
+                  onClick={() => onRecordResult(matchup.id, matchup.entrant1Id)}
+                  className={`rounded px-2 py-0.5 text-xs font-medium text-white transition-colors ${
+                    e1Leads ? 'bg-green-600 ring-2 ring-green-400 hover:bg-green-700' : 'bg-green-600 hover:bg-green-700'
+                  }`}
+                >
+                  {entrant1Name}{hasVotes ? ` (${e1Votes})` : ''} Wins
+                </button>
+                <button
+                  type="button"
+                  onClick={() => onRecordResult(matchup.id, null)}
+                  className="rounded bg-yellow-500 px-2 py-0.5 text-xs font-medium text-white transition-colors hover:bg-yellow-600"
+                >
+                  Tie
+                </button>
+                <button
+                  type="button"
+                  onClick={() => onRecordResult(matchup.id, matchup.entrant2Id)}
+                  className={`rounded px-2 py-0.5 text-xs font-medium text-white transition-colors ${
+                    e2Leads ? 'bg-green-600 ring-2 ring-green-400 hover:bg-green-700' : 'bg-green-600 hover:bg-green-700'
+                  }`}
+                >
+                  {entrant2Name}{hasVotes ? ` (${e2Votes})` : ''} Wins
+                </button>
+                {hasVotes && !isTiedVotes && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const leaderId = e1Leads ? matchup.entrant1Id : matchup.entrant2Id
+                      if (leaderId) onRecordResult(matchup.id, leaderId)
+                    }}
+                    className="rounded bg-violet-600 px-2 py-0.5 text-xs font-medium text-white transition-colors hover:bg-violet-700"
+                  >
+                    Decide by Votes
+                  </button>
+                )}
+              </div>
+            )
+          })()}
         </div>
       </div>
     </div>
