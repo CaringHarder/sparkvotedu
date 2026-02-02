@@ -1,10 +1,11 @@
 'use client'
 
-import { useState, useTransition, useMemo, useCallback } from 'react'
+import { useState, useTransition, useMemo } from 'react'
 import { Trophy, Check, Edit3, Lock, ChevronRight } from 'lucide-react'
 import type { BracketWithDetails, MatchupData, PredictionData, PredictionScore } from '@/lib/bracket/types'
 import { submitPrediction, updatePredictionStatus } from '@/actions/prediction'
 import { usePredictions } from '@/hooks/use-predictions'
+import { usePredictionCascade } from '@/hooks/use-prediction-cascade'
 import { BracketDiagram } from '@/components/bracket/bracket-diagram'
 
 interface PredictiveBracketProps {
@@ -198,53 +199,41 @@ function SimplePredictionMode({
   isLoading: boolean
   onRefetch: () => void
 }) {
-  const nonByeMatchups = useMemo(
-    () => bracket.matchups.filter((m) => !m.isBye && m.entrant1Id && m.entrant2Id),
-    [bracket.matchups]
-  )
+  const isPredictionsOpen = predictionStatus === 'predictions_open'
+  const hasSubmitted = myPredictions.length > 0
+  const [isEditing, setIsEditing] = useState(myPredictions.length === 0)
+  const [isPending, startTransition] = useTransition()
 
-  // Build existing prediction map: matchupId -> predictedWinnerId
-  const existingMap = useMemo(() => {
-    const map = new Map<string, string>()
+  const initialSelections = useMemo(() => {
+    const map: Record<string, string> = {}
     for (const p of myPredictions) {
-      map.set(p.matchupId, p.predictedWinnerId)
+      map[p.matchupId] = p.predictedWinnerId
     }
     return map
   }, [myPredictions])
 
-  const [selections, setSelections] = useState<Record<string, string>>(() => {
-    const initial: Record<string, string> = {}
-    for (const p of myPredictions) {
-      initial[p.matchupId] = p.predictedWinnerId
-    }
-    return initial
+  const {
+    augmentedMatchups,
+    selectableMatchups,
+    selections,
+    handleSelect,
+    totalSelectableCount,
+    selectedCount,
+    allSelected,
+  } = usePredictionCascade({
+    matchups: bracket.matchups,
+    initialSelections,
+    enabled: isPredictionsOpen && (isEditing || !hasSubmitted),
   })
 
-  // Sync selections when myPredictions changes (after fetch)
-  const [lastPredictionCount, setLastPredictionCount] = useState(0)
-  if (myPredictions.length !== lastPredictionCount) {
-    const updated: Record<string, string> = {}
-    for (const p of myPredictions) {
-      updated[p.matchupId] = p.predictedWinnerId
+  // Build a Map for ReadOnlyPredictions from augmented matchups + selections
+  const readOnlyMap = useMemo(() => {
+    const map = new Map<string, string>()
+    for (const [matchupId, entrantId] of Object.entries(selections)) {
+      map.set(matchupId, entrantId)
     }
-    setSelections(updated)
-    setLastPredictionCount(myPredictions.length)
-  }
-
-  const [isPending, startTransition] = useTransition()
-  const [isEditing, setIsEditing] = useState(myPredictions.length === 0)
-
-  const madeCount = Object.keys(selections).length
-  const totalCount = nonByeMatchups.length
-  const allSelected = madeCount === totalCount
-
-  const isPredictionsOpen = predictionStatus === 'predictions_open'
-  const hasSubmitted = myPredictions.length > 0
-
-  function handleSelect(matchupId: string, entrantId: string) {
-    if (!isPredictionsOpen || (!isEditing && hasSubmitted)) return
-    setSelections((prev) => ({ ...prev, [matchupId]: entrantId }))
-  }
+    return map
+  }, [selections])
 
   function handleSubmit() {
     startTransition(async () => {
@@ -283,7 +272,7 @@ function SimplePredictionMode({
           </span>
         </div>
         {hasSubmitted && (
-          <ReadOnlyPredictions matchups={nonByeMatchups} selections={existingMap} />
+          <ReadOnlyPredictions matchups={augmentedMatchups.filter((m) => !m.isBye && m.entrant1Id && m.entrant2Id)} selections={readOnlyMap} />
         )}
       </div>
     )
@@ -296,7 +285,7 @@ function SimplePredictionMode({
         <div className="flex items-center gap-2 rounded-lg border border-green-200 bg-green-50 p-3 dark:border-green-900 dark:bg-green-950">
           <Check className="h-4 w-4 text-green-600" />
           <span className="text-sm text-green-800 dark:text-green-200">
-            Predictions submitted ({myPredictions.length} picks)
+            Predictions submitted ({Object.keys(selections).length} picks)
           </span>
           <div className="flex-1" />
           <button
@@ -308,7 +297,7 @@ function SimplePredictionMode({
             Edit Predictions
           </button>
         </div>
-        <ReadOnlyPredictions matchups={nonByeMatchups} selections={existingMap} />
+        <ReadOnlyPredictions matchups={augmentedMatchups.filter((m) => !m.isBye && m.entrant1Id && m.entrant2Id)} selections={readOnlyMap} />
       </div>
     )
   }
@@ -319,24 +308,25 @@ function SimplePredictionMode({
       {/* Progress */}
       <div className="flex items-center justify-between text-xs text-muted-foreground">
         <span>
-          {madeCount} of {totalCount} predictions made
+          {selectedCount} of {totalSelectableCount} predictions made
         </span>
         <div className="h-1.5 w-32 overflow-hidden rounded-full bg-muted">
           <div
             className="h-full rounded-full bg-primary transition-all"
-            style={{ width: `${totalCount > 0 ? (madeCount / totalCount) * 100 : 0}%` }}
+            style={{ width: `${totalSelectableCount > 0 ? (selectedCount / totalSelectableCount) * 100 : 0}%` }}
           />
         </div>
       </div>
 
       {/* Matchup list */}
       <div className="space-y-2">
-        {nonByeMatchups.map((matchup) => (
+        {selectableMatchups.map((matchup) => (
           <MatchupPredictionCard
             key={matchup.id}
             matchup={matchup}
             selectedWinnerId={selections[matchup.id] ?? null}
             onSelect={(entrantId) => handleSelect(matchup.id, entrantId)}
+            isSpeculative={matchup.round > 1}
           />
         ))}
       </div>
@@ -373,47 +363,33 @@ function AdvancedPredictionMode({
   isLoading: boolean
   onRefetch: () => void
 }) {
-  const nonByeMatchups = useMemo(
-    () => bracket.matchups.filter((m) => !m.isBye && m.entrant1Id && m.entrant2Id),
-    [bracket.matchups]
-  )
+  const isPredictionsOpen = predictionStatus === 'predictions_open'
+  const hasSubmitted = myPredictions.length > 0
+  const [isEditing, setIsEditing] = useState(myPredictions.length === 0)
+  const [isPending, startTransition] = useTransition()
 
-  const existingMap = useMemo(() => {
-    const map = new Map<string, string>()
+  const totalRounds = Math.ceil(Math.log2(bracket.maxEntrants ?? bracket.size))
+
+  const initialSelections = useMemo(() => {
+    const map: Record<string, string> = {}
     for (const p of myPredictions) {
-      map.set(p.matchupId, p.predictedWinnerId)
+      map[p.matchupId] = p.predictedWinnerId
     }
     return map
   }, [myPredictions])
 
-  const [selections, setSelections] = useState<Record<string, string>>(() => {
-    const initial: Record<string, string> = {}
-    for (const p of myPredictions) {
-      initial[p.matchupId] = p.predictedWinnerId
-    }
-    return initial
+  const {
+    augmentedMatchups,
+    selections,
+    handleSelect,
+    totalSelectableCount,
+    selectedCount,
+    allSelected,
+  } = usePredictionCascade({
+    matchups: bracket.matchups,
+    initialSelections,
+    enabled: isPredictionsOpen && (isEditing || !hasSubmitted),
   })
-
-  const [lastPredictionCount, setLastPredictionCount] = useState(0)
-  if (myPredictions.length !== lastPredictionCount) {
-    const updated: Record<string, string> = {}
-    for (const p of myPredictions) {
-      updated[p.matchupId] = p.predictedWinnerId
-    }
-    setSelections(updated)
-    setLastPredictionCount(myPredictions.length)
-  }
-
-  const [isPending, startTransition] = useTransition()
-  const [isEditing, setIsEditing] = useState(myPredictions.length === 0)
-
-  const madeCount = Object.keys(selections).length
-  const totalCount = nonByeMatchups.length
-  const allSelected = madeCount === totalCount
-  const isPredictionsOpen = predictionStatus === 'predictions_open'
-  const hasSubmitted = myPredictions.length > 0
-
-  const totalRounds = Math.ceil(Math.log2(bracket.maxEntrants ?? bracket.size))
 
   // Build votedEntrantIds map for the bracket diagram (reuse its highlight system)
   const votedEntrantIds = useMemo(() => {
@@ -424,16 +400,14 @@ function AdvancedPredictionMode({
     return map
   }, [selections])
 
-  const handleEntrantClick = useCallback(
-    (matchupId: string, entrantId: string) => {
-      if (!isPredictionsOpen || (!isEditing && hasSubmitted)) return
-      // Only allow clicks on non-bye matchups
-      const matchup = bracket.matchups.find((m) => m.id === matchupId)
-      if (!matchup || matchup.isBye) return
-      setSelections((prev) => ({ ...prev, [matchupId]: entrantId }))
-    },
-    [isPredictionsOpen, isEditing, hasSubmitted, bracket.matchups]
-  )
+  // Build existing prediction map for read-only views
+  const existingMap = useMemo(() => {
+    const map: Record<string, string | null> = {}
+    for (const p of myPredictions) {
+      map[p.matchupId] = p.predictedWinnerId
+    }
+    return map
+  }, [myPredictions])
 
   function handleSubmit() {
     startTransition(async () => {
@@ -476,7 +450,7 @@ function AdvancedPredictionMode({
               matchups={bracket.matchups}
               totalRounds={totalRounds}
               bracketSize={bracket.maxEntrants ?? bracket.size}
-              votedEntrantIds={Object.fromEntries(existingMap)}
+              votedEntrantIds={existingMap}
             />
           </div>
         )}
@@ -490,7 +464,7 @@ function AdvancedPredictionMode({
         <div className="flex items-center gap-2 rounded-lg border border-green-200 bg-green-50 p-3 dark:border-green-900 dark:bg-green-950">
           <Check className="h-4 w-4 text-green-600" />
           <span className="text-sm text-green-800 dark:text-green-200">
-            Predictions submitted ({myPredictions.length} picks)
+            Predictions submitted ({Object.keys(selections).length} picks)
           </span>
           <div className="flex-1" />
           <button
@@ -504,10 +478,10 @@ function AdvancedPredictionMode({
         </div>
         <div className="rounded-lg border p-3">
           <BracketDiagram
-            matchups={bracket.matchups}
+            matchups={augmentedMatchups}
             totalRounds={totalRounds}
             bracketSize={bracket.maxEntrants ?? bracket.size}
-            votedEntrantIds={Object.fromEntries(existingMap)}
+            votedEntrantIds={votedEntrantIds}
           />
         </div>
       </div>
@@ -519,23 +493,23 @@ function AdvancedPredictionMode({
       {/* Progress */}
       <div className="flex items-center justify-between text-xs text-muted-foreground">
         <span>
-          Click an entrant to predict the winner. {madeCount} of {totalCount} picks made.
+          Click an entrant to predict the winner. {selectedCount} of {totalSelectableCount} picks made.
         </span>
         <div className="h-1.5 w-32 overflow-hidden rounded-full bg-muted">
           <div
             className="h-full rounded-full bg-primary transition-all"
-            style={{ width: `${totalCount > 0 ? (madeCount / totalCount) * 100 : 0}%` }}
+            style={{ width: `${totalSelectableCount > 0 ? (selectedCount / totalSelectableCount) * 100 : 0}%` }}
           />
         </div>
       </div>
 
-      {/* Interactive bracket diagram */}
+      {/* Interactive bracket diagram -- uses augmentedMatchups to show speculative entrants */}
       <div className="rounded-lg border p-3">
         <BracketDiagram
-          matchups={bracket.matchups}
+          matchups={augmentedMatchups}
           totalRounds={totalRounds}
           bracketSize={bracket.maxEntrants ?? bracket.size}
-          onEntrantClick={handleEntrantClick}
+          onEntrantClick={(matchupId, entrantId) => handleSelect(matchupId, entrantId)}
           votedEntrantIds={votedEntrantIds}
         />
       </div>
@@ -583,18 +557,25 @@ function MatchupPredictionCard({
   matchup,
   selectedWinnerId,
   onSelect,
+  isSpeculative = false,
 }: {
   matchup: MatchupData
   selectedWinnerId: string | null
   onSelect: (entrantId: string) => void
+  isSpeculative?: boolean
 }) {
   const entrant1 = matchup.entrant1
   const entrant2 = matchup.entrant2
 
   return (
-    <div className="rounded-lg border p-3">
-      <div className="mb-1.5 text-xs text-muted-foreground">
-        Round {matchup.round}, Match {matchup.position}
+    <div className={`rounded-lg border p-3 ${isSpeculative ? 'border-dashed border-blue-300 dark:border-blue-700' : ''}`}>
+      <div className="mb-1.5 flex items-center gap-2 text-xs text-muted-foreground">
+        <span>Round {matchup.round}, Match {matchup.position}</span>
+        {isSpeculative && (
+          <span className="rounded bg-blue-100 px-1.5 py-0.5 text-[10px] font-medium text-blue-700 dark:bg-blue-900 dark:text-blue-300">
+            predicted matchup
+          </span>
+        )}
       </div>
       <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2">
         {/* Entrant 1 */}
