@@ -20,6 +20,10 @@ interface MatchupState {
   entrant2: { id: string; name: string; seedPosition: number } | null
   winner: { id: string; name: string; seedPosition: number } | null
   voteCounts?: Record<string, number>
+  bracketRegion?: string | null
+  isBye?: boolean
+  roundRobinRound?: number | null
+  nextMatchupId?: string | null
 }
 
 interface BracketStateResponse {

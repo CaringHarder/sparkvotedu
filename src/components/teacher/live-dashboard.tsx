@@ -259,6 +259,26 @@ export function LiveDashboard({
     prevMatchupStatusRef.current = newStatuses
   }, [currentMatchups, totalRounds, isDoubleElim])
 
+  // Fallback: when bracketCompleted fires for DE, ensure winner reveal triggers.
+  // The status-transition-based detection above may miss the GF decision if the
+  // real-time refetch and prevMatchupStatusRef update race each other.
+  useEffect(() => {
+    if (bracketCompleted && isDoubleElim && !revealState) {
+      const gf = currentMatchups.filter((m) => m.bracketRegion === 'grand_finals')
+      const maxGfRound = gf.length > 0 ? Math.max(...gf.map((m) => m.round)) : 0
+      const finalGf = gf.find((m) => m.round === maxGfRound && m.winner)
+      if (finalGf?.winner) {
+        setRevealState({
+          winnerName: finalGf.winner.name,
+          entrant1Name: finalGf.entrant1?.name ?? 'TBD',
+          entrant2Name: finalGf.entrant2?.name ?? 'TBD',
+          entrant1Votes: 0,
+          entrant2Votes: 0,
+        })
+      }
+    }
+  }, [bracketCompleted, isDoubleElim, currentMatchups, revealState])
+
   // Show celebration when bracket is completed
   useEffect(() => {
     if (bracketCompleted) {
