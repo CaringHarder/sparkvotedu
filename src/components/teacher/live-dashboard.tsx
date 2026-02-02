@@ -16,6 +16,8 @@ import { recordResult, advanceRound } from '@/actions/round-robin'
 import type { BracketWithDetails, MatchupData, RoundRobinStanding } from '@/lib/bracket/types'
 import type { VoteCounts } from '@/types/vote'
 
+type DERegion = 'winners' | 'losers' | 'grand_finals'
+
 interface LiveDashboardProps {
   bracket: BracketWithDetails
   totalRounds: number
@@ -49,6 +51,9 @@ export function LiveDashboard({
   const [showCelebration, setShowCelebration] = useState(false)
   const [isPending, startTransition] = useTransition()
   const [error, setError] = useState<string | null>(null)
+
+  // DE region navigation state
+  const [deRegion, setDeRegion] = useState<DERegion>('winners')
 
   // Bracket type detection
   const isDoubleElim = bracket.bracketType === 'double_elimination'
@@ -103,6 +108,111 @@ export function LiveDashboard({
     return merged
   }, [initialVoteCounts, realtimeVoteCounts])
 
+  // ---------------------------------------------------------------------------
+  // DE region-specific derived data
+  // ---------------------------------------------------------------------------
+
+  // Split matchups by region for DE brackets
+  const deMatchupsByRegion = useMemo(() => {
+    if (!isDoubleElim) return { winners: [] as MatchupData[], losers: [] as MatchupData[], grand_finals: [] as MatchupData[] }
+    return {
+      winners: currentMatchups.filter((m) => m.bracketRegion === 'winners'),
+      losers: currentMatchups.filter((m) => m.bracketRegion === 'losers'),
+      grand_finals: currentMatchups.filter((m) => m.bracketRegion === 'grand_finals'),
+    }
+  }, [isDoubleElim, currentMatchups])
+
+  // Compute round info per DE region
+  const deRegionInfo = useMemo(() => {
+    if (!isDoubleElim) return null
+
+    const computeRegionInfo = (regionMatchups: MatchupData[]) => {
+      if (regionMatchups.length === 0) return { minRound: 0, maxRound: 0, displayRounds: 0, currentDisplayRound: 0 }
+      const rounds = regionMatchups.map((m) => m.round)
+      const minRound = Math.min(...rounds)
+      const maxRound = Math.max(...rounds)
+      const displayRounds = maxRound - minRound + 1
+
+      // Current display round: first non-fully-decided round in this region
+      let currentDisplayRound = 1
+      for (let dr = 1; dr <= displayRounds; dr++) {
+        const dbRound = minRound + dr - 1
+        const roundMatchups = regionMatchups.filter((m) => m.round === dbRound)
+        const allDecided = roundMatchups.length > 0 && roundMatchups.every((m) => m.status === 'decided')
+        if (!allDecided) {
+          currentDisplayRound = dr
+          break
+        }
+        currentDisplayRound = dr // if all decided, stay on last
+      }
+      return { minRound, maxRound, displayRounds, currentDisplayRound }
+    }
+
+    return {
+      winners: computeRegionInfo(deMatchupsByRegion.winners),
+      losers: computeRegionInfo(deMatchupsByRegion.losers),
+      grand_finals: computeRegionInfo(deMatchupsByRegion.grand_finals),
+    }
+  }, [isDoubleElim, deMatchupsByRegion])
+
+  // Active DE region matchups and round info
+  const deActiveRegionMatchups = useMemo(() => {
+    if (!isDoubleElim) return []
+    return deMatchupsByRegion[deRegion]
+  }, [isDoubleElim, deMatchupsByRegion, deRegion])
+
+  const deActiveRegionInfo = useMemo(() => {
+    if (!isDoubleElim || !deRegionInfo) return null
+    return deRegionInfo[deRegion]
+  }, [isDoubleElim, deRegionInfo, deRegion])
+
+  // DE region round status (keyed by display round 1..N)
+  const deRegionRoundStatus = useMemo(() => {
+    if (!isDoubleElim || !deActiveRegionInfo) return {} as Record<number, { pending: number; voting: number; decided: number; total: number }>
+    const status: Record<number, { pending: number; voting: number; decided: number; total: number }> = {}
+    const { minRound, displayRounds } = deActiveRegionInfo
+    for (let dr = 1; dr <= displayRounds; dr++) {
+      const dbRound = minRound + dr - 1
+      const rm = deActiveRegionMatchups.filter((m) => m.round === dbRound)
+      status[dr] = {
+        pending: rm.filter((m) => m.status === 'pending').length,
+        voting: rm.filter((m) => m.status === 'voting').length,
+        decided: rm.filter((m) => m.status === 'decided').length,
+        total: rm.length,
+      }
+    }
+    return status
+  }, [isDoubleElim, deActiveRegionInfo, deActiveRegionMatchups])
+
+  // DE region current DB round (for action handlers)
+  const deCurrentDbRound = useMemo(() => {
+    if (!isDoubleElim || !deActiveRegionInfo) return 1
+    return deActiveRegionInfo.minRound + deActiveRegionInfo.currentDisplayRound - 1
+  }, [isDoubleElim, deActiveRegionInfo])
+
+  // DE bracket completion: all GF matchups decided
+  const deBracketDone = useMemo(() => {
+    if (!isDoubleElim) return false
+    const gf = deMatchupsByRegion.grand_finals
+    return gf.length > 0 && gf.every((m) => m.status === 'decided')
+  }, [isDoubleElim, deMatchupsByRegion])
+
+  // Per-region status badge counts (for region tabs)
+  const deRegionBadges = useMemo(() => {
+    if (!isDoubleElim) return { winners: 0, losers: 0, grand_finals: 0 }
+    const countActive = (matchups: MatchupData[]) =>
+      matchups.filter((m) => m.status === 'pending' || m.status === 'voting').length
+    return {
+      winners: countActive(deMatchupsByRegion.winners),
+      losers: countActive(deMatchupsByRegion.losers),
+      grand_finals: countActive(deMatchupsByRegion.grand_finals),
+    }
+  }, [isDoubleElim, deMatchupsByRegion])
+
+  // ---------------------------------------------------------------------------
+  // Non-DE logic (SE/Predictive) -- unchanged
+  // ---------------------------------------------------------------------------
+
   // Detect newly decided FINAL matchup and trigger WinnerReveal
   useEffect(() => {
     const prev = prevMatchupStatusRef.current
@@ -112,17 +222,34 @@ export function LiveDashboard({
         prevStatus &&
         prevStatus !== 'decided' &&
         matchup.status === 'decided' &&
-        matchup.winner &&
-        matchup.round === totalRounds &&
-        matchup.position === 1
+        matchup.winner
       ) {
-        setRevealState({
-          winnerName: matchup.winner.name,
-          entrant1Name: matchup.entrant1?.name ?? 'TBD',
-          entrant2Name: matchup.entrant2?.name ?? 'TBD',
-          entrant1Votes: 0,
-          entrant2Votes: 0,
-        })
+        // For DE: trigger reveal only for the final GF matchup
+        if (isDoubleElim) {
+          const gf = currentMatchups.filter((m) => m.bracketRegion === 'grand_finals')
+          const maxGfRound = gf.length > 0 ? Math.max(...gf.map((m) => m.round)) : 0
+          if (matchup.bracketRegion === 'grand_finals' && matchup.round === maxGfRound) {
+            setRevealState({
+              winnerName: matchup.winner.name,
+              entrant1Name: matchup.entrant1?.name ?? 'TBD',
+              entrant2Name: matchup.entrant2?.name ?? 'TBD',
+              entrant1Votes: 0,
+              entrant2Votes: 0,
+            })
+          }
+        } else if (
+          matchup.round === totalRounds &&
+          matchup.position === 1
+        ) {
+          // SE/Predictive: highest round, position 1
+          setRevealState({
+            winnerName: matchup.winner.name,
+            entrant1Name: matchup.entrant1?.name ?? 'TBD',
+            entrant2Name: matchup.entrant2?.name ?? 'TBD',
+            entrant1Votes: 0,
+            entrant2Votes: 0,
+          })
+        }
       }
     }
     const newStatuses: Record<string, string> = {}
@@ -130,7 +257,7 @@ export function LiveDashboard({
       newStatuses[m.id] = m.status
     }
     prevMatchupStatusRef.current = newStatuses
-  }, [currentMatchups, totalRounds])
+  }, [currentMatchups, totalRounds, isDoubleElim])
 
   // Show celebration when bracket is completed
   useEffect(() => {
@@ -146,26 +273,35 @@ export function LiveDashboard({
     return initialVoterIds[selectedMatchupId] ?? []
   }, [selectedMatchupId, initialVoterIds])
 
-  // Current round
+  // Current round (SE/Predictive only -- DE uses region-based deCurrentDbRound)
   const currentRound = useMemo(() => {
+    if (isDoubleElim) return 1 // Not used for DE; region-based navigation instead
     for (let r = 1; r <= totalRounds; r++) {
       const roundMatchups = currentMatchups.filter((m) => m.round === r)
       const allDecided = roundMatchups.every((m) => m.status === 'decided')
       if (!allDecided) return r
     }
     return totalRounds
-  }, [currentMatchups, totalRounds])
+  }, [currentMatchups, totalRounds, isDoubleElim])
 
   // Champion name for celebration
   const championName = useMemo(() => {
+    if (isDoubleElim) {
+      const gf = currentMatchups.filter((m) => m.bracketRegion === 'grand_finals')
+      if (gf.length === 0) return 'Champion'
+      const maxRound = Math.max(...gf.map((m) => m.round))
+      const finalGf = gf.find((m) => m.round === maxRound)
+      return finalGf?.winner?.name ?? 'Champion'
+    }
     const finalMatchup = currentMatchups.find(
       (m) => m.round === totalRounds && m.position === 1
     )
     return finalMatchup?.winner?.name ?? 'Champion'
-  }, [currentMatchups, totalRounds])
+  }, [currentMatchups, totalRounds, isDoubleElim])
 
-  // Round-level status counts
+  // Round-level status counts (SE/Predictive only -- DE uses deRegionRoundStatus)
   const roundStatus = useMemo(() => {
+    if (isDoubleElim) return {} as Record<number, { pending: number; voting: number; decided: number; total: number }>
     const status: Record<number, { pending: number; voting: number; decided: number; total: number }> = {}
     for (let r = 1; r <= totalRounds; r++) {
       const rm = currentMatchups.filter((m) => m.round === r)
@@ -177,7 +313,7 @@ export function LiveDashboard({
       }
     }
     return status
-  }, [currentMatchups, totalRounds])
+  }, [currentMatchups, totalRounds, isDoubleElim])
 
   // Build inline vote count labels for diagram: matchupId -> "3-2" style label
   const voteLabels = useMemo(() => {
@@ -194,24 +330,46 @@ export function LiveDashboard({
     return labels
   }, [currentMatchups, mergedVoteCounts])
 
-  // Actions
+  // ---------------------------------------------------------------------------
+  // Actions -- DE-aware
+  // ---------------------------------------------------------------------------
+
   const handleOpenVoting = useCallback(() => {
     setError(null)
-    const pendingIds = currentMatchups
-      .filter((m) => m.round === currentRound && m.status === 'pending')
-      .map((m) => m.id)
+    let pendingIds: string[]
+
+    if (isDoubleElim) {
+      // Filter pending matchups in the active DE region's current DB round
+      pendingIds = deActiveRegionMatchups
+        .filter((m) => m.round === deCurrentDbRound && m.status === 'pending')
+        .map((m) => m.id)
+    } else {
+      pendingIds = currentMatchups
+        .filter((m) => m.round === currentRound && m.status === 'pending')
+        .map((m) => m.id)
+    }
+
     if (pendingIds.length === 0) return
     startTransition(async () => {
       const result = await openMatchupsForVoting({ bracketId: bracket.id, matchupIds: pendingIds })
       if (result && 'error' in result) setError(result.error as string)
     })
-  }, [currentMatchups, currentRound, bracket.id])
+  }, [isDoubleElim, deActiveRegionMatchups, deCurrentDbRound, currentMatchups, currentRound, bracket.id])
 
   const handleCloseAndAdvance = useCallback(() => {
     setError(null)
-    const votingMatchups = currentMatchups.filter(
-      (m) => m.round === currentRound && m.status === 'voting'
-    )
+
+    let votingMatchups: MatchupData[]
+    if (isDoubleElim) {
+      votingMatchups = deActiveRegionMatchups.filter(
+        (m) => m.round === deCurrentDbRound && m.status === 'voting'
+      )
+    } else {
+      votingMatchups = currentMatchups.filter(
+        (m) => m.round === currentRound && m.status === 'voting'
+      )
+    }
+
     const advanceList: Array<{ matchupId: string; winnerId: string }> = []
     const tiedCount = { value: 0 }
 
@@ -239,20 +397,24 @@ export function LiveDashboard({
         if (result && 'error' in result) { setError(result.error as string); return }
       }
       if (tiedCount.value > 0) {
-        setError(`${advanceList.length} advanced. ${tiedCount.value} tied — click matchup to break tie.`)
+        setError(`${advanceList.length} advanced. ${tiedCount.value} tied -- click matchup to break tie.`)
       }
     })
-  }, [currentMatchups, currentRound, mergedVoteCounts, bracket.id])
+  }, [isDoubleElim, deActiveRegionMatchups, deCurrentDbRound, currentMatchups, currentRound, mergedVoteCounts, bracket.id])
 
   const handleAdvanceRound = useCallback(() => {
     setError(null)
+    const roundToAdvance = isDoubleElim ? deCurrentDbRound : currentRound
     startTransition(async () => {
-      const result = await batchAdvanceRound({ bracketId: bracket.id, round: currentRound })
+      const result = await batchAdvanceRound({ bracketId: bracket.id, round: roundToAdvance })
       if (result && 'error' in result) setError(result.error as string)
     })
-  }, [bracket.id, currentRound])
+  }, [bracket.id, currentRound, isDoubleElim, deCurrentDbRound])
 
+  // ---------------------------------------------------------------------------
   // Round-robin: current round, advance logic, and handlers
+  // ---------------------------------------------------------------------------
+
   // Current round = the highest RR round that has been opened (voting or decided).
   // This ensures that when round 1 is all decided, we stay on round 1 (not jump to pending round 2)
   // so that canAdvanceRoundRobin can detect completion and show the "Open Round 2" button.
@@ -341,6 +503,10 @@ export function LiveDashboard({
     })
   }, [currentMatchups, currentRoundRobinRound, mergedVoteCounts, bracket.id])
 
+  // ---------------------------------------------------------------------------
+  // Per-matchup actions
+  // ---------------------------------------------------------------------------
+
   // Click matchup in diagram to select it for per-matchup actions
   const handleMatchupClick = useCallback((matchupId: string) => {
     setSelectedMatchupId((prev) => (prev === matchupId ? null : matchupId))
@@ -359,7 +525,7 @@ export function LiveDashboard({
   // Get selected matchup details
   const selectedMatchup = currentMatchups.find((m) => m.id === selectedMatchupId) ?? null
 
-  // Round label helper
+  // Round label helper (SE/Predictive)
   function getRoundLabel(round: number): string {
     if (round === totalRounds) return 'Final'
     if (round === totalRounds - 1) return 'Semis'
@@ -367,12 +533,50 @@ export function LiveDashboard({
     return `R${round}`
   }
 
+  // DE region round label helper
+  function getDeRoundLabel(displayRound: number, regionTotalRounds: number, region: DERegion): string {
+    if (region === 'grand_finals') {
+      if (displayRound === 1) return 'GF 1'
+      return 'GF Reset'
+    }
+    if (displayRound === regionTotalRounds) return 'Final'
+    return `R${displayRound}`
+  }
+
+  // DE region display name
+  function getRegionDisplayName(region: DERegion): string {
+    if (region === 'winners') return 'Winners'
+    if (region === 'losers') return 'Losers'
+    return 'Grand Finals'
+  }
+
+  // ---------------------------------------------------------------------------
   // Determine primary action for action bar
+  // ---------------------------------------------------------------------------
+
+  // For DE, use region-specific round status
+  const deRs = isDoubleElim && deActiveRegionInfo
+    ? deRegionRoundStatus[deActiveRegionInfo.currentDisplayRound]
+    : null
+  const deAllRegionRoundDecided = deRs && deRs.decided === deRs.total && deRs.total > 0
+  const deHasVoting = deRs && deRs.voting > 0
+  const deHasPending = deRs && deRs.pending > 0
+  // DE region round is "done" when all rounds in that region are decided
+  const deRegionAllDone = isDoubleElim && deActiveRegionInfo
+    ? Object.values(deRegionRoundStatus).every((s) => s.decided === s.total && s.total > 0)
+    : false
+
+  // For SE/Predictive (unchanged)
   const rs = roundStatus[currentRound]
   const allRoundDecided = rs && rs.decided === rs.total && rs.total > 0
   const hasVoting = rs && rs.voting > 0
   const hasPending = rs && rs.pending > 0
-  const bracketDone = currentRound === totalRounds && allRoundDecided
+  const bracketDone = isDoubleElim
+    ? deBracketDone
+    : (currentRound === totalRounds && allRoundDecided)
+
+  // Suppress unused variable warnings for type detection booleans
+  void isPredictive
 
   return (
     <div className="flex h-full flex-col gap-3">
@@ -402,8 +606,69 @@ export function LiveDashboard({
           LIVE
         </span>
 
-        {/* Round tabs (SE / DE only) */}
-        {!isRoundRobin && (
+        {/* DE region tabs */}
+        {isDoubleElim && (
+          <div className="flex gap-1">
+            {(['winners', 'losers', 'grand_finals'] as DERegion[]).map((region) => {
+              const isActive = region === deRegion
+              const badge = deRegionBadges[region]
+              const regionMatchups = deMatchupsByRegion[region]
+              const allDecided = regionMatchups.length > 0 && regionMatchups.every((m) => m.status === 'decided')
+              // Hide GF tab if no GF matchups exist yet
+              if (region === 'grand_finals' && regionMatchups.length === 0) return null
+              return (
+                <button
+                  key={region}
+                  onClick={() => setDeRegion(region)}
+                  className={`rounded px-2.5 py-0.5 text-xs font-medium transition-colors ${
+                    isActive
+                      ? 'bg-primary text-primary-foreground'
+                      : allDecided
+                        ? 'bg-green-100 text-green-700 hover:bg-green-200'
+                        : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                  }`}
+                >
+                  {getRegionDisplayName(region)}
+                  {badge > 0 && (
+                    <span className="ml-1 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-blue-500 px-1 text-[10px] font-bold text-white">
+                      {badge}
+                    </span>
+                  )}
+                  {allDecided && regionMatchups.length > 0 && ' \u2713'}
+                </button>
+              )
+            })}
+          </div>
+        )}
+
+        {/* DE region round sub-tabs */}
+        {isDoubleElim && deActiveRegionInfo && deActiveRegionInfo.displayRounds > 0 && (
+          <div className="flex gap-0.5 border-l pl-2">
+            {Array.from({ length: deActiveRegionInfo.displayRounds }, (_, i) => i + 1).map((dr) => {
+              const s = deRegionRoundStatus[dr]
+              const isActiveDr = dr === deActiveRegionInfo.currentDisplayRound
+              const isComplete = s && s.decided === s.total && s.total > 0
+              return (
+                <span
+                  key={dr}
+                  className={`rounded px-1.5 py-0.5 text-[10px] font-medium ${
+                    isActiveDr
+                      ? 'bg-primary/80 text-primary-foreground'
+                      : isComplete
+                        ? 'bg-green-100 text-green-700'
+                        : 'bg-muted/60 text-muted-foreground'
+                  }`}
+                >
+                  {getDeRoundLabel(dr, deActiveRegionInfo.displayRounds, deRegion)}
+                  {isComplete && ' \u2713'}
+                </span>
+              )
+            })}
+          </div>
+        )}
+
+        {/* Round tabs (SE / Predictive only -- NOT DE) */}
+        {!isRoundRobin && !isDoubleElim && (
           <div className="flex gap-1">
             {Array.from({ length: totalRounds }, (_, i) => i + 1).map((round) => {
               const s = roundStatus[round]
@@ -421,7 +686,7 @@ export function LiveDashboard({
                   }`}
                 >
                   {getRoundLabel(round)}
-                  {isComplete && ' ✓'}
+                  {isComplete && ' \u2713'}
                 </span>
               )
             })}
@@ -437,8 +702,39 @@ export function LiveDashboard({
 
         <div className="flex-1" />
 
-        {/* Primary action buttons (SE / DE) */}
-        {!isRoundRobin && hasPending && (
+        {/* DE primary action buttons */}
+        {isDoubleElim && deHasPending && (
+          <button
+            onClick={handleOpenVoting}
+            disabled={isPending}
+            className="rounded-md bg-blue-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+          >
+            {isPending ? 'Opening...' : `Open Voting (${deRs!.pending})`}
+          </button>
+        )}
+
+        {isDoubleElim && deHasVoting && (
+          <button
+            onClick={handleCloseAndAdvance}
+            disabled={isPending}
+            className="rounded-md bg-orange-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-orange-700 disabled:opacity-50"
+          >
+            {isPending ? 'Closing...' : `Close & Advance (${deRs!.voting})`}
+          </button>
+        )}
+
+        {isDoubleElim && deAllRegionRoundDecided && !deRegionAllDone && !deBracketDone && (
+          <button
+            onClick={handleAdvanceRound}
+            disabled={isPending}
+            className="rounded-md bg-green-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-green-700 disabled:opacity-50"
+          >
+            {isPending ? 'Advancing...' : 'Next Round \u2192'}
+          </button>
+        )}
+
+        {/* SE / Predictive primary action buttons (NOT DE, NOT RR) */}
+        {!isRoundRobin && !isDoubleElim && hasPending && (
           <button
             onClick={handleOpenVoting}
             disabled={isPending}
@@ -448,7 +744,7 @@ export function LiveDashboard({
           </button>
         )}
 
-        {!isRoundRobin && hasVoting && (
+        {!isRoundRobin && !isDoubleElim && hasVoting && (
           <button
             onClick={handleCloseAndAdvance}
             disabled={isPending}
@@ -458,13 +754,13 @@ export function LiveDashboard({
           </button>
         )}
 
-        {!isRoundRobin && allRoundDecided && !bracketDone && (
+        {!isRoundRobin && !isDoubleElim && allRoundDecided && !bracketDone && (
           <button
             onClick={handleAdvanceRound}
             disabled={isPending}
             className="rounded-md bg-green-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-green-700 disabled:opacity-50"
           >
-            {isPending ? 'Advancing...' : `Next Round →`}
+            {isPending ? 'Advancing...' : 'Next Round \u2192'}
           </button>
         )}
 
@@ -496,7 +792,7 @@ export function LiveDashboard({
           </button>
         )}
 
-        {!isRoundRobin && bracketDone && (
+        {bracketDone && (
           <span className="flex items-center gap-1.5 rounded-md bg-green-50 px-3 py-1.5 text-xs font-semibold text-green-700 dark:bg-green-900/20 dark:text-green-400">
             Complete!
           </span>
@@ -524,7 +820,7 @@ export function LiveDashboard({
             <div className="mx-4 w-full max-w-sm rounded-xl border bg-card p-6 shadow-lg" onClick={(e) => e.stopPropagation()}>
               <h2 className="mb-1 text-center text-base font-bold">Pick Winner</h2>
               <p className="mb-5 text-center text-xs text-muted-foreground">
-                {isTied ? 'Tied — teacher breaks the tie' : 'Override or confirm the vote leader'}
+                {isTied ? 'Tied -- teacher breaks the tie' : 'Override or confirm the vote leader'}
               </p>
 
               <div className="flex gap-3">
