@@ -30,17 +30,24 @@ export async function GET(
       return NextResponse.json([], { status: 200 })
     }
 
-    // Fetch brackets in this session that are active or completed
+    // Fetch brackets in this session that are active/completed,
+    // OR predictive brackets with predictions_open (handles edge cases
+    // where bracket was opened before auto-activate fix)
     const brackets = await prisma.bracket.findMany({
       where: {
         sessionId,
-        status: { in: ['active', 'completed'] },
+        OR: [
+          { status: { in: ['active', 'completed'] } },
+          { predictionStatus: 'predictions_open' },
+        ],
       },
       select: {
         id: true,
         name: true,
         status: true,
         viewingMode: true,
+        bracketType: true,
+        predictionStatus: true,
         _count: {
           select: {
             matchups: { where: { status: 'voting' } },
@@ -75,6 +82,8 @@ export async function GET(
           participantCount: bracket._count.matchups, // number of active voting matchups
           hasVoted,
           status: bracket.status,
+          bracketType: bracket.bracketType,
+          predictionStatus: bracket.predictionStatus,
         }
       })
     )
