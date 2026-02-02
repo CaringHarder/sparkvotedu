@@ -18,7 +18,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 4: Voting & Real-Time** - Students vote on matchups with live updating dashboard and real-time bracket state
 - [x] **Phase 5: Polls** - Simple and ranked polls with real-time results display
 - [x] **Phase 6: Billing & Subscriptions** - Stripe integration, tier enforcement, and upgrade prompts
-- [x] **Phase 7: Advanced Brackets** - Double-elimination, round-robin, predictive brackets, and non-power-of-two support (complete 2026-02-02)
+- [ ] **Phase 7: Advanced Brackets** - Double-elimination, round-robin, predictive brackets, and non-power-of-two support (R5 gap closure in progress)
 - [ ] **Phase 7.1: Predictive Auto-Resolution Mode** - Third resolution mode where predictions auto-count as votes without voting rounds (INSERTED)
 - [ ] **Phase 8: Sports Integration** - Real sports tournament brackets from external APIs for classroom prediction competitions
 - [ ] **Phase 9: Analytics** - Participation metrics, vote distribution views, CSV export, and predictive leaderboard scoring
@@ -158,7 +158,7 @@ Plans:
   3. Teacher can create a predictive bracket where students submit predictions and a scored leaderboard ranks accuracy
   4. Teacher can create a bracket with a non-power-of-two number of entrants (e.g., 5, 6, 7, 10) and byes are placed automatically and fairly
   5. Predictive bracket leaderboard shows each student's scoring breakdown (points per correct pick by round)
-**Plans**: 27 plans
+**Plans**: 31 plans
 
 Plans:
 - [x] 07-01-PLAN.md — Schema evolution, TypeScript types, and Zod validation for all bracket types
@@ -188,6 +188,10 @@ Plans:
 - [x] 07-25-PLAN.md — Gap closure R4: DE teacher UX (partial advance tiebreak, GF tab persistence, winner animation timing)
 - [x] 07-26-PLAN.md — Gap closure R4: RR student experience (celebration, standings, tabs, votingStyle, round visibility)
 - [x] 07-27-PLAN.md — Gap closure R4: Zoom pinch scoping, section navigation for 32+, SE simple/advanced creation
+- [ ] 07-28-PLAN.md — Gap closure R5: DE duplicate celebration fix, RR nested button fix, batch decide loading
+- [ ] 07-29-PLAN.md — Gap closure R5: RR completion detection + celebration broadcast
+- [ ] 07-30-PLAN.md — Gap closure R5: RR simple/advanced matchup layout behavior
+- [ ] 07-31-PLAN.md — Gap closure R5: 64-entrant quadrant bracket layout
 
 ### Phase 7.1: Predictive Auto-Resolution Mode (INSERTED)
 **Goal**: Add a third predictive bracket resolution mode where student predictions automatically count as votes, resolving the entire bracket without voting rounds — teacher simply releases results on Go Live
@@ -275,7 +279,7 @@ Note: Phase 3 depends only on Phase 1 (not Phase 2), so Phases 2 and 3 could the
 | 4. Voting & Real-Time | 6/6 | Complete | 2026-01-31 |
 | 5. Polls | 10/10 | Complete | 2026-01-31 |
 | 6. Billing & Subscriptions | 5/5 | Complete | 2026-02-01 |
-| 7. Advanced Brackets | 27/27 | Complete | 2026-02-02 |
+| 7. Advanced Brackets | 27/31 | R5 Gap Closure | - |
 | 7.1 Predictive Auto-Resolution | 0/4 | Not started | - |
 | 8. Sports Integration | 0/5 | Not started | - |
 | 9. Analytics | 0/4 | Not started | - |
