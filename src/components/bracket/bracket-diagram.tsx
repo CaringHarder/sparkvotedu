@@ -574,6 +574,7 @@ export function BracketDiagram({ matchups, totalRounds, className, bracketSize, 
     return (
       <BracketZoomWrapper
         options={effectiveSize >= 64 ? { initialScale: 0.75 } : undefined}
+        bracketSize={effectiveSize}
       >
         {svgContent}
       </BracketZoomWrapper>

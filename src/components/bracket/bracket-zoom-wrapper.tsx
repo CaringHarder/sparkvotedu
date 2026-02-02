@@ -1,7 +1,7 @@
 'use client'
 
 import type { ReactNode } from 'react'
-import { useRef, useState } from 'react'
+import { useRef, useState, useEffect, useMemo, useCallback } from 'react'
 import { ZoomIn, ZoomOut, Maximize } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 
@@ -23,6 +23,8 @@ interface BracketZoomWrapperProps {
   options?: BracketZoomWrapperOptions
   /** Additional CSS class for the outer container */
   className?: string
+  /** Actual bracket entrant count -- enables section navigation for 32+ brackets */
+  bracketSize?: number
 }
 
 /**
@@ -43,12 +45,56 @@ export function BracketZoomWrapper({
   children,
   options,
   className = '',
+  bracketSize,
 }: BracketZoomWrapperProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const initialScale = options?.initialScale ?? 1
   const minScale = options?.minScale ?? 0.25
   const maxScale = options?.maxScale ?? 3
   const [scale, setScale] = useState(initialScale)
+
+  // Intercept pinch-to-zoom (ctrlKey wheel events) to change bracket scale
+  // instead of browser page zoom. Normal scroll wheel events pass through.
+  useEffect(() => {
+    const el = containerRef.current
+    if (!el) return
+    const handleWheel = (e: WheelEvent) => {
+      if (!e.ctrlKey) return // Let normal scroll pass through
+      e.preventDefault()
+      const factor = e.deltaY > 0 ? 0.95 : 1.05
+      setScale((s) => Math.max(minScale, Math.min(maxScale, s * factor)))
+    }
+    el.addEventListener('wheel', handleWheel, { passive: false })
+    return () => el.removeEventListener('wheel', handleWheel)
+  }, [minScale, maxScale])
+
+  // Section navigation buttons for large brackets
+  const sections = useMemo(() => {
+    if (!bracketSize || bracketSize < 32) return []
+    if (bracketSize >= 64) {
+      return [
+        { label: 'TL', title: 'Top-Left', top: 0 as const, left: 0 as const },
+        { label: 'TR', title: 'Top-Right', top: 0 as const, left: 'max' as const },
+        { label: 'BL', title: 'Bottom-Left', top: 'max' as const, left: 0 as const },
+        { label: 'BR', title: 'Bottom-Right', top: 'max' as const, left: 'max' as const },
+      ]
+    }
+    // 32 entrants: top/bottom halves
+    return [
+      { label: 'Top', title: 'Top Half', top: 0 as const, left: 0 as const },
+      { label: 'Bottom', title: 'Bottom Half', top: 'max' as const, left: 0 as const },
+    ]
+  }, [bracketSize])
+
+  const scrollToSection = useCallback((top: 0 | 'max', left: 0 | 'max') => {
+    const el = containerRef.current
+    if (!el) return
+    el.scrollTo({
+      top: top === 'max' ? el.scrollHeight : 0,
+      left: left === 'max' ? el.scrollWidth : 0,
+      behavior: 'smooth',
+    })
+  }, [])
 
   const zoomIn = () => setScale((s) => Math.min(maxScale, s * 1.2))
   const zoomOut = () => setScale((s) => Math.max(minScale, s / 1.2))
@@ -68,7 +114,7 @@ export function BracketZoomWrapper({
       <div
         ref={containerRef}
         className="overflow-auto rounded-lg border bg-background"
-        style={{ maxHeight: '70vh' }}
+        style={{ maxHeight: '70vh', touchAction: 'pan-x pan-y' }}
       >
         <div
           style={{
@@ -83,6 +129,25 @@ export function BracketZoomWrapper({
 
       {/* Floating zoom controls (outside the scrollable area) */}
       <div className="absolute bottom-3 right-3 flex items-center gap-1 rounded-lg border bg-background/90 p-1 shadow-sm backdrop-blur-sm">
+        {/* Section navigation buttons for 32+ brackets */}
+        {sections.length > 0 && (
+          <>
+            {sections.map((s) => (
+              <Button
+                key={s.label}
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8 text-xs font-medium"
+                onClick={() => scrollToSection(s.top, s.left)}
+                title={s.title}
+              >
+                {s.label}
+              </Button>
+            ))}
+            <div className="mx-0.5 h-5 w-px bg-border" />
+          </>
+        )}
+
         <Button
           variant="ghost"
           size="icon"

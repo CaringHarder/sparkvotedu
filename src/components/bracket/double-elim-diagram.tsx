@@ -333,6 +333,7 @@ export function DoubleElimDiagram({
               {effectiveSize >= 32 ? (
                 <BracketZoomWrapper
                   options={effectiveSize >= 64 ? { initialScale: 0.75 } : undefined}
+                  bracketSize={effectiveSize}
                 >
                   <BracketDiagram
                     matchups={normalizedWinners}
@@ -374,6 +375,7 @@ export function DoubleElimDiagram({
               {losersTotalRounds >= 4 || effectiveSize >= 32 ? (
                 <BracketZoomWrapper
                   options={losersTotalRounds >= 6 || effectiveSize >= 64 ? { initialScale: 0.75 } : undefined}
+                  bracketSize={effectiveSize}
                 >
                   <BracketDiagram
                     matchups={normalizedLosers}
