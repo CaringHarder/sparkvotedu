@@ -307,7 +307,12 @@ export function LiveDashboard({
   // Fallback: if bracket completed but reveal never triggered, go straight to celebration
   useEffect(() => {
     if (bracketCompleted && !revealState && !hasShownRevealRef.current) {
-      const timer = setTimeout(() => setShowCelebration(true), 2000)
+      const timer = setTimeout(() => {
+        // Double-check: if reveal path already handled celebration, skip fallback
+        if (!hasShownRevealRef.current) {
+          setShowCelebration(true)
+        }
+      }, 2000)
       return () => clearTimeout(timer)
     }
   }, [bracketCompleted, revealState])
@@ -1011,6 +1016,7 @@ export function LiveDashboard({
                   voteCounts={mergedVoteCounts}
                   onBatchDecideByVotes={handleBatchDecideByVotes}
                   votingStyle={(bracket.roundRobinVotingStyle ?? 'simple') as 'simple' | 'advanced'}
+                  isBatchDeciding={isPending}
                 />
               </div>
             </div>
