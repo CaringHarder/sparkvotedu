@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { ArrowLeft, Pencil, Radio, Link2, Unlink, ChevronDown, ChevronUp, Play } from 'lucide-react'
 import type { BracketWithDetails, RoundRobinStanding, PredictionScore } from '@/lib/bracket/types'
 import { BracketDiagram } from '@/components/bracket/bracket-diagram'
+import { QuadrantBracketLayout } from '@/components/bracket/quadrant-bracket-layout'
 import { RoundRobinStandings } from '@/components/bracket/round-robin-standings'
 import { RoundRobinMatchups } from '@/components/bracket/round-robin-matchups'
 import { PredictiveBracket } from '@/components/bracket/predictive-bracket'
@@ -215,10 +216,18 @@ export function BracketDetail({ bracket, totalRounds, sessions, standings = [], 
             />
           ) : (
             <div className="rounded-lg border p-3">
-              <BracketDiagram
-                matchups={bracket.matchups}
-                totalRounds={totalRounds}
-              />
+              {(bracket.maxEntrants ?? bracket.entrants.length) >= 64 ? (
+                <QuadrantBracketLayout
+                  matchups={bracket.matchups}
+                  totalRounds={totalRounds}
+                  bracketSize={bracket.maxEntrants ?? bracket.entrants.length}
+                />
+              ) : (
+                <BracketDiagram
+                  matchups={bracket.matchups}
+                  totalRounds={totalRounds}
+                />
+              )}
             </div>
           )}
         </div>

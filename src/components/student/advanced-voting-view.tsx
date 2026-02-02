@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef, useTransition, useCallback } from 'react'
 import { BracketDiagram } from '@/components/bracket/bracket-diagram'
+import { QuadrantBracketLayout } from '@/components/bracket/quadrant-bracket-layout'
 import { WinnerReveal } from '@/components/bracket/winner-reveal'
 import { CelebrationScreen } from '@/components/bracket/celebration-screen'
 import { useRealtimeBracket } from '@/hooks/use-realtime-bracket'
@@ -163,12 +164,22 @@ export function AdvancedVotingView({
 
       {/* Interactive bracket diagram */}
       <div className="rounded-lg border p-3">
-        <BracketDiagram
-          matchups={currentMatchups}
-          totalRounds={totalRounds}
-          onEntrantClick={handleEntrantClick}
-          votedEntrantIds={votes}
-        />
+        {(bracket.maxEntrants ?? bracket.size) >= 64 ? (
+          <QuadrantBracketLayout
+            matchups={currentMatchups}
+            totalRounds={totalRounds}
+            onEntrantClick={handleEntrantClick}
+            votedEntrantIds={votes}
+            bracketSize={bracket.maxEntrants ?? bracket.size}
+          />
+        ) : (
+          <BracketDiagram
+            matchups={currentMatchups}
+            totalRounds={totalRounds}
+            onEntrantClick={handleEntrantClick}
+            votedEntrantIds={votes}
+          />
+        )}
       </div>
 
       {/* Bracket complete message */}

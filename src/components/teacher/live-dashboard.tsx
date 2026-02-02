@@ -4,6 +4,7 @@ import { useState, useMemo, useCallback, useEffect, useRef, useTransition } from
 import { useRealtimeBracket } from '@/hooks/use-realtime-bracket'
 import { useSessionPresence } from '@/hooks/use-student-session'
 import { BracketDiagram } from '@/components/bracket/bracket-diagram'
+import { QuadrantBracketLayout } from '@/components/bracket/quadrant-bracket-layout'
 import { DoubleElimDiagram } from '@/components/bracket/double-elim-diagram'
 import { RoundRobinStandings } from '@/components/bracket/round-robin-standings'
 import { RoundRobinMatchups } from '@/components/bracket/round-robin-matchups'
@@ -1022,13 +1023,24 @@ export function LiveDashboard({
             </div>
           ) : (
             /* SE and Predictive: standard bracket diagram with vote counts */
-            <BracketDiagram
-              matchups={currentMatchups}
-              totalRounds={totalRounds}
-              voteLabels={voteLabels}
-              onMatchupClick={handleMatchupClick}
-              selectedMatchupId={selectedMatchupId}
-            />
+            (bracket.maxEntrants ?? 0) >= 64 ? (
+              <QuadrantBracketLayout
+                matchups={currentMatchups}
+                totalRounds={totalRounds}
+                voteLabels={voteLabels}
+                onMatchupClick={handleMatchupClick}
+                selectedMatchupId={selectedMatchupId}
+                bracketSize={bracket.maxEntrants ?? 0}
+              />
+            ) : (
+              <BracketDiagram
+                matchups={currentMatchups}
+                totalRounds={totalRounds}
+                voteLabels={voteLabels}
+                onMatchupClick={handleMatchupClick}
+                selectedMatchupId={selectedMatchupId}
+              />
+            )
           )}
 
           {/* Prediction leaderboard for predictive brackets */}
