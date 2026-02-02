@@ -5,23 +5,23 @@
 See: .planning/PROJECT.md (updated 2026-01-28)
 
 **Core value:** Teachers can instantly engage any classroom through voting -- on any topic, in any format -- and see participation happen in real time.
-**Current focus:** Phase 7 gap closure COMPLETE -- All 16 plans executed
+**Current focus:** Phase 7 gap closure R2 -- Plans 17-20 complete (18/19 pending separate execution)
 
 ## Current Position
 
-Phase: 7 of 10 (Advanced Brackets - Gap Closure Complete)
-Plan: 16 of 16 in current phase (all gap closure plans complete)
-Status: Phase complete
-Last activity: 2026-02-01 -- Completed 07-15-PLAN.md (Live Dashboard Bracket Type Routing)
+Phase: 7 of 10 (Advanced Brackets - Gap Closure R2)
+Plan: 17 of 20 in current phase (gap closure R2 in progress)
+Status: In progress
+Last activity: 2026-02-01 -- Completed 07-17-PLAN.md (DE Student Voting + Real-Time Subscription)
 
-Progress: [##########] 100% (55/55 plans)
+Progress: [#########-] 95% (56/59 plans)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 55
+- Total plans completed: 56
 - Average duration: ~4.1 min
-- Total execution time: ~4.2 hours
+- Total execution time: ~4.3 hours
 
 **By Phase:**
 
@@ -34,11 +34,11 @@ Progress: [##########] 100% (55/55 plans)
 | 05-polls | 10/10 | ~26.0m | ~2.6m |
 | 06-billing-and-subscriptions | 5/5 | ~17.0m | ~3.4m |
 
-| 07-advanced-brackets | 16/16 | ~52.9m | ~3.3m |
+| 07-advanced-brackets | 17/20 | ~56.0m | ~3.3m |
 
 **Recent Trend:**
-- Last 5 plans: 07-12 (~3.0m), 07-13 (~2.0m), 07-14 (~2.6m), 07-16 (~2.0m), 07-15 (~2.6m)
-- Trend: Gap closure plans executing fast -- all 3 gap closure plans completed
+- Last 5 plans: 07-13 (~2.0m), 07-14 (~2.6m), 07-16 (~2.0m), 07-15 (~2.6m), 07-17 (~3.1m)
+- Trend: Gap closure R2 executing -- 07-17 complete, 3 remaining
 
 *Updated after each plan completion*
 
@@ -241,6 +241,9 @@ Recent decisions affecting current work:
 - [07-15]: Live page totalRounds uses Math.ceil(Math.log2(effectiveSize)) with maxEntrants fallback for bye support
 - [07-16]: 30s transaction timeout for large bracket creation (not batching optimization -- minimal fix)
 - [07-16]: Hide Activate button for predictive brackets; Complete and Delete remain for all types
+- [07-17]: Wrapper components for hook isolation -- hooks must be called unconditionally; separate components per bracket type avoid conditional hook violations
+- [07-17]: Optimistic vote updates with revert in DEVotingView follows AdvancedVotingView pattern
+- [07-17]: RR voting wired pre-emptively -- RoundRobinMatchups already has onStudentVote/votedMatchups props
 
 ### Pending Todos
 
@@ -258,5 +261,5 @@ Recent decisions affecting current work:
 ## Session Continuity
 
 Last session: 2026-02-01
-Stopped at: Completed 07-15-PLAN.md (Live Dashboard Bracket Type Routing) -- Phase 7 gap closure COMPLETE (16/16 plans)
+Stopped at: Completed 07-17-PLAN.md (DE Student Voting + Real-Time Subscription)
 Resume file: None
