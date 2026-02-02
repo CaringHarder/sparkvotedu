@@ -259,6 +259,13 @@ export function LiveDashboard({
     return rrMatchup?.roundRobinRound ?? 1
   }, [isRoundRobin, currentMatchups])
 
+  // Check if round 1 needs opening (fallback for brackets activated before auto-open fix)
+  const needsRound1Open = useMemo(() => {
+    if (!isRoundRobin) return false
+    const round1Matchups = currentMatchups.filter((m) => m.roundRobinRound === 1)
+    return round1Matchups.length > 0 && round1Matchups.every((m) => m.status === 'pending')
+  }, [isRoundRobin, currentMatchups])
+
   const canAdvanceRoundRobin = useMemo(() => {
     if (!isRoundRobin) return false
     const pacing = (bracket.roundRobinPacing ?? 'round_by_round') as 'round_by_round' | 'all_at_once'
@@ -417,6 +424,23 @@ export function LiveDashboard({
             className="rounded-md bg-green-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-green-700 disabled:opacity-50"
           >
             {isPending ? 'Advancing...' : `Next Round →`}
+          </button>
+        )}
+
+        {/* Round-robin: Open Round 1 fallback button */}
+        {isRoundRobin && needsRound1Open && (
+          <button
+            onClick={() => {
+              setError(null)
+              startTransition(async () => {
+                const result = await advanceRound({ bracketId: bracket.id, roundNumber: 1 })
+                if (result && 'error' in result) setError(result.error as string)
+              })
+            }}
+            disabled={isPending}
+            className="rounded-md bg-blue-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+          >
+            {isPending ? 'Opening...' : 'Open Round 1'}
           </button>
         )}
 

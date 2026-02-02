@@ -10,6 +10,7 @@ import {
   findR1PositionForSeed,
 } from '@/lib/bracket/double-elim'
 import { createRoundRobinBracketDAL } from '@/lib/dal/round-robin'
+import { broadcastBracketUpdate } from '@/lib/realtime/broadcast'
 import type { MatchupSeed, MatchupSeedWithBye, BracketRegion } from '@/lib/bracket/types'
 
 /**
@@ -575,10 +576,27 @@ export async function updateBracketStatusDAL(
     }
   }
 
-  return prisma.bracket.update({
+  const updated = await prisma.bracket.update({
     where: { id: bracketId },
     data: { status },
   })
+
+  // Auto-open round 1 for round-robin brackets on activation
+  if (bracket.status === 'draft' && status === 'active' && updated.bracketType === 'round_robin') {
+    await prisma.matchup.updateMany({
+      where: {
+        bracketId: bracket.id,
+        roundRobinRound: 1,
+        status: 'pending',
+      },
+      data: { status: 'voting' },
+    })
+
+    // Broadcast round_advanced event so students get the update
+    broadcastBracketUpdate(bracketId, 'round_advanced', { round: 1 }).catch(console.error)
+  }
+
+  return updated
 }
 
 /**
