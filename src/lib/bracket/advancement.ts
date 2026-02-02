@@ -372,35 +372,48 @@ export async function advanceDoubleElimMatchup(
 
     // Propagate winner to the next matchup in the same region (via nextMatchupId)
     if (matchup.nextMatchupId) {
+      const nextMatchup = allMatchups.find((m) => m.id === matchup.nextMatchupId)
       let slot: 'entrant1Id' | 'entrant2Id'
+      let skipPropagation = false
 
       if (region === 'losers') {
-        // In losers bracket, "major" rounds receive WB dropdowns into entrant2Id.
-        // LB survivors from minor rounds must always go into entrant1Id to avoid
-        // a slot collision with WB dropdowns.
-        // Detect 1-to-1 transitions (minor→major): source and target rounds have
-        // the same number of matchups.
-        const nextMatchup = allMatchups.find((m) => m.id === matchup.nextMatchupId)
-        const currentRoundCount = lbMatchups.filter((m) => m.round === matchup.round).length
-        const nextRoundCount = nextMatchup
-          ? lbMatchups.filter((m) => m.round === nextMatchup.round).length
-          : 0
-
-        if (currentRoundCount === nextRoundCount) {
-          // 1-to-1 (minor→major): always use entrant1Id for LB survivors
-          slot = 'entrant1Id'
+        // Skip standard propagation for LB Final → Grand Finals.
+        // LB champion goes to GF entrant2Id, handled explicitly in the
+        // region-specific block below. Standard propagation would incorrectly
+        // place LB champion in entrant1Id (position 1) and collide with
+        // WB champion who should be in entrant1Id.
+        if (nextMatchup?.bracketRegion === 'grand_finals') {
+          skipPropagation = true
+          slot = 'entrant2Id' // unused but required for typing
         } else {
-          // 2-to-1 (major→minor): standard position-based slot assignment
-          slot = getSlotForPosition(matchup.position)
+          // In losers bracket, "major" rounds receive WB dropdowns into entrant2Id.
+          // LB survivors from minor rounds must always go into entrant1Id to avoid
+          // a slot collision with WB dropdowns.
+          // Detect 1-to-1 transitions (minor→major): source and target rounds have
+          // the same number of matchups.
+          const currentRoundCount = lbMatchups.filter((m) => m.round === matchup.round).length
+          const nextRoundCount = nextMatchup
+            ? lbMatchups.filter((m) => m.round === nextMatchup.round).length
+            : 0
+
+          if (currentRoundCount === nextRoundCount) {
+            // 1-to-1 (minor→major): always use entrant1Id for LB survivors
+            slot = 'entrant1Id'
+          } else {
+            // 2-to-1 (major→minor): standard position-based slot assignment
+            slot = getSlotForPosition(matchup.position)
+          }
         }
       } else {
         slot = getSlotForPosition(matchup.position)
       }
 
-      await tx.matchup.update({
-        where: { id: matchup.nextMatchupId },
-        data: { [slot]: winnerId },
-      })
+      if (!skipPropagation) {
+        await tx.matchup.update({
+          where: { id: matchup.nextMatchupId },
+          data: { [slot]: winnerId },
+        })
+      }
     }
 
     const wbMaxRound = Math.max(...wbMatchups.map((m) => m.round))
@@ -474,17 +487,13 @@ export async function advanceDoubleElimMatchup(
         matchup.round === lbMaxRound && matchup.position === 1
 
       if (isLbFinal && matchup.nextMatchupId) {
-        // LB champion goes to GF entrant2 (via nextMatchupId which should point to GF)
-        // Already handled by standard nextMatchupId propagation above.
-        // The slot is getSlotForPosition(1) = entrant1Id. But we want entrant2.
-        // Fix: LB final position is 1, so getSlotForPosition(1) = entrant1Id.
-        // But the GF matchup should have WB champ as entrant1 and LB champ as entrant2.
-        // Override: explicitly set entrant2 for GF.
-        // Undo the standard propagation first:
-        const standardSlot = getSlotForPosition(matchup.position)
+        // LB champion goes to GF entrant2Id.
+        // Standard propagation was skipped above (skipPropagation=true for LB→GF).
+        // Set entrant2Id directly — entrant1Id is reserved for WB champion and
+        // must not be touched (it may already be populated if WB Final resolved first).
         await tx.matchup.update({
           where: { id: matchup.nextMatchupId },
-          data: { [standardSlot]: null, entrant2Id: winnerId },
+          data: { entrant2Id: winnerId },
         })
       }
     }
