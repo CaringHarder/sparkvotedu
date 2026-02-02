@@ -5,21 +5,21 @@
 See: .planning/PROJECT.md (updated 2026-01-28)
 
 **Core value:** Teachers can instantly engage any classroom through voting -- on any topic, in any format -- and see participation happen in real time.
-**Current focus:** Phase 7 COMPLETE -- all 27 plans executed, verified R4
+**Current focus:** Phase 7 R5 Gap Closure -- executing plans 28-32
 
 ## Current Position
 
-Phase: 7 of 10 (Advanced Brackets - COMPLETE)
-Plan: 27 of 27 in current phase (all plans complete, verified R4)
-Status: Phase complete
-Last activity: 2026-02-02 -- Phase 7 complete, verification R4 passed (5/5 must-haves)
+Phase: 7 of 10 (Advanced Brackets - R5 Gap Closure)
+Plan: 29 of 32 in current phase
+Status: In progress
+Last activity: 2026-02-02 -- Completed 07-29-PLAN.md
 
-Progress: [##########] 100% (66/66 plans)
+Progress: [##########] 100% (68/71 plans)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 66
+- Total plans completed: 67
 - Average duration: ~3.7 min
 - Total execution time: ~4.5 hours
 
@@ -34,11 +34,11 @@ Progress: [##########] 100% (66/66 plans)
 | 05-polls | 10/10 | ~26.0m | ~2.6m |
 | 06-billing-and-subscriptions | 5/5 | ~17.0m | ~3.4m |
 
-| 07-advanced-brackets | 27/27 | ~74.3m | ~2.8m |
+| 07-advanced-brackets | 28/32 | ~76.3m | ~2.7m |
 
 **Recent Trend:**
-- Last 5 plans: 07-24 (~1.2m), 07-25 (~1.7m), 07-27 (~2.7m), 07-26 (~3.4m)
-- Trend: Phase 7 COMPLETE -- 27 plans, 4 verification rounds, all gaps closed
+- Last 5 plans: 07-25 (~1.7m), 07-27 (~2.7m), 07-26 (~3.4m), 07-28 (~2.0m)
+- Trend: R5 gap closure in progress
 
 *Updated after each plan completion*
 
@@ -278,6 +278,8 @@ Recent decisions affecting current work:
 - [07-26]: Client-side standings via calculateRoundRobinStandings -- updates instantly on every realtime matchup change without state API modification
 - [07-26]: Direct CelebrationScreen for RR (no WinnerReveal countdown) -- RR has no dramatic final matchup
 - [07-26]: !isRoundRobin guard on SE winner detection prevents totalRounds=1 misfiring for RR matchups
+- [07-28]: Inner ref check inside setTimeout for fallback celebration prevents race with chained reveal path
+- [07-28]: Sibling button layout (flex div wrapping collapse button + batch decide button) eliminates nested button hydration error
 
 ### Pending Todos
 
@@ -295,5 +297,5 @@ Recent decisions affecting current work:
 ## Session Continuity
 
 Last session: 2026-02-02
-Stopped at: Phase 7 complete -- all 27 plans executed, verification R4 passed (5/5 must-haves)
+Stopped at: Completed 07-28-PLAN.md
 Resume file: None
