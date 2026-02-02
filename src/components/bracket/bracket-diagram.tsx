@@ -245,6 +245,7 @@ function MatchupBox({
           strokeWidth: isSelected ? 2 : isVoting ? 2 : 1.5,
           cursor: onMatchupClick ? 'pointer' : undefined,
         }}
+        onPointerDown={onMatchupClick ? (e) => e.stopPropagation() : undefined}
         onClick={onMatchupClick ? () => onMatchupClick(matchup.id) : undefined}
       />
 
@@ -275,6 +276,7 @@ function MatchupBox({
           width={MATCH_WIDTH}
           height={MATCH_HEIGHT / 2}
           style={{ fill: 'transparent', cursor: 'pointer' }}
+          onPointerDown={(e) => e.stopPropagation()}
           onClick={() => onEntrantClick(matchup.id, matchup.entrant1Id!)}
         >
           <title>Vote for {entrant1Name}</title>
@@ -342,6 +344,7 @@ function MatchupBox({
           width={MATCH_WIDTH}
           height={MATCH_HEIGHT / 2}
           style={{ fill: 'transparent', cursor: 'pointer' }}
+          onPointerDown={(e) => e.stopPropagation()}
           onClick={() => onEntrantClick(matchup.id, matchup.entrant2Id!)}
         >
           <title>Vote for {entrant2Name}</title>

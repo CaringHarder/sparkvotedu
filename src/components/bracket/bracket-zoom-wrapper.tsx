@@ -52,7 +52,10 @@ export function BracketZoomWrapper({
       </div>
 
       {/* Floating zoom controls */}
-      <div className="absolute bottom-3 right-3 flex items-center gap-1 rounded-lg border bg-background/90 p-1 shadow-sm backdrop-blur-sm">
+      <div
+        className="absolute bottom-3 right-3 flex items-center gap-1 rounded-lg border bg-background/90 p-1 shadow-sm backdrop-blur-sm"
+        onPointerDown={(e) => e.stopPropagation()}
+      >
         <Button
           variant="ghost"
           size="icon"
