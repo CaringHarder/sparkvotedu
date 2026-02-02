@@ -5,21 +5,21 @@
 See: .planning/PROJECT.md (updated 2026-01-28)
 
 **Core value:** Teachers can instantly engage any classroom through voting -- on any topic, in any format -- and see participation happen in real time.
-**Current focus:** Phase 7 gap closure R2 -- 19/20 complete (plan 19 pending)
+**Current focus:** Phase 7 gap closure R2 COMPLETE -- All 20 plans executed
 
 ## Current Position
 
-Phase: 7 of 10 (Advanced Brackets - Gap Closure R2)
-Plan: 20 of 20 in current phase (07-20 complete; 07-19 pending)
-Status: In progress
-Last activity: 2026-02-02 -- Completed 07-20-PLAN.md (Zoom Controls & Entrant Click Fix)
+Phase: 7 of 10 (Advanced Brackets - Gap Closure R2 Complete)
+Plan: 20 of 20 in current phase (all gap closure R2 plans complete)
+Status: Phase complete
+Last activity: 2026-02-02 -- Completed 07-19-PLAN.md (Predictive Cascade Engine)
 
-Progress: [#########-] 98% (58/59 plans)
+Progress: [##########] 100% (59/59 plans)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 58
+- Total plans completed: 59
 - Average duration: ~4.0 min
 - Total execution time: ~4.3 hours
 
@@ -34,11 +34,11 @@ Progress: [#########-] 98% (58/59 plans)
 | 05-polls | 10/10 | ~26.0m | ~2.6m |
 | 06-billing-and-subscriptions | 5/5 | ~17.0m | ~3.4m |
 
-| 07-advanced-brackets | 19/20 | ~59.2m | ~3.1m |
+| 07-advanced-brackets | 20/20 | ~61.6m | ~3.1m |
 
 **Recent Trend:**
-- Last 5 plans: 07-16 (~2.0m), 07-15 (~2.6m), 07-17 (~3.1m), 07-18 (~2.2m), 07-20 (~1.0m)
-- Trend: Gap closure R2 nearly complete -- plan 19 remaining
+- Last 5 plans: 07-17 (~3.1m), 07-18 (~2.2m), 07-20 (~1.0m), 07-19 (~2.4m)
+- Trend: Phase 7 gap closure R2 complete -- all 20 plans executed
 
 *Updated after each plan completion*
 
@@ -250,6 +250,10 @@ Recent decisions affecting current work:
 - [07-18]: visibleRounds filtering hides future rounds for students in round_by_round pacing
 - [07-20]: Fix at child level not hook level -- setPointerCapture essential for reliable drag-to-pan; children opt out via stopPropagation
 - [07-20]: Conditional stopPropagation on matchup rect -- only prevents propagation when onMatchupClick provided (teacher view)
+- [07-19]: Position parity slot assignment (odd->entrant1, even->entrant2) reuses existing advancement engine convention for cascade propagation
+- [07-19]: Speculative entrants only fill empty slots -- preserves real DB data when present
+- [07-19]: BFS downstream invalidation via nextMatchupId chain clears all dependent picks on earlier-round change
+- [07-19]: Dashed blue border + "predicted matchup" badge visually distinguishes speculative from DB-populated matchups
 
 ### Pending Todos
 
@@ -267,5 +271,5 @@ Recent decisions affecting current work:
 ## Session Continuity
 
 Last session: 2026-02-02
-Stopped at: Completed 07-20-PLAN.md (Zoom Controls & Entrant Click Fix)
+Stopped at: Completed 07-19-PLAN.md (Predictive Cascade Engine) -- Phase 7 gap closure R2 COMPLETE (20/20 plans)
 Resume file: None
