@@ -928,6 +928,9 @@ export function LiveDashboard({
               entrants={bracket.entrants}
               matchups={currentMatchups}
               isTeacher={true}
+              onMatchupClick={handleMatchupClick}
+              selectedMatchupId={selectedMatchupId}
+              voteLabels={voteLabels}
             />
           ) : isRoundRobin ? (
             <div className="space-y-6">

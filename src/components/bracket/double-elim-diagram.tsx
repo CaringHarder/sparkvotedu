@@ -15,6 +15,12 @@ interface DoubleElimDiagramProps {
   onEntrantClick?: (matchupId: string, entrantId: string) => void
   /** Map of matchupId -> voted entrantId for showing which entrant was picked */
   votedEntrantIds?: Record<string, string | null>
+  /** Teacher view: click handler when teacher clicks a matchup box */
+  onMatchupClick?: (matchupId: string) => void
+  /** Teacher view: currently selected matchup ID for highlight */
+  selectedMatchupId?: string | null
+  /** Teacher view: inline vote counts per matchup */
+  voteLabels?: Record<string, { e1: number; e2: number }>
 }
 
 type DETab = 'winners' | 'losers' | 'grand_finals' | 'overview'
@@ -69,10 +75,14 @@ function GrandFinalsCard({
   matchup,
   onEntrantClick,
   votedEntrantIds,
+  onMatchupClick,
+  voteLabels,
 }: {
   matchup: MatchupData
   onEntrantClick?: (matchupId: string, entrantId: string) => void
   votedEntrantIds?: Record<string, string | null>
+  onMatchupClick?: (matchupId: string) => void
+  voteLabels?: Record<string, { e1: number; e2: number }>
 }) {
   const e1Name = matchup.entrant1?.name ?? 'TBD'
   const e2Name = matchup.entrant2?.name ?? 'TBD'
@@ -83,6 +93,9 @@ function GrandFinalsCard({
   const voted1 = votedEntrantIds?.[matchup.id] === matchup.entrant1Id && matchup.entrant1Id != null
   const voted2 = votedEntrantIds?.[matchup.id] === matchup.entrant2Id && matchup.entrant2Id != null
 
+  const isTeacherClickable = isVoting && !!onMatchupClick
+  const votes = voteLabels?.[matchup.id]
+
   return (
     <div
       className={`mx-auto w-full max-w-sm rounded-lg border-2 p-4 ${
@@ -91,7 +104,10 @@ function GrandFinalsCard({
           : isDecided
             ? 'border-green-500/50'
             : 'border-border'
-      }`}
+      } ${isTeacherClickable ? 'cursor-pointer hover:ring-2 hover:ring-primary/30' : ''}`}
+      onClick={isTeacherClickable ? () => onMatchupClick(matchup.id) : undefined}
+      role={isTeacherClickable ? 'button' : undefined}
+      tabIndex={isTeacherClickable ? 0 : undefined}
     >
       <div className="mb-3 text-center text-xs font-semibold uppercase tracking-wide text-muted-foreground">
         {matchup.round === 1 ? 'Grand Finals' : 'Grand Finals - Reset Match'}
@@ -143,7 +159,12 @@ function GrandFinalsCard({
       </div>
       {isVoting && (
         <div className="mt-2 text-center text-xs font-medium text-primary">
-          {isClickable ? 'Tap to vote' : 'Voting in progress'}
+          {isClickable ? 'Tap to vote' : isTeacherClickable ? 'Click to pick winner' : 'Voting in progress'}
+        </div>
+      )}
+      {votes && (
+        <div className="mt-1 text-center text-[10px] text-muted-foreground">
+          {votes.e1} - {votes.e2}
         </div>
       )}
       {isDecided && (
@@ -163,6 +184,9 @@ export function DoubleElimDiagram({
   isTeacher = false,
   onEntrantClick,
   votedEntrantIds,
+  onMatchupClick,
+  selectedMatchupId,
+  voteLabels,
 }: DoubleElimDiagramProps) {
   const [activeTab, setActiveTab] = useState<DETab>('winners')
 
@@ -316,6 +340,9 @@ export function DoubleElimDiagram({
                     bracketSize={effectiveSize}
                     onEntrantClick={onEntrantClick}
                     votedEntrantIds={votedEntrantIds}
+                    onMatchupClick={onMatchupClick}
+                    selectedMatchupId={selectedMatchupId}
+                    voteLabels={voteLabels}
                   />
                 </BracketZoomWrapper>
               ) : (
@@ -325,6 +352,9 @@ export function DoubleElimDiagram({
                   bracketSize={effectiveSize}
                   onEntrantClick={onEntrantClick}
                   votedEntrantIds={votedEntrantIds}
+                  onMatchupClick={onMatchupClick}
+                  selectedMatchupId={selectedMatchupId}
+                  voteLabels={voteLabels}
                 />
               )}
             </div>
@@ -351,6 +381,9 @@ export function DoubleElimDiagram({
                     bracketSize={effectiveSize}
                     onEntrantClick={onEntrantClick}
                     votedEntrantIds={votedEntrantIds}
+                    onMatchupClick={onMatchupClick}
+                    selectedMatchupId={selectedMatchupId}
+                    voteLabels={voteLabels}
                     compactVertical
                   />
                 </BracketZoomWrapper>
@@ -361,6 +394,9 @@ export function DoubleElimDiagram({
                   bracketSize={effectiveSize}
                   onEntrantClick={onEntrantClick}
                   votedEntrantIds={votedEntrantIds}
+                  onMatchupClick={onMatchupClick}
+                  selectedMatchupId={selectedMatchupId}
+                  voteLabels={voteLabels}
                   compactVertical
                 />
               )}
@@ -383,6 +419,8 @@ export function DoubleElimDiagram({
                 matchup={m}
                 onEntrantClick={onEntrantClick}
                 votedEntrantIds={votedEntrantIds}
+                onMatchupClick={onMatchupClick}
+                voteLabels={voteLabels}
               />
             ))}
           </div>
