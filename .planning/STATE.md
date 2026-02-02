@@ -5,22 +5,22 @@
 See: .planning/PROJECT.md (updated 2026-01-28)
 
 **Core value:** Teachers can instantly engage any classroom through voting -- on any topic, in any format -- and see participation happen in real time.
-**Current focus:** Phase 7 gap closure R3 COMPLETE -- all 24 plans executed
+**Current focus:** Phase 7 gap closure R4 in progress
 
 ## Current Position
 
-Phase: 7 of 10 (Advanced Brackets - Gap Closure R3 Complete)
-Plan: 24 of 24 in current phase (all gap closure R3 plans complete)
-Status: Phase complete
-Last activity: 2026-02-02 -- Completed 07-24-PLAN.md (Zoom Controls Fix)
+Phase: 7 of 10 (Advanced Brackets - Gap Closure R4)
+Plan: 25 of 27 in current phase (gap closure R4 plans 25-27)
+Status: In progress
+Last activity: 2026-02-02 -- Completed 07-25-PLAN.md (DE Tiebreak, GF Tab, Reveal Timing)
 
-Progress: [##########] 100% (63/63 plans)
+Progress: [##########] 100% (64/66 plans)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 63
-- Average duration: ~3.8 min
+- Total plans completed: 64
+- Average duration: ~3.7 min
 - Total execution time: ~4.4 hours
 
 **By Phase:**
@@ -34,11 +34,11 @@ Progress: [##########] 100% (63/63 plans)
 | 05-polls | 10/10 | ~26.0m | ~2.6m |
 | 06-billing-and-subscriptions | 5/5 | ~17.0m | ~3.4m |
 
-| 07-advanced-brackets | 24/24 | ~67.2m | ~2.8m |
+| 07-advanced-brackets | 25/27 | ~68.9m | ~2.8m |
 
 **Recent Trend:**
-- Last 5 plans: 07-19 (~2.4m), 07-23 (~1.4m), 07-22 (~2.0m), 07-24 (~1.2m)
-- Trend: Phase 7 gap closure R3 COMPLETE -- all 24 plans executed
+- Last 5 plans: 07-23 (~1.4m), 07-22 (~2.0m), 07-24 (~1.2m), 07-25 (~1.7m)
+- Trend: Phase 7 gap closure R4 in progress
 
 *Updated after each plan completion*
 
@@ -268,6 +268,9 @@ Recent decisions affecting current work:
 - [07-24]: Native overflow:auto scrolling replaces pointer-capture drag-to-pan -- eliminates all interaction conflicts
 - [07-24]: stopPropagation calls in bracket-diagram.tsx left in place (harmless, provide safety margin)
 - [07-24]: use-pan-zoom.ts hook left in place (unused but not deleted for safety)
+- [07-25]: Chain celebration to WinnerReveal onComplete instead of independent 4s timer -- eliminates animation overlap
+- [07-25]: useEffect auto-navigates to grand_finals tab when deBracketDone -- survives component remount
+- [07-25]: Auto-select first unresolved matchup for tiebreak on partial advance via setSelectedMatchupId
 
 ### Pending Todos
 
@@ -285,5 +288,5 @@ Recent decisions affecting current work:
 ## Session Continuity
 
 Last session: 2026-02-02
-Stopped at: Completed 07-21-PLAN.md (DE Live Dashboard Region Navigation) -- Phase 7 gap closure R3 all 24 plans executed
+Stopped at: Completed 07-25-PLAN.md (DE Tiebreak, GF Tab, Reveal Timing) -- Phase 7 gap closure R4 plan 25 of 27
 Resume file: None
