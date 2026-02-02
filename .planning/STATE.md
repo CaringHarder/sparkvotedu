@@ -10,18 +10,18 @@ See: .planning/PROJECT.md (updated 2026-01-28)
 ## Current Position
 
 Phase: 7 of 10 (Advanced Brackets - Gap Closure R4)
-Plan: 25 of 27 in current phase (gap closure R4 plans 25-27)
+Plan: 27 of 27 in current phase (gap closure R4 plans 25-27)
 Status: In progress
-Last activity: 2026-02-02 -- Completed 07-25-PLAN.md (DE Tiebreak, GF Tab, Reveal Timing)
+Last activity: 2026-02-02 -- Completed 07-27-PLAN.md (Zoom Scoping, Section Nav, SE Viewing Mode)
 
-Progress: [##########] 100% (64/66 plans)
+Progress: [##########] 100% (66/66 plans)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 64
+- Total plans completed: 66
 - Average duration: ~3.7 min
-- Total execution time: ~4.4 hours
+- Total execution time: ~4.5 hours
 
 **By Phase:**
 
@@ -34,11 +34,11 @@ Progress: [##########] 100% (64/66 plans)
 | 05-polls | 10/10 | ~26.0m | ~2.6m |
 | 06-billing-and-subscriptions | 5/5 | ~17.0m | ~3.4m |
 
-| 07-advanced-brackets | 25/27 | ~68.9m | ~2.8m |
+| 07-advanced-brackets | 27/27 | ~74.3m | ~2.8m |
 
 **Recent Trend:**
-- Last 5 plans: 07-23 (~1.4m), 07-22 (~2.0m), 07-24 (~1.2m), 07-25 (~1.7m)
-- Trend: Phase 7 gap closure R4 in progress
+- Last 5 plans: 07-24 (~1.2m), 07-25 (~1.7m), 07-26 (~2.0m), 07-27 (~2.7m)
+- Trend: Phase 7 gap closure R4 complete -- all 27 plans executed
 
 *Updated after each plan completion*
 
@@ -271,6 +271,10 @@ Recent decisions affecting current work:
 - [07-25]: Chain celebration to WinnerReveal onComplete instead of independent 4s timer -- eliminates animation overlap
 - [07-25]: useEffect auto-navigates to grand_finals tab when deBracketDone -- survives component remount
 - [07-25]: Auto-select first unresolved matchup for tiebreak on partial advance via setSelectedMatchupId
+- [07-27]: Intercept ctrlKey wheel events for pinch zoom on bracket container, pass through normal scroll
+- [07-27]: Top/Bottom for 32+, quadrant TL/TR/BL/BR for 64+ section navigation buttons
+- [07-27]: viewingMode defaults to 'advanced' for backwards compatibility with existing SE brackets
+- [07-27]: touch-action: pan-x pan-y on bracket container prevents browser zoom on mobile pinch
 
 ### Pending Todos
 
@@ -288,5 +292,5 @@ Recent decisions affecting current work:
 ## Session Continuity
 
 Last session: 2026-02-02
-Stopped at: Completed 07-25-PLAN.md (DE Tiebreak, GF Tab, Reveal Timing) -- Phase 7 gap closure R4 plan 25 of 27
+Stopped at: Completed 07-27-PLAN.md (Zoom Scoping, Section Nav, SE Viewing Mode) -- Phase 7 gap closure R4 plan 27 of 27
 Resume file: None
