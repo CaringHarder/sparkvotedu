@@ -16,6 +16,7 @@ interface RoundRobinMatchupsProps {
   voteCounts?: Record<string, Record<string, number>> // matchupId -> { entrantId: voteCount }
   onBatchDecideByVotes?: () => void
   votingStyle?: 'simple' | 'advanced' // simple = compact cards, advanced = expanded with vote counts
+  isBatchDeciding?: boolean
 }
 
 /**
@@ -37,6 +38,7 @@ export function RoundRobinMatchups({
   voteCounts,
   onBatchDecideByVotes,
   votingStyle = 'simple',
+  isBatchDeciding = false,
 }: RoundRobinMatchupsProps) {
   // Group matchups by roundRobinRound
   const roundsMap = new Map<number, MatchupData[]>()
@@ -103,42 +105,44 @@ export function RoundRobinMatchups({
 
         return (
           <div key={roundNumber} className="rounded-lg border">
-            {/* Round header (collapsible) */}
-            <button
-              type="button"
-              onClick={() => toggleRound(roundNumber)}
-              className="flex w-full items-center justify-between px-3 py-2 text-left transition-colors hover:bg-muted/50"
-            >
-              <div className="flex items-center gap-2">
+            {/* Round header: collapse button + status + batch decide as siblings */}
+            <div className="flex items-center gap-2 px-3 py-2">
+              {/* Collapse/expand button (no longer wraps everything) */}
+              <button
+                type="button"
+                onClick={() => toggleRound(roundNumber)}
+                className="flex flex-1 items-center gap-2 text-left text-sm font-medium transition-colors hover:text-primary"
+              >
                 {isExpanded ? (
-                  <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
+                  <ChevronDown className="h-4 w-4 shrink-0" />
                 ) : (
-                  <ChevronRight className="h-3.5 w-3.5 text-muted-foreground" />
+                  <ChevronRight className="h-4 w-4 shrink-0" />
                 )}
-                <span className="text-sm font-semibold">Round {roundNumber}</span>
+                <span>Round {roundNumber}</span>
                 <span className="text-xs text-muted-foreground">
                   {decidedCount}/{totalCount} decided
                 </span>
-              </div>
+              </button>
+
+              {/* Complete badge (sibling, not nested) */}
               {isComplete && (
                 <span className="rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-700">
                   Complete
                 </span>
               )}
-              {/* Batch decide by votes button in round header */}
+
+              {/* Batch decide button (sibling, not nested inside header button) */}
               {isTeacher && !isComplete && voteCounts && onBatchDecideByVotes && roundMatchups.some((m) => m.status === 'voting') && (
                 <button
                   type="button"
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    onBatchDecideByVotes()
-                  }}
-                  className="rounded bg-violet-600 px-2 py-0.5 text-xs font-medium text-white transition-colors hover:bg-violet-700"
+                  onClick={() => onBatchDecideByVotes()}
+                  disabled={isBatchDeciding}
+                  className="rounded bg-violet-600 px-2 py-0.5 text-xs font-medium text-white transition-colors hover:bg-violet-700 disabled:cursor-not-allowed disabled:opacity-50"
                 >
-                  Close All &amp; Decide by Votes
+                  {isBatchDeciding ? 'Deciding...' : 'Close All & Decide by Votes'}
                 </button>
               )}
-            </button>
+            </div>
 
             {/* Round matchups */}
             {isExpanded && (
