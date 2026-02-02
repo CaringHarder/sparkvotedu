@@ -19,6 +19,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 5: Polls** - Simple and ranked polls with real-time results display
 - [x] **Phase 6: Billing & Subscriptions** - Stripe integration, tier enforcement, and upgrade prompts
 - [x] **Phase 7: Advanced Brackets** - Double-elimination, round-robin, predictive brackets, and non-power-of-two support
+- [ ] **Phase 7.1: Predictive Auto-Resolution Mode** - Third resolution mode where predictions auto-count as votes without voting rounds (INSERTED)
 - [ ] **Phase 8: Sports Integration** - Real sports tournament brackets from external APIs for classroom prediction competitions
 - [ ] **Phase 9: Analytics** - Participation metrics, vote distribution views, CSV export, and predictive leaderboard scoring
 - [ ] **Phase 10: Landing Page & Polish** - Public landing page, responsive design audit, and interface refinement
@@ -157,7 +158,7 @@ Plans:
   3. Teacher can create a predictive bracket where students submit predictions and a scored leaderboard ranks accuracy
   4. Teacher can create a bracket with a non-power-of-two number of entrants (e.g., 5, 6, 7, 10) and byes are placed automatically and fairly
   5. Predictive bracket leaderboard shows each student's scoring breakdown (points per correct pick by round)
-**Plans**: 24 plans
+**Plans**: 27 plans
 
 Plans:
 - [x] 07-01-PLAN.md — Schema evolution, TypeScript types, and Zod validation for all bracket types
@@ -184,6 +185,27 @@ Plans:
 - [x] 07-22-PLAN.md — Gap closure R3: RR vote counts + round advancement
 - [x] 07-23-PLAN.md — Gap closure R3: Predictive bracket visibility to students
 - [x] 07-24-PLAN.md — Gap closure R3: ESPN-style section navigation for large brackets
+- [ ] 07-25-PLAN.md — Gap closure R4: DE teacher UX (partial advance tiebreak, GF tab persistence, winner animation timing)
+- [ ] 07-26-PLAN.md — Gap closure R4: RR student experience (celebration, standings, tabs, votingStyle, round visibility)
+- [ ] 07-27-PLAN.md — Gap closure R4: Zoom pinch scoping, section navigation for 32+, SE simple/advanced creation
+
+### Phase 7.1: Predictive Auto-Resolution Mode (INSERTED)
+**Goal**: Add a third predictive bracket resolution mode where student predictions automatically count as votes, resolving the entire bracket without voting rounds — teacher simply releases results on Go Live
+**Depends on**: Phase 7
+**Requirements**: Extension of BRKT-05 (Predictive brackets)
+**Success Criteria** (what must be TRUE):
+  1. Teacher can select "Predictive" as the resolution mode when creating a predictive bracket (alongside existing Manual and Vote-based options)
+  2. When predictions close, the system automatically tabulates predictions as votes and determines winners for all rounds without opening any voting
+  3. Teacher clicks "Release Results" and students see the bracket progressively fill in with winners derived from their collective predictions
+  4. Prediction leaderboard correctly scores student accuracy against the prediction-derived outcomes
+  5. Students see a reveal experience showing how predictions translated to bracket results
+**Plans**: TBD
+
+Plans:
+- [ ] 07.1-01: Predictive resolution engine — tabulate predictions as votes, auto-resolve full bracket
+- [ ] 07.1-02: Teacher "Release Results" flow — staged reveal UI replacing voting workflow
+- [ ] 07.1-03: Student reveal experience — progressive bracket fill-in with prediction accuracy overlay
+- [ ] 07.1-04: Form + DAL updates — third resolution mode option, status transitions, tier gating
 
 ### Phase 8: Sports Integration
 **Goal**: Teachers can browse real sports tournaments, import them as classroom prediction brackets, and results update automatically from live game data
@@ -241,7 +263,7 @@ Plans:
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7 -> 8 -> 9 -> 10
+Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7 -> 7.1 -> 8 -> 9 -> 10
 
 Note: Phase 3 depends only on Phase 1 (not Phase 2), so Phases 2 and 3 could theoretically run in parallel. Phase 6 depends only on Phase 1, so it could be pulled earlier if billing urgency requires it. However, the recommended linear order above maximizes coherence: build the user flows (auth, student, brackets, voting, polls) before layering on billing, advanced features, and polish.
 
@@ -253,7 +275,8 @@ Note: Phase 3 depends only on Phase 1 (not Phase 2), so Phases 2 and 3 could the
 | 4. Voting & Real-Time | 6/6 | Complete | 2026-01-31 |
 | 5. Polls | 10/10 | Complete | 2026-01-31 |
 | 6. Billing & Subscriptions | 5/5 | Complete | 2026-02-01 |
-| 7. Advanced Brackets | 24/24 | Complete | 2026-02-02 |
+| 7. Advanced Brackets | 24/27 | Gap closure R4 | - |
+| 7.1 Predictive Auto-Resolution | 0/4 | Not started | - |
 | 8. Sports Integration | 0/5 | Not started | - |
 | 9. Analytics | 0/4 | Not started | - |
 | 10. Landing Page & Polish | 0/5 | Not started | - |
