@@ -19,7 +19,7 @@ Progress: [##########] 100% (68/71 plans)
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 67
+- Total plans completed: 68
 - Average duration: ~3.7 min
 - Total execution time: ~4.5 hours
 
@@ -34,10 +34,10 @@ Progress: [##########] 100% (68/71 plans)
 | 05-polls | 10/10 | ~26.0m | ~2.6m |
 | 06-billing-and-subscriptions | 5/5 | ~17.0m | ~3.4m |
 
-| 07-advanced-brackets | 28/32 | ~76.3m | ~2.7m |
+| 07-advanced-brackets | 29/32 | ~77.7m | ~2.7m |
 
 **Recent Trend:**
-- Last 5 plans: 07-25 (~1.7m), 07-27 (~2.7m), 07-26 (~3.4m), 07-28 (~2.0m)
+- Last 5 plans: 07-27 (~2.7m), 07-26 (~3.4m), 07-28 (~2.0m), 07-29 (~1.4m)
 - Trend: R5 gap closure in progress
 
 *Updated after each plan completion*
@@ -278,6 +278,8 @@ Recent decisions affecting current work:
 - [07-26]: Client-side standings via calculateRoundRobinStandings -- updates instantly on every realtime matchup change without state API modification
 - [07-26]: Direct CelebrationScreen for RR (no WinnerReveal countdown) -- RR has no dramatic final matchup
 - [07-26]: !isRoundRobin guard on SE winner detection prevents totalRounds=1 misfiring for RR matchups
+- [07-29]: isRoundRobinComplete reuses getRoundRobinStandings for winner determination rather than duplicating standings logic
+- [07-29]: isBracketComplete returns 'rr_complete' sentinel for RR brackets since actual winner requires standings calculation
 - [07-28]: Inner ref check inside setTimeout for fallback celebration prevents race with chained reveal path
 - [07-28]: Sibling button layout (flex div wrapping collapse button + batch decide button) eliminates nested button hydration error
 
@@ -297,5 +299,5 @@ Recent decisions affecting current work:
 ## Session Continuity
 
 Last session: 2026-02-02
-Stopped at: Completed 07-28-PLAN.md
+Stopped at: Completed 07-29-PLAN.md (RR completion detection + celebration broadcast)
 Resume file: None
