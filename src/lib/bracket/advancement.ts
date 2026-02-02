@@ -224,7 +224,20 @@ export async function isBracketComplete(
     return finalGf.winnerId ?? null
   }
 
-  // SE / Predictive / RR: highest-round matchup with winnerId
+  if (bracketType === 'round_robin') {
+    // RR: all matchups must be decided (no single "final" matchup)
+    const rrMatchups = await prisma.matchup.findMany({
+      where: { bracketId },
+      select: { status: true },
+    })
+    if (rrMatchups.length === 0) return null
+    const allDecided = rrMatchups.every((m) => m.status === 'decided')
+    if (!allDecided) return null
+    // Return a truthy non-null value; actual winner computed by standings
+    return 'rr_complete'
+  }
+
+  // SE / Predictive: highest-round matchup with winnerId
   const matchups = await prisma.matchup.findMany({
     where: { bracketId },
     orderBy: { round: 'desc' },

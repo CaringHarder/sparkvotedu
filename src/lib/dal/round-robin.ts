@@ -238,3 +238,26 @@ export async function advanceRoundRobinRound(
 
   return { success: true, opened: result.count }
 }
+
+/**
+ * Check if all round-robin matchups are decided (bracket complete).
+ * Returns the top-ranked entrant ID if complete, null otherwise.
+ */
+export async function isRoundRobinComplete(bracketId: string): Promise<string | null> {
+  const matchups = await prisma.matchup.findMany({
+    where: { bracketId },
+    select: { status: true, winnerId: true },
+  })
+
+  if (matchups.length === 0) return null
+
+  const allDecided = matchups.every((m) => m.status === 'decided')
+  if (!allDecided) return null
+
+  // All decided — compute standings to find the winner
+  const standings = await getRoundRobinStandings(bracketId)
+  if (standings.length === 0) return null
+
+  // Return the top-ranked entrant's ID
+  return standings[0].entrantId
+}
