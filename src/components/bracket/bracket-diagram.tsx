@@ -43,6 +43,10 @@ interface BracketDiagramProps {
   compactVertical?: boolean
   /** Allow entrant clicks on pending matchups (used by prediction mode) */
   allowPendingClick?: boolean
+  /** Mirror X axis so rounds progress right-to-left (used by right quadrants in 64-entrant layout) */
+  mirrorX?: boolean
+  /** Skip the built-in BracketZoomWrapper (used when parent manages zoom) */
+  skipZoom?: boolean
 }
 
 // --- Round label mapping ---
@@ -91,8 +95,19 @@ function getMatchPosition(
 // --- Connector path between a source matchup and its next matchup ---
 function getConnectorPath(
   src: { x: number; y: number },
-  dst: { x: number; y: number }
+  dst: { x: number; y: number },
+  mirrored?: boolean
 ): string {
+  if (mirrored) {
+    // Mirrored: source is to the RIGHT, destination is to the LEFT
+    // Connect from source LEFT edge to destination RIGHT edge
+    const srcLeft = src.x
+    const srcMidY = src.y + MATCH_HEIGHT / 2
+    const dstRight = dst.x + MATCH_WIDTH
+    const dstMidY = dst.y + MATCH_HEIGHT / 2
+    const midX = (srcLeft + dstRight) / 2
+    return `M ${srcLeft} ${srcMidY} H ${midX} V ${dstMidY} H ${dstRight}`
+  }
   const srcRight = src.x + MATCH_WIDTH
   const srcMidY = src.y + MATCH_HEIGHT / 2
   const dstLeft = dst.x
@@ -447,7 +462,7 @@ function getCompactPositions(
 }
 
 // --- Main BracketDiagram component ---
-export function BracketDiagram({ matchups, totalRounds, className, bracketSize, onEntrantClick, votedEntrantIds, voteLabels, onMatchupClick, selectedMatchupId, compactVertical, allowPendingClick }: BracketDiagramProps) {
+export function BracketDiagram({ matchups, totalRounds, className, bracketSize, onEntrantClick, votedEntrantIds, voteLabels, onMatchupClick, selectedMatchupId, compactVertical, allowPendingClick, mirrorX, skipZoom }: BracketDiagramProps) {
   const roundLabels = useMemo(() => getRoundLabels(totalRounds), [totalRounds])
 
   // Compact positioning for non-SE structures (e.g. losers bracket)
@@ -456,19 +471,32 @@ export function BracketDiagram({ matchups, totalRounds, className, bracketSize, 
     [compactVertical, matchups, totalRounds]
   )
 
+  // Compute SVG dimensions (needed before positioning for mirrorX)
+  const svgWidth = PADDING * 2 + totalRounds * MATCH_WIDTH + (totalRounds - 1) * ROUND_GAP
+
   // Pre-compute positions for all matchups
   const positionedMatchups = useMemo(() => {
+    let items: Array<{ matchup: MatchupData; pos: { x: number; y: number } }>
     if (compactData) {
-      return matchups.map((m) => ({
+      items = matchups.map((m) => ({
         matchup: m,
         pos: compactData.positions.get(m.id) ?? { x: 0, y: 0 },
       }))
+    } else {
+      items = matchups.map((m) => ({
+        matchup: m,
+        pos: getMatchPosition(m.round, m.position, totalRounds),
+      }))
     }
-    return matchups.map((m) => ({
-      matchup: m,
-      pos: getMatchPosition(m.round, m.position, totalRounds),
-    }))
-  }, [matchups, totalRounds, compactData])
+    // If mirrorX, flip X coordinates so rounds progress right-to-left
+    if (mirrorX) {
+      return items.map(({ matchup, pos }) => ({
+        matchup,
+        pos: { x: svgWidth - pos.x - MATCH_WIDTH, y: pos.y },
+      }))
+    }
+    return items
+  }, [matchups, totalRounds, compactData, mirrorX, svgWidth])
 
   // Build a lookup by matchup ID for connector rendering
   const matchupById = useMemo(() => {
@@ -479,8 +507,7 @@ export function BracketDiagram({ matchups, totalRounds, className, bracketSize, 
     return map
   }, [positionedMatchups])
 
-  // Compute SVG dimensions
-  const svgWidth = PADDING * 2 + totalRounds * MATCH_WIDTH + (totalRounds - 1) * ROUND_GAP
+  // Compute SVG height
   const svgHeight = compactData
     ? compactData.totalHeight
     : (() => {
@@ -495,7 +522,7 @@ export function BracketDiagram({ matchups, totalRounds, className, bracketSize, 
 
   // Determine effective size for zoom wrapper (use maxEntrants bracket size if available)
   const effectiveSize = bracketSize ?? Math.pow(2, totalRounds)
-  const needsZoom = effectiveSize >= 32
+  const needsZoom = !skipZoom && effectiveSize >= 32
 
   const svgContent = (
     <div className={className ?? ''} style={{ width: '100%' }}>
@@ -507,7 +534,8 @@ export function BracketDiagram({ matchups, totalRounds, className, bracketSize, 
       >
         {/* Round labels */}
         {roundLabels.map((label, i) => {
-          const x = PADDING + i * (MATCH_WIDTH + ROUND_GAP) + MATCH_WIDTH / 2
+          const normalX = PADDING + i * (MATCH_WIDTH + ROUND_GAP) + MATCH_WIDTH / 2
+          const x = mirrorX ? svgWidth - (PADDING + i * (MATCH_WIDTH + ROUND_GAP)) - MATCH_WIDTH / 2 : normalX
           return (
             <text
               key={`label-${i}`}
@@ -535,7 +563,7 @@ export function BracketDiagram({ matchups, totalRounds, className, bracketSize, 
           if (!next) return null
 
           const isByeConnector = matchup.isBye === true
-          const path = getConnectorPath(pos, next.pos)
+          const path = getConnectorPath(pos, next.pos, mirrorX)
           return (
             <path
               key={`connector-${matchup.id}`}
