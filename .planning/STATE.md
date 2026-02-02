@@ -34,11 +34,11 @@ Progress: [##########] 100% (63/63 plans)
 | 05-polls | 10/10 | ~26.0m | ~2.6m |
 | 06-billing-and-subscriptions | 5/5 | ~17.0m | ~3.4m |
 
-| 07-advanced-brackets | 22/24 | ~65.0m | ~3.0m |
+| 07-advanced-brackets | 24/24 | ~67.2m | ~2.8m |
 
 **Recent Trend:**
-- Last 5 plans: 07-20 (~1.0m), 07-19 (~2.4m), 07-23 (~1.4m), 07-22 (~2.0m)
-- Trend: Phase 7 gap closure R3 in progress -- 2/4 R3 plans complete
+- Last 5 plans: 07-19 (~2.4m), 07-23 (~1.4m), 07-22 (~2.0m), 07-24 (~1.2m)
+- Trend: Phase 7 gap closure R3 COMPLETE -- all 24 plans executed
 
 *Updated after each plan completion*
 
@@ -261,6 +261,9 @@ Recent decisions affecting current work:
 - [07-23]: Auto-activate predictive brackets to 'active' status when predictions opened (Option A from R3 verification)
 - [07-23]: OR condition in activities API includes predictionStatus:'predictions_open' as safety net for pre-fix brackets
 - [07-23]: broadcastActivityUpdate on session channel when predictions open for real-time student page refresh
+- [07-24]: Native overflow:auto scrolling replaces pointer-capture drag-to-pan -- eliminates all interaction conflicts
+- [07-24]: stopPropagation calls in bracket-diagram.tsx left in place (harmless, provide safety margin)
+- [07-24]: use-pan-zoom.ts hook left in place (unused but not deleted for safety)
 
 ### Pending Todos
 
@@ -278,5 +281,5 @@ Recent decisions affecting current work:
 ## Session Continuity
 
 Last session: 2026-02-02
-Stopped at: Completed 07-22-PLAN.md (RR Vote Counts + Round Advancement) -- Phase 7 gap closure R3: 2/4 complete
+Stopped at: Completed 07-24-PLAN.md (Zoom Controls Fix) -- Phase 7 gap closure R3 COMPLETE (24/24 plans)
 Resume file: None
