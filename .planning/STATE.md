@@ -5,22 +5,22 @@
 See: .planning/PROJECT.md (updated 2026-01-28)
 
 **Core value:** Teachers can instantly engage any classroom through voting -- on any topic, in any format -- and see participation happen in real time.
-**Current focus:** Phase 7 gap closure R2 COMPLETE -- All 20 plans executed
+**Current focus:** Phase 7 gap closure R3 in progress
 
 ## Current Position
 
-Phase: 7 of 10 (Advanced Brackets - Gap Closure R2 Complete)
-Plan: 20 of 20 in current phase (all gap closure R2 plans complete)
-Status: Phase complete
-Last activity: 2026-02-02 -- Completed 07-19-PLAN.md (Predictive Cascade Engine)
+Phase: 7 of 10 (Advanced Brackets - Gap Closure R3)
+Plan: 23 of 24 in current phase (gap closure R3: 1/4 complete)
+Status: In progress
+Last activity: 2026-02-02 -- Completed 07-23-PLAN.md (Predictive Bracket Visibility)
 
-Progress: [##########] 100% (59/59 plans)
+Progress: [##########] 100% (60/63 plans)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 59
-- Average duration: ~4.0 min
+- Total plans completed: 60
+- Average duration: ~3.9 min
 - Total execution time: ~4.3 hours
 
 **By Phase:**
@@ -34,11 +34,11 @@ Progress: [##########] 100% (59/59 plans)
 | 05-polls | 10/10 | ~26.0m | ~2.6m |
 | 06-billing-and-subscriptions | 5/5 | ~17.0m | ~3.4m |
 
-| 07-advanced-brackets | 20/20 | ~61.6m | ~3.1m |
+| 07-advanced-brackets | 21/24 | ~63.0m | ~3.0m |
 
 **Recent Trend:**
-- Last 5 plans: 07-17 (~3.1m), 07-18 (~2.2m), 07-20 (~1.0m), 07-19 (~2.4m)
-- Trend: Phase 7 gap closure R2 complete -- all 20 plans executed
+- Last 5 plans: 07-18 (~2.2m), 07-20 (~1.0m), 07-19 (~2.4m), 07-23 (~1.4m)
+- Trend: Phase 7 gap closure R3 started -- 1/4 R3 plans complete
 
 *Updated after each plan completion*
 
@@ -254,6 +254,9 @@ Recent decisions affecting current work:
 - [07-19]: Speculative entrants only fill empty slots -- preserves real DB data when present
 - [07-19]: BFS downstream invalidation via nextMatchupId chain clears all dependent picks on earlier-round change
 - [07-19]: Dashed blue border + "predicted matchup" badge visually distinguishes speculative from DB-populated matchups
+- [07-23]: Auto-activate predictive brackets to 'active' status when predictions opened (Option A from R3 verification)
+- [07-23]: OR condition in activities API includes predictionStatus:'predictions_open' as safety net for pre-fix brackets
+- [07-23]: broadcastActivityUpdate on session channel when predictions open for real-time student page refresh
 
 ### Pending Todos
 
@@ -271,5 +274,5 @@ Recent decisions affecting current work:
 ## Session Continuity
 
 Last session: 2026-02-02
-Stopped at: Completed 07-19-PLAN.md (Predictive Cascade Engine) -- Phase 7 gap closure R2 COMPLETE (20/20 plans)
+Stopped at: Completed 07-23-PLAN.md (Predictive Bracket Visibility) -- Phase 7 gap closure R3: 1/4 complete
 Resume file: None
