@@ -430,11 +430,13 @@ export async function advanceDoubleElimMatchup(
           (m) => m.round === lbMaxRound && m.position === 1
         )
         if (lbFinal) {
-          // Place WB final loser into whichever LB final slot is empty
-          const lbSlot = lbFinal.entrant1Id === null ? 'entrant1Id' : 'entrant2Id'
+          // WB dropdowns always go to entrant2Id in major rounds.
+          // The LB Final is a major round — LB survivor fills entrant1Id,
+          // WB Final loser fills entrant2Id. This is consistent with all
+          // other major round placements and avoids slot collisions.
           await tx.matchup.update({
             where: { id: lbFinal.id },
-            data: { [lbSlot]: loserId },
+            data: { entrant2Id: loserId },
           })
         }
       } else {
