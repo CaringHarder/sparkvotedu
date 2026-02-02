@@ -61,6 +61,8 @@ export const createBracketSchema = z.object({
   predictiveResolutionMode: z.enum(['manual', 'vote_based']).optional(),
   // Play-in option (only used for double_elimination)
   playInEnabled: z.boolean().optional(),
+  // Viewing mode (only used for single_elimination)
+  viewingMode: z.enum(['simple', 'advanced']).optional(),
 })
 
 export const entrantSchema = z.object({

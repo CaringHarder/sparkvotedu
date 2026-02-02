@@ -95,6 +95,7 @@ export function BracketForm() {
   const [predictiveMode, setPredictiveMode] = useState<PredictiveMode>('simple')
   const [predictiveResolutionMode, setPredictiveResolutionMode] = useState<PredictiveResolutionMode>('manual')
   const [playInEnabled, setPlayInEnabled] = useState(false)
+  const [viewingMode, setViewingMode] = useState<'simple' | 'advanced'>('advanced')
 
   // Step 2: Entrants
   const [entrants, setEntrants] = useState<FormEntrant[]>([])
@@ -274,6 +275,9 @@ export function BracketForm() {
       if (bracketType === 'double_elimination') {
         bracketData.playInEnabled = playInEnabled
       }
+      if (bracketType === 'single_elimination') {
+        bracketData.viewingMode = viewingMode
+      }
 
       const result = await createBracket({
         bracket: bracketData,
@@ -308,6 +312,7 @@ export function BracketForm() {
     predictiveMode,
     predictiveResolutionMode,
     playInEnabled,
+    viewingMode,
     entrants,
     router,
   ])
@@ -606,6 +611,32 @@ export function BracketForm() {
               </div>
             )}
 
+            {bracketType === 'single_elimination' && (
+              <div className="space-y-3 rounded-lg border p-4">
+                <h4 className="text-sm font-medium">Single Elimination Options</h4>
+                <div className="space-y-2">
+                  <Label className="text-xs text-muted-foreground">Viewing Mode</Label>
+                  <div className="flex gap-3">
+                    {(['simple', 'advanced'] as const).map((value) => (
+                      <label key={value} className="flex items-center gap-1.5">
+                        <input
+                          type="radio"
+                          name="se-viewing-mode"
+                          checked={viewingMode === value}
+                          onChange={() => setViewingMode(value)}
+                          className="h-4 w-4"
+                        />
+                        <span className="text-sm capitalize">{value}</span>
+                      </label>
+                    ))}
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Simple: students see one matchup at a time. Advanced: students see the full bracket diagram.
+                  </p>
+                </div>
+              </div>
+            )}
+
             <div className="flex justify-end pt-4">
               <Button
                 onClick={() => setStep(2)}
@@ -822,6 +853,14 @@ export function BracketForm() {
                 <div>
                   <span className="text-sm font-medium text-muted-foreground">Options</span>
                   <p className="text-sm">Play-in round enabled (+8 entrants)</p>
+                </div>
+              )}
+              {bracketType === 'single_elimination' && (
+                <div>
+                  <span className="text-sm font-medium text-muted-foreground">Options</span>
+                  <p className="text-sm">
+                    Viewing: {viewingMode === 'simple' ? 'Simple (one matchup at a time)' : 'Advanced (full bracket diagram)'}
+                  </p>
                 </div>
               )}
             </div>

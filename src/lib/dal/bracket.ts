@@ -188,6 +188,7 @@ export async function createBracketDAL(
     predictiveMode?: string
     predictiveResolutionMode?: string
     playInEnabled?: boolean
+    viewingMode?: string
   },
   entrants: { name: string; seedPosition: number }[]
 ) {
@@ -240,6 +241,7 @@ export async function createBracketDAL(
         predictiveMode: data.predictiveMode ?? null,
         predictiveResolutionMode: data.predictiveResolutionMode ?? null,
         playInEnabled: data.playInEnabled ?? false,
+        viewingMode: data.viewingMode ?? 'advanced',
       },
     })
 
