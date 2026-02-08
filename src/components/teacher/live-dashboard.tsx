@@ -306,8 +306,9 @@ export function LiveDashboard({
   }, [])
 
   // Fallback: if bracket completed but reveal never triggered, go straight to celebration
+  // DE brackets excluded -- they use dedicated DE fallback (Path 2) with WinnerReveal -> handleRevealComplete -> CelebrationScreen
   useEffect(() => {
-    if (bracketCompleted && !revealState && !hasShownRevealRef.current) {
+    if (bracketCompleted && !revealState && !hasShownRevealRef.current && !isDoubleElim) {
       const timer = setTimeout(() => {
         // Double-check: if reveal path already handled celebration, skip fallback
         if (!hasShownRevealRef.current) {
@@ -316,7 +317,7 @@ export function LiveDashboard({
       }, 2000)
       return () => clearTimeout(timer)
     }
-  }, [bracketCompleted, revealState])
+  }, [bracketCompleted, revealState, isDoubleElim])
 
   // Get voter IDs for selected matchup
   const currentVoterIds = useMemo(() => {
