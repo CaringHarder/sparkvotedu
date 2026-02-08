@@ -1024,14 +1024,14 @@ export function LiveDashboard({
             </div>
           ) : (
             /* SE and Predictive: standard bracket diagram with vote counts */
-            (bracket.maxEntrants ?? 0) >= 64 ? (
+            (bracket.maxEntrants ?? bracket.size) >= 64 ? (
               <QuadrantBracketLayout
                 matchups={currentMatchups}
                 totalRounds={totalRounds}
                 voteLabels={voteLabels}
                 onMatchupClick={handleMatchupClick}
                 selectedMatchupId={selectedMatchupId}
-                bracketSize={bracket.maxEntrants ?? 0}
+                bracketSize={bracket.maxEntrants ?? bracket.size}
               />
             ) : (
               <BracketDiagram
