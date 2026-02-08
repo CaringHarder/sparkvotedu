@@ -158,7 +158,7 @@ Plans:
   3. Teacher can create a predictive bracket where students submit predictions and a scored leaderboard ranks accuracy
   4. Teacher can create a bracket with a non-power-of-two number of entrants (e.g., 5, 6, 7, 10) and byes are placed automatically and fairly
   5. Predictive bracket leaderboard shows each student's scoring breakdown (points per correct pick by round)
-**Plans**: 32 plans
+**Plans**: 34 plans
 
 Plans:
 - [x] 07-01-PLAN.md — Schema evolution, TypeScript types, and Zod validation for all bracket types
@@ -193,6 +193,8 @@ Plans:
 - [x] 07-30-PLAN.md — Gap closure R5: RR simple/advanced matchup layout behavior
 - [x] 07-31-PLAN.md — Gap closure R5: 64-entrant quadrant bracket layout (component + mirrorX)
 - [x] 07-32-PLAN.md — Gap closure R5: 64-entrant quadrant layout view integration
+- [x] 07-33-PLAN.md — Gap closure R6: DE duplicate celebration fix
+- [x] 07-34-PLAN.md — Gap closure R6: 64-entrant teacher quadrant layout fallback fix
 
 ### Phase 7.1: Predictive Auto-Resolution Mode (INSERTED)
 **Goal**: Add a third predictive bracket resolution mode where student predictions automatically count as votes, resolving the entire bracket without voting rounds — teacher simply releases results on Go Live
@@ -280,7 +282,7 @@ Note: Phase 3 depends only on Phase 1 (not Phase 2), so Phases 2 and 3 could the
 | 4. Voting & Real-Time | 6/6 | Complete | 2026-01-31 |
 | 5. Polls | 10/10 | Complete | 2026-01-31 |
 | 6. Billing & Subscriptions | 5/5 | Complete | 2026-02-01 |
-| 7. Advanced Brackets | 32/32 | Complete | 2026-02-02 |
+| 7. Advanced Brackets | 34/34 | Complete | 2026-02-08 |
 | 7.1 Predictive Auto-Resolution | 0/4 | Not started | - |
 | 8. Sports Integration | 0/5 | Not started | - |
 | 9. Analytics | 0/4 | Not started | - |
