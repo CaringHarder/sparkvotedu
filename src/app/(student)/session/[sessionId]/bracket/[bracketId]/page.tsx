@@ -439,10 +439,10 @@ function DEVotingView({
     }
   }, [bracketCompleted, currentMatchups])
 
-  // Chain celebration to reveal completion (not independent timer)
+  // Chain celebration to reveal completion — CelebrationScreen IS the reveal
   const handleRevealComplete = useCallback(() => {
     setRevealState(null)
-    setTimeout(() => setShowCelebration(true), 1000)
+    setShowCelebration(true)
   }, [])
 
   // Fallback: if bracket completed but reveal never triggered, go straight to celebration
@@ -471,7 +471,6 @@ function DEVotingView({
       {/* Winner Reveal overlay */}
       {revealState && (
         <WinnerReveal
-          winnerName={revealState.winnerName}
           entrant1Name={revealState.entrant1Name}
           entrant2Name={revealState.entrant2Name}
           onComplete={handleRevealComplete}

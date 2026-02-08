@@ -115,7 +115,6 @@ export function SimpleVotingView({
   // Winner Reveal overlay (final round only)
   const winnerRevealOverlay = revealState ? (
     <WinnerReveal
-      winnerName={revealState.winnerName}
       entrant1Name={revealState.entrant1Name}
       entrant2Name={revealState.entrant2Name}
       onComplete={() => setRevealState(null)}

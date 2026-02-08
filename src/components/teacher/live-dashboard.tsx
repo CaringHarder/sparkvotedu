@@ -298,11 +298,10 @@ export function LiveDashboard({
     }
   }, [bracketCompleted, isDoubleElim, currentMatchups])
 
-  // Chain celebration to reveal completion (not independent timer)
+  // Chain celebration to reveal completion — CelebrationScreen IS the reveal
   const handleRevealComplete = useCallback(() => {
     setRevealState(null)
-    // Show celebration 1 second after reveal dismisses
-    setTimeout(() => setShowCelebration(true), 1000)
+    setShowCelebration(true)
   }, [])
 
   // Fallback: if bracket completed but reveal never triggered, go straight to celebration
@@ -682,7 +681,6 @@ export function LiveDashboard({
       {/* Winner Reveal overlay */}
       {revealState && (
         <WinnerReveal
-          winnerName={revealState.winnerName}
           entrant1Name={revealState.entrant1Name}
           entrant2Name={revealState.entrant2Name}
           onComplete={handleRevealComplete}

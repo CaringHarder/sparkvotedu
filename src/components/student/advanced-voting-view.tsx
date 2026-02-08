@@ -120,7 +120,6 @@ export function AdvancedVotingView({
       {/* Winner Reveal overlay */}
       {revealState && (
         <WinnerReveal
-          winnerName={revealState.winnerName}
           entrant1Name={revealState.entrant1Name}
           entrant2Name={revealState.entrant2Name}
           onComplete={() => setRevealState(null)}
