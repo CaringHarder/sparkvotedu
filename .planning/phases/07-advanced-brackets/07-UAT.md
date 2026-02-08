@@ -1,10 +1,10 @@
 ---
-status: testing
+status: diagnosed
 phase: 07-advanced-brackets
-source: 07-01 through 07-32 (all plans complete)
+source: 07-01 through 07-34 (plans 33-34 pending)
 round: R6 (gap closure verification after 07-28, 07-29, 07-30, 07-31, 07-32)
 started: 2026-02-01T20:00:00Z
-updated: 2026-02-02
+updated: 2026-02-08
 ---
 
 ## Current Test
@@ -70,6 +70,14 @@ r5_issues:
   - Duplicate celebration: old celebration fires first, then new chained one fires after — old code path not fully removed
 r5_feature_request: Bracket view should auto-snap to current round taking up full vertical space
 
+R6 re-test (16-entrant DE full flow):
+result: issue
+reported: "it played both celebrations. first the old one....then that cleared and then it played the new one on both student and teacher page"
+severity: minor
+r6_issues:
+  - Duplicate celebration persists — 07-28 inner ref check fix not preventing the race condition
+root_cause_hypothesis: The fallback celebration effect fires BEFORE the chained celebration path, not during. Need to trace exact timing of both code paths.
+
 ### 6. Double-Elimination Overview Tab
 expected: In a double-elimination bracket, the teacher live dashboard now shows the full DE visualization with Winners/Losers/Grand Finals tabs (not just a single BracketDiagram). The Overview tab groups entrants into "Still in Winners" (green), "In Losers Bracket" (amber), and "Eliminated" (dimmed, strikethrough). Open Voting / Close & Advance buttons work across both winner and loser bracket matchups.
 previous_result: issue — "The losers bracket does not appear as an option when going live, open voting, or close and advance winners"
@@ -122,6 +130,17 @@ r5_issues:
   - Nested <button> hydration error: batch decide button is child of collapsible round header button (round-robin-matchups.tsx:130)
   - No CelebrationScreen on bracket completion (student page)
   - No visual distinction between simple and advanced matchup cards — simple should show one matchup at a time, advanced shows entire round
+
+R6 re-test (4-entrant RR, round-by-round):
+result: partial pass (3/4)
+reported: "1, 2, 4 work - 3 still doesn't show simple voting style"
+r6_pass:
+  - No nested button hydration error (07-28 sibling flex layout fix works)
+  - Batch decide button shows "Deciding..." and disabled state (07-28 isBatchDeciding prop works)
+  - CelebrationScreen shows on RR completion (07-29 completion detection + broadcast works)
+r6_issues:
+  - Simple voting style still shows all matchups instead of one at a time — 07-30 fix not applying
+root_cause_hypothesis: votingStyle prop may not be reaching RoundRobinMatchups component, or the conditional rendering logic has a bug.
 
 ### 11. Round-Robin Round Advancement
 expected: In the live view for a round-robin bracket with round-by-round pacing, the teacher sees the round-robin matchup grid (not SE layout). Round advancement controls are available to open the next round's matchups for voting.
@@ -193,6 +212,16 @@ r5_pass:
 r5_issues:
   - 64-entrant bracket still renders as single horizontal layout — quadrant navigation buttons appear but bracket itself isn't laid out in 2x2 quadrant grid (TL/TR/BL/BR). Expected: first 16 top-left, second 16 top-right (mirrored), third 16 bottom-left, fourth 16 bottom-right (mirrored)
 
+R6 re-test (64-entrant SE bracket):
+result: partial pass
+reported: "the bracket renders as the full grid with mirrored regions and the final four at the bottom on the student page. On the teacher page, there are still buttons for tl, bl, tr, br, but the bracket renders all on one side causing lots of scrolling. The student page isn't zoomed in to any quadrant, so it displays the full bracket making it hard to read unless manually zooming in on the page."
+r6_pass:
+  - Student page: QuadrantBracketLayout renders correctly (2x2 grid with mirrored regions and Final Four)
+r6_issues:
+  - Teacher page: Still renders horizontally (QuadrantBracketLayout not applied to live-dashboard or bracket-detail)
+  - Student page: Full bracket too small to read, needs auto-zoom to quadrant
+r6_feature_request: Mini-map visual navigator — small clickable bracket thumbnail showing quadrants (like NCAA bracket overview) for zooming to specific regions. Should be visible at all times at the top for brackets with 16+ entrants.
+
 ### 17. Bye-Aware Entrant Reordering
 expected: In the bracket creation wizard Step 2 (entrant list), when the bracket has a non-power-of-two count, entrant positions that receive first-round byes show an amber "BYE" badge. Reordering entrants via drag-and-drop recalculates which positions get byes.
 result: pass
@@ -202,9 +231,28 @@ note: "User feedback: after creating bracket, going back to edit mode, user can'
 
 total: 17
 passed: 14 (9 R1 + tests 12/13/14 hotfixed + test 11 R3)
-issues: 3 (tests 5, 10, 16 — all have R5 residual issues)
+issues: 3 (tests 5, 10, 16 — R6 residual issues remain)
 pending: 0
 skipped: 0
+
+### R6 Results (after 07-28, 07-29, 07-30, 07-31, 07-32 fixes)
+
+| Test | Core Fix | R6 Result | Residual |
+|------|----------|-----------|----------|
+| 5 (DE Celebration) | 07-28 inner ref check | FAIL | Duplicate celebration persists — old fires before new |
+| 10 (RR Student UX) | 07-28 nested button, 07-29 completion, 07-30 simple mode | 3/4 PASS | Simple mode still shows all matchups |
+| 16 (64-Entrant Layout) | 07-31 QuadrantBracketLayout, 07-32 view wiring | PARTIAL | Student works, teacher horizontal, needs mini-map nav |
+
+### Remaining R6 Issues (Diagnosed)
+
+- **Test 5**: Duplicate celebration — Path 4 fallback effect (lines 309-319) fires for DE brackets when it shouldn't. Fix: add `&& !isDoubleElim` to condition on line 310. Debug: `.planning/debug/de-duplicate-celebration-r6.md`
+
+- **Test 10**: ~~Simple voting style~~ **NOT A BUG** — Code is correct. User tested with 3 entrants (1 matchup/round due to BYE rotation). Condition `roundMatchups.length > 1` correctly shows all matchups when there's only 1. Need 4+ entrants to see 2+ matchups/round where nav appears. Debug: `.planning/debug/rr-simple-mode-r6.md`
+
+- **Test 16**: Teacher page quadrant layout — live-dashboard.tsx line 1026 uses `(bracket.maxEntrants ?? 0) >= 64` which fails when maxEntrants is null (fallback 0 never >= 64). Fix: change fallback from `0` to `bracket.size`. Debug: `.planning/debug/teacher-quadrant-layout-r6.md`
+
+### Feature Request (logged, not blocking)
+- Mini-map visual navigator for large brackets (16+ entrants) — clickable bracket thumbnail showing quadrants for zoom navigation
 
 ### R5 Results (after 07-25, 07-26, 07-27 fixes)
 
