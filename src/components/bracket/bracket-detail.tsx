@@ -216,11 +216,11 @@ export function BracketDetail({ bracket, totalRounds, sessions, standings = [], 
             />
           ) : (
             <div className="rounded-lg border p-3">
-              {(bracket.maxEntrants ?? bracket.entrants.length) >= 64 ? (
+              {(bracket.maxEntrants ?? bracket.size) >= 64 ? (
                 <QuadrantBracketLayout
                   matchups={bracket.matchups}
                   totalRounds={totalRounds}
-                  bracketSize={bracket.maxEntrants ?? bracket.entrants.length}
+                  bracketSize={bracket.maxEntrants ?? bracket.size}
                 />
               ) : (
                 <BracketDiagram
