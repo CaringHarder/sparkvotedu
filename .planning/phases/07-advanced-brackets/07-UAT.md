@@ -1,8 +1,8 @@
 ---
-status: diagnosed
+status: testing
 phase: 07-advanced-brackets
-source: 07-01 through 07-34 (plans 33-34 pending)
-round: R6 (gap closure verification after 07-28, 07-29, 07-30, 07-31, 07-32)
+source: 07-01 through 07-35 (region navigation rewrite)
+round: R7 (region navigation verification after 07-35 rewrite)
 started: 2026-02-01T20:00:00Z
 updated: 2026-02-08
 ---
@@ -10,7 +10,15 @@ updated: 2026-02-08
 ## Current Test
 <!-- OVERWRITE each test - shows where we are -->
 
-[testing complete — R5]
+number: R7-2
+name: 64-Entrant SE Region Navigation (Student Advanced View)
+expected: |
+  Create or open a 64-entrant single-elimination bracket. On the student page (advanced mode):
+  - A card-based region navigator appears with four cards in a 2-column grid: "Region 1", "Region 2", "Region 3", "Region 4"
+  - A connector line and centered "Final Four" card below the grid
+  - Clicking a region card shows that region's 16-entrant sub-bracket at full readable size
+  - Each region renders only its 16 entrants (4 rounds), not the whole 64-entrant bracket
+awaiting: user response
 
 ## Tests
 
