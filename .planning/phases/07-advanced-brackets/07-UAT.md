@@ -1,24 +1,47 @@
 ---
-status: testing
+status: complete
 phase: 07-advanced-brackets
 source: 07-01 through 07-35 (region navigation rewrite)
 round: R7 (region navigation verification after 07-35 rewrite)
 started: 2026-02-01T20:00:00Z
-updated: 2026-02-08
+updated: 2026-02-13
 ---
 
 ## Current Test
 <!-- OVERWRITE each test - shows where we are -->
 
-number: R7-2
-name: 64-Entrant SE Region Navigation (Student Advanced View)
-expected: |
-  Create or open a 64-entrant single-elimination bracket. On the student page (advanced mode):
-  - A card-based region navigator appears with four cards in a 2-column grid: "Region 1", "Region 2", "Region 3", "Region 4"
-  - A connector line and centered "Final Four" card below the grid
-  - Clicking a region card shows that region's 16-entrant sub-bracket at full readable size
-  - Each region renders only its 16 entrants (4 rounds), not the whole 64-entrant bracket
-awaiting: user response
+[testing complete]
+
+### R7 Tests (Region Navigation Rewrite)
+
+### R7-1. 32-Entrant SE Region Navigation (Student Advanced View)
+expected: Region navigator with 2 cards (Top Half / Bottom Half) + Championship. Clicking shows 16-entrant sub-bracket.
+result: pass
+
+### R7-2. 64-Entrant SE Region Navigation (Student Advanced View)
+expected: Region navigator with 4 cards (Region 1-4) + Final Four. Clicking shows 16-entrant sub-bracket.
+result: pass
+note: "Performance concern: voting on large brackets takes exceptionally long to show up on teacher dashboard. Needs investigation for real-time latency optimization on 32+ entrant brackets."
+
+### R7-3. 32-Entrant Region Navigation (Teacher Live Dashboard)
+expected: Region navigator with 2 cards (Top Half / Bottom Half) + Championship. Vote labels, matchup click/selection work within region.
+result: pass
+
+### R7-4. 64-Entrant Region Navigation (Teacher Live Dashboard)
+expected: Region navigator with 4 cards (Region 1-4) + Final Four. Vote labels, matchup click, selected matchup highlight, and Open Voting / Close & Advance all work.
+result: pass
+
+### R7-5. 16-Entrant Bracket (No Regions — Single View)
+expected: No region navigator. Full 16-entrant bracket renders as single BracketDiagram. All voting and interaction works (no regression).
+result: pass
+
+### R7-6. Auto-Consolidation (64-team Sweet 16)
+expected: After R1+R2 decided, region cards disappear. Unified 2x2 mirrored grid with all 4 regions visible. Right-side mirrored. Final Four centered below.
+result: pass
+
+### R7-7. Region Navigation on Bracket Detail Page
+expected: 32+ entrant bracket detail page shows region navigator. Clicking cards switches sub-bracket. Static view renders correctly within regions.
+result: pass
 
 ## Tests
 
