@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useCallback, useMemo } from 'react'
+import { useEffect, useState, useCallback, useMemo, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { getMyPredictions, getLeaderboard } from '@/actions/prediction'
 import type { PredictionData, PredictionScore } from '@/lib/bracket/types'
@@ -10,6 +10,11 @@ import type { PredictionData, PredictionScore } from '@/lib/bracket/types'
  *
  * Fetches initial predictions and leaderboard, then subscribes to
  * Supabase Realtime for prediction_status_changed events.
+ *
+ * Handles auto-resolution reveal events:
+ * - 'reveal_round': trigger refetch + update revealedUpToRound
+ * - 'reveal_complete': trigger refetch + set revealComplete flag
+ * - 'results_prepared': trigger refetch
  *
  * Follows the same pattern as useRealtimeBracket:
  * - Initial fetch via server action
@@ -24,6 +29,11 @@ export function usePredictions(bracketId: string, participantId?: string) {
   const [myPredictions, setMyPredictions] = useState<PredictionData[]>([])
   const [leaderboard, setLeaderboard] = useState<PredictionScore[]>([])
   const [isLoading, setIsLoading] = useState(true)
+  const [revealedUpToRound, setRevealedUpToRound] = useState<number | null>(null)
+  const [revealComplete, setRevealComplete] = useState(false)
+
+  // Track the last revealed round for change detection by consumers
+  const prevRevealedRoundRef = useRef<number | null>(null)
 
   const fetchData = useCallback(async () => {
     try {
@@ -55,7 +65,7 @@ export function usePredictions(bracketId: string, participantId?: string) {
     const channel = supabase
       .channel(`bracket:${bracketId}`)
       .on('broadcast', { event: 'bracket_update' }, (message) => {
-        const { type } = message.payload as { type: string }
+        const { type, ...payload } = message.payload as { type: string; round?: number; [key: string]: unknown }
 
         // Refetch on prediction-related events
         if (
@@ -66,13 +76,40 @@ export function usePredictions(bracketId: string, participantId?: string) {
         ) {
           fetchData()
         }
+
+        // Auto-resolution reveal events
+        if (type === 'reveal_round') {
+          const round = payload.round as number | undefined
+          if (round != null) {
+            prevRevealedRoundRef.current = revealedUpToRound
+            setRevealedUpToRound(round)
+          }
+          fetchData()
+        }
+
+        if (type === 'reveal_complete') {
+          setRevealComplete(true)
+          fetchData()
+        }
+
+        if (type === 'results_prepared') {
+          fetchData()
+        }
       })
       .subscribe()
 
     return () => {
       supabase.removeChannel(channel)
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [bracketId, supabase, fetchData])
 
-  return { myPredictions, leaderboard, isLoading, refetch: fetchData }
+  return {
+    myPredictions,
+    leaderboard,
+    isLoading,
+    refetch: fetchData,
+    revealedUpToRound,
+    revealComplete,
+  }
 }

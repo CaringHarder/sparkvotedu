@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback, useMemo } from 'react'
+import { motion, LayoutGroup } from 'motion/react'
 import { Trophy, ChevronDown, ChevronRight, Check, X, BarChart3, Users } from 'lucide-react'
 import type { PredictionScore } from '@/lib/bracket/types'
 import { getPointsForRound } from '@/lib/bracket/predictive'
@@ -28,6 +29,10 @@ interface PredictionLeaderboardProps {
   totalRounds: number
   isTeacher: boolean
   participantId?: string
+  /** Student reveal mode: limits to top 10 + self with animated rank transitions */
+  isStudent?: boolean
+  /** Current participant ID for top-10 + self-rank in student mode */
+  currentParticipantId?: string
 }
 
 /**
@@ -44,6 +49,8 @@ export function PredictionLeaderboard({
   totalRounds,
   isTeacher,
   participantId,
+  isStudent,
+  currentParticipantId,
 }: PredictionLeaderboardProps) {
   const { leaderboard, isLoading } = usePredictions(bracketId, participantId)
   const [matchupStats, setMatchupStats] = useState<MatchupStatsMap>({})
@@ -93,6 +100,15 @@ export function PredictionLeaderboard({
         <p className="text-sm text-muted-foreground">
           No matchups resolved yet. Leaderboard will appear as matches are decided.
         </p>
+      </div>
+    )
+  }
+
+  // Student reveal mode: top 10 + self-rank with animated transitions
+  if (isStudent) {
+    return (
+      <div className="space-y-4">
+        <AnimatedStudentLeaderboard scores={scores} currentParticipantId={currentParticipantId} />
       </div>
     )
   }
@@ -257,6 +273,142 @@ function StudentLeaderboard({
             )
           })}
         </div>
+      </div>
+
+      <p className="mt-2 text-center text-xs text-muted-foreground">
+        {scores.length} participant{scores.length !== 1 ? 's' : ''}
+      </p>
+    </div>
+  )
+}
+
+// ---------------------------------------------------------------------------
+// Animated Student Leaderboard: Top-10 + self-rank with LayoutGroup animations
+// Used during auto-resolution reveal experience.
+// Shows rank + total points only (no per-round breakdown) per locked decision.
+// ---------------------------------------------------------------------------
+
+/**
+ * Compute dense ranking: shared scores get shared rank.
+ * Returns a Map of participantId -> rank.
+ */
+function computeDenseRanks(scores: PredictionScore[]): Map<string, number> {
+  const ranks = new Map<string, number>()
+  let currentRank = 0
+  let lastPoints = -1
+  let lastCorrect = -1
+
+  for (const score of scores) {
+    if (score.totalPoints !== lastPoints || score.correctPicks !== lastCorrect) {
+      currentRank++
+      lastPoints = score.totalPoints
+      lastCorrect = score.correctPicks
+    }
+    ranks.set(score.participantId, currentRank)
+  }
+
+  return ranks
+}
+
+function AnimatedStudentLeaderboard({
+  scores,
+  currentParticipantId,
+}: {
+  scores: PredictionScore[]
+  currentParticipantId?: string
+}) {
+  const ranks = useMemo(() => computeDenseRanks(scores), [scores])
+
+  // Top 10 entries
+  const top10 = scores.slice(0, 10)
+
+  // Check if current student is in top 10
+  const isCurrentInTop10 = currentParticipantId
+    ? top10.some((s) => s.participantId === currentParticipantId)
+    : true
+
+  // Find current student's entry if outside top 10
+  const currentEntry = !isCurrentInTop10 && currentParticipantId
+    ? scores.find((s) => s.participantId === currentParticipantId)
+    : null
+
+  // Current student's summary
+  const myRank = currentParticipantId ? ranks.get(currentParticipantId) : undefined
+  const myScore = currentParticipantId ? scores.find((s) => s.participantId === currentParticipantId) : undefined
+
+  return (
+    <div>
+      <h2 className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+        Prediction Leaderboard
+      </h2>
+
+      {/* Own score summary */}
+      {myScore && myRank && (
+        <div className="mb-3 rounded-lg border border-primary/20 bg-primary/5 p-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <RankBadge rank={myRank} />
+              <span className="text-sm font-semibold">Your Score</span>
+            </div>
+            <div className="text-right">
+              <span className="text-lg font-bold">{myScore.totalPoints}</span>
+              <span className="ml-1 text-xs text-muted-foreground">pts</span>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Animated leaderboard with LayoutGroup for smooth rank transitions */}
+      <div className="rounded-lg border">
+        <LayoutGroup>
+          <div className="divide-y">
+            {top10.map((score) => {
+              const rank = ranks.get(score.participantId) ?? 0
+              const isCurrentStudent = score.participantId === currentParticipantId
+              return (
+                <motion.div
+                  key={score.participantId}
+                  layout
+                  transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+                  className={`flex items-center gap-3 px-3 py-2.5 ${
+                    isCurrentStudent ? 'bg-primary/5' : ''
+                  }`}
+                >
+                  <RankBadge rank={rank} />
+                  <span className="min-w-0 flex-1 truncate text-sm">
+                    {score.participantName || 'Student'}
+                    {isCurrentStudent && (
+                      <span className="ml-1 text-xs text-primary">(you)</span>
+                    )}
+                  </span>
+                  <span className="text-sm font-semibold">{score.totalPoints} pts</span>
+                </motion.div>
+              )
+            })}
+
+            {/* Separator and self row if outside top 10 */}
+            {currentEntry && (
+              <>
+                <div className="flex items-center justify-center px-3 py-1.5 text-xs text-muted-foreground">
+                  ...
+                </div>
+                <motion.div
+                  key={currentEntry.participantId}
+                  layout
+                  transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+                  className="flex items-center gap-3 bg-primary/5 px-3 py-2.5"
+                >
+                  <RankBadge rank={ranks.get(currentEntry.participantId) ?? 0} />
+                  <span className="min-w-0 flex-1 truncate text-sm">
+                    {currentEntry.participantName || 'Student'}
+                    <span className="ml-1 text-xs text-primary">(you)</span>
+                  </span>
+                  <span className="text-sm font-semibold">{currentEntry.totalPoints} pts</span>
+                </motion.div>
+              </>
+            )}
+          </div>
+        </LayoutGroup>
       </div>
 
       <p className="mt-2 text-center text-xs text-muted-foreground">
