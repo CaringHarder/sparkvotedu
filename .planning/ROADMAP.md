@@ -209,7 +209,7 @@ Plans:
 **Plans**: 4 plans
 
 Plans:
-- [ ] 07.1-01-PLAN.md — Tabulation engine TDD (pure function, types, schemas, DB column)
+- [x] 07.1-01-PLAN.md — Tabulation engine TDD (pure function, types, schemas, DB column)
 - [ ] 07.1-02-PLAN.md — DAL + server actions for auto-resolution lifecycle (prepare, override, release, reveal, complete)
 - [ ] 07.1-03-PLAN.md — Teacher UI (preview with overrides, reveal controls, presentation mode, form update)
 - [ ] 07.1-04-PLAN.md — Student reveal experience (progressive bracket, accuracy overlay, animated leaderboard, podium celebration)
@@ -283,7 +283,7 @@ Note: Phase 3 depends only on Phase 1 (not Phase 2), so Phases 2 and 3 could the
 | 5. Polls | 10/10 | Complete | 2026-01-31 |
 | 6. Billing & Subscriptions | 5/5 | Complete | 2026-02-01 |
 | 7. Advanced Brackets | 34/34 | Complete | 2026-02-08 |
-| 7.1 Predictive Auto-Resolution | 0/4 | Planned | - |
+| 7.1 Predictive Auto-Resolution | 1/4 | In Progress | - |
 | 8. Sports Integration | 0/5 | Not started | - |
 | 9. Analytics | 0/4 | Not started | - |
 | 10. Landing Page & Polish | 0/5 | Not started | - |

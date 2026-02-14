@@ -5,23 +5,23 @@
 See: .planning/PROJECT.md (updated 2026-01-28)
 
 **Core value:** Teachers can instantly engage any classroom through voting -- on any topic, in any format -- and see participation happen in real time.
-**Current focus:** Phase 7 complete -- all 34 plans executed (32 core + 2 gap closure). Ready for Phase 8.
+**Current focus:** Phase 7.1 (Predictive Auto-Resolution) -- tabulation engine complete, 3 plans remaining.
 
 ## Current Position
 
-Phase: 7 of 10 (Advanced Brackets - COMPLETE)
-Plan: 34 of 34 in current phase (gap closure complete)
-Status: Phase complete
-Last activity: 2026-02-08 -- Completed 07-34-PLAN.md
+Phase: 7.1 of 10 (Predictive Auto-Resolution Mode - INSERTED)
+Plan: 1 of 4 in current phase
+Status: In progress
+Last activity: 2026-02-13 -- Completed 07.1-01-PLAN.md
 
-Progress: [##########] 100% (74/74 plans)
+Progress: [#############-] 96% (75/78 plans)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 74
+- Total plans completed: 75
 - Average duration: ~3.5 min
-- Total execution time: ~4.5 hours
+- Total execution time: ~4.6 hours
 
 **By Phase:**
 
@@ -36,9 +36,11 @@ Progress: [##########] 100% (74/74 plans)
 
 | 07-advanced-brackets | 34/34 | ~87.1m | ~2.6m |
 
+| 07.1-predictive-auto-resolution | 1/4 | ~5m | ~5m |
+
 **Recent Trend:**
-- Last 5 plans: 07-31 (~2.5m), 07-32 (~2.0m), 07-33 (~0.5m), 07-34 (~0.8m)
-- Trend: Phase 7 complete. All 34 plans executed (32 core + 2 gap closure).
+- Last 5 plans: 07-32 (~2.0m), 07-33 (~0.5m), 07-34 (~0.8m), 07.1-01 (~5m)
+- Trend: Phase 7.1 started. TDD plan took ~5m (test writing + implementation).
 
 *Updated after each plan completion*
 
@@ -291,6 +293,10 @@ Recent decisions affecting current work:
 - [07-32]: maxEntrants fallback chain for 64+ detection: entrants.length (detail), 0 (live), bracket.size (student)
 - [07-33]: Exclude DE from Path 4 via && !isDoubleElim guard rather than restructuring celebration paths
 - [07-34]: Use bracket.size (always present) instead of 0 or entrants.length as fallback for maxEntrants null safety
+- [07.1-01]: Position parity cascade in tabulatePredictions reuses existing SE advancement convention (odd->entrant1, even->entrant2)
+- [07.1-01]: Empty predictions returns empty array (consistent with scorePredictions pattern)
+- [07.1-01]: Predictions for eliminated entrants silently ignored in later rounds (not counted, not errored)
+- [07.1-01]: revealedUpToRound nullable Int on Bracket model for progressive round reveal
 
 ### Pending Todos
 
@@ -308,6 +314,6 @@ Recent decisions affecting current work:
 ## Session Continuity
 
 Last session: 2026-02-13
-Stopped at: Phase 7 UAT R7 COMPLETE — all 7 region navigation tests passed. Phase 7 fully verified.
+Stopped at: Completed 07.1-01-PLAN.md (tabulation engine TDD)
 Resume file: None
 Note: Voting latency on large brackets (64-entrant) flagged for optimization.
