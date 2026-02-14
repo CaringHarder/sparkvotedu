@@ -199,31 +199,21 @@ function TeacherPredictiveView({
               </button>
             )}
             {predictionStatus === 'predictions_open' && (
-              <>
-                <button
-                  type="button"
-                  onClick={() => handleStatusChange('active')}
-                  disabled={isPending}
-                  className="rounded-md bg-orange-600 px-3 py-1.5 text-xs font-medium text-white shadow-sm transition-colors hover:bg-orange-700 disabled:opacity-50"
-                >
-                  Close Predictions
-                </button>
-                <button
-                  type="button"
-                  onClick={handlePrepareResults}
-                  disabled={isPending}
-                  className="rounded-md bg-green-600 px-3 py-1.5 text-xs font-medium text-white shadow-sm transition-colors hover:bg-green-700 disabled:opacity-50"
-                >
-                  {isPending ? (
-                    <span className="inline-flex items-center gap-1.5">
-                      <Loader2 className="h-3 w-3 animate-spin" />
-                      Tabulating...
-                    </span>
-                  ) : (
-                    'Prepare Results'
-                  )}
-                </button>
-              </>
+              <button
+                type="button"
+                onClick={handlePrepareResults}
+                disabled={isPending}
+                className="rounded-md bg-green-600 px-3 py-1.5 text-xs font-medium text-white shadow-sm transition-colors hover:bg-green-700 disabled:opacity-50"
+              >
+                {isPending ? (
+                  <span className="inline-flex items-center gap-1.5">
+                    <Loader2 className="h-3 w-3 animate-spin" />
+                    Tabulating...
+                  </span>
+                ) : (
+                  'Close Predictions & Prepare Results'
+                )}
+              </button>
             )}
           </div>
 
