@@ -618,7 +618,7 @@ export async function overrideMatchupWinnerDAL(
   teacherId: string,
   matchupId: string,
   winnerId: string
-): Promise<{ success: true } | { error: string }> {
+): Promise<{ success: true; results: TabulationResult[] } | { error: string }> {
   const bracket = await prisma.bracket.findFirst({
     where: { id: bracketId, teacherId },
     select: {
@@ -783,7 +783,33 @@ export async function overrideMatchupWinnerDAL(
     }
   }
 
-  return { success: true }
+  // Re-fetch final matchup state and build TabulationResult[] for the client
+  const finalMatchups = await prisma.matchup.findMany({
+    where: { bracketId, isBye: false },
+    select: {
+      id: true,
+      round: true,
+      position: true,
+      winnerId: true,
+      entrant1Id: true,
+      entrant2Id: true,
+    },
+  })
+
+  const results: TabulationResult[] = finalMatchups.map((m) => ({
+    matchupId: m.id,
+    round: m.round,
+    position: m.position,
+    winnerId: m.winnerId,
+    entrant1Id: m.entrant1Id,
+    entrant2Id: m.entrant2Id,
+    entrant1Votes: 0,
+    entrant2Votes: 0,
+    totalVotes: 0,
+    status: m.winnerId ? ('resolved' as const) : ('tie' as const),
+  }))
+
+  return { success: true, results }
 }
 
 /**

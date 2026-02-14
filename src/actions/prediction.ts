@@ -267,7 +267,7 @@ export async function overrideWinner(input: unknown) {
 
     revalidatePath(`/brackets/${bracketId}`)
 
-    return { success: true }
+    return { success: true, results: result.results }
   } catch {
     return { error: 'Failed to override winner' }
   }

@@ -133,17 +133,17 @@ function TeacherPredictiveView({
     })
   }
 
-  // Auto-mode: Override Winner
+  // Auto-mode: Override Winner (uses results returned directly from override)
   function handleOverrideWinner(matchupId: string, winnerId: string) {
     startTransition(async () => {
       const result = await overrideWinner({ bracketId: bracket.id, matchupId, winnerId })
-      if (result && 'success' in result) {
-        // Re-fetch tabulation results after override
-        const refreshed = await prepareResults({ bracketId: bracket.id })
-        if (refreshed && 'results' in refreshed && refreshed.results) {
-          setTabulationResults(refreshed.results as TabulationResult[])
-          setUnresolvedCount(refreshed.unresolvedCount ?? 0)
-        }
+      if (result && 'results' in result && result.results) {
+        setTabulationResults(result.results as TabulationResult[])
+        setUnresolvedCount(
+          (result.results as TabulationResult[]).filter(
+            (r: TabulationResult) => !r.winnerId
+          ).length
+        )
       }
     })
   }
