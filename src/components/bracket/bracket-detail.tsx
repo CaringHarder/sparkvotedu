@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { ArrowLeft, Pencil, Radio, Link2, Unlink, ChevronDown, ChevronUp, Play } from 'lucide-react'
 import type { BracketWithDetails, RoundRobinStanding, PredictionScore } from '@/lib/bracket/types'
 import { BracketDiagram } from '@/components/bracket/bracket-diagram'
-import { QuadrantBracketLayout } from '@/components/bracket/quadrant-bracket-layout'
+import { RegionBracketView } from '@/components/bracket/region-bracket-view'
 import { RoundRobinStandings } from '@/components/bracket/round-robin-standings'
 import { RoundRobinMatchups } from '@/components/bracket/round-robin-matchups'
 import { PredictiveBracket } from '@/components/bracket/predictive-bracket'
@@ -38,6 +38,7 @@ export function BracketDetail({ bracket, totalRounds, sessions, standings = [], 
   const isRoundRobin = bracket.bracketType === 'round_robin'
   const isPredictive = bracket.bracketType === 'predictive'
   const isDoubleElim = bracket.bracketType === 'double_elimination'
+  const isPredictiveAuto = isPredictive && bracket.predictiveResolutionMode === 'auto'
   const pacing = (bracket.roundRobinPacing ?? 'round_by_round') as 'round_by_round' | 'all_at_once'
   const isLive = bracket.roundRobinStandingsMode === 'live'
 
@@ -151,13 +152,13 @@ export function BracketDetail({ bracket, totalRounds, sessions, standings = [], 
         {/* Main content area */}
         <div className="min-w-0 flex-1 space-y-4">
           {isPredictive ? (
-            <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+            <div className={isPredictiveAuto ? '' : 'grid grid-cols-1 gap-6 lg:grid-cols-2'}>
               <PredictiveBracket
                 bracket={bracket}
                 participantId=""
                 isTeacher={true}
               />
-              {(bracket.status === 'active' || bracket.status === 'completed') && (
+              {!isPredictiveAuto && (bracket.status === 'active' || bracket.status === 'completed') && (
                 <PredictionLeaderboard
                   bracketId={bracket.id}
                   initialScores={predictionScores}
@@ -216,8 +217,8 @@ export function BracketDetail({ bracket, totalRounds, sessions, standings = [], 
             />
           ) : (
             <div className="rounded-lg border p-3">
-              {(bracket.maxEntrants ?? bracket.size) >= 64 ? (
-                <QuadrantBracketLayout
+              {(bracket.maxEntrants ?? bracket.size) >= 32 ? (
+                <RegionBracketView
                   matchups={bracket.matchups}
                   totalRounds={totalRounds}
                   bracketSize={bracket.maxEntrants ?? bracket.size}
