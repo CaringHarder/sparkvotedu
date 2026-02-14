@@ -5,23 +5,23 @@
 See: .planning/PROJECT.md (updated 2026-01-28)
 
 **Core value:** Teachers can instantly engage any classroom through voting -- on any topic, in any format -- and see participation happen in real time.
-**Current focus:** Phase 7.1 (Predictive Auto-Resolution) -- tabulation engine complete, 3 plans remaining.
+**Current focus:** Phase 7.1 (Predictive Auto-Resolution) -- DAL and server actions complete, 2 plans remaining (UI).
 
 ## Current Position
 
 Phase: 7.1 of 10 (Predictive Auto-Resolution Mode - INSERTED)
-Plan: 1 of 4 in current phase
+Plan: 2 of 4 in current phase
 Status: In progress
-Last activity: 2026-02-13 -- Completed 07.1-01-PLAN.md
+Last activity: 2026-02-13 -- Completed 07.1-02-PLAN.md
 
-Progress: [#############-] 96% (75/78 plans)
+Progress: [#############-] 97% (76/78 plans)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 75
+- Total plans completed: 76
 - Average duration: ~3.5 min
-- Total execution time: ~4.6 hours
+- Total execution time: ~4.7 hours
 
 **By Phase:**
 
@@ -36,11 +36,11 @@ Progress: [#############-] 96% (75/78 plans)
 
 | 07-advanced-brackets | 34/34 | ~87.1m | ~2.6m |
 
-| 07.1-predictive-auto-resolution | 1/4 | ~5m | ~5m |
+| 07.1-predictive-auto-resolution | 2/4 | ~9m | ~4.5m |
 
 **Recent Trend:**
-- Last 5 plans: 07-32 (~2.0m), 07-33 (~0.5m), 07-34 (~0.8m), 07.1-01 (~5m)
-- Trend: Phase 7.1 started. TDD plan took ~5m (test writing + implementation).
+- Last 5 plans: 07-33 (~0.5m), 07-34 (~0.8m), 07.1-01 (~5m), 07.1-02 (~4m)
+- Trend: Phase 7.1 DAL+actions plans averaging ~4.5m.
 
 *Updated after each plan completion*
 
@@ -297,6 +297,11 @@ Recent decisions affecting current work:
 - [07.1-01]: Empty predictions returns empty array (consistent with scorePredictions pattern)
 - [07.1-01]: Predictions for eliminated entrants silently ignored in later rounds (not counted, not errored)
 - [07.1-01]: revealedUpToRound nullable Int on Bracket model for progressive round reveal
+- [07.1-02]: Mode-specific transition maps (MANUAL vs AUTO) selected by predictiveResolutionMode
+- [07.1-02]: Auto-open matchups for voting restricted to vote_based mode only (auto resolves via tabulation)
+- [07.1-02]: Override triggers full downstream clear + re-tabulate (simpler than incremental patch)
+- [07.1-02]: Reveal validates sequential order (revealedUpToRound + 1) to prevent round skipping
+- [07.1-02]: Reopen clears all non-bye winners and propagated entrants for rounds > 1
 
 ### Pending Todos
 
@@ -314,6 +319,6 @@ Recent decisions affecting current work:
 ## Session Continuity
 
 Last session: 2026-02-13
-Stopped at: Completed 07.1-01-PLAN.md (tabulation engine TDD)
+Stopped at: Completed 07.1-02-PLAN.md (DAL and server actions)
 Resume file: None
 Note: Voting latency on large brackets (64-entrant) flagged for optimization.

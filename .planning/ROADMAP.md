@@ -210,7 +210,7 @@ Plans:
 
 Plans:
 - [x] 07.1-01-PLAN.md — Tabulation engine TDD (pure function, types, schemas, DB column)
-- [ ] 07.1-02-PLAN.md — DAL + server actions for auto-resolution lifecycle (prepare, override, release, reveal, complete)
+- [x] 07.1-02-PLAN.md — DAL + server actions for auto-resolution lifecycle (prepare, override, release, reveal, complete)
 - [ ] 07.1-03-PLAN.md — Teacher UI (preview with overrides, reveal controls, presentation mode, form update)
 - [ ] 07.1-04-PLAN.md — Student reveal experience (progressive bracket, accuracy overlay, animated leaderboard, podium celebration)
 
