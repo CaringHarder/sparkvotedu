@@ -213,9 +213,9 @@ Plans:
 - [x] 07.1-02-PLAN.md — DAL + server actions for auto-resolution lifecycle (prepare, override, release, reveal, complete)
 - [x] 07.1-03-PLAN.md — Teacher UI (preview with overrides, reveal controls, presentation mode, form update)
 - [x] 07.1-04-PLAN.md — Student reveal experience (progressive bracket, accuracy overlay, animated leaderboard, podium celebration)
-- [ ] 07.1-05-PLAN.md — Gap closure: override stale entrants fix + release auto-reveal round 1
-- [ ] 07.1-06-PLAN.md — Gap closure: duplicate leaderboard guard + completed state presentation mode
-- [ ] 07.1-07-PLAN.md — Gap closure: accuracy badge unicode + podium cold-start + closed prediction enforcement
+- [x] 07.1-05-PLAN.md — Gap closure: override stale entrants fix + release auto-reveal round 1
+- [x] 07.1-06-PLAN.md — Gap closure: duplicate leaderboard guard + completed state presentation mode
+- [x] 07.1-07-PLAN.md — Gap closure: accuracy badge unicode + podium cold-start + closed prediction enforcement
 
 ### Phase 8: Sports Integration
 **Goal**: Teachers can browse real sports tournaments, import them as classroom prediction brackets, and results update automatically from live game data
@@ -286,7 +286,7 @@ Note: Phase 3 depends only on Phase 1 (not Phase 2), so Phases 2 and 3 could the
 | 5. Polls | 10/10 | Complete | 2026-01-31 |
 | 6. Billing & Subscriptions | 5/5 | Complete | 2026-02-01 |
 | 7. Advanced Brackets | 34/34 | Complete | 2026-02-08 |
-| 7.1 Predictive Auto-Resolution | 4/7 | Gap closure | 2026-02-13 |
+| 7.1 Predictive Auto-Resolution | 7/7 | Complete | 2026-02-14 |
 | 8. Sports Integration | 0/5 | Not started | - |
 | 9. Analytics | 0/4 | Not started | - |
 | 10. Landing Page & Polish | 0/5 | Not started | - |
