@@ -24,13 +24,13 @@ import type { PredictionData, PredictionScore } from '@/lib/bracket/types'
  * @param bracketId - The bracket ID to track predictions for
  * @param participantId - Optional participant ID for fetching own predictions
  */
-export function usePredictions(bracketId: string, participantId?: string) {
+export function usePredictions(bracketId: string, participantId?: string, initialPredictionStatus?: string) {
   const supabase = useMemo(() => createClient(), [])
   const [myPredictions, setMyPredictions] = useState<PredictionData[]>([])
   const [leaderboard, setLeaderboard] = useState<PredictionScore[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [revealedUpToRound, setRevealedUpToRound] = useState<number | null>(null)
-  const [revealComplete, setRevealComplete] = useState(false)
+  const [revealComplete, setRevealComplete] = useState(initialPredictionStatus === 'completed')
 
   // Track the last revealed round for change detection by consumers
   const prevRevealedRoundRef = useRef<number | null>(null)

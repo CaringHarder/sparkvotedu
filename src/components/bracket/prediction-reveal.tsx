@@ -63,7 +63,7 @@ export function PredictionReveal({
     myPredictions: realtimePredictions,
     revealedUpToRound,
     revealComplete,
-  } = usePredictions(bracket.id, participantId)
+  } = usePredictions(bracket.id, participantId, bracket.predictionStatus ?? undefined)
 
   // Use real-time predictions or initial
   const currentPredictions = realtimePredictions.length > 0 ? realtimePredictions : initialPredictions
@@ -96,6 +96,14 @@ export function PredictionReveal({
       return () => clearTimeout(timer)
     }
   }, [revealComplete, podiumDismissed])
+
+  // Fallback: show podium on cold-start completed bracket
+  useEffect(() => {
+    if (bracket.predictionStatus === 'completed' && !podiumDismissed && !showPodium) {
+      const timer = setTimeout(() => setShowPodium(true), 500)
+      return () => clearTimeout(timer)
+    }
+  }, [bracket.predictionStatus, podiumDismissed, showPodium])
 
   const handleCountdownComplete = useCallback(() => {
     setShowCountdown(false)
@@ -390,7 +398,7 @@ function BracketAccuracyView({
                         fontWeight: 700,
                       }}
                     >
-                      {'\\u2713'}
+                      {'\u2713'}
                     </text>
                   </g>
                 )}
@@ -414,7 +422,7 @@ function BracketAccuracyView({
                         fontWeight: 700,
                       }}
                     >
-                      {'\\u2717'}
+                      {'\u2717'}
                     </text>
 
                     {/* Strikethrough predicted name below the matchup box */}
