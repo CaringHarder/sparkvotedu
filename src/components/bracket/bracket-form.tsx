@@ -591,19 +591,24 @@ export function BracketForm() {
                 {/* Resolution Mode */}
                 <div className="space-y-2">
                   <Label className="text-xs text-muted-foreground">Resolution Mode</Label>
-                  <div className="flex gap-3">
-                    {(['manual', 'vote_based'] as const).map((value) => (
-                      <label key={value} className="flex items-center gap-1.5">
+                  <div className="flex flex-col gap-2">
+                    {([
+                      { value: 'manual' as const, label: 'Manual', description: 'Teacher picks each winner manually.' },
+                      { value: 'vote_based' as const, label: 'Vote Based', description: 'Students vote on matchups, then predictions are scored.' },
+                      { value: 'auto' as const, label: 'Predictive', description: 'Predictions auto-resolve the bracket. Teacher paces the reveal.' },
+                    ]).map((option) => (
+                      <label key={option.value} className="flex items-start gap-1.5">
                         <input
                           type="radio"
                           name="pred-resolution"
-                          checked={predictiveResolutionMode === value}
-                          onChange={() => setPredictiveResolutionMode(value)}
-                          className="h-4 w-4"
+                          checked={predictiveResolutionMode === option.value}
+                          onChange={() => setPredictiveResolutionMode(option.value)}
+                          className="mt-0.5 h-4 w-4"
                         />
-                        <span className="text-sm">
-                          {value === 'manual' ? 'Manual' : 'Vote Based'}
-                        </span>
+                        <div>
+                          <span className="text-sm font-medium">{option.label}</span>
+                          <p className="text-xs text-muted-foreground">{option.description}</p>
+                        </div>
                       </label>
                     ))}
                   </div>
@@ -845,7 +850,7 @@ export function BracketForm() {
                   <span className="text-sm font-medium text-muted-foreground">Options</span>
                   <p className="text-sm">
                     Mode: {predictiveMode} /
-                    Resolution: {predictiveResolutionMode === 'vote_based' ? 'Vote Based' : 'Manual'}
+                    Resolution: {predictiveResolutionMode === 'auto' ? 'Predictive' : predictiveResolutionMode === 'vote_based' ? 'Vote Based' : 'Manual'}
                   </p>
                 </div>
               )}
