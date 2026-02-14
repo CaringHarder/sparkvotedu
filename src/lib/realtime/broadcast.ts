@@ -84,6 +84,9 @@ type BracketUpdateType =
   | 'bracket_completed'
   | 'voting_opened'
   | 'prediction_status_changed'
+  | 'reveal_round'
+  | 'reveal_complete'
+  | 'results_prepared'
 
 /**
  * Broadcast a bracket state change to a bracket channel.

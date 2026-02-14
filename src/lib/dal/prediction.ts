@@ -1,8 +1,8 @@
 import { prisma } from '@/lib/prisma'
-import { scorePredictions } from '@/lib/bracket/predictive'
+import { scorePredictions, tabulatePredictions } from '@/lib/bracket/predictive'
 import { calculateBracketSizeWithByes } from '@/lib/bracket/byes'
 import { broadcastBracketUpdate, broadcastActivityUpdate } from '@/lib/realtime/broadcast'
-import type { PredictionData, PredictionScore } from '@/lib/bracket/types'
+import type { PredictionData, PredictionScore, TabulationInput, TabulationResult } from '@/lib/bracket/types'
 
 /**
  * Submit (or replace) predictions for a participant in a predictive bracket.
@@ -337,16 +337,34 @@ export async function getAllMatchupPredictionStats(
 }
 
 /**
- * Valid prediction status transitions.
+ * Valid prediction status transitions for manual/vote_based modes.
  *
  * - draft -> predictions_open (teacher opens predictions)
  * - predictions_open -> active (teacher closes predictions, bracket begins)
  * - active -> completed (all matchups resolved)
  */
-const VALID_PREDICTION_TRANSITIONS: Record<string, string[]> = {
+const MANUAL_PREDICTION_TRANSITIONS: Record<string, string[]> = {
   draft: ['predictions_open'],
   predictions_open: ['active'],
   active: ['completed'],
+}
+
+/**
+ * Valid prediction status transitions for auto mode.
+ *
+ * - draft -> predictions_open (teacher opens predictions)
+ * - predictions_open -> tabulating (prepare results -- handled by tabulateBracketPredictions)
+ * - tabulating -> previewing (results ready for teacher preview -- handled by tabulateBracketPredictions)
+ * - previewing -> revealing (teacher releases results)
+ * - revealing -> completed (all rounds revealed)
+ * - previewing -> predictions_open (teacher reopens for changes)
+ */
+const AUTO_PREDICTION_TRANSITIONS: Record<string, string[]> = {
+  draft: ['predictions_open'],
+  predictions_open: ['tabulating'],
+  tabulating: ['previewing'],
+  previewing: ['revealing', 'predictions_open'],
+  revealing: ['completed'],
 }
 
 /**
@@ -381,7 +399,10 @@ export async function updatePredictionStatusDAL(
 
   // Use bracket.status as the effective prediction status when predictionStatus is null (draft)
   const currentStatus = bracket.predictionStatus ?? 'draft'
-  const allowed = VALID_PREDICTION_TRANSITIONS[currentStatus] ?? []
+  const transitions = bracket.predictiveResolutionMode === 'auto'
+    ? AUTO_PREDICTION_TRANSITIONS
+    : MANUAL_PREDICTION_TRANSITIONS
+  const allowed = transitions[currentStatus] ?? []
 
   if (!allowed.includes(status)) {
     return {
@@ -413,7 +434,8 @@ export async function updatePredictionStatusDAL(
 
   // When predictions close (status='active') in vote_based mode, auto-open Round 1
   // matchups for voting. In manual mode, matchups stay pending -- teacher picks winners directly.
-  if (status === 'active' && bracket.predictiveResolutionMode !== 'manual') {
+  // In auto mode, tabulation resolves matchups without voting rounds.
+  if (status === 'active' && bracket.predictiveResolutionMode === 'vote_based') {
     const round1Matchups = await prisma.matchup.findMany({
       where: { bracketId, round: 1, status: 'pending' },
       select: { id: true, entrant1Id: true, entrant2Id: true },
@@ -442,6 +464,511 @@ export async function updatePredictionStatusDAL(
   if (status === 'predictions_open' && bracket.sessionId) {
     broadcastActivityUpdate(bracket.sessionId).catch(console.error)
   }
+
+  return { success: true }
+}
+
+// ---------------------------------------------------------------------------
+// Auto-resolution DAL functions
+// ---------------------------------------------------------------------------
+
+/**
+ * Determine which slot a matchup feeds into in the next round.
+ * Odd positions (1, 3, 5...) -> entrant1Id, even positions (2, 4, 6...) -> entrant2Id.
+ */
+function getSlotForPosition(position: number): 'entrant1Id' | 'entrant2Id' {
+  return position % 2 === 1 ? 'entrant1Id' : 'entrant2Id'
+}
+
+/**
+ * Tabulate all predictions in a predictive auto-resolution bracket.
+ *
+ * Transitions: predictions_open -> tabulating -> previewing
+ *
+ * - Calls the pure tabulatePredictions engine with bracket matchups and predictions
+ * - Writes tabulated winners to matchup.winnerId (keeps status 'pending' for preview)
+ * - Propagates winners to next matchup entrant slots
+ * - Returns results and count of unresolved (ties + no_predictions) matchups
+ */
+export async function tabulateBracketPredictions(
+  bracketId: string,
+  teacherId: string
+): Promise<{ results: TabulationResult[]; unresolvedCount: number } | { error: string }> {
+  const bracket = await prisma.bracket.findFirst({
+    where: { id: bracketId, teacherId },
+    select: {
+      id: true,
+      bracketType: true,
+      predictiveResolutionMode: true,
+      predictionStatus: true,
+      size: true,
+      maxEntrants: true,
+    },
+  })
+
+  if (!bracket) {
+    return { error: 'Bracket not found' }
+  }
+
+  if (bracket.bracketType !== 'predictive') {
+    return { error: 'Bracket is not a predictive bracket' }
+  }
+
+  if (bracket.predictiveResolutionMode !== 'auto') {
+    return { error: 'Bracket is not in auto-resolution mode' }
+  }
+
+  const currentStatus = bracket.predictionStatus ?? 'draft'
+  if (currentStatus !== 'predictions_open' && currentStatus !== 'tabulating') {
+    return { error: `Cannot tabulate from status '${currentStatus}'` }
+  }
+
+  // Transition to tabulating
+  await prisma.bracket.update({
+    where: { id: bracketId },
+    data: { predictionStatus: 'tabulating' },
+  })
+
+  // Fetch all predictions
+  const predictions = await prisma.prediction.findMany({
+    where: { bracketId },
+    select: {
+      participantId: true,
+      matchupId: true,
+      predictedWinnerId: true,
+    },
+  })
+
+  // Fetch all matchups with entrant data
+  const matchups = await prisma.matchup.findMany({
+    where: { bracketId },
+    select: {
+      id: true,
+      round: true,
+      position: true,
+      entrant1Id: true,
+      entrant2Id: true,
+      isBye: true,
+      nextMatchupId: true,
+    },
+  })
+
+  // Build TabulationInput from matchups
+  const tabulationInputs: TabulationInput[] = matchups.map((m) => ({
+    matchupId: m.id,
+    round: m.round,
+    position: m.position,
+    entrant1Id: m.entrant1Id,
+    entrant2Id: m.entrant2Id,
+    isBye: m.isBye,
+    nextMatchupId: m.nextMatchupId,
+  }))
+
+  // Calculate total rounds
+  const effectiveSize = bracket.maxEntrants ?? bracket.size
+  const totalRounds = Math.ceil(Math.log2(effectiveSize))
+
+  // Call pure tabulation engine
+  const results = tabulatePredictions(predictions, tabulationInputs, totalRounds)
+
+  // Write results: for each resolved matchup, update winnerId and propagate
+  for (const result of results) {
+    if (result.winnerId) {
+      // Set winnerId on matchup (keep status 'pending' for preview)
+      await prisma.matchup.update({
+        where: { id: result.matchupId },
+        data: { winnerId: result.winnerId },
+      })
+
+      // Propagate winner to next matchup entrant slot
+      const matchup = matchups.find((m) => m.id === result.matchupId)
+      if (matchup?.nextMatchupId) {
+        const slot = getSlotForPosition(matchup.position)
+        await prisma.matchup.update({
+          where: { id: matchup.nextMatchupId },
+          data: { [slot]: result.winnerId },
+        })
+      }
+    }
+  }
+
+  // Count unresolved matchups (ties + no_predictions)
+  const unresolvedCount = results.filter(
+    (r) => r.status === 'tie' || r.status === 'no_predictions'
+  ).length
+
+  // Transition to previewing
+  await prisma.bracket.update({
+    where: { id: bracketId },
+    data: { predictionStatus: 'previewing' },
+  })
+
+  return { results, unresolvedCount }
+}
+
+/**
+ * Override a matchup winner during the previewing phase.
+ *
+ * After override, the winner propagates to the next matchup slot.
+ * Then all downstream rounds are cleared and re-tabulated because
+ * entrants changed.
+ */
+export async function overrideMatchupWinnerDAL(
+  bracketId: string,
+  teacherId: string,
+  matchupId: string,
+  winnerId: string
+): Promise<{ success: true } | { error: string }> {
+  const bracket = await prisma.bracket.findFirst({
+    where: { id: bracketId, teacherId },
+    select: {
+      id: true,
+      bracketType: true,
+      predictiveResolutionMode: true,
+      predictionStatus: true,
+      size: true,
+      maxEntrants: true,
+    },
+  })
+
+  if (!bracket) {
+    return { error: 'Bracket not found' }
+  }
+
+  if ((bracket.predictionStatus ?? 'draft') !== 'previewing') {
+    return { error: 'Can only override winners during previewing' }
+  }
+
+  // Verify the matchup belongs to this bracket
+  const matchup = await prisma.matchup.findFirst({
+    where: { id: matchupId, bracketId },
+    select: {
+      id: true,
+      round: true,
+      position: true,
+      entrant1Id: true,
+      entrant2Id: true,
+      nextMatchupId: true,
+    },
+  })
+
+  if (!matchup) {
+    return { error: 'Matchup not found' }
+  }
+
+  // Verify winner is one of the entrants
+  if (winnerId !== matchup.entrant1Id && winnerId !== matchup.entrant2Id) {
+    return { error: 'Winner must be one of the matchup entrants' }
+  }
+
+  // Update the matchup winner
+  await prisma.matchup.update({
+    where: { id: matchupId },
+    data: { winnerId },
+  })
+
+  // Propagate winner to next matchup slot
+  if (matchup.nextMatchupId) {
+    const slot = getSlotForPosition(matchup.position)
+    await prisma.matchup.update({
+      where: { id: matchup.nextMatchupId },
+      data: { [slot]: winnerId },
+    })
+  }
+
+  // Clear and re-tabulate downstream rounds
+  // Fetch all matchups for downstream invalidation
+  const allMatchups = await prisma.matchup.findMany({
+    where: { bracketId },
+    select: {
+      id: true,
+      round: true,
+      position: true,
+      entrant1Id: true,
+      entrant2Id: true,
+      isBye: true,
+      nextMatchupId: true,
+      winnerId: true,
+    },
+  })
+
+  // Find rounds after the overridden matchup's round
+  const downstreamRounds = allMatchups.filter(
+    (m) => m.round > matchup.round && !m.isBye
+  )
+
+  if (downstreamRounds.length > 0) {
+    // Clear winnerId for downstream matchups
+    await prisma.matchup.updateMany({
+      where: {
+        bracketId,
+        round: { gt: matchup.round },
+        isBye: false,
+      },
+      data: { winnerId: null },
+    })
+
+    // Also clear entrant slots for rounds beyond the immediately next round
+    // (since those entrants came from now-invalidated cascade propagation).
+    // We keep round matchup.round+1 entrants since those are fed from
+    // matchup.round winners (which we just updated).
+    if (matchup.round + 1 < Math.ceil(Math.log2(bracket.maxEntrants ?? bracket.size))) {
+      await prisma.matchup.updateMany({
+        where: {
+          bracketId,
+          round: { gt: matchup.round + 1 },
+          isBye: false,
+        },
+        data: { entrant1Id: null, entrant2Id: null },
+      })
+    }
+
+    // Re-fetch updated matchups and re-run tabulation for downstream
+    const updatedMatchups = await prisma.matchup.findMany({
+      where: { bracketId },
+      select: {
+        id: true,
+        round: true,
+        position: true,
+        entrant1Id: true,
+        entrant2Id: true,
+        isBye: true,
+        nextMatchupId: true,
+      },
+    })
+
+    const predictions = await prisma.prediction.findMany({
+      where: { bracketId },
+      select: {
+        participantId: true,
+        matchupId: true,
+        predictedWinnerId: true,
+      },
+    })
+
+    const effectiveSize = bracket.maxEntrants ?? bracket.size
+    const totalRounds = Math.ceil(Math.log2(effectiveSize))
+
+    const tabulationInputs: TabulationInput[] = updatedMatchups.map((m) => ({
+      matchupId: m.id,
+      round: m.round,
+      position: m.position,
+      entrant1Id: m.entrant1Id,
+      entrant2Id: m.entrant2Id,
+      isBye: m.isBye,
+      nextMatchupId: m.nextMatchupId,
+    }))
+
+    // Re-tabulate only downstream rounds
+    const reResults = tabulatePredictions(predictions, tabulationInputs, totalRounds)
+    const downstreamResults = reResults.filter((r) => r.round > matchup.round)
+
+    for (const result of downstreamResults) {
+      if (result.winnerId) {
+        await prisma.matchup.update({
+          where: { id: result.matchupId },
+          data: { winnerId: result.winnerId },
+        })
+
+        // Propagate to next slot
+        const m = updatedMatchups.find((um) => um.id === result.matchupId)
+        if (m?.nextMatchupId) {
+          const slot = getSlotForPosition(m.position)
+          await prisma.matchup.update({
+            where: { id: m.nextMatchupId },
+            data: { [slot]: result.winnerId },
+          })
+        }
+      }
+    }
+  }
+
+  return { success: true }
+}
+
+/**
+ * Release tabulated results for progressive round reveal.
+ *
+ * Transitions: previewing -> revealing
+ *
+ * - Verifies ALL matchups have winnerId set (no ties or no_predictions remaining)
+ * - Sets revealedUpToRound to 0 (no rounds revealed yet)
+ */
+export async function releaseResultsDAL(
+  bracketId: string,
+  teacherId: string
+): Promise<{ success: true } | { error: string }> {
+  const bracket = await prisma.bracket.findFirst({
+    where: { id: bracketId, teacherId },
+    select: {
+      id: true,
+      bracketType: true,
+      predictionStatus: true,
+    },
+  })
+
+  if (!bracket) {
+    return { error: 'Bracket not found' }
+  }
+
+  if ((bracket.predictionStatus ?? 'draft') !== 'previewing') {
+    return { error: 'Can only release results from previewing status' }
+  }
+
+  // Verify all non-bye matchups have winnerId set
+  const unresolvedMatchups = await prisma.matchup.count({
+    where: {
+      bracketId,
+      isBye: false,
+      winnerId: null,
+    },
+  })
+
+  if (unresolvedMatchups > 0) {
+    return { error: 'All matchups must have winners before release' }
+  }
+
+  // Transition to revealing with revealedUpToRound = 0
+  await prisma.bracket.update({
+    where: { id: bracketId },
+    data: {
+      predictionStatus: 'revealing',
+      revealedUpToRound: 0,
+    },
+  })
+
+  return { success: true }
+}
+
+/**
+ * Reveal the next round of results during progressive reveal.
+ *
+ * - Verifies round is the next sequential round (revealedUpToRound + 1)
+ * - Updates non-bye matchups for that round from 'pending' to 'decided'
+ * - Increments revealedUpToRound
+ * - Broadcasts reveal_round or reveal_complete
+ */
+export async function revealRoundDAL(
+  bracketId: string,
+  teacherId: string,
+  round: number
+): Promise<{ success: true; isLastRound: boolean } | { error: string }> {
+  const bracket = await prisma.bracket.findFirst({
+    where: { id: bracketId, teacherId },
+    select: {
+      id: true,
+      predictionStatus: true,
+      revealedUpToRound: true,
+      size: true,
+      maxEntrants: true,
+    },
+  })
+
+  if (!bracket) {
+    return { error: 'Bracket not found' }
+  }
+
+  if ((bracket.predictionStatus ?? 'draft') !== 'revealing') {
+    return { error: 'Can only reveal rounds during revealing status' }
+  }
+
+  const currentRevealed = bracket.revealedUpToRound ?? 0
+  if (round !== currentRevealed + 1) {
+    return { error: `Must reveal round ${currentRevealed + 1} next (requested ${round})` }
+  }
+
+  // Update matchups for this round to 'decided'
+  await prisma.matchup.updateMany({
+    where: {
+      bracketId,
+      round,
+      isBye: false,
+      status: 'pending',
+    },
+    data: { status: 'decided' },
+  })
+
+  // Calculate total rounds to determine if this is the last
+  const effectiveSize = bracket.maxEntrants ?? bracket.size
+  const totalRounds = Math.ceil(Math.log2(effectiveSize))
+  const isLastRound = round >= totalRounds
+
+  // Update revealedUpToRound
+  await prisma.bracket.update({
+    where: { id: bracketId },
+    data: { revealedUpToRound: round },
+  })
+
+  // If last round, transition to completed
+  if (isLastRound) {
+    await prisma.bracket.update({
+      where: { id: bracketId },
+      data: {
+        predictionStatus: 'completed',
+        status: 'completed',
+      },
+    })
+    broadcastBracketUpdate(bracketId, 'reveal_complete', { round }).catch(console.error)
+  } else {
+    broadcastBracketUpdate(bracketId, 'reveal_round', { round }).catch(console.error)
+  }
+
+  return { success: true, isLastRound }
+}
+
+/**
+ * Reopen predictions during the previewing phase.
+ *
+ * Transitions: previewing -> predictions_open
+ *
+ * - Clears all non-bye matchup winnerId values
+ * - Clears non-bye matchup entrant slots for rounds > 1 (reset propagated entrants)
+ * - Resets revealedUpToRound to null
+ */
+export async function reopenPredictionsDAL(
+  bracketId: string,
+  teacherId: string
+): Promise<{ success: true } | { error: string }> {
+  const bracket = await prisma.bracket.findFirst({
+    where: { id: bracketId, teacherId },
+    select: {
+      id: true,
+      predictionStatus: true,
+    },
+  })
+
+  if (!bracket) {
+    return { error: 'Bracket not found' }
+  }
+
+  if ((bracket.predictionStatus ?? 'draft') !== 'previewing') {
+    return { error: 'Can only reopen predictions from previewing status' }
+  }
+
+  // Clear all non-bye matchup winnerId values
+  await prisma.matchup.updateMany({
+    where: { bracketId, isBye: false },
+    data: { winnerId: null },
+  })
+
+  // Clear entrant slots for rounds > 1 (those were propagated from tabulation)
+  await prisma.matchup.updateMany({
+    where: {
+      bracketId,
+      round: { gt: 1 },
+      isBye: false,
+    },
+    data: { entrant1Id: null, entrant2Id: null },
+  })
+
+  // Reset bracket to predictions_open
+  await prisma.bracket.update({
+    where: { id: bracketId },
+    data: {
+      predictionStatus: 'predictions_open',
+      revealedUpToRound: null,
+    },
+  })
 
   return { success: true }
 }
