@@ -100,9 +100,13 @@ function TeacherPredictiveView({
   const totalRounds = Math.ceil(Math.log2(bracket.maxEntrants ?? bracket.size))
   const revealedUpToRound = bracket.revealedUpToRound ?? 0
 
-  // F key shortcut for presentation mode toggle
+  // F key shortcut for presentation mode toggle, Escape to exit
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
+      if (e.key === 'Escape') {
+        setPresentationMode(false)
+        return
+      }
       if (e.key === 'f' || e.key === 'F') {
         const target = e.target as HTMLElement
         if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.tagName === 'SELECT') return
@@ -463,7 +467,79 @@ function TeacherPredictiveView({
             </span>
             <PredictionStatusBadge status={predictionStatus} />
             <span className="text-xs text-green-600">All rounds revealed</span>
+            <div className="flex-1" />
+            <button
+              type="button"
+              onClick={() => setPresentationMode(true)}
+              className="rounded-md border border-input px-2 py-1.5 text-xs text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
+              title="Presentation mode (F)"
+            >
+              <Maximize2 className="h-3.5 w-3.5" />
+            </button>
           </div>
+
+          {presentationMode && (
+            <div className="fixed inset-0 z-40 flex flex-col bg-gray-950">
+              {/* Presentation toolbar */}
+              <div className="flex items-center gap-3 border-b border-gray-800 bg-gray-900 px-4 py-2">
+                <h1 className="text-sm font-bold text-white">{bracket.name} — Results</h1>
+                <div className="flex-1" />
+                <div className="flex gap-1">
+                  <button
+                    type="button"
+                    onClick={() => setPresentationView('bracket')}
+                    className={`rounded px-3 py-1 text-xs font-medium transition-colors ${
+                      presentationView === 'bracket'
+                        ? 'bg-white text-gray-900'
+                        : 'text-gray-400 hover:text-white'
+                    }`}
+                  >
+                    Bracket
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setPresentationView('leaderboard')}
+                    className={`rounded px-3 py-1 text-xs font-medium transition-colors ${
+                      presentationView === 'leaderboard'
+                        ? 'bg-white text-gray-900'
+                        : 'text-gray-400 hover:text-white'
+                    }`}
+                  >
+                    Leaderboard
+                  </button>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setPresentationMode(false)}
+                  className="rounded p-1 text-gray-400 hover:text-white"
+                  title="Exit (Esc)"
+                >
+                  <Minimize2 className="h-4 w-4" />
+                </button>
+              </div>
+              {/* Presentation content */}
+              <div className="flex-1 overflow-auto p-6">
+                {presentationView === 'bracket' ? (
+                  <div className="rounded-lg bg-gray-900 p-4">
+                    <BracketDiagram
+                      matchups={bracket.matchups}
+                      totalRounds={totalRounds}
+                      bracketSize={bracket.maxEntrants ?? bracket.size}
+                    />
+                  </div>
+                ) : (
+                  <div className="mx-auto max-w-2xl [&_*]:text-white">
+                    <PredictionLeaderboard
+                      bracketId={bracket.id}
+                      initialScores={leaderboard}
+                      totalRounds={totalRounds}
+                      isTeacher={true}
+                    />
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
 
           <div className="rounded-lg border p-3">
             <BracketDiagram
