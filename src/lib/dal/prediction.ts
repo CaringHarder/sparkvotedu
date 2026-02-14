@@ -818,7 +818,8 @@ export async function overrideMatchupWinnerDAL(
  * Transitions: previewing -> revealing
  *
  * - Verifies ALL matchups have winnerId set (no ties or no_predictions remaining)
- * - Sets revealedUpToRound to 0 (no rounds revealed yet)
+ * - Sets revealedUpToRound to 0, then auto-reveals round 1 via revealRoundDAL
+ * - Teacher sees round 1 results immediately without needing an extra click
  */
 export async function releaseResultsDAL(
   bracketId: string,
@@ -862,6 +863,9 @@ export async function releaseResultsDAL(
       revealedUpToRound: 0,
     },
   })
+
+  // Auto-reveal round 1 immediately (teacher should not need to click again)
+  await revealRoundDAL(bracketId, teacherId, 1)
 
   return { success: true }
 }
