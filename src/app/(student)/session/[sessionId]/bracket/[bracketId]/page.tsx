@@ -146,6 +146,16 @@ export default function StudentBracketVotingPage() {
         }
 
         if (bracketData.status === 'completed') {
+          // Auto-mode predictive brackets: route through PredictiveStudentView for PredictionReveal (podium celebration)
+          if (bracketData.bracketType === 'predictive' && bracketData.predictiveResolutionMode === 'auto') {
+            setState({
+              type: 'ready',
+              bracket,
+              participantId: participantId!,
+              initialVotes: {},
+            })
+            return
+          }
           setState({ type: 'completed', bracket })
           return
         }
