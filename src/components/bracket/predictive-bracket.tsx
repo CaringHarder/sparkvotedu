@@ -1,12 +1,22 @@
 'use client'
 
-import { useState, useTransition, useMemo } from 'react'
-import { Trophy, Check, Edit3, Lock, ChevronRight } from 'lucide-react'
-import type { BracketWithDetails, MatchupData, PredictionData, PredictionScore } from '@/lib/bracket/types'
-import { submitPrediction, updatePredictionStatus } from '@/actions/prediction'
+import { useState, useEffect, useCallback, useTransition, useMemo } from 'react'
+import { Trophy, Check, Edit3, Lock, ChevronRight, Loader2, Maximize2, Minimize2 } from 'lucide-react'
+import type { BracketWithDetails, MatchupData, PredictionData, PredictionScore, TabulationResult } from '@/lib/bracket/types'
+import {
+  submitPrediction,
+  updatePredictionStatus,
+  prepareResults,
+  overrideWinner,
+  releaseResults,
+  revealNextRound,
+  reopenPredictions,
+} from '@/actions/prediction'
 import { usePredictions } from '@/hooks/use-predictions'
 import { usePredictionCascade } from '@/hooks/use-prediction-cascade'
 import { BracketDiagram } from '@/components/bracket/bracket-diagram'
+import { PredictionPreview } from '@/components/bracket/prediction-preview'
+import { PredictionLeaderboard } from '@/components/bracket/prediction-leaderboard'
 
 interface PredictiveBracketProps {
   bracket: BracketWithDetails
@@ -78,6 +88,30 @@ function TeacherPredictiveView({
   leaderboard: PredictionScore[]
 }) {
   const [isPending, startTransition] = useTransition()
+  const isAutoMode = bracket.predictiveResolutionMode === 'auto'
+
+  // Auto-mode state
+  const [tabulationResults, setTabulationResults] = useState<TabulationResult[]>([])
+  const [unresolvedCount, setUnresolvedCount] = useState(0)
+  const [revealTab, setRevealTab] = useState<'bracket' | 'leaderboard'>('bracket')
+  const [presentationMode, setPresentationMode] = useState(false)
+  const [presentationView, setPresentationView] = useState<'bracket' | 'leaderboard'>('bracket')
+
+  const totalRounds = Math.ceil(Math.log2(bracket.maxEntrants ?? bracket.size))
+  const revealedUpToRound = bracket.revealedUpToRound ?? 0
+
+  // F key shortcut for presentation mode toggle
+  useEffect(() => {
+    function handleKeyDown(e: KeyboardEvent) {
+      if (e.key === 'f' || e.key === 'F') {
+        const target = e.target as HTMLElement
+        if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.tagName === 'SELECT') return
+        setPresentationMode((prev) => !prev)
+      }
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [])
 
   function handleStatusChange(newStatus: string) {
     startTransition(async () => {
@@ -88,6 +122,408 @@ function TeacherPredictiveView({
     })
   }
 
+  // Auto-mode: Prepare Results
+  function handlePrepareResults() {
+    startTransition(async () => {
+      const result = await prepareResults({ bracketId: bracket.id })
+      if (result && 'results' in result && result.results) {
+        setTabulationResults(result.results as TabulationResult[])
+        setUnresolvedCount(result.unresolvedCount ?? 0)
+      }
+    })
+  }
+
+  // Auto-mode: Override Winner
+  function handleOverrideWinner(matchupId: string, winnerId: string) {
+    startTransition(async () => {
+      const result = await overrideWinner({ bracketId: bracket.id, matchupId, winnerId })
+      if (result && 'success' in result) {
+        // Re-fetch tabulation results after override
+        const refreshed = await prepareResults({ bracketId: bracket.id })
+        if (refreshed && 'results' in refreshed && refreshed.results) {
+          setTabulationResults(refreshed.results as TabulationResult[])
+          setUnresolvedCount(refreshed.unresolvedCount ?? 0)
+        }
+      }
+    })
+  }
+
+  // Auto-mode: Release Results
+  function handleReleaseResults() {
+    startTransition(async () => {
+      await releaseResults({ bracketId: bracket.id })
+    })
+  }
+
+  // Auto-mode: Reveal Next Round
+  function handleRevealNextRound() {
+    startTransition(async () => {
+      await revealNextRound({ bracketId: bracket.id, round: revealedUpToRound + 1 })
+    })
+  }
+
+  // Auto-mode: Reopen Predictions
+  function handleReopenPredictions() {
+    startTransition(async () => {
+      await reopenPredictions({ bracketId: bracket.id })
+    })
+  }
+
+  // -------------------------------------------------------------------------
+  // Auto mode: render by predictionStatus
+  // -------------------------------------------------------------------------
+  if (isAutoMode) {
+    // --- predictions_open ---
+    if (predictionStatus === 'predictions_open' || predictionStatus === 'draft') {
+      return (
+        <div className="space-y-4">
+          <div className="flex items-center gap-3">
+            <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+              Predictions
+            </span>
+            <PredictionStatusBadge status={predictionStatus} />
+            <div className="flex-1" />
+            {predictionStatus === 'draft' && (
+              <button
+                type="button"
+                onClick={() => handleStatusChange('predictions_open')}
+                disabled={isPending}
+                className="rounded-md bg-blue-600 px-3 py-1.5 text-xs font-medium text-white shadow-sm transition-colors hover:bg-blue-700 disabled:opacity-50"
+              >
+                Open Predictions
+              </button>
+            )}
+            {predictionStatus === 'predictions_open' && (
+              <>
+                <button
+                  type="button"
+                  onClick={() => handleStatusChange('active')}
+                  disabled={isPending}
+                  className="rounded-md bg-orange-600 px-3 py-1.5 text-xs font-medium text-white shadow-sm transition-colors hover:bg-orange-700 disabled:opacity-50"
+                >
+                  Close Predictions
+                </button>
+                <button
+                  type="button"
+                  onClick={handlePrepareResults}
+                  disabled={isPending}
+                  className="rounded-md bg-green-600 px-3 py-1.5 text-xs font-medium text-white shadow-sm transition-colors hover:bg-green-700 disabled:opacity-50"
+                >
+                  {isPending ? (
+                    <span className="inline-flex items-center gap-1.5">
+                      <Loader2 className="h-3 w-3 animate-spin" />
+                      Tabulating...
+                    </span>
+                  ) : (
+                    'Prepare Results'
+                  )}
+                </button>
+              </>
+            )}
+          </div>
+
+          <div className="rounded-lg border p-3">
+            <BracketDiagram
+              matchups={bracket.matchups}
+              totalRounds={totalRounds}
+              bracketSize={bracket.maxEntrants ?? bracket.size}
+            />
+          </div>
+        </div>
+      )
+    }
+
+    // --- tabulating ---
+    if (predictionStatus === 'tabulating') {
+      return (
+        <div className="space-y-4">
+          <div className="flex items-center gap-3">
+            <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+              Predictions
+            </span>
+            <PredictionStatusBadge status={predictionStatus} />
+          </div>
+          <div className="flex flex-col items-center gap-3 py-12">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            <p className="text-sm text-muted-foreground">Tabulating predictions...</p>
+          </div>
+        </div>
+      )
+    }
+
+    // --- previewing ---
+    if (predictionStatus === 'previewing') {
+      return (
+        <div className="space-y-4">
+          <div className="flex items-center gap-3">
+            <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+              Predictions
+            </span>
+            <PredictionStatusBadge status={predictionStatus} />
+          </div>
+          <PredictionPreview
+            bracket={bracket}
+            tabulationResults={tabulationResults}
+            onOverride={handleOverrideWinner}
+            onRelease={handleReleaseResults}
+            onReopen={handleReopenPredictions}
+            unresolvedCount={unresolvedCount}
+            isPending={isPending}
+          />
+        </div>
+      )
+    }
+
+    // --- revealing ---
+    if (predictionStatus === 'revealing') {
+      const allRevealed = revealedUpToRound >= totalRounds
+
+      // Presentation mode overlay
+      if (presentationMode) {
+        return (
+          <div className="fixed inset-0 z-40 flex flex-col bg-gray-950">
+            {/* Presentation toolbar */}
+            <div className="flex items-center gap-3 border-b border-gray-800 bg-gray-900 px-4 py-2">
+              <h1 className="text-sm font-bold text-white">{bracket.name}</h1>
+              <div className="flex-1" />
+              <div className="flex gap-1">
+                <button
+                  type="button"
+                  onClick={() => setPresentationView('bracket')}
+                  className={`rounded px-3 py-1 text-xs font-medium transition-colors ${
+                    presentationView === 'bracket'
+                      ? 'bg-white text-gray-900'
+                      : 'text-gray-400 hover:text-white'
+                  }`}
+                >
+                  Show Bracket
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setPresentationView('leaderboard')}
+                  className={`rounded px-3 py-1 text-xs font-medium transition-colors ${
+                    presentationView === 'leaderboard'
+                      ? 'bg-white text-gray-900'
+                      : 'text-gray-400 hover:text-white'
+                  }`}
+                >
+                  Show Leaderboard
+                </button>
+              </div>
+              <span className="text-xs text-gray-400">
+                Round {revealedUpToRound} of {totalRounds} revealed
+              </span>
+              {!allRevealed && (
+                <button
+                  type="button"
+                  onClick={handleRevealNextRound}
+                  disabled={isPending}
+                  className="rounded-md bg-blue-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+                >
+                  {isPending ? 'Revealing...' : 'Reveal Next Round'}
+                </button>
+              )}
+              {allRevealed && (
+                <button
+                  type="button"
+                  onClick={() => handleStatusChange('completed')}
+                  disabled={isPending}
+                  className="rounded-md bg-green-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-green-700 disabled:opacity-50"
+                >
+                  Complete Bracket
+                </button>
+              )}
+              <button
+                type="button"
+                onClick={() => setPresentationMode(false)}
+                className="rounded p-1 text-gray-400 hover:text-white"
+              >
+                <Minimize2 className="h-4 w-4" />
+              </button>
+            </div>
+            {/* Presentation content */}
+            <div className="flex-1 overflow-auto p-6">
+              {presentationView === 'bracket' ? (
+                <div className="rounded-lg bg-gray-900 p-4">
+                  <BracketDiagram
+                    matchups={bracket.matchups}
+                    totalRounds={totalRounds}
+                    bracketSize={bracket.maxEntrants ?? bracket.size}
+                  />
+                </div>
+              ) : (
+                <div className="mx-auto max-w-2xl [&_*]:text-white">
+                  <PredictionLeaderboard
+                    bracketId={bracket.id}
+                    initialScores={leaderboard}
+                    totalRounds={totalRounds}
+                    isTeacher={true}
+                  />
+                </div>
+              )}
+            </div>
+          </div>
+        )
+      }
+
+      return (
+        <div className="space-y-4">
+          <div className="flex items-center gap-3">
+            <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+              Predictions
+            </span>
+            <PredictionStatusBadge status={predictionStatus} />
+            <span className="text-xs text-muted-foreground">
+              Round {revealedUpToRound} of {totalRounds} revealed
+            </span>
+            <div className="flex-1" />
+            {!allRevealed && (
+              <button
+                type="button"
+                onClick={handleRevealNextRound}
+                disabled={isPending}
+                className="rounded-md bg-blue-600 px-3 py-1.5 text-xs font-medium text-white shadow-sm transition-colors hover:bg-blue-700 disabled:opacity-50"
+              >
+                {isPending ? 'Revealing...' : 'Reveal Next Round'}
+              </button>
+            )}
+            {allRevealed && (
+              <button
+                type="button"
+                onClick={() => handleStatusChange('completed')}
+                disabled={isPending}
+                className="rounded-md bg-green-600 px-3 py-1.5 text-xs font-medium text-white shadow-sm transition-colors hover:bg-green-700 disabled:opacity-50"
+              >
+                Complete Bracket
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={() => setPresentationMode(true)}
+              className="rounded-md border border-input px-2 py-1.5 text-xs text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
+              title="Presentation mode (F)"
+            >
+              <Maximize2 className="h-3.5 w-3.5" />
+            </button>
+          </div>
+
+          {/* Bracket + Leaderboard tabs */}
+          <div className="flex gap-1 rounded-lg bg-muted p-1">
+            <button
+              type="button"
+              onClick={() => setRevealTab('bracket')}
+              className={`flex-1 rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
+                revealTab === 'bracket'
+                  ? 'bg-background text-foreground shadow-sm'
+                  : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              Bracket
+            </button>
+            <button
+              type="button"
+              onClick={() => setRevealTab('leaderboard')}
+              className={`flex-1 rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
+                revealTab === 'leaderboard'
+                  ? 'bg-background text-foreground shadow-sm'
+                  : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              Leaderboard
+            </button>
+          </div>
+
+          {revealTab === 'bracket' ? (
+            <div className="rounded-lg border p-3">
+              <BracketDiagram
+                matchups={bracket.matchups}
+                totalRounds={totalRounds}
+                bracketSize={bracket.maxEntrants ?? bracket.size}
+              />
+            </div>
+          ) : (
+            <PredictionLeaderboard
+              bracketId={bracket.id}
+              initialScores={leaderboard}
+              totalRounds={totalRounds}
+              isTeacher={true}
+            />
+          )}
+        </div>
+      )
+    }
+
+    // --- completed ---
+    if (predictionStatus === 'completed') {
+      return (
+        <div className="space-y-4">
+          <div className="flex items-center gap-3">
+            <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+              Predictions
+            </span>
+            <PredictionStatusBadge status={predictionStatus} />
+            <span className="text-xs text-green-600">All rounds revealed</span>
+          </div>
+
+          <div className="rounded-lg border p-3">
+            <BracketDiagram
+              matchups={bracket.matchups}
+              totalRounds={totalRounds}
+              bracketSize={bracket.maxEntrants ?? bracket.size}
+            />
+          </div>
+
+          <PredictionLeaderboard
+            bracketId={bracket.id}
+            initialScores={leaderboard}
+            totalRounds={totalRounds}
+            isTeacher={true}
+          />
+        </div>
+      )
+    }
+
+    // --- active (auto mode, after predictions closed) ---
+    // This state is transitional -- teacher should prepare results
+    return (
+      <div className="space-y-4">
+        <div className="flex items-center gap-3">
+          <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+            Predictions
+          </span>
+          <PredictionStatusBadge status={predictionStatus} />
+          <div className="flex-1" />
+          <button
+            type="button"
+            onClick={handlePrepareResults}
+            disabled={isPending}
+            className="rounded-md bg-green-600 px-3 py-1.5 text-xs font-medium text-white shadow-sm transition-colors hover:bg-green-700 disabled:opacity-50"
+          >
+            {isPending ? (
+              <span className="inline-flex items-center gap-1.5">
+                <Loader2 className="h-3 w-3 animate-spin" />
+                Tabulating...
+              </span>
+            ) : (
+              'Prepare Results'
+            )}
+          </button>
+        </div>
+
+        <div className="rounded-lg border p-3">
+          <BracketDiagram
+            matchups={bracket.matchups}
+            totalRounds={totalRounds}
+            bracketSize={bracket.maxEntrants ?? bracket.size}
+          />
+        </div>
+      </div>
+    )
+  }
+
+  // -------------------------------------------------------------------------
+  // Manual / vote_based mode (existing behavior, unchanged)
+  // -------------------------------------------------------------------------
   return (
     <div className="space-y-4">
       {/* Prediction lifecycle controls */}
@@ -133,7 +569,7 @@ function TeacherPredictiveView({
       <div className="rounded-lg border p-3">
         <BracketDiagram
           matchups={bracket.matchups}
-          totalRounds={Math.ceil(Math.log2(bracket.maxEntrants ?? bracket.size))}
+          totalRounds={totalRounds}
           bracketSize={bracket.maxEntrants ?? bracket.size}
         />
       </div>
@@ -537,6 +973,9 @@ function PredictionStatusBadge({ status }: { status: string }) {
     draft: 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300',
     predictions_open: 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300',
     active: 'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300',
+    tabulating: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900 dark:text-yellow-300',
+    previewing: 'bg-violet-100 text-violet-700 dark:bg-violet-900 dark:text-violet-300',
+    revealing: 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900 dark:text-indigo-300',
     completed: 'bg-orange-100 text-orange-700 dark:bg-orange-900 dark:text-orange-300',
   }
 
@@ -544,6 +983,9 @@ function PredictionStatusBadge({ status }: { status: string }) {
     draft: 'Draft',
     predictions_open: 'Predictions Open',
     active: 'Active',
+    tabulating: 'Tabulating',
+    previewing: 'Previewing',
+    revealing: 'Revealing',
     completed: 'Completed',
   }
 

@@ -4,7 +4,7 @@ import { useState, useMemo, useCallback, useEffect, useRef, useTransition } from
 import { useRealtimeBracket } from '@/hooks/use-realtime-bracket'
 import { useSessionPresence } from '@/hooks/use-student-session'
 import { BracketDiagram } from '@/components/bracket/bracket-diagram'
-import { QuadrantBracketLayout } from '@/components/bracket/quadrant-bracket-layout'
+import { RegionBracketView } from '@/components/bracket/region-bracket-view'
 import { DoubleElimDiagram } from '@/components/bracket/double-elim-diagram'
 import { RoundRobinStandings } from '@/components/bracket/round-robin-standings'
 import { RoundRobinMatchups } from '@/components/bracket/round-robin-matchups'
@@ -15,6 +15,7 @@ import { QRCodeDisplay } from '@/components/teacher/qr-code-display'
 import { openMatchupsForVoting, advanceMatchup, batchAdvanceRound } from '@/actions/bracket-advance'
 import { recordResult, advanceRound } from '@/actions/round-robin'
 import { PredictionLeaderboard } from '@/components/bracket/prediction-leaderboard'
+import { PredictiveBracket } from '@/components/bracket/predictive-bracket'
 import type { BracketWithDetails, MatchupData, RoundRobinStanding, PredictionScore } from '@/lib/bracket/types'
 import type { VoteCounts } from '@/types/vote'
 
@@ -64,6 +65,7 @@ export function LiveDashboard({
   const isRoundRobin = bracket.bracketType === 'round_robin'
   const isPredictive = bracket.bracketType === 'predictive'
   const isPredictiveManual = isPredictive && bracket.predictiveResolutionMode === 'manual'
+  const isPredictiveAuto = isPredictive && bracket.predictiveResolutionMode === 'auto'
 
   // Track previous matchup statuses for detecting newly decided matchups
   const prevMatchupStatusRef = useRef<Record<string, string>>({})
@@ -764,8 +766,8 @@ export function LiveDashboard({
           </div>
         )}
 
-        {/* Round tabs (SE / Predictive only -- NOT DE) */}
-        {!isRoundRobin && !isDoubleElim && (
+        {/* Round tabs (SE / Predictive non-auto only -- NOT DE, NOT auto) */}
+        {!isRoundRobin && !isDoubleElim && !isPredictiveAuto && (
           <div className="flex gap-1">
             {Array.from({ length: totalRounds }, (_, i) => i + 1).map((round) => {
               const s = roundStatus[round]
@@ -844,8 +846,8 @@ export function LiveDashboard({
           </span>
         )}
 
-        {/* SE / Predictive (vote_based) primary action buttons (NOT DE, NOT RR, NOT manual) */}
-        {!isRoundRobin && !isDoubleElim && !isPredictiveManual && hasPending && (
+        {/* SE / Predictive (vote_based) primary action buttons (NOT DE, NOT RR, NOT manual, NOT auto) */}
+        {!isRoundRobin && !isDoubleElim && !isPredictiveManual && !isPredictiveAuto && hasPending && (
           <button
             onClick={handleOpenVoting}
             disabled={isPending}
@@ -855,7 +857,7 @@ export function LiveDashboard({
           </button>
         )}
 
-        {!isRoundRobin && !isDoubleElim && !isPredictiveManual && hasVoting && (
+        {!isRoundRobin && !isDoubleElim && !isPredictiveManual && !isPredictiveAuto && hasVoting && (
           <button
             onClick={handleCloseAndAdvance}
             disabled={isPending}
@@ -865,7 +867,7 @@ export function LiveDashboard({
           </button>
         )}
 
-        {!isRoundRobin && !isDoubleElim && !isPredictiveManual && allRoundDecided && !bracketDone && (
+        {!isRoundRobin && !isDoubleElim && !isPredictiveManual && !isPredictiveAuto && allRoundDecided && !bracketDone && (
           <button
             onClick={handleAdvanceRound}
             disabled={isPending}
@@ -903,7 +905,7 @@ export function LiveDashboard({
           </button>
         )}
 
-        {bracketDone && (
+        {bracketDone && !isPredictiveAuto && (
           <span className="flex items-center gap-1.5 rounded-md bg-green-50 px-3 py-1.5 text-xs font-semibold text-green-700 dark:bg-green-900/20 dark:text-green-400">
             Complete!
           </span>
@@ -978,7 +980,14 @@ export function LiveDashboard({
       <div className="flex flex-1 gap-3 overflow-hidden">
         {/* Bracket diagram / type-specific view */}
         <div className="flex-1 overflow-auto rounded-lg border bg-card p-4">
-          {isDoubleElim ? (
+          {isPredictiveAuto ? (
+            /* Predictive auto mode: PredictiveBracket handles full lifecycle */
+            <PredictiveBracket
+              bracket={bracket}
+              participantId="__teacher__"
+              isTeacher={true}
+            />
+          ) : isDoubleElim ? (
             <DoubleElimDiagram
               bracket={bracket}
               entrants={bracket.entrants}
@@ -1021,15 +1030,15 @@ export function LiveDashboard({
               </div>
             </div>
           ) : (
-            /* SE and Predictive: standard bracket diagram with vote counts */
-            (bracket.maxEntrants ?? bracket.size) >= 64 ? (
-              <QuadrantBracketLayout
+            /* SE and Predictive (manual/vote_based): standard bracket diagram with vote counts */
+            (bracket.maxEntrants ?? bracket.size) >= 32 ? (
+              <RegionBracketView
                 matchups={currentMatchups}
                 totalRounds={totalRounds}
+                bracketSize={bracket.maxEntrants ?? bracket.size}
                 voteLabels={voteLabels}
                 onMatchupClick={handleMatchupClick}
                 selectedMatchupId={selectedMatchupId}
-                bracketSize={bracket.maxEntrants ?? bracket.size}
               />
             ) : (
               <BracketDiagram
@@ -1042,8 +1051,8 @@ export function LiveDashboard({
             )
           )}
 
-          {/* Prediction leaderboard for predictive brackets */}
-          {isPredictive && (
+          {/* Prediction leaderboard for non-auto predictive brackets */}
+          {isPredictive && !isPredictiveAuto && (
             <div className="mt-4 border-t pt-4">
               <PredictionLeaderboard
                 bracketId={bracket.id}
