@@ -5,16 +5,16 @@
 See: .planning/PROJECT.md (updated 2026-01-28)
 
 **Core value:** Teachers can instantly engage any classroom through voting -- on any topic, in any format -- and see participation happen in real time.
-**Current focus:** Phase 7.1 (Predictive Auto-Resolution) -- COMPLETE. All 4 plans delivered. Ready for Phase 8.
+**Current focus:** Phase 7.1 (Predictive Auto-Resolution) -- Gap closure plans executing (05-07).
 
 ## Current Position
 
 Phase: 7.1 of 10 (Predictive Auto-Resolution Mode - INSERTED)
-Plan: 4 of 4 in current phase
-Status: Phase complete
-Last activity: 2026-02-13 -- Completed 07.1-04-PLAN.md
+Plan: 6 of 7 in current phase (gap closure plans 05-07)
+Status: Executing gap closure
+Last activity: 2026-02-14 -- Completed 07.1-06-PLAN.md
 
-Progress: [###############] 100% (78/78 plans)
+Progress: [###############] 100% (80/81 plans)
 
 ## Performance Metrics
 
@@ -36,11 +36,11 @@ Progress: [###############] 100% (78/78 plans)
 
 | 07-advanced-brackets | 34/34 | ~87.1m | ~2.6m |
 
-| 07.1-predictive-auto-resolution | 4/4 | ~21m | ~5.3m |
+| 07.1-predictive-auto-resolution | 6/7 | ~23m | ~3.8m |
 
 **Recent Trend:**
-- Last 5 plans: 07.1-01 (~5m), 07.1-02 (~4m), 07.1-03 (~6m), 07.1-04 (~6m)
-- Trend: Phase 7.1 complete. UI plans averaged ~6m due to multi-component work.
+- Last 5 plans: 07.1-02 (~4m), 07.1-03 (~6m), 07.1-04 (~6m), 07.1-05 (~TBD), 07.1-06 (~2m)
+- Trend: Gap closure plans executing fast due to targeted fixes.
 
 *Updated after each plan completion*
 
@@ -311,6 +311,12 @@ Recent decisions affecting current work:
 - [07.1-04]: Countdown skipped for Round 1 (first reveal starts immediately, no 3-2-1)
 - [07.1-04]: Server-side prediction fetch triggers when entering revealing/completed state (Promise.all for parallel fetch)
 - [07.1-04]: Podium auto-dismiss at 12 seconds (longer than CelebrationScreen's 10s for staggered entries)
+- [07.1-05]: Return TabulationResult[] from overrideMatchupWinnerDAL to avoid blocked prepareResults call showing stale data
+- [07.1-05]: Chain revealRoundDAL(bracketId, teacherId, 1) inside releaseResultsDAL for auto-reveal of round 1
+- [07.1-05]: Filter unresolvedCount by !winnerId only -- bye matchups already excluded from results at DAL layer
+- [07.1-06]: isPredictiveAuto guard skips outer PredictionLeaderboard for auto-mode since PredictiveBracket renders its own
+- [07.1-06]: Presentation mode overlay in completed branch mirrors revealing branch pattern exactly for consistency
+- [07.1-06]: Escape key handler added to existing F key useEffect for presentation mode exit
 
 ### Pending Todos
 
@@ -327,7 +333,7 @@ Recent decisions affecting current work:
 
 ## Session Continuity
 
-Last session: 2026-02-13
-Stopped at: Completed 07.1-04-PLAN.md (Student reveal experience) -- Phase 7.1 COMPLETE
+Last session: 2026-02-14
+Stopped at: Completed 07.1-06-PLAN.md (Duplicate leaderboard guard + completed state presentation mode)
 Resume file: None
-Note: Phase 7.1 complete. All 78 plans across Phases 1-7.1 delivered. Ready for Phase 8 (Sports Integration).
+Note: Gap closure plan 6 of 7 complete. One remaining: 07.1-07.
