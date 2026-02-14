@@ -76,6 +76,7 @@ export default async function BracketDetailPage({
     predictiveResolutionMode: bracket.predictiveResolutionMode,
     playInEnabled: bracket.playInEnabled,
     maxEntrants: bracket.maxEntrants,
+    revealedUpToRound: bracket.revealedUpToRound ?? null,
     createdAt: bracket.createdAt.toISOString(),
     updatedAt: bracket.updatedAt.toISOString(),
     entrants: bracket.entrants.map((e) => ({

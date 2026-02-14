@@ -138,6 +138,7 @@ export default async function LiveDashboardPage({ params }: PageProps) {
     predictiveResolutionMode: bracket.predictiveResolutionMode,
     playInEnabled: bracket.playInEnabled,
     maxEntrants: bracket.maxEntrants,
+    revealedUpToRound: bracket.revealedUpToRound ?? null,
     createdAt: bracket.createdAt.toISOString(),
     updatedAt: bracket.updatedAt.toISOString(),
     entrants: bracket.entrants.map((e) => ({

@@ -80,6 +80,7 @@ export async function GET(
       roundRobinStandingsMode: bracket.roundRobinStandingsMode,
       maxEntrants: bracket.maxEntrants,
       playInEnabled: bracket.playInEnabled,
+      revealedUpToRound: bracket.revealedUpToRound,
       entrants: bracket.entrants,
       matchups: matchupsWithCounts,
     })

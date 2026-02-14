@@ -58,7 +58,7 @@ export const createBracketSchema = z.object({
   roundRobinStandingsMode: z.enum(['live', 'suspenseful']).optional(),
   // Predictive options (only used when bracketType is predictive)
   predictiveMode: z.enum(['simple', 'advanced']).optional(),
-  predictiveResolutionMode: z.enum(['manual', 'vote_based']).optional(),
+  predictiveResolutionMode: z.enum(['manual', 'vote_based', 'auto']).optional(),
   // Play-in option (only used for double_elimination)
   playInEnabled: z.boolean().optional(),
   // Viewing mode (only used for single_elimination)
@@ -138,7 +138,22 @@ export const submitPredictionSchema = z.object({
 
 export const updatePredictionStatusSchema = z.object({
   bracketId: z.string().uuid(),
-  status: z.enum(['predictions_open', 'active']),
+  status: z.enum(['predictions_open', 'active', 'tabulating', 'previewing', 'revealing', 'completed']),
+})
+
+export const revealRoundSchema = z.object({
+  bracketId: z.string().uuid(),
+  round: z.number().int().min(1),
+})
+
+export const overrideMatchupWinnerSchema = z.object({
+  bracketId: z.string().uuid(),
+  matchupId: z.string().uuid(),
+  winnerId: z.string().uuid(),
+})
+
+export const prepareResultsSchema = z.object({
+  bracketId: z.string().uuid(),
 })
 
 // Round-robin validation schemas
@@ -151,6 +166,9 @@ export const recordRoundRobinResultSchema = z.object({
 export type SubmitPredictionInput = z.infer<typeof submitPredictionSchema>
 export type UpdatePredictionStatusInput = z.infer<typeof updatePredictionStatusSchema>
 export type RecordRoundRobinResultInput = z.infer<typeof recordRoundRobinResultSchema>
+export type RevealRoundInput = z.infer<typeof revealRoundSchema>
+export type OverrideMatchupWinnerInput = z.infer<typeof overrideMatchupWinnerSchema>
+export type PrepareResultsInput = z.infer<typeof prepareResultsSchema>
 
 // Poll validation schemas
 export const createPollSchema = z.object({

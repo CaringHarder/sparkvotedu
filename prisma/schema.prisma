@@ -91,6 +91,7 @@ model Bracket {
   predictiveResolutionMode String?      @map("predictive_resolution_mode")
   playInEnabled            Boolean      @default(false) @map("play_in_enabled")
   maxEntrants              Int?         @map("max_entrants")
+  revealedUpToRound        Int?         @map("revealed_up_to_round")
   createdAt                DateTime     @default(now()) @map("created_at")
   updatedAt                DateTime     @updatedAt @map("updated_at")
 

@@ -38,6 +38,7 @@ interface BracketStateResponse {
   roundRobinStandingsMode: string | null
   maxEntrants: number | null
   playInEnabled: boolean
+  revealedUpToRound?: number | null
   matchups: Array<{
     id: string
     round: number
@@ -833,6 +834,7 @@ function toBracketWithDetails(
     predictiveResolutionMode: data.predictiveResolutionMode ?? null,
     playInEnabled: data.playInEnabled ?? false,
     maxEntrants: data.maxEntrants ?? null,
+    revealedUpToRound: data.revealedUpToRound ?? null,
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
     entrants,

@@ -12,7 +12,7 @@ export type BracketType = 'single_elimination' | 'double_elimination' | 'round_r
 export type BracketRegion = 'winners' | 'losers' | 'grand_finals'
 
 // Prediction status for predictive brackets
-export type PredictionStatus = 'predictions_open' | 'active'
+export type PredictionStatus = 'predictions_open' | 'active' | 'tabulating' | 'previewing' | 'revealing'
 
 // Round-robin configuration types
 export type RoundRobinPacing = 'round_by_round' | 'all_at_once'
@@ -38,7 +38,7 @@ export interface RoundRobinStanding {
 
 // Predictive bracket configuration types
 export type PredictiveMode = 'simple' | 'advanced'
-export type PredictiveResolutionMode = 'manual' | 'vote_based'
+export type PredictiveResolutionMode = 'manual' | 'vote_based' | 'auto'
 
 // Prediction data (serialized from Prisma Prediction model)
 export interface PredictionData {
@@ -59,6 +59,31 @@ export interface PredictionScore {
   correctPicks: number
   totalPicks: number
   pointsByRound: Record<number, { correct: number; total: number; points: number }>
+}
+
+// Tabulation input: a single matchup to resolve via prediction counting
+export interface TabulationInput {
+  matchupId: string
+  round: number
+  position: number
+  entrant1Id: string | null
+  entrant2Id: string | null
+  isBye: boolean
+  nextMatchupId: string | null
+}
+
+// Tabulation result: outcome of prediction counting for a matchup
+export interface TabulationResult {
+  matchupId: string
+  round: number
+  position: number
+  winnerId: string | null
+  entrant1Id: string | null
+  entrant2Id: string | null
+  entrant1Votes: number
+  entrant2Votes: number
+  totalVotes: number
+  status: 'resolved' | 'tie' | 'no_predictions'
 }
 
 // Serialized bracket data (matches Prisma model shape for client use)
@@ -82,6 +107,7 @@ export interface BracketData {
   predictiveResolutionMode: string | null
   playInEnabled: boolean
   maxEntrants: number | null
+  revealedUpToRound: number | null
   createdAt: string // ISO string for serialization
   updatedAt: string
 }
