@@ -10,6 +10,8 @@ import { RoundRobinStandings } from '@/components/bracket/round-robin-standings'
 import { RoundRobinMatchups } from '@/components/bracket/round-robin-matchups'
 import { PredictiveBracket } from '@/components/bracket/predictive-bracket'
 import { PredictionLeaderboard } from '@/components/bracket/prediction-leaderboard'
+import { PredictionReveal } from '@/components/bracket/prediction-reveal'
+import { getMyPredictions, getLeaderboard } from '@/actions/prediction'
 import { WinnerReveal } from '@/components/bracket/winner-reveal'
 import { CelebrationScreen } from '@/components/bracket/celebration-screen'
 import { useRealtimeBracket } from '@/hooks/use-realtime-bracket'
@@ -677,9 +679,11 @@ function RRLiveView({
 /**
  * PredictiveStudentView: Handles the full predictive bracket lifecycle.
  *
- * - predictions_open: shows PredictiveBracket for submitting predictions
- * - active: shows tabbed interface with Bracket (voting) + Results (leaderboard)
- * - Automatically transitions when teacher closes predictions via real-time broadcast
+ * - predictions_open/draft: shows PredictiveBracket for submitting predictions
+ * - Auto-mode + tabulating/previewing: waiting state ("Your teacher is preparing results...")
+ * - Auto-mode + revealing/completed: PredictionReveal (the full reveal experience)
+ * - Manual/vote_based + active: tabbed Bracket + Results view
+ * - Automatically transitions when teacher changes status via real-time broadcast
  */
 function PredictiveStudentView({
   bracket,
@@ -691,6 +695,9 @@ function PredictiveStudentView({
   initialVotes: Record<string, string | null>
 }) {
   const [activeTab, setActiveTab] = useState<'bracket' | 'results'>('bracket')
+  const [fetchedPredictions, setFetchedPredictions] = useState<import('@/lib/bracket/types').PredictionData[]>([])
+  const [fetchedScores, setFetchedScores] = useState<import('@/lib/bracket/types').PredictionScore[]>([])
+  const [dataFetched, setDataFetched] = useState(false)
 
   // Real-time bracket updates (includes predictionStatus tracking)
   const { matchups: realtimeMatchups, predictionStatus: realtimePredictionStatus } =
@@ -705,7 +712,36 @@ function PredictiveStudentView({
     : bracket
 
   const totalRounds = Math.ceil(Math.log2(bracket.maxEntrants ?? bracket.size))
+  const isAutoMode = bracket.predictiveResolutionMode === 'auto'
   const isManualMode = bracket.predictiveResolutionMode === 'manual'
+
+  // Fetch predictions + scores for auto-mode reveal (server-side data for PredictionReveal)
+  useEffect(() => {
+    if (!isAutoMode) return
+    if (effectiveStatus !== 'revealing' && effectiveStatus !== 'completed') return
+    if (dataFetched) return
+
+    async function fetchRevealData() {
+      try {
+        const [predResult, scoreResult] = await Promise.all([
+          getMyPredictions(bracket.id, participantId),
+          getLeaderboard(bracket.id),
+        ])
+        if ('predictions' in predResult && predResult.predictions) {
+          setFetchedPredictions(predResult.predictions)
+        }
+        if ('scores' in scoreResult && scoreResult.scores) {
+          setFetchedScores(scoreResult.scores)
+        }
+        setDataFetched(true)
+      } catch {
+        // Non-fatal
+        setDataFetched(true)
+      }
+    }
+
+    fetchRevealData()
+  }, [isAutoMode, effectiveStatus, dataFetched, bracket.id, participantId])
 
   // Predictions still open: show prediction submission UI
   if (effectiveStatus === 'predictions_open' || effectiveStatus === 'draft') {
@@ -718,7 +754,45 @@ function PredictiveStudentView({
     )
   }
 
-  // Predictions closed: tabbed view with Bracket + Results
+  // Auto-mode: tabulating or previewing = waiting state
+  if (isAutoMode && (effectiveStatus === 'tabulating' || effectiveStatus === 'previewing')) {
+    return (
+      <div className="flex items-center justify-center py-16">
+        <div className="max-w-sm space-y-3 text-center">
+          <div className="mx-auto h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+          <p className="text-lg font-semibold">Almost there!</p>
+          <p className="text-sm text-muted-foreground">
+            Your teacher is preparing results...
+          </p>
+        </div>
+      </div>
+    )
+  }
+
+  // Auto-mode: revealing or completed = full reveal experience
+  if (isAutoMode && (effectiveStatus === 'revealing' || effectiveStatus === 'completed')) {
+    if (!dataFetched) {
+      return (
+        <div className="flex items-center justify-center py-16">
+          <div className="space-y-3 text-center">
+            <div className="mx-auto h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+            <p className="text-sm text-muted-foreground">Loading results...</p>
+          </div>
+        </div>
+      )
+    }
+
+    return (
+      <PredictionReveal
+        bracket={liveBracket}
+        participantId={participantId}
+        myPredictions={fetchedPredictions}
+        initialScores={fetchedScores}
+      />
+    )
+  }
+
+  // Manual/vote_based mode: tabbed view with Bracket + Results
   return (
     <div className="space-y-3">
       {/* Manual mode notice */}
