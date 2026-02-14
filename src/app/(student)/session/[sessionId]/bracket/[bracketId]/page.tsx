@@ -750,6 +750,7 @@ function PredictiveStudentView({
         bracket={bracket}
         participantId={participantId}
         isTeacher={false}
+        effectivePredictionStatus={effectiveStatus}
       />
     )
   }

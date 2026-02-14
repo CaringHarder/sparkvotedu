@@ -22,6 +22,7 @@ interface PredictiveBracketProps {
   bracket: BracketWithDetails
   participantId: string
   isTeacher: boolean
+  effectivePredictionStatus?: string
 }
 
 /**
@@ -30,9 +31,9 @@ interface PredictiveBracketProps {
  * Students: Submit/edit predictions during predictions_open phase.
  * Teachers: Manage prediction lifecycle + view aggregate prediction stats.
  */
-export function PredictiveBracket({ bracket, participantId, isTeacher }: PredictiveBracketProps) {
+export function PredictiveBracket({ bracket, participantId, isTeacher, effectivePredictionStatus }: PredictiveBracketProps) {
   const predictiveMode = bracket.predictiveMode ?? 'simple'
-  const predictionStatus = bracket.predictionStatus ?? 'draft'
+  const predictionStatus = effectivePredictionStatus ?? bracket.predictionStatus ?? 'draft'
 
   const { myPredictions, leaderboard, isLoading, refetch } = usePredictions(
     bracket.id,
@@ -763,6 +764,10 @@ function SimplePredictionMode({
       if (result && 'success' in result) {
         setIsEditing(false)
         onRefetch()
+      } else if (result && 'error' in result) {
+        // Server rejected (e.g., predictions closed)
+        alert(result.error as string)
+        setIsEditing(false)
       }
     })
   }
@@ -800,14 +805,16 @@ function SimplePredictionMode({
             Predictions submitted ({Object.keys(selections).length} picks)
           </span>
           <div className="flex-1" />
-          <button
-            type="button"
-            onClick={() => setIsEditing(true)}
-            className="inline-flex items-center gap-1 text-xs font-medium text-green-700 hover:text-green-900 dark:text-green-300 dark:hover:text-green-100"
-          >
-            <Edit3 className="h-3 w-3" />
-            Edit Predictions
-          </button>
+          {isPredictionsOpen && (
+            <button
+              type="button"
+              onClick={() => setIsEditing(true)}
+              className="inline-flex items-center gap-1 text-xs font-medium text-green-700 hover:text-green-900 dark:text-green-300 dark:hover:text-green-100"
+            >
+              <Edit3 className="h-3 w-3" />
+              Edit Predictions
+            </button>
+          )}
         </div>
         <ReadOnlyPredictions matchups={augmentedMatchups.filter((m) => !m.isBye && m.entrant1Id && m.entrant2Id)} selections={readOnlyMap} />
       </div>
@@ -937,6 +944,10 @@ function AdvancedPredictionMode({
       if (result && 'success' in result) {
         setIsEditing(false)
         onRefetch()
+      } else if (result && 'error' in result) {
+        // Server rejected (e.g., predictions closed)
+        alert(result.error as string)
+        setIsEditing(false)
       }
     })
   }
@@ -979,14 +990,16 @@ function AdvancedPredictionMode({
             Predictions submitted ({Object.keys(selections).length} picks)
           </span>
           <div className="flex-1" />
-          <button
-            type="button"
-            onClick={() => setIsEditing(true)}
-            className="inline-flex items-center gap-1 text-xs font-medium text-green-700 hover:text-green-900 dark:text-green-300 dark:hover:text-green-100"
-          >
-            <Edit3 className="h-3 w-3" />
-            Edit Predictions
-          </button>
+          {isPredictionsOpen && (
+            <button
+              type="button"
+              onClick={() => setIsEditing(true)}
+              className="inline-flex items-center gap-1 text-xs font-medium text-green-700 hover:text-green-900 dark:text-green-300 dark:hover:text-green-100"
+            >
+              <Edit3 className="h-3 w-3" />
+              Edit Predictions
+            </button>
+          )}
         </div>
         <div className="rounded-lg border p-3">
           <BracketDiagram
