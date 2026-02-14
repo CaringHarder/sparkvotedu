@@ -19,7 +19,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 5: Polls** - Simple and ranked polls with real-time results display
 - [x] **Phase 6: Billing & Subscriptions** - Stripe integration, tier enforcement, and upgrade prompts
 - [x] **Phase 7: Advanced Brackets** - Double-elimination, round-robin, predictive brackets, and non-power-of-two support
-- [ ] **Phase 7.1: Predictive Auto-Resolution Mode** - Third resolution mode where predictions auto-count as votes without voting rounds (INSERTED)
+- [x] **Phase 7.1: Predictive Auto-Resolution Mode** - Third resolution mode where predictions auto-count as votes without voting rounds (INSERTED)
 - [ ] **Phase 8: Sports Integration** - Real sports tournament brackets from external APIs for classroom prediction competitions
 - [ ] **Phase 9: Analytics** - Participation metrics, vote distribution views, CSV export, and predictive leaderboard scoring
 - [ ] **Phase 10: Landing Page & Polish** - Public landing page, responsive design audit, and interface refinement
@@ -216,7 +216,7 @@ Plans:
 - [x] 07.1-05-PLAN.md — Gap closure: override stale entrants fix + release auto-reveal round 1
 - [x] 07.1-06-PLAN.md — Gap closure: duplicate leaderboard guard + completed state presentation mode
 - [x] 07.1-07-PLAN.md — Gap closure: accuracy badge unicode + podium cold-start + closed prediction enforcement
-- [ ] 07.1-08-PLAN.md — Gap closure R2: completed bracket podium routing + auto-mode button consolidation
+- [x] 07.1-08-PLAN.md — Gap closure R2: completed bracket podium routing + auto-mode button consolidation
 
 ### Phase 8: Sports Integration
 **Goal**: Teachers can browse real sports tournaments, import them as classroom prediction brackets, and results update automatically from live game data
@@ -287,7 +287,7 @@ Note: Phase 3 depends only on Phase 1 (not Phase 2), so Phases 2 and 3 could the
 | 5. Polls | 10/10 | Complete | 2026-01-31 |
 | 6. Billing & Subscriptions | 5/5 | Complete | 2026-02-01 |
 | 7. Advanced Brackets | 34/34 | Complete | 2026-02-08 |
-| 7.1 Predictive Auto-Resolution | 7/8 | In Progress | - |
+| 7.1 Predictive Auto-Resolution | 8/8 | Complete | 2026-02-14 |
 | 8. Sports Integration | 0/5 | Not started | - |
 | 9. Analytics | 0/4 | Not started | - |
 | 10. Landing Page & Polish | 0/5 | Not started | - |

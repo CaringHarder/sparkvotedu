@@ -5,21 +5,21 @@
 See: .planning/PROJECT.md (updated 2026-01-28)
 
 **Core value:** Teachers can instantly engage any classroom through voting -- on any topic, in any format -- and see participation happen in real time.
-**Current focus:** Phase 7.1 (Predictive Auto-Resolution) -- COMPLETE. All 7 plans delivered (4 original + 3 gap closure). Ready for Phase 8.
+**Current focus:** Phase 7.1 (Predictive Auto-Resolution) -- COMPLETE. All 8 plans delivered (4 original + 4 gap closure). Ready for Phase 8.
 
 ## Current Position
 
 Phase: 7.1 of 10 (Predictive Auto-Resolution Mode - INSERTED)
-Plan: 7 of 7 in current phase
+Plan: 8 of 8 in current phase
 Status: Phase complete
-Last activity: 2026-02-14 -- Completed 07.1-07-PLAN.md (gap closure final)
+Last activity: 2026-02-14 -- Completed 07.1-08-PLAN.md (R2 UAT gap closure final)
 
-Progress: [###############] 100% (81/81 plans)
+Progress: [###############] 100% (82/82 plans)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 81
+- Total plans completed: 82
 - Average duration: ~3.5 min
 - Total execution time: ~5.0 hours
 
@@ -36,11 +36,11 @@ Progress: [###############] 100% (81/81 plans)
 
 | 07-advanced-brackets | 34/34 | ~87.1m | ~2.6m |
 
-| 07.1-predictive-auto-resolution | 7/7 | ~25m | ~3.6m |
+| 07.1-predictive-auto-resolution | 8/8 | ~26.5m | ~3.3m |
 
 **Recent Trend:**
-- Last 5 plans: 07.1-03 (~6m), 07.1-04 (~6m), 07.1-05 (~TBD), 07.1-06 (~2m), 07.1-07 (~2m)
-- Trend: Phase 7.1 complete with gap closure. All 81 plans across Phases 1-7.1 delivered.
+- Last 5 plans: 07.1-04 (~6m), 07.1-05 (~TBD), 07.1-06 (~2m), 07.1-07 (~2m), 07.1-08 (~1.5m)
+- Trend: Phase 7.1 fully complete with all gap closure. All 82 plans across Phases 1-7.1 delivered.
 
 *Updated after each plan completion*
 
@@ -317,6 +317,8 @@ Recent decisions affecting current work:
 - [07.1-06]: isPredictiveAuto guard skips outer PredictionLeaderboard for auto-mode since PredictiveBracket renders its own
 - [07.1-06]: Presentation mode overlay in completed branch mirrors revealing branch pattern exactly for consistency
 - [07.1-06]: Escape key handler added to existing F key useEffect for presentation mode exit
+- [07.1-08]: Completed auto-mode predictive brackets route to 'ready' state (PredictiveStudentView) for PredictionReveal podium instead of generic completed view
+- [07.1-08]: Single combined "Close Predictions & Prepare Results" button replaces Fragment-wrapped two-button layout in auto-mode teacher UI
 
 ### Pending Todos
 
@@ -334,6 +336,6 @@ Recent decisions affecting current work:
 ## Session Continuity
 
 Last session: 2026-02-14
-Stopped at: Completed 07.1-07-PLAN.md (Accuracy badge unicode + podium cold-start + closed prediction enforcement) -- Phase 7.1 gap closure COMPLETE
+Stopped at: Completed 07.1-08-PLAN.md (R2 UAT gap closure: auto-mode routing + button fix) -- Phase 7.1 gap closure COMPLETE
 Resume file: None
-Note: Phase 7.1 fully complete with all 7 plans (4 original + 3 gap closure). All 81 plans across Phases 1-7.1 delivered. Ready for Phase 8 (Sports Integration).
+Note: Phase 7.1 fully complete with all 8 plans (4 original + 4 gap closure). All 82 plans across Phases 1-7.1 delivered. Ready for Phase 8 (Sports Integration).
