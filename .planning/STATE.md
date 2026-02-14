@@ -19,9 +19,9 @@ Progress: [###############] 100% (78/78 plans)
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 77
+- Total plans completed: 78
 - Average duration: ~3.5 min
-- Total execution time: ~4.8 hours
+- Total execution time: ~4.9 hours
 
 **By Phase:**
 
@@ -36,11 +36,11 @@ Progress: [###############] 100% (78/78 plans)
 
 | 07-advanced-brackets | 34/34 | ~87.1m | ~2.6m |
 
-| 07.1-predictive-auto-resolution | 3/4 | ~15m | ~5m |
+| 07.1-predictive-auto-resolution | 4/4 | ~21m | ~5.3m |
 
 **Recent Trend:**
-- Last 5 plans: 07-34 (~0.8m), 07.1-01 (~5m), 07.1-02 (~4m), 07.1-03 (~6m)
-- Trend: Phase 7.1 UI plan slightly longer due to multi-component work.
+- Last 5 plans: 07.1-01 (~5m), 07.1-02 (~4m), 07.1-03 (~6m), 07.1-04 (~6m)
+- Trend: Phase 7.1 complete. UI plans averaged ~6m due to multi-component work.
 
 *Updated after each plan completion*
 
@@ -306,6 +306,11 @@ Recent decisions affecting current work:
 - [07.1-03]: Presentation mode uses fixed overlay with dark bg (matching 05-05 pattern)
 - [07.1-03]: Override triggers re-prepare to refresh tabulation results with downstream recalculation
 - [07.1-03]: Auto mode hides SE-style round tabs, action buttons, and completion badge in LiveDashboard
+- [07.1-04]: SVG overlay approach for bracket accuracy coloring -- imports layout constants from BracketDiagram, renders transparent overlay on top
+- [07.1-04]: Dense ranking for student leaderboard: tied scores share same rank number
+- [07.1-04]: Countdown skipped for Round 1 (first reveal starts immediately, no 3-2-1)
+- [07.1-04]: Server-side prediction fetch triggers when entering revealing/completed state (Promise.all for parallel fetch)
+- [07.1-04]: Podium auto-dismiss at 12 seconds (longer than CelebrationScreen's 10s for staggered entries)
 
 ### Pending Todos
 
@@ -323,6 +328,6 @@ Recent decisions affecting current work:
 ## Session Continuity
 
 Last session: 2026-02-13
-Stopped at: Completed 07.1-03-PLAN.md (Teacher UI for auto-resolution)
+Stopped at: Completed 07.1-04-PLAN.md (Student reveal experience) -- Phase 7.1 COMPLETE
 Resume file: None
-Note: Voting latency on large brackets (64-entrant) flagged for optimization.
+Note: Phase 7.1 complete. All 78 plans across Phases 1-7.1 delivered. Ready for Phase 8 (Sports Integration).

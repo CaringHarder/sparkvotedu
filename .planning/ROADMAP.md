@@ -19,7 +19,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 5: Polls** - Simple and ranked polls with real-time results display
 - [x] **Phase 6: Billing & Subscriptions** - Stripe integration, tier enforcement, and upgrade prompts
 - [x] **Phase 7: Advanced Brackets** - Double-elimination, round-robin, predictive brackets, and non-power-of-two support
-- [ ] **Phase 7.1: Predictive Auto-Resolution Mode** - Third resolution mode where predictions auto-count as votes without voting rounds (INSERTED)
+- [x] **Phase 7.1: Predictive Auto-Resolution Mode** - Third resolution mode where predictions auto-count as votes without voting rounds (INSERTED)
 - [ ] **Phase 8: Sports Integration** - Real sports tournament brackets from external APIs for classroom prediction competitions
 - [ ] **Phase 9: Analytics** - Participation metrics, vote distribution views, CSV export, and predictive leaderboard scoring
 - [ ] **Phase 10: Landing Page & Polish** - Public landing page, responsive design audit, and interface refinement
@@ -212,7 +212,7 @@ Plans:
 - [x] 07.1-01-PLAN.md — Tabulation engine TDD (pure function, types, schemas, DB column)
 - [x] 07.1-02-PLAN.md — DAL + server actions for auto-resolution lifecycle (prepare, override, release, reveal, complete)
 - [x] 07.1-03-PLAN.md — Teacher UI (preview with overrides, reveal controls, presentation mode, form update)
-- [ ] 07.1-04-PLAN.md — Student reveal experience (progressive bracket, accuracy overlay, animated leaderboard, podium celebration)
+- [x] 07.1-04-PLAN.md — Student reveal experience (progressive bracket, accuracy overlay, animated leaderboard, podium celebration)
 
 ### Phase 8: Sports Integration
 **Goal**: Teachers can browse real sports tournaments, import them as classroom prediction brackets, and results update automatically from live game data
