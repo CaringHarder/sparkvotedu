@@ -233,8 +233,8 @@ Plans:
 **Plans**: 4 plans
 
 Plans:
-- [ ] 08-01-PLAN.md — Sports provider abstraction, SportsDataIO client, schema extensions, type updates
-- [ ] 08-02-PLAN.md — Sports bracket creation DAL, sync engine, server actions, logo resolver
+- [x] 08-01-PLAN.md — Sports provider abstraction, SportsDataIO client, schema extensions, type updates
+- [x] 08-02-PLAN.md — Sports bracket creation DAL, sync engine, server actions, logo resolver
 - [ ] 08-03-PLAN.md — Tournament browser UI, import page, sports matchup box, bracket diagram integration
 - [ ] 08-04-PLAN.md — Cron-based score sync endpoint, live dashboard sports mode, manual override
 

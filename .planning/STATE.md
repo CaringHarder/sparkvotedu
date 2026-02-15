@@ -5,21 +5,21 @@
 See: .planning/PROJECT.md (updated 2026-01-28)
 
 **Core value:** Teachers can instantly engage any classroom through voting -- on any topic, in any format -- and see participation happen in real time.
-**Current focus:** Phase 8 (Sports Integration) -- Plan 1 of 4 complete. Provider abstraction and schema foundation delivered.
+**Current focus:** Phase 8 (Sports Integration) -- Plan 2 of 4 complete. Sports DAL, sync engine, and server actions delivered.
 
 ## Current Position
 
 Phase: 8 of 10 (Sports Integration)
-Plan: 1 of 4 in current phase
+Plan: 2 of 4 in current phase
 Status: In progress
-Last activity: 2026-02-15 -- Completed 08-01-PLAN.md (Sports data provider foundation)
+Last activity: 2026-02-15 -- Completed 08-02-PLAN.md (Sports bracket creation DAL and server actions)
 
-Progress: [################--] 94% (85/88 plans)
+Progress: [################--] 98% (86/88 plans)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 85
+- Total plans completed: 86
 - Average duration: ~3.5 min
 - Total execution time: ~5.1 hours
 
@@ -38,11 +38,11 @@ Progress: [################--] 94% (85/88 plans)
 
 | 07.1-predictive-auto-resolution | 10/10 | ~29m | ~2.9m |
 
-| 08-sports-integration | 1/4 | ~6m | ~6m |
+| 08-sports-integration | 2/4 | ~8m | ~4m |
 
 **Recent Trend:**
-- Last 5 plans: 07.1-08 (~1.5m), 07.1-09 (~40s), 07.1-10 (~2m), 08-01 (~6m)
-- Trend: Phase 8 started. Plan 08-01 took 6m (heavier foundation plan with schema + provider + 9 construction site updates).
+- Last 5 plans: 07.1-09 (~40s), 07.1-10 (~2m), 08-01 (~6m), 08-02 (~2m)
+- Trend: 08-02 fast at 2m (DAL + server actions, no UI). Provider foundation from 08-01 made this straightforward.
 
 *Updated after each plan completion*
 
@@ -331,6 +331,11 @@ Recent decisions affecting current work:
 - [08-01]: All new Prisma sports fields optional/nullable -- zero migration risk for existing data
 - [08-01]: BracketEntrantData extended with externalTeamId, logoUrl, abbreviation for team logo display
 - [08-01]: MatchupData extended with externalGameId, homeScore, awayScore, gameStatus, gameStartTime for live scores
+- [08-02]: Two-pass matchup creation: first create all matchups, then wire nextMatchupId via previousHomeGameId/previousAwayGameId
+- [08-02]: Position parity for winner propagation in sync (odd->entrant1, even->entrant2) reusing existing advancement convention
+- [08-02]: Season extraction from bracket name regex for sync (avoids storing season separately)
+- [08-02]: Duplicate import prevention per session via externalTournamentId + sessionId query
+- [08-02]: Logo resolver returns null when SportsDataIO URL absent, letting components decide fallback rendering
 
 ### Pending Todos
 
@@ -356,6 +361,6 @@ Recent decisions affecting current work:
 ## Session Continuity
 
 Last session: 2026-02-15
-Stopped at: Completed 08-01-PLAN.md (Sports data provider foundation)
+Stopped at: Completed 08-02-PLAN.md (Sports bracket creation DAL and server actions)
 Resume file: None
-Note: Phase 8 started. Plan 08-01 complete (provider abstraction, SportsDataIO implementation, schema extensions). 85 total plans delivered.
+Note: Phase 8 progressing. Plan 08-02 complete (sports DAL, sync engine, server actions). 86 total plans delivered.
