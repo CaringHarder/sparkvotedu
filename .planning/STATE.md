@@ -5,23 +5,23 @@
 See: .planning/PROJECT.md (updated 2026-01-28)
 
 **Core value:** Teachers can instantly engage any classroom through voting -- on any topic, in any format -- and see participation happen in real time.
-**Current focus:** Phase 8 (Sports Integration) -- Plan 3 of 4 complete. Tournament browser, sports matchup UI, and bracket list/detail integration delivered.
+**Current focus:** Phase 8 (Sports Integration) -- Complete. All 4 plans delivered: provider, DAL/actions, UI components, and automated sync + live dashboard.
 
 ## Current Position
 
 Phase: 8 of 10 (Sports Integration)
-Plan: 3 of 4 in current phase
-Status: In progress
-Last activity: 2026-02-15 -- Completed 08-03-PLAN.md (Sports bracket UI components)
+Plan: 4 of 4 in current phase
+Status: Phase complete
+Last activity: 2026-02-15 -- Completed 08-04-PLAN.md (Automated sync and sports live dashboard)
 
-Progress: [#################-] 99% (87/88 plans)
+Progress: [##################] 100% (88/88 plans)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 87
+- Total plans completed: 88
 - Average duration: ~3.5 min
-- Total execution time: ~5.2 hours
+- Total execution time: ~5.3 hours
 
 **By Phase:**
 
@@ -38,11 +38,11 @@ Progress: [#################-] 99% (87/88 plans)
 
 | 07.1-predictive-auto-resolution | 10/10 | ~29m | ~2.9m |
 
-| 08-sports-integration | 3/4 | ~14m | ~4.7m |
+| 08-sports-integration | 4/4 | ~20m | ~5m |
 
 **Recent Trend:**
-- Last 5 plans: 07.1-10 (~2m), 08-01 (~6m), 08-02 (~2m), 08-03 (~6m)
-- Trend: 08-03 at 6m (UI components: tournament browser, sports matchup overlay, bracket list/detail integration). Multiple files touched across components.
+- Last 5 plans: 08-01 (~6m), 08-02 (~2m), 08-03 (~6m), 08-04 (~6m)
+- Trend: Phase 8 complete. 08-04 at 6m (cron endpoint + live dashboard enhancements). Consistent ~5m/plan for sports integration.
 
 *Updated after each plan completion*
 
@@ -340,6 +340,12 @@ Recent decisions affecting current work:
 - [08-03]: Sports brackets route through RegionBracketView for 32+ entrants with isSports prop forwarding for consistent rendering
 - [08-03]: Emerald badge color for sports brackets to visually distinguish from violet type badges on other bracket types
 - [08-03]: Tournament browser uses client-side fetch via useEffect on mount, matching existing server action call patterns
+- [08-04]: CRON_SECRET Bearer token auth for Vercel cron endpoint (standard Vercel cron security pattern)
+- [08-04]: Adaptive polling: always syncs even without live games to catch recently finalized results
+- [08-04]: Per-bracket try/catch error isolation in cron (matches 06-01 webhook per-operation pattern)
+- [08-04]: Sports brackets render through existing SE diagram path (RegionBracketView for 64 entrants) -- no new diagram component needed
+- [08-04]: Manual override uses advanceMatchup (bracket-type agnostic) rather than overrideMatchupWinner (predictive-gated)
+- [08-04]: SE voting controls hidden for sports brackets (auto-sync, not manual voting)
 
 ### Pending Todos
 
@@ -352,6 +358,7 @@ Recent decisions affecting current work:
 - ~~Add option to show or hide seed numbers for entrants when creating bracket~~ (DONE - showSeedNumbers boolean on Bracket model, toggle in creation form, passed through all diagram components)
 - Add visual bracket placement with drag-and-drop seeding (let teachers place matchups on the bracket, not just reorder a list) → Phase 11
 - Add SPORTSDATAIO_API_KEY to .env.local (sign up at https://sportsdata.io/free-trial)
+- Add CRON_SECRET to Vercel environment variables for cron job authentication
 
 ### Roadmap Evolution
 
@@ -365,6 +372,6 @@ Recent decisions affecting current work:
 ## Session Continuity
 
 Last session: 2026-02-15
-Stopped at: Completed 08-03-PLAN.md (Sports bracket UI components)
+Stopped at: Completed 08-04-PLAN.md (Automated sync and sports live dashboard)
 Resume file: None
-Note: Phase 8 progressing. Plan 08-03 complete (tournament browser, sports matchup overlay, bracket list/detail). 87 total plans delivered.
+Note: Phase 8 complete. All 4 plans delivered: provider, DAL/actions, UI components, automated sync + live dashboard. 88 total plans delivered.
