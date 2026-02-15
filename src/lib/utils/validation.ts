@@ -232,3 +232,12 @@ export type CastPollVoteInput = z.infer<typeof castPollVoteSchema>
 export type CastRankedPollVoteInput = z.infer<typeof castRankedPollVoteSchema>
 export type UpdatePollStatusInput = z.infer<typeof updatePollStatusSchema>
 export type DeletePollInput = z.infer<typeof deletePollSchema>
+
+// Sports integration validation schemas
+export const importTournamentSchema = z.object({
+  tournamentId: z.string().min(1),
+  season: z.number().int().min(2020),
+  sessionId: z.string().uuid(),
+})
+
+export type ImportTournamentInput = z.infer<typeof importTournamentSchema>
