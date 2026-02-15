@@ -5,21 +5,21 @@
 See: .planning/PROJECT.md (updated 2026-01-28)
 
 **Core value:** Teachers can instantly engage any classroom through voting -- on any topic, in any format -- and see participation happen in real time.
-**Current focus:** Phase 9 (Analytics) -- Plan 01 complete. Analytics DAL and bracket analytics page delivered.
+**Current focus:** Phase 9 (Analytics) -- Plan 02 complete. Poll analytics page, analytics hub, and sidebar navigation delivered.
 
 ## Current Position
 
 Phase: 9 of 10 (Analytics)
-Plan: 1 of 3 in current phase
+Plan: 2 of 3 in current phase
 Status: In progress
-Last activity: 2026-02-15 -- Completed 09-01-PLAN.md (Analytics DAL and bracket analytics page)
+Last activity: 2026-02-15 -- Completed 09-02-PLAN.md (Poll analytics, analytics hub, sidebar navigation)
 
-Progress: [##################] 100% (89/91 plans)
+Progress: [##################] 100% (90/91 plans)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 89
+- Total plans completed: 90
 - Average duration: ~3.5 min
 - Total execution time: ~5.3 hours
 
@@ -40,11 +40,11 @@ Progress: [##################] 100% (89/91 plans)
 
 | 08-sports-integration | 4/4 | ~20m | ~5m |
 
-| 09-analytics | 1/3 | ~3m | ~3m |
+| 09-analytics | 2/3 | ~5m | ~2.5m |
 
 **Recent Trend:**
-- Last 5 plans: 08-02 (~2m), 08-03 (~6m), 08-04 (~6m), 09-01 (~3m)
-- Trend: Phase 9 started. 09-01 at 3m (analytics DAL + bracket analytics page). Fast execution with existing data model.
+- Last 5 plans: 08-03 (~6m), 08-04 (~6m), 09-01 (~3m), 09-02 (~2m)
+- Trend: Phase 9 progressing fast. 09-02 at 2m (poll analytics + hub + sidebar). Read-only UI pages with existing DAL.
 
 *Updated after each plan completion*
 
@@ -351,6 +351,9 @@ Recent decisions affecting current work:
 - [09-01]: Predictive scoring detail gated to pro_plus directly (no TIER_LIMITS key -- predictive brackets are Pro Plus only)
 - [09-01]: Single groupBy query for batch vote distribution avoids N+1 across all matchups
 - [09-01]: Borda scores used as 'votes' metric for ranked poll distribution (percentage of total Borda points)
+- [09-02]: LineChart icon for Analytics sidebar nav to avoid visual confusion with BarChart3 used for Polls
+- [09-02]: Analytics hub uses direct Prisma queries (not DAL) for lightweight listing with _count
+- [09-02]: Only non-draft brackets/polls shown on analytics hub (active, completed, closed, archived)
 
 ### Pending Todos
 
@@ -377,6 +380,6 @@ Recent decisions affecting current work:
 ## Session Continuity
 
 Last session: 2026-02-15
-Stopped at: Completed 09-01-PLAN.md (Analytics DAL and bracket analytics page)
+Stopped at: Completed 09-02-PLAN.md (Poll analytics, analytics hub, sidebar navigation)
 Resume file: None
-Note: Phase 9 started. Plan 01 complete: analytics DAL with 5 aggregation functions, bracket analytics page with participation summary and vote distribution. 89 total plans delivered.
+Note: Phase 9 plan 02 complete: poll analytics page with vote distribution bars (Borda for ranked), analytics hub listing all brackets/polls, sidebar Analytics link. 90 total plans delivered.
