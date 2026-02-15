@@ -332,6 +332,7 @@ Recent decisions affecting current work:
 - Configure production Stripe webhook URL (https://yourdomain.com/api/webhooks/stripe) in Stripe Dashboard when deploying (using Stripe CLI for local dev)
 - Create Stripe Products (Pro, Pro Plus) with Monthly/Annual prices and add Price IDs to .env.local
 - Add STRIPE_SECRET_KEY and STRIPE_WEBHOOK_SECRET to .env.local
+- Unify 32+ bracket layout across predictive modes on teacher dashboard (all modes show linear scroll instead of halves/quadrants)
 
 ### Blockers/Concerns
 
