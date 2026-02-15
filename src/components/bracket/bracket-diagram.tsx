@@ -3,6 +3,7 @@
 import { useMemo } from 'react'
 import type { MatchupData, BracketEntrantData } from '@/lib/bracket/types'
 import { BracketZoomWrapper } from '@/components/bracket/bracket-zoom-wrapper'
+import { SportsMatchupOverlay } from '@/components/bracket/sports-matchup-box'
 
 // --- Layout constants ---
 const MATCH_WIDTH = 160
@@ -51,6 +52,8 @@ interface BracketDiagramProps {
   accuracyMap?: Record<string, 'correct' | 'incorrect' | null>
   /** Whether to show seed position numbers next to entrant names */
   showSeedNumbers?: boolean
+  /** Sports bracket: renders team logos, scores, and status badges as overlay */
+  isSports?: boolean
 }
 
 // --- Round label mapping ---
@@ -474,7 +477,7 @@ function getCompactPositions(
 }
 
 // --- Main BracketDiagram component ---
-export function BracketDiagram({ matchups, totalRounds, className, bracketSize, onEntrantClick, votedEntrantIds, voteLabels, onMatchupClick, selectedMatchupId, compactVertical, allowPendingClick, mirrorX, skipZoom, accuracyMap, showSeedNumbers }: BracketDiagramProps) {
+export function BracketDiagram({ matchups, totalRounds, className, bracketSize, onEntrantClick, votedEntrantIds, voteLabels, onMatchupClick, selectedMatchupId, compactVertical, allowPendingClick, mirrorX, skipZoom, accuracyMap, showSeedNumbers, isSports }: BracketDiagramProps) {
   const roundLabels = useMemo(() => getRoundLabels(totalRounds), [totalRounds])
 
   // Compact positioning for non-SE structures (e.g. losers bracket)
@@ -605,6 +608,18 @@ export function BracketDiagram({ matchups, totalRounds, className, bracketSize, 
             isSelected={selectedMatchupId === matchup.id}
             allowPendingClick={allowPendingClick}
             showSeedNumbers={showSeedNumbers}
+          />
+        ))}
+
+        {/* Sports overlay: team logos, scores, status badges */}
+        {isSports && positionedMatchups.map(({ matchup, pos }) => (
+          <SportsMatchupOverlay
+            key={`sports-${matchup.id}`}
+            matchup={matchup}
+            x={pos.x}
+            y={pos.y}
+            width={MATCH_WIDTH}
+            height={MATCH_HEIGHT}
           />
         ))}
 

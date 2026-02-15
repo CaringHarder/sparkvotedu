@@ -18,6 +18,7 @@ interface BracketCardProps {
     createdAt: string
     _count?: { entrants: number }
     sessionCode: string | null
+    sportGender?: string | null
   }
 }
 
@@ -25,6 +26,7 @@ const BRACKET_TYPE_LABELS: Record<string, string> = {
   double_elimination: 'Double Elim',
   round_robin: 'Round Robin',
   predictive: 'Predictive',
+  sports: 'Sports',
 }
 
 function formatDate(dateStr: string): string {
@@ -118,8 +120,19 @@ export function BracketCard({ bracket }: BracketCardProps) {
           </h3>
           <div className="flex items-center gap-1.5">
             {BRACKET_TYPE_LABELS[bracket.bracketType] && (
-              <span className="whitespace-nowrap rounded-full bg-violet-100 px-2 py-0.5 text-[10px] font-medium text-violet-700 dark:bg-violet-900/40 dark:text-violet-300">
+              <span
+                className={`whitespace-nowrap rounded-full px-2 py-0.5 text-[10px] font-medium ${
+                  bracket.bracketType === 'sports'
+                    ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300'
+                    : 'bg-violet-100 text-violet-700 dark:bg-violet-900/40 dark:text-violet-300'
+                }`}
+              >
                 {BRACKET_TYPE_LABELS[bracket.bracketType]}
+              </span>
+            )}
+            {bracket.bracketType === 'sports' && bracket.sportGender && (
+              <span className="whitespace-nowrap text-[10px] text-muted-foreground">
+                {bracket.sportGender === 'mens' ? "Men's" : "Women's"}
               </span>
             )}
             <BracketStatusBadge status={bracket.status} />

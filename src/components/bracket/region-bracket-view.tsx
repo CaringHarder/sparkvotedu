@@ -152,6 +152,8 @@ interface RegionBracketViewProps {
   pendingPredictionIds?: Set<string>
   /** Whether to show seed position numbers next to entrant names */
   showSeedNumbers?: boolean
+  /** Sports bracket: forward to BracketDiagram for sports overlay rendering */
+  isSports?: boolean
 }
 
 // --- Component ---
@@ -169,6 +171,7 @@ export function RegionBracketView({
   accuracyMap,
   pendingPredictionIds,
   showSeedNumbers,
+  isSports,
 }: RegionBracketViewProps) {
   const { regions, connectingRegion, regionRounds } = useMemo(
     () => computeRegions(matchups, totalRounds),
@@ -310,6 +313,7 @@ export function RegionBracketView({
                 selectedMatchupId={selectedMatchupId}
                 accuracyMap={accuracyMap}
                 showSeedNumbers={showSeedNumbers}
+                isSports={isSports}
               />
             </div>
           ))}
@@ -334,6 +338,7 @@ export function RegionBracketView({
               onMatchupClick={onMatchupClick}
               selectedMatchupId={selectedMatchupId}
               accuracyMap={accuracyMap}
+              isSports={isSports}
             />
           </div>
         )}
@@ -368,6 +373,7 @@ export function RegionBracketView({
             skipZoom
             accuracyMap={accuracyMap}
             showSeedNumbers={showSeedNumbers}
+            isSports={isSports}
           />
         </div>
       )}

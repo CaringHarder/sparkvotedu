@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from 'react'
 import Link from 'next/link'
-import { ArrowLeft, Pencil, Radio, Link2, Unlink, ChevronDown, ChevronUp, Play } from 'lucide-react'
+import { ArrowLeft, Pencil, Radio, Link2, Unlink, ChevronDown, ChevronUp, Play, RefreshCw } from 'lucide-react'
 import type { BracketWithDetails, RoundRobinStanding, PredictionScore } from '@/lib/bracket/types'
 import { BracketDiagram } from '@/components/bracket/bracket-diagram'
 import { RegionBracketView } from '@/components/bracket/region-bracket-view'
@@ -14,6 +14,7 @@ import { DoubleElimDiagram } from '@/components/bracket/double-elim-diagram'
 import { BracketStatusBadge, BracketLifecycleControls } from '@/components/bracket/bracket-status'
 import { assignBracketToSession } from '@/actions/bracket'
 import { recordResult, advanceRound } from '@/actions/round-robin'
+import { triggerSportsSync } from '@/actions/sports'
 
 interface SessionInfo {
   id: string
@@ -34,10 +35,13 @@ export function BracketDetail({ bracket, totalRounds, sessions, standings = [], 
   const [currentSessionId, setCurrentSessionId] = useState<string | null>(bracket.sessionId)
   const [sessionError, setSessionError] = useState<string | null>(null)
   const [showEntrants, setShowEntrants] = useState(false)
+  const [syncing, setSyncing] = useState(false)
+  const [syncError, setSyncError] = useState<string | null>(null)
 
   const isRoundRobin = bracket.bracketType === 'round_robin'
   const isPredictive = bracket.bracketType === 'predictive'
   const isDoubleElim = bracket.bracketType === 'double_elimination'
+  const isSports = bracket.bracketType === 'sports'
   const isPredictiveAuto = isPredictive && bracket.predictiveResolutionMode === 'auto'
   const pacing = (bracket.roundRobinPacing ?? 'round_by_round') as 'round_by_round' | 'all_at_once'
   const isLive = bracket.roundRobinStandingsMode === 'live'
@@ -89,6 +93,23 @@ export function BracketDetail({ bracket, totalRounds, sessions, standings = [], 
       if (result && 'error' in result) {
         setSessionError(result.error as string)
         setCurrentSessionId(bracket.sessionId) // revert
+      }
+    })
+  }
+
+  function handleSportsSync() {
+    setSyncing(true)
+    setSyncError(null)
+    startTransition(async () => {
+      try {
+        const result = await triggerSportsSync()
+        if ('error' in result && result.error) {
+          setSyncError(result.error as string)
+        }
+      } catch {
+        setSyncError('Sync failed')
+      } finally {
+        setSyncing(false)
       }
     })
   }
@@ -208,6 +229,54 @@ export function BracketDetail({ bracket, totalRounds, sessions, standings = [], 
                 />
               </div>
             </>
+          ) : isSports ? (
+            <div className="space-y-3">
+              {/* Sync controls */}
+              <div className="flex items-center gap-3">
+                {bracket.lastSyncAt && (
+                  <span className="text-xs text-muted-foreground">
+                    Last synced: {new Date(bracket.lastSyncAt).toLocaleString('en-US', {
+                      month: 'short',
+                      day: 'numeric',
+                      hour: 'numeric',
+                      minute: '2-digit',
+                    })}
+                  </span>
+                )}
+                <button
+                  type="button"
+                  onClick={handleSportsSync}
+                  disabled={syncing || isPending}
+                  className="inline-flex items-center gap-1.5 rounded-md border px-2.5 py-1 text-xs font-medium transition-colors hover:bg-accent disabled:opacity-50"
+                >
+                  <RefreshCw className={`h-3 w-3 ${syncing ? 'animate-spin' : ''}`} />
+                  {syncing ? 'Syncing...' : 'Manual Sync'}
+                </button>
+                {syncError && (
+                  <span className="text-xs text-red-600">{syncError}</span>
+                )}
+              </div>
+
+              {/* Sports bracket diagram */}
+              <div className="rounded-lg border p-3">
+                {(bracket.maxEntrants ?? bracket.size) >= 32 ? (
+                  <RegionBracketView
+                    matchups={bracket.matchups}
+                    totalRounds={totalRounds}
+                    bracketSize={bracket.maxEntrants ?? bracket.size}
+                    showSeedNumbers={bracket.showSeedNumbers}
+                    isSports={true}
+                  />
+                ) : (
+                  <BracketDiagram
+                    matchups={bracket.matchups}
+                    totalRounds={totalRounds}
+                    showSeedNumbers={bracket.showSeedNumbers}
+                    isSports={true}
+                  />
+                )}
+              </div>
+            </div>
           ) : isDoubleElim ? (
             <DoubleElimDiagram
               bracket={bracket}
