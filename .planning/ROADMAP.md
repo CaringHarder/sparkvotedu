@@ -217,7 +217,7 @@ Plans:
 - [x] 07.1-06-PLAN.md — Gap closure: duplicate leaderboard guard + completed state presentation mode
 - [x] 07.1-07-PLAN.md — Gap closure: accuracy badge unicode + podium cold-start + closed prediction enforcement
 - [x] 07.1-08-PLAN.md — Gap closure R2: completed bracket podium routing + auto-mode button consolidation
-- [ ] 07.1-09-PLAN.md — Gap closure R3: real-time reveal event handling for student progressive updates
+- [x] 07.1-09-PLAN.md — Gap closure R3: real-time reveal event handling for student progressive updates
 - [ ] 07.1-10-PLAN.md — Gap closure R3: 32+ entrant predictive bracket regional layout + accuracy badge alignment
 
 ### Phase 8: Sports Integration
