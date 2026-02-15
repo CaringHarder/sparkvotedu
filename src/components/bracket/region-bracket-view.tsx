@@ -257,16 +257,23 @@ export function RegionBracketView({
     return filterVoteLabels(voteLabels, activeTab?.matchups ?? [])
   }, [voteLabels, activeTab, isConsolidated])
 
-  // Matchup count per tab (voting status or pending predictions)
+  // Matchup count per tab (pending predictions, remaining votes, or total voting)
   const votingCounts = useMemo(() => {
     const counts: Record<string, number> = {}
     for (const tab of allTabs) {
-      counts[tab.key] = pendingPredictionIds
-        ? tab.matchups.filter((m) => pendingPredictionIds.has(m.id)).length
-        : tab.matchups.filter((m) => m.status === 'voting').length
+      if (pendingPredictionIds) {
+        counts[tab.key] = tab.matchups.filter((m) => pendingPredictionIds.has(m.id)).length
+      } else if (votedEntrantIds) {
+        // Student voting: count voting matchups not yet voted on
+        counts[tab.key] = tab.matchups.filter(
+          (m) => m.status === 'voting' && !votedEntrantIds[m.id]
+        ).length
+      } else {
+        counts[tab.key] = tab.matchups.filter((m) => m.status === 'voting').length
+      }
     }
     return counts
-  }, [allTabs, pendingPredictionIds])
+  }, [allTabs, pendingPredictionIds, votedEntrantIds])
 
   // --- Consolidated view: all remaining regions in a mirrored 2x2 grid ---
   if (isConsolidated && consolidation) {
