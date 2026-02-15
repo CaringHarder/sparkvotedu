@@ -111,9 +111,10 @@ export default async function LiveDashboardPage({ params }: PageProps) {
     standings = await getRoundRobinStandings(bracketId)
   }
 
-  // Fetch prediction scores for predictive brackets
+  // Fetch prediction scores for predictive and sports brackets
+  // Sports brackets support student predictions (predictiveResolutionMode: 'auto')
   let predictionScores: PredictionScore[] = []
-  if (bracket.bracketType === 'predictive') {
+  if (bracket.bracketType === 'predictive' || bracket.bracketType === 'sports') {
     predictionScores = await scoreBracketPredictions(bracketId)
   }
 

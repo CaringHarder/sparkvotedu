@@ -5,23 +5,23 @@
 See: .planning/PROJECT.md (updated 2026-01-28)
 
 **Core value:** Teachers can instantly engage any classroom through voting -- on any topic, in any format -- and see participation happen in real time.
-**Current focus:** Phase 8 (Sports Integration) -- Plan 2 of 4 complete. Sports DAL, sync engine, and server actions delivered.
+**Current focus:** Phase 8 (Sports Integration) -- Plan 3 of 4 complete. Tournament browser, sports matchup UI, and bracket list/detail integration delivered.
 
 ## Current Position
 
 Phase: 8 of 10 (Sports Integration)
-Plan: 2 of 4 in current phase
+Plan: 3 of 4 in current phase
 Status: In progress
-Last activity: 2026-02-15 -- Completed 08-02-PLAN.md (Sports bracket creation DAL and server actions)
+Last activity: 2026-02-15 -- Completed 08-03-PLAN.md (Sports bracket UI components)
 
-Progress: [################--] 98% (86/88 plans)
+Progress: [#################-] 99% (87/88 plans)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 86
+- Total plans completed: 87
 - Average duration: ~3.5 min
-- Total execution time: ~5.1 hours
+- Total execution time: ~5.2 hours
 
 **By Phase:**
 
@@ -38,11 +38,11 @@ Progress: [################--] 98% (86/88 plans)
 
 | 07.1-predictive-auto-resolution | 10/10 | ~29m | ~2.9m |
 
-| 08-sports-integration | 2/4 | ~8m | ~4m |
+| 08-sports-integration | 3/4 | ~14m | ~4.7m |
 
 **Recent Trend:**
-- Last 5 plans: 07.1-09 (~40s), 07.1-10 (~2m), 08-01 (~6m), 08-02 (~2m)
-- Trend: 08-02 fast at 2m (DAL + server actions, no UI). Provider foundation from 08-01 made this straightforward.
+- Last 5 plans: 07.1-10 (~2m), 08-01 (~6m), 08-02 (~2m), 08-03 (~6m)
+- Trend: 08-03 at 6m (UI components: tournament browser, sports matchup overlay, bracket list/detail integration). Multiple files touched across components.
 
 *Updated after each plan completion*
 
@@ -336,6 +336,10 @@ Recent decisions affecting current work:
 - [08-02]: Season extraction from bracket name regex for sync (avoids storing season separately)
 - [08-02]: Duplicate import prevention per session via externalTournamentId + sessionId query
 - [08-02]: Logo resolver returns null when SportsDataIO URL absent, letting components decide fallback rendering
+- [08-03]: SVG overlay approach for sports data (logos, scores, status) -- SportsMatchupOverlay renders on top of standard matchup boxes, matching accuracyMap pattern from 07.1-10
+- [08-03]: Sports brackets route through RegionBracketView for 32+ entrants with isSports prop forwarding for consistent rendering
+- [08-03]: Emerald badge color for sports brackets to visually distinguish from violet type badges on other bracket types
+- [08-03]: Tournament browser uses client-side fetch via useEffect on mount, matching existing server action call patterns
 
 ### Pending Todos
 
@@ -361,6 +365,6 @@ Recent decisions affecting current work:
 ## Session Continuity
 
 Last session: 2026-02-15
-Stopped at: Completed 08-02-PLAN.md (Sports bracket creation DAL and server actions)
+Stopped at: Completed 08-03-PLAN.md (Sports bracket UI components)
 Resume file: None
-Note: Phase 8 progressing. Plan 08-02 complete (sports DAL, sync engine, server actions). 86 total plans delivered.
+Note: Phase 8 progressing. Plan 08-03 complete (tournament browser, sports matchup overlay, bracket list/detail). 87 total plans delivered.

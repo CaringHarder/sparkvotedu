@@ -14,6 +14,8 @@ import { ParticipationSidebar } from '@/components/teacher/participation-sidebar
 import { QRCodeDisplay } from '@/components/teacher/qr-code-display'
 import { openMatchupsForVoting, advanceMatchup, batchAdvanceRound } from '@/actions/bracket-advance'
 import { recordResult, advanceRound } from '@/actions/round-robin'
+import { triggerSportsSync } from '@/actions/sports'
+import { updatePredictionStatus } from '@/actions/prediction'
 import { PredictionLeaderboard } from '@/components/bracket/prediction-leaderboard'
 import { PredictiveBracket } from '@/components/bracket/predictive-bracket'
 import type { BracketWithDetails, MatchupData, RoundRobinStanding, PredictionScore } from '@/lib/bracket/types'
@@ -64,8 +66,13 @@ export function LiveDashboard({
   const isDoubleElim = bracket.bracketType === 'double_elimination'
   const isRoundRobin = bracket.bracketType === 'round_robin'
   const isPredictive = bracket.bracketType === 'predictive'
+  const isSports = bracket.bracketType === 'sports'
   const isPredictiveManual = isPredictive && bracket.predictiveResolutionMode === 'manual'
   const isPredictiveAuto = isPredictive && bracket.predictiveResolutionMode === 'auto'
+
+  // Sports bracket sync state
+  const [isSyncing, setIsSyncing] = useState(false)
+  const [lastSyncAt, setLastSyncAt] = useState<string | null>(bracket.lastSyncAt ?? null)
 
   // Track previous matchup statuses for detecting newly decided matchups
   const prevMatchupStatusRef = useRef<Record<string, string>>({})
@@ -101,6 +108,13 @@ export function LiveDashboard({
     }
     return bracket.matchups
   }, [realtimeMatchups, bracket.matchups])
+
+  // Update lastSyncAt when real-time data refreshes (cron sync broadcasts bracket_update)
+  useEffect(() => {
+    if (isSports && realtimeMatchups) {
+      setLastSyncAt(new Date().toISOString())
+    }
+  }, [isSports, realtimeMatchups])
 
   // Merge initial vote counts with real-time updates
   const mergedVoteCounts = useMemo(() => {
@@ -591,6 +605,75 @@ export function LiveDashboard({
   }, [currentMatchups, currentRoundRobinRound, mergedVoteCounts, bracket.id])
 
   // ---------------------------------------------------------------------------
+  // Sports bracket: sync, prediction controls, and live game detection
+  // ---------------------------------------------------------------------------
+
+  const handleManualSync = useCallback(() => {
+    setIsSyncing(true)
+    setError(null)
+    startTransition(async () => {
+      try {
+        const result = await triggerSportsSync()
+        if (result && 'error' in result) {
+          setError(result.error as string)
+        } else {
+          setLastSyncAt(new Date().toISOString())
+        }
+      } finally {
+        setIsSyncing(false)
+      }
+    })
+  }, [])
+
+  const handleOpenPredictions = useCallback(() => {
+    setError(null)
+    startTransition(async () => {
+      const result = await updatePredictionStatus({
+        bracketId: bracket.id,
+        status: 'predictions_open',
+      })
+      if (result && 'error' in result) setError(result.error as string)
+    })
+  }, [bracket.id])
+
+  const handleClosePredictions = useCallback(() => {
+    setError(null)
+    startTransition(async () => {
+      const result = await updatePredictionStatus({
+        bracketId: bracket.id,
+        status: 'predictions_closed',
+      })
+      if (result && 'error' in result) setError(result.error as string)
+    })
+  }, [bracket.id])
+
+  // Detect if any games are currently in progress
+  const hasLiveGames = useMemo(() => {
+    if (!isSports) return false
+    return currentMatchups.some((m) => m.gameStatus === 'in_progress')
+  }, [isSports, currentMatchups])
+
+  // Format relative time for last sync display
+  const lastSyncDisplay = useMemo(() => {
+    if (!lastSyncAt) return 'Never'
+    const diff = Date.now() - new Date(lastSyncAt).getTime()
+    const seconds = Math.floor(diff / 1000)
+    if (seconds < 60) return 'Just now'
+    const minutes = Math.floor(seconds / 60)
+    if (minutes < 60) return `${minutes}m ago`
+    const hours = Math.floor(minutes / 60)
+    return `${hours}h ago`
+  }, [lastSyncAt])
+
+  // Auto-refresh the relative time display every 30 seconds
+  const [, setTick] = useState(0)
+  useEffect(() => {
+    if (!isSports) return
+    const interval = setInterval(() => setTick((t) => t + 1), 30000)
+    return () => clearInterval(interval)
+  }, [isSports])
+
+  // ---------------------------------------------------------------------------
   // Per-matchup actions
   // ---------------------------------------------------------------------------
 
@@ -766,8 +849,8 @@ export function LiveDashboard({
           </div>
         )}
 
-        {/* Round tabs (SE / Predictive non-auto only -- NOT DE, NOT auto) */}
-        {!isRoundRobin && !isDoubleElim && !isPredictiveAuto && (
+        {/* Round tabs (SE / Predictive non-auto only -- NOT DE, NOT auto, NOT sports) */}
+        {!isRoundRobin && !isDoubleElim && !isPredictiveAuto && !isSports && (
           <div className="flex gap-1">
             {Array.from({ length: totalRounds }, (_, i) => i + 1).map((round) => {
               const s = roundStatus[round]
@@ -846,8 +929,15 @@ export function LiveDashboard({
           </span>
         )}
 
-        {/* SE / Predictive (vote_based) primary action buttons (NOT DE, NOT RR, NOT manual, NOT auto) */}
-        {!isRoundRobin && !isDoubleElim && !isPredictiveManual && !isPredictiveAuto && hasPending && (
+        {/* Sports bracket: hint to click matchups to override */}
+        {isSports && !bracketDone && (
+          <span className="rounded-md bg-blue-50 px-3 py-1.5 text-xs font-medium text-blue-700 dark:bg-blue-900/20 dark:text-blue-400">
+            Click any matchup to override result
+          </span>
+        )}
+
+        {/* SE / Predictive (vote_based) primary action buttons (NOT DE, NOT RR, NOT manual, NOT auto, NOT sports) */}
+        {!isRoundRobin && !isDoubleElim && !isPredictiveManual && !isPredictiveAuto && !isSports && hasPending && (
           <button
             onClick={handleOpenVoting}
             disabled={isPending}
@@ -857,7 +947,7 @@ export function LiveDashboard({
           </button>
         )}
 
-        {!isRoundRobin && !isDoubleElim && !isPredictiveManual && !isPredictiveAuto && hasVoting && (
+        {!isRoundRobin && !isDoubleElim && !isPredictiveManual && !isPredictiveAuto && !isSports && hasVoting && (
           <button
             onClick={handleCloseAndAdvance}
             disabled={isPending}
@@ -867,7 +957,7 @@ export function LiveDashboard({
           </button>
         )}
 
-        {!isRoundRobin && !isDoubleElim && !isPredictiveManual && !isPredictiveAuto && allRoundDecided && !bracketDone && (
+        {!isRoundRobin && !isDoubleElim && !isPredictiveManual && !isPredictiveAuto && !isSports && allRoundDecided && !bracketDone && (
           <button
             onClick={handleAdvanceRound}
             disabled={isPending}
@@ -905,7 +995,27 @@ export function LiveDashboard({
           </button>
         )}
 
-        {bracketDone && !isPredictiveAuto && (
+        {/* Sports bracket: prediction controls */}
+        {isSports && bracket.predictionStatus === 'draft' && (
+          <button
+            onClick={handleOpenPredictions}
+            disabled={isPending}
+            className="rounded-md bg-violet-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-violet-700 disabled:opacity-50"
+          >
+            {isPending ? 'Opening...' : 'Open Predictions'}
+          </button>
+        )}
+        {isSports && bracket.predictionStatus === 'predictions_open' && (
+          <button
+            onClick={handleClosePredictions}
+            disabled={isPending}
+            className="rounded-md bg-amber-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-amber-700 disabled:opacity-50"
+          >
+            {isPending ? 'Closing...' : 'Close Predictions'}
+          </button>
+        )}
+
+        {bracketDone && !isPredictiveAuto && !isSports && (
           <span className="flex items-center gap-1.5 rounded-md bg-green-50 px-3 py-1.5 text-xs font-semibold text-green-700 dark:bg-green-900/20 dark:text-green-400">
             Complete!
           </span>
@@ -913,6 +1023,47 @@ export function LiveDashboard({
 
         {sessionCode && <QRCodeDisplay code={sessionCode} />}
       </div>
+
+      {/* Sports bracket sync status bar */}
+      {isSports && (
+        <div className="flex items-center gap-3 rounded-lg border bg-card px-4 py-2">
+          {/* Auto-updating indicator */}
+          <div className="flex items-center gap-1.5">
+            <span className="relative flex h-2 w-2">
+              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-green-400 opacity-75" />
+              <span className="relative inline-flex h-2 w-2 rounded-full bg-green-500" />
+            </span>
+            <span className="text-xs font-medium text-green-700 dark:text-green-400">Auto-updating</span>
+          </div>
+
+          {/* Live games indicator */}
+          {hasLiveGames && (
+            <span className="flex items-center gap-1 rounded-full bg-red-100 px-2 py-0.5 text-[10px] font-bold text-red-700 dark:bg-red-900/30 dark:text-red-400">
+              <span className="relative flex h-1.5 w-1.5">
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-red-500 opacity-75" />
+                <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-red-600" />
+              </span>
+              LIVE GAMES
+            </span>
+          )}
+
+          <div className="flex-1" />
+
+          {/* Last synced time */}
+          <span className="text-xs text-muted-foreground">
+            Last synced: {lastSyncDisplay}
+          </span>
+
+          {/* Manual sync button */}
+          <button
+            onClick={handleManualSync}
+            disabled={isSyncing || isPending}
+            className="rounded-md border px-2.5 py-1 text-xs font-medium transition-colors hover:bg-muted disabled:opacity-50"
+          >
+            {isSyncing ? 'Syncing...' : 'Sync Now'}
+          </button>
+        </div>
+      )}
 
       {/* Error */}
       {error && (
@@ -922,21 +1073,50 @@ export function LiveDashboard({
         </div>
       )}
 
-      {/* Pick winner modal — shown for voting matchups, or pending matchups in manual mode */}
-      {selectedMatchup && (selectedMatchup.status === 'voting' || (isPredictiveManual && selectedMatchup.status === 'pending')) && selectedMatchup.entrant1Id && selectedMatchup.entrant2Id && (() => {
+      {/* Pick winner modal — shown for voting matchups, pending matchups in manual mode, or any sports matchup with both entrants */}
+      {selectedMatchup && (selectedMatchup.status === 'voting' || (isPredictiveManual && selectedMatchup.status === 'pending') || (isSports && selectedMatchup.entrant1Id && selectedMatchup.entrant2Id)) && selectedMatchup.entrant1Id && selectedMatchup.entrant2Id && (() => {
         const votes = voteLabels[selectedMatchup.id]
         const e1Votes = votes?.e1 ?? 0
         const e2Votes = votes?.e2 ?? 0
         const isTied = e1Votes === e2Votes
+        const sportsGameInfo = isSports ? {
+          homeScore: selectedMatchup.homeScore ?? 0,
+          awayScore: selectedMatchup.awayScore ?? 0,
+          gameStatus: selectedMatchup.gameStatus,
+        } : null
         return (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onClick={() => setSelectedMatchupId(null)}>
             <div className="mx-4 w-full max-w-sm rounded-xl border bg-card p-6 shadow-lg" onClick={(e) => e.stopPropagation()}>
-              <h2 className="mb-1 text-center text-base font-bold">Pick Winner</h2>
+              <h2 className="mb-1 text-center text-base font-bold">
+                {isSports ? 'Override Result' : 'Pick Winner'}
+              </h2>
               <p className="mb-5 text-center text-xs text-muted-foreground">
-                {isPredictiveManual
-                  ? 'Select the winner for this matchup'
-                  : isTied ? 'Tied -- teacher breaks the tie' : 'Override or confirm the vote leader'}
+                {isSports
+                  ? 'Manually set the winner (overrides auto-sync)'
+                  : isPredictiveManual
+                    ? 'Select the winner for this matchup'
+                    : isTied ? 'Tied -- teacher breaks the tie' : 'Override or confirm the vote leader'}
               </p>
+
+              {/* Sports game score display */}
+              {sportsGameInfo && (sportsGameInfo.homeScore > 0 || sportsGameInfo.awayScore > 0) && (
+                <div className="mb-4 text-center">
+                  <span className="text-lg font-bold">
+                    {sportsGameInfo.homeScore} - {sportsGameInfo.awayScore}
+                  </span>
+                  {sportsGameInfo.gameStatus && (
+                    <span className={`ml-2 text-xs font-medium ${
+                      sportsGameInfo.gameStatus === 'in_progress'
+                        ? 'text-green-600'
+                        : sportsGameInfo.gameStatus === 'final'
+                          ? 'text-muted-foreground'
+                          : 'text-amber-600'
+                    }`}>
+                      {sportsGameInfo.gameStatus === 'in_progress' ? 'LIVE' : sportsGameInfo.gameStatus.toUpperCase()}
+                    </span>
+                  )}
+                </div>
+              )}
 
               <div className="flex gap-3">
                 {selectedMatchup.entrant1Id && (
@@ -946,9 +1126,11 @@ export function LiveDashboard({
                     className="flex flex-1 flex-col items-center gap-1.5 rounded-lg border-2 border-blue-200 bg-blue-50 px-4 py-4 transition-colors hover:border-blue-400 hover:bg-blue-100 disabled:opacity-50 dark:border-blue-800 dark:bg-blue-950/30 dark:hover:border-blue-600 dark:hover:bg-blue-950/50"
                   >
                     <span className="text-sm font-semibold">{selectedMatchup.entrant1?.name ?? 'TBD'}</span>
-                    {!isPredictiveManual && (
+                    {isSports ? (
+                      <span className="text-lg font-bold text-blue-600 dark:text-blue-400">{sportsGameInfo?.homeScore ?? 0}</span>
+                    ) : !isPredictiveManual ? (
                       <span className="text-lg font-bold text-blue-600 dark:text-blue-400">{e1Votes} vote{e1Votes !== 1 ? 's' : ''}</span>
-                    )}
+                    ) : null}
                   </button>
                 )}
                 {selectedMatchup.entrant2Id && (
@@ -958,9 +1140,11 @@ export function LiveDashboard({
                     className="flex flex-1 flex-col items-center gap-1.5 rounded-lg border-2 border-orange-200 bg-orange-50 px-4 py-4 transition-colors hover:border-orange-400 hover:bg-orange-100 disabled:opacity-50 dark:border-orange-800 dark:bg-orange-950/30 dark:hover:border-orange-600 dark:hover:bg-orange-950/50"
                   >
                     <span className="text-sm font-semibold">{selectedMatchup.entrant2?.name ?? 'TBD'}</span>
-                    {!isPredictiveManual && (
+                    {isSports ? (
+                      <span className="text-lg font-bold text-orange-600 dark:text-orange-400">{sportsGameInfo?.awayScore ?? 0}</span>
+                    ) : !isPredictiveManual ? (
                       <span className="text-lg font-bold text-orange-600 dark:text-orange-400">{e2Votes} vote{e2Votes !== 1 ? 's' : ''}</span>
-                    )}
+                    ) : null}
                   </button>
                 )}
               </div>
@@ -1053,8 +1237,8 @@ export function LiveDashboard({
             )
           )}
 
-          {/* Prediction leaderboard for non-auto predictive brackets */}
-          {isPredictive && !isPredictiveAuto && (
+          {/* Prediction leaderboard for non-auto predictive brackets and sports brackets */}
+          {((isPredictive && !isPredictiveAuto) || isSports) && (
             <div className="mt-4 border-t pt-4">
               <PredictionLeaderboard
                 bracketId={bracket.id}
