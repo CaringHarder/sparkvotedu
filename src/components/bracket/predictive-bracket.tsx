@@ -15,6 +15,7 @@ import {
 import { usePredictions } from '@/hooks/use-predictions'
 import { usePredictionCascade } from '@/hooks/use-prediction-cascade'
 import { BracketDiagram } from '@/components/bracket/bracket-diagram'
+import { RegionBracketView } from '@/components/bracket/region-bracket-view'
 import { PredictionPreview } from '@/components/bracket/prediction-preview'
 import { PredictionLeaderboard } from '@/components/bracket/prediction-leaderboard'
 
@@ -218,7 +219,7 @@ function TeacherPredictiveView({
           </div>
 
           <div className="rounded-lg border p-3">
-            <BracketDiagram
+            <PredictiveDiagram
               matchups={bracket.matchups}
               totalRounds={totalRounds}
               bracketSize={bracket.maxEntrants ?? bracket.size}
@@ -340,7 +341,7 @@ function TeacherPredictiveView({
             <div className="flex-1 overflow-auto p-6">
               {presentationView === 'bracket' ? (
                 <div className="rounded-lg bg-gray-900 p-4">
-                  <BracketDiagram
+                  <PredictiveDiagram
                     matchups={bracket.matchups}
                     totalRounds={totalRounds}
                     bracketSize={bracket.maxEntrants ?? bracket.size}
@@ -430,7 +431,7 @@ function TeacherPredictiveView({
 
           {revealTab === 'bracket' ? (
             <div className="rounded-lg border p-3">
-              <BracketDiagram
+              <PredictiveDiagram
                 matchups={bracket.matchups}
                 totalRounds={totalRounds}
                 bracketSize={bracket.maxEntrants ?? bracket.size}
@@ -512,7 +513,7 @@ function TeacherPredictiveView({
               <div className="flex-1 overflow-auto p-6">
                 {presentationView === 'bracket' ? (
                   <div className="rounded-lg bg-gray-900 p-4">
-                    <BracketDiagram
+                    <PredictiveDiagram
                       matchups={bracket.matchups}
                       totalRounds={totalRounds}
                       bracketSize={bracket.maxEntrants ?? bracket.size}
@@ -533,7 +534,7 @@ function TeacherPredictiveView({
           )}
 
           <div className="rounded-lg border p-3">
-            <BracketDiagram
+            <PredictiveDiagram
               matchups={bracket.matchups}
               totalRounds={totalRounds}
               bracketSize={bracket.maxEntrants ?? bracket.size}
@@ -578,7 +579,7 @@ function TeacherPredictiveView({
         </div>
 
         <div className="rounded-lg border p-3">
-          <BracketDiagram
+          <PredictiveDiagram
             matchups={bracket.matchups}
             totalRounds={totalRounds}
             bracketSize={bracket.maxEntrants ?? bracket.size}
@@ -634,7 +635,7 @@ function TeacherPredictiveView({
 
       {/* Bracket diagram */}
       <div className="rounded-lg border p-3">
-        <BracketDiagram
+        <PredictiveDiagram
           matchups={bracket.matchups}
           totalRounds={totalRounds}
           bracketSize={bracket.maxEntrants ?? bracket.size}
@@ -959,7 +960,7 @@ function AdvancedPredictionMode({
         </div>
         {hasSubmitted && (
           <div className="rounded-lg border p-3">
-            <BracketDiagram
+            <PredictiveDiagram
               matchups={bracket.matchups}
               totalRounds={totalRounds}
               bracketSize={bracket.maxEntrants ?? bracket.size}
@@ -1046,6 +1047,19 @@ function AdvancedPredictionMode({
 // ---------------------------------------------------------------------------
 // Shared Components
 // ---------------------------------------------------------------------------
+
+/** Renders RegionBracketView for 32+ entrants, BracketDiagram otherwise */
+function PredictiveDiagram(props: {
+  matchups: MatchupData[]
+  totalRounds: number
+  bracketSize: number
+  votedEntrantIds?: Record<string, string | null>
+}) {
+  if (props.bracketSize >= 32) {
+    return <RegionBracketView {...props} />
+  }
+  return <BracketDiagram {...props} />
+}
 
 function PredictionStatusBadge({ status }: { status: string }) {
   const styles: Record<string, string> = {
