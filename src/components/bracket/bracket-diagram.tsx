@@ -47,6 +47,8 @@ interface BracketDiagramProps {
   mirrorX?: boolean
   /** Skip the built-in BracketZoomWrapper (used when parent manages zoom) */
   skipZoom?: boolean
+  /** Prediction accuracy data: matchupId -> 'correct' | 'incorrect' | null. Renders inline SVG badges. */
+  accuracyMap?: Record<string, 'correct' | 'incorrect' | null>
 }
 
 // --- Round label mapping ---
@@ -462,7 +464,7 @@ function getCompactPositions(
 }
 
 // --- Main BracketDiagram component ---
-export function BracketDiagram({ matchups, totalRounds, className, bracketSize, onEntrantClick, votedEntrantIds, voteLabels, onMatchupClick, selectedMatchupId, compactVertical, allowPendingClick, mirrorX, skipZoom }: BracketDiagramProps) {
+export function BracketDiagram({ matchups, totalRounds, className, bracketSize, onEntrantClick, votedEntrantIds, voteLabels, onMatchupClick, selectedMatchupId, compactVertical, allowPendingClick, mirrorX, skipZoom, accuracyMap }: BracketDiagramProps) {
   const roundLabels = useMemo(() => getRoundLabels(totalRounds), [totalRounds])
 
   // Compact positioning for non-SE structures (e.g. losers bracket)
@@ -594,6 +596,60 @@ export function BracketDiagram({ matchups, totalRounds, className, bracketSize, 
             allowPendingClick={allowPendingClick}
           />
         ))}
+
+        {/* Accuracy overlay badges (prediction reveal) */}
+        {accuracyMap && positionedMatchups.map(({ matchup, pos }) => {
+          const accuracy = accuracyMap[matchup.id]
+          if (accuracy == null) return null
+
+          const isCorrect = accuracy === 'correct'
+          return (
+            <g key={`accuracy-${matchup.id}`}>
+              {/* Green/red border overlay */}
+              <rect
+                x={pos.x}
+                y={pos.y}
+                width={MATCH_WIDTH}
+                height={MATCH_HEIGHT}
+                rx={6}
+                ry={6}
+                style={{
+                  fill: isCorrect
+                    ? 'rgba(34, 197, 94, 0.15)'
+                    : 'rgba(239, 68, 68, 0.15)',
+                  stroke: isCorrect
+                    ? 'rgba(34, 197, 94, 0.5)'
+                    : 'rgba(239, 68, 68, 0.5)',
+                  strokeWidth: 1.5,
+                  pointerEvents: 'none',
+                }}
+              />
+              {/* Badge circle + glyph */}
+              <circle
+                cx={pos.x + MATCH_WIDTH - 8}
+                cy={pos.y + 8}
+                r={6}
+                style={{
+                  fill: isCorrect
+                    ? 'rgba(34, 197, 94, 0.9)'
+                    : 'rgba(239, 68, 68, 0.9)',
+                }}
+              />
+              <text
+                x={pos.x + MATCH_WIDTH - 8}
+                y={pos.y + 11.5}
+                textAnchor="middle"
+                style={{
+                  fill: 'white',
+                  fontSize: 9,
+                  fontWeight: 700,
+                }}
+              >
+                {isCorrect ? '\u2713' : '\u2717'}
+              </text>
+            </g>
+          )
+        })}
       </svg>
     </div>
   )
