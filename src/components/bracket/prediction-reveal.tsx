@@ -1,22 +1,14 @@
 'use client'
 
 import { useState, useEffect, useMemo, useRef, useCallback } from 'react'
-import { Check, X } from 'lucide-react'
-import type { BracketWithDetails, MatchupData, PredictionData, PredictionScore } from '@/lib/bracket/types'
+import { Check } from 'lucide-react'
+import type { BracketWithDetails, PredictionData, PredictionScore } from '@/lib/bracket/types'
 import { usePredictions } from '@/hooks/use-predictions'
 import { PredictionLeaderboard } from '@/components/bracket/prediction-leaderboard'
 import { CountdownOverlay } from '@/components/bracket/countdown-overlay'
 import { PodiumCelebration } from '@/components/bracket/podium-celebration'
-import {
-  BracketDiagram,
-  MATCH_WIDTH,
-  MATCH_HEIGHT,
-  ROUND_GAP,
-  MATCH_V_GAP,
-  PADDING,
-  LABEL_HEIGHT,
-  getMatchPosition,
-} from '@/components/bracket/bracket-diagram'
+import { BracketDiagram } from '@/components/bracket/bracket-diagram'
+import { RegionBracketView } from '@/components/bracket/region-bracket-view'
 
 interface PredictionRevealProps {
   bracket: BracketWithDetails
@@ -260,65 +252,36 @@ function BracketAccuracyView({
   totalRounds: number
   revealedUpToRound: number | null
 }) {
-  // Compute SVG dimensions (same as BracketDiagram)
-  const svgWidth = PADDING * 2 + totalRounds * MATCH_WIDTH + (totalRounds - 1) * ROUND_GAP
-  const round1Matches = Math.pow(2, totalRounds - 1)
-  const svgHeight =
-    PADDING * 2 +
-    LABEL_HEIGHT +
-    round1Matches * MATCH_HEIGHT +
-    (round1Matches - 1) * MATCH_V_GAP
-
-  // Build accuracy data for each matchup
-  const accuracyData = useMemo(() => {
-    const data: Array<{
-      matchup: MatchupData
-      pos: { x: number; y: number }
-      isCorrect: boolean | null // null = not revealed/no prediction
-      predictedName: string | null // wrong prediction's entrant name
-    }> = []
+  // Build accuracy map: matchupId -> 'correct' | 'incorrect' | null
+  const accuracyMap = useMemo(() => {
+    const map: Record<string, 'correct' | 'incorrect' | null> = {}
 
     for (const matchup of bracket.matchups) {
-      // Skip bye matchups
       if (matchup.isBye) continue
-
-      const pos = getMatchPosition(matchup.round, matchup.position, totalRounds)
 
       // Only show accuracy for revealed, decided matchups
       if (matchup.status !== 'decided' || !matchup.winnerId) {
-        data.push({ matchup, pos, isCorrect: null, predictedName: null })
+        map[matchup.id] = null
         continue
       }
 
       // Check if matchup round is within revealed range
       if (revealedUpToRound != null && matchup.round > revealedUpToRound) {
-        data.push({ matchup, pos, isCorrect: null, predictedName: null })
+        map[matchup.id] = null
         continue
       }
 
       const predicted = predictionMap.get(matchup.id)
       if (!predicted) {
-        data.push({ matchup, pos, isCorrect: null, predictedName: null })
+        map[matchup.id] = null
         continue
       }
 
-      const isCorrect = predicted === matchup.winnerId
-
-      // For wrong predictions, find the entrant name the student picked
-      let predictedName: string | null = null
-      if (!isCorrect) {
-        if (predicted === matchup.entrant1Id) {
-          predictedName = matchup.entrant1?.name ?? null
-        } else if (predicted === matchup.entrant2Id) {
-          predictedName = matchup.entrant2?.name ?? null
-        }
-      }
-
-      data.push({ matchup, pos, isCorrect, predictedName })
+      map[matchup.id] = predicted === matchup.winnerId ? 'correct' : 'incorrect'
     }
 
-    return data
-  }, [bracket.matchups, predictionMap, totalRounds, revealedUpToRound])
+    return map
+  }, [bracket.matchups, predictionMap, revealedUpToRound])
 
   return (
     <div>
@@ -332,121 +295,23 @@ function BracketAccuracyView({
         </div>
       </div>
 
-      {/* Bracket diagram with accuracy overlay */}
-      <div className="relative" style={{ width: '100%' }}>
-        {/* Base bracket diagram */}
-        <BracketDiagram
-          matchups={bracket.matchups}
-          totalRounds={totalRounds}
-          bracketSize={bracket.maxEntrants ?? bracket.size}
-        />
-
-        {/* SVG accuracy overlay (positioned on top) */}
-        <svg
-          viewBox={`0 0 ${svgWidth} ${svgHeight}`}
-          xmlns="http://www.w3.org/2000/svg"
-          preserveAspectRatio="xMinYMin meet"
-          style={{
-            position: 'absolute',
-            top: 0,
-            left: 0,
-            width: '100%',
-            height: 'auto',
-            pointerEvents: 'none',
-          }}
-        >
-          {accuracyData.map(({ matchup, pos, isCorrect, predictedName }) => {
-            if (isCorrect === null) return null
-
-            return (
-              <g key={`accuracy-${matchup.id}`}>
-                {/* Green/red background overlay */}
-                <rect
-                  x={pos.x}
-                  y={pos.y}
-                  width={MATCH_WIDTH}
-                  height={MATCH_HEIGHT}
-                  rx={6}
-                  ry={6}
-                  style={{
-                    fill: isCorrect
-                      ? 'rgba(34, 197, 94, 0.15)' // green-500 at 15%
-                      : 'rgba(239, 68, 68, 0.15)', // red-500 at 15%
-                    stroke: isCorrect
-                      ? 'rgba(34, 197, 94, 0.5)' // green-500 at 50%
-                      : 'rgba(239, 68, 68, 0.5)', // red-500 at 50%
-                    strokeWidth: 1.5,
-                  }}
-                />
-
-                {/* Correct: checkmark badge */}
-                {isCorrect && (
-                  <g>
-                    <circle
-                      cx={pos.x + MATCH_WIDTH - 8}
-                      cy={pos.y + 8}
-                      r={6}
-                      style={{ fill: 'rgba(34, 197, 94, 0.9)' }}
-                    />
-                    <text
-                      x={pos.x + MATCH_WIDTH - 8}
-                      y={pos.y + 11.5}
-                      textAnchor="middle"
-                      style={{
-                        fill: 'white',
-                        fontSize: 9,
-                        fontWeight: 700,
-                      }}
-                    >
-                      {'\u2713'}
-                    </text>
-                  </g>
-                )}
-
-                {/* Wrong: X badge + predicted name with strikethrough */}
-                {!isCorrect && (
-                  <g>
-                    <circle
-                      cx={pos.x + MATCH_WIDTH - 8}
-                      cy={pos.y + 8}
-                      r={6}
-                      style={{ fill: 'rgba(239, 68, 68, 0.9)' }}
-                    />
-                    <text
-                      x={pos.x + MATCH_WIDTH - 8}
-                      y={pos.y + 11.5}
-                      textAnchor="middle"
-                      style={{
-                        fill: 'white',
-                        fontSize: 9,
-                        fontWeight: 700,
-                      }}
-                    >
-                      {'\u2717'}
-                    </text>
-
-                    {/* Strikethrough predicted name below the matchup box */}
-                    {predictedName && (
-                      <text
-                        x={pos.x + MATCH_WIDTH / 2}
-                        y={pos.y + MATCH_HEIGHT + 11}
-                        textAnchor="middle"
-                        style={{
-                          fill: 'rgba(239, 68, 68, 0.7)',
-                          fontSize: 9,
-                          fontFamily: 'inherit',
-                          textDecoration: 'line-through',
-                        }}
-                      >
-                        You picked: {predictedName}
-                      </text>
-                    )}
-                  </g>
-                )}
-              </g>
-            )
-          })}
-        </svg>
+      {/* Bracket diagram with inline accuracy badges */}
+      <div className="rounded-lg border p-3">
+        {(bracket.maxEntrants ?? bracket.size) >= 32 ? (
+          <RegionBracketView
+            matchups={bracket.matchups}
+            totalRounds={totalRounds}
+            bracketSize={bracket.maxEntrants ?? bracket.size}
+            accuracyMap={accuracyMap}
+          />
+        ) : (
+          <BracketDiagram
+            matchups={bracket.matchups}
+            totalRounds={totalRounds}
+            bracketSize={bracket.maxEntrants ?? bracket.size}
+            accuracyMap={accuracyMap}
+          />
+        )}
       </div>
     </div>
   )
