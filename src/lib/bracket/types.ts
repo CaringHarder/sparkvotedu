@@ -6,7 +6,7 @@ export type BracketSize = number
 export type BracketStatus = 'draft' | 'active' | 'completed'
 
 // Bracket type discriminator for all bracket formats
-export type BracketType = 'single_elimination' | 'double_elimination' | 'round_robin' | 'predictive'
+export type BracketType = 'single_elimination' | 'double_elimination' | 'round_robin' | 'predictive' | 'sports'
 
 // Bracket region for double-elimination matchups
 export type BracketRegion = 'winners' | 'losers' | 'grand_finals'
@@ -109,6 +109,10 @@ export interface BracketData {
   playInEnabled: boolean
   maxEntrants: number | null
   revealedUpToRound: number | null
+  externalTournamentId: string | null
+  dataSource: string | null
+  lastSyncAt: string | null
+  sportGender: string | null
   createdAt: string // ISO string for serialization
   updatedAt: string
 }
@@ -119,6 +123,9 @@ export interface BracketEntrantData {
   name: string
   seedPosition: number
   bracketId: string
+  externalTeamId: number | null
+  logoUrl: string | null
+  abbreviation: string | null
 }
 
 // Serialized matchup data
@@ -135,6 +142,11 @@ export interface MatchupData {
   bracketRegion: string | null
   isBye: boolean
   roundRobinRound: number | null
+  externalGameId: number | null
+  homeScore: number | null
+  awayScore: number | null
+  gameStatus: string | null
+  gameStartTime: string | null
   entrant1: BracketEntrantData | null
   entrant2: BracketEntrantData | null
   winner: BracketEntrantData | null

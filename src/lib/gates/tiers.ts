@@ -42,7 +42,7 @@ export const TIER_LIMITS = {
   pro_plus: {
     maxBrackets: Infinity,
     maxEntrantsPerBracket: 128,
-    bracketTypes: ['single_elimination', 'double_elimination', 'round_robin', 'predictive'],
+    bracketTypes: ['single_elimination', 'double_elimination', 'round_robin', 'predictive', 'sports'],
     pollTypes: ['simple', 'ranked'],
     maxPollOptions: 32,
     basicAnalytics: true,

@@ -50,16 +50,21 @@ interface BracketStateResponse {
     entrant1Id: string | null
     entrant2Id: string | null
     winnerId: string | null
-    entrant1: { id: string; name: string; seedPosition: number } | null
-    entrant2: { id: string; name: string; seedPosition: number } | null
-    winner: { id: string; name: string; seedPosition: number } | null
+    entrant1: { id: string; name: string; seedPosition: number; externalTeamId?: number | null; logoUrl?: string | null; abbreviation?: string | null } | null
+    entrant2: { id: string; name: string; seedPosition: number; externalTeamId?: number | null; logoUrl?: string | null; abbreviation?: string | null } | null
+    winner: { id: string; name: string; seedPosition: number; externalTeamId?: number | null; logoUrl?: string | null; abbreviation?: string | null } | null
     voteCounts?: Record<string, number>
     bracketRegion: string | null
     isBye: boolean
     roundRobinRound: number | null
     nextMatchupId: string | null
+    externalGameId?: number | null
+    homeScore?: number | null
+    awayScore?: number | null
+    gameStatus?: string | null
+    gameStartTime?: string | null
   }>
-  entrants: { id: string; name: string; seedPosition: number }[]
+  entrants: { id: string; name: string; seedPosition: number; externalTeamId?: number | null; logoUrl?: string | null; abbreviation?: string | null }[]
 }
 
 type PageState =
@@ -888,20 +893,28 @@ function toBracketWithDetails(
     bracketRegion: m.bracketRegion ?? null,
     isBye: m.isBye ?? false,
     roundRobinRound: m.roundRobinRound ?? null,
+    externalGameId: m.externalGameId ?? null,
+    homeScore: m.homeScore ?? null,
+    awayScore: m.awayScore ?? null,
+    gameStatus: m.gameStatus ?? null,
+    gameStartTime: m.gameStartTime ?? null,
     entrant1: m.entrant1
-      ? { ...m.entrant1, bracketId }
+      ? { ...m.entrant1, bracketId, externalTeamId: m.entrant1.externalTeamId ?? null, logoUrl: m.entrant1.logoUrl ?? null, abbreviation: m.entrant1.abbreviation ?? null }
       : null,
     entrant2: m.entrant2
-      ? { ...m.entrant2, bracketId }
+      ? { ...m.entrant2, bracketId, externalTeamId: m.entrant2.externalTeamId ?? null, logoUrl: m.entrant2.logoUrl ?? null, abbreviation: m.entrant2.abbreviation ?? null }
       : null,
     winner: m.winner
-      ? { ...m.winner, bracketId }
+      ? { ...m.winner, bracketId, externalTeamId: m.winner.externalTeamId ?? null, logoUrl: m.winner.logoUrl ?? null, abbreviation: m.winner.abbreviation ?? null }
       : null,
   }))
 
   const entrants: BracketEntrantData[] = data.entrants.map((e) => ({
     ...e,
     bracketId,
+    externalTeamId: e.externalTeamId ?? null,
+    logoUrl: e.logoUrl ?? null,
+    abbreviation: e.abbreviation ?? null,
   }))
 
   // Calculate bracket size from entrants count (round to nearest power of 2)
@@ -929,6 +942,10 @@ function toBracketWithDetails(
     playInEnabled: data.playInEnabled ?? false,
     maxEntrants: data.maxEntrants ?? null,
     revealedUpToRound: data.revealedUpToRound ?? null,
+    externalTournamentId: null,
+    dataSource: null,
+    lastSyncAt: null,
+    sportGender: null,
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
     entrants,

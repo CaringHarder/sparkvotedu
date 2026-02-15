@@ -143,6 +143,9 @@ function buildAugmentedMatchups(
       name: selectedEntrant.name,
       seedPosition: selectedEntrant.seedPosition,
       bracketId: selectedEntrant.bracketId,
+      externalTeamId: selectedEntrant.externalTeamId ?? null,
+      logoUrl: selectedEntrant.logoUrl ?? null,
+      abbreviation: selectedEntrant.abbreviation ?? null,
     }
 
     if (m.position % 2 === 1) {

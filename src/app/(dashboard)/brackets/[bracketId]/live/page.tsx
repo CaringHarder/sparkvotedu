@@ -140,6 +140,10 @@ export default async function LiveDashboardPage({ params }: PageProps) {
     playInEnabled: bracket.playInEnabled,
     maxEntrants: bracket.maxEntrants,
     revealedUpToRound: bracket.revealedUpToRound ?? null,
+    externalTournamentId: bracket.externalTournamentId ?? null,
+    dataSource: bracket.dataSource ?? null,
+    lastSyncAt: bracket.lastSyncAt?.toISOString() ?? null,
+    sportGender: bracket.sportGender ?? null,
     createdAt: bracket.createdAt.toISOString(),
     updatedAt: bracket.updatedAt.toISOString(),
     entrants: bracket.entrants.map((e) => ({
@@ -147,6 +151,9 @@ export default async function LiveDashboardPage({ params }: PageProps) {
       name: e.name,
       seedPosition: e.seedPosition,
       bracketId: e.bracketId,
+      externalTeamId: e.externalTeamId ?? null,
+      logoUrl: e.logoUrl ?? null,
+      abbreviation: e.abbreviation ?? null,
     })),
     matchups: bracket.matchups.map((m) => ({
       id: m.id,
@@ -161,14 +168,19 @@ export default async function LiveDashboardPage({ params }: PageProps) {
       bracketRegion: m.bracketRegion,
       isBye: m.isBye,
       roundRobinRound: m.roundRobinRound,
+      externalGameId: m.externalGameId ?? null,
+      homeScore: m.homeScore ?? null,
+      awayScore: m.awayScore ?? null,
+      gameStatus: m.gameStatus ?? null,
+      gameStartTime: m.gameStartTime?.toISOString() ?? null,
       entrant1: m.entrant1
-        ? { id: m.entrant1.id, name: m.entrant1.name, seedPosition: m.entrant1.seedPosition, bracketId: m.entrant1.bracketId }
+        ? { id: m.entrant1.id, name: m.entrant1.name, seedPosition: m.entrant1.seedPosition, bracketId: m.entrant1.bracketId, externalTeamId: m.entrant1.externalTeamId ?? null, logoUrl: m.entrant1.logoUrl ?? null, abbreviation: m.entrant1.abbreviation ?? null }
         : null,
       entrant2: m.entrant2
-        ? { id: m.entrant2.id, name: m.entrant2.name, seedPosition: m.entrant2.seedPosition, bracketId: m.entrant2.bracketId }
+        ? { id: m.entrant2.id, name: m.entrant2.name, seedPosition: m.entrant2.seedPosition, bracketId: m.entrant2.bracketId, externalTeamId: m.entrant2.externalTeamId ?? null, logoUrl: m.entrant2.logoUrl ?? null, abbreviation: m.entrant2.abbreviation ?? null }
         : null,
       winner: m.winner
-        ? { id: m.winner.id, name: m.winner.name, seedPosition: m.winner.seedPosition, bracketId: m.winner.bracketId }
+        ? { id: m.winner.id, name: m.winner.name, seedPosition: m.winner.seedPosition, bracketId: m.winner.bracketId, externalTeamId: m.winner.externalTeamId ?? null, logoUrl: m.winner.logoUrl ?? null, abbreviation: m.winner.abbreviation ?? null }
         : null,
     })),
   }

@@ -23,13 +23,13 @@ export async function GET(
       include: {
         entrants: {
           orderBy: { seedPosition: 'asc' },
-          select: { id: true, name: true, seedPosition: true },
+          select: { id: true, name: true, seedPosition: true, externalTeamId: true, logoUrl: true, abbreviation: true },
         },
         matchups: {
           include: {
-            entrant1: { select: { id: true, name: true, seedPosition: true } },
-            entrant2: { select: { id: true, name: true, seedPosition: true } },
-            winner: { select: { id: true, name: true, seedPosition: true } },
+            entrant1: { select: { id: true, name: true, seedPosition: true, externalTeamId: true, logoUrl: true, abbreviation: true } },
+            entrant2: { select: { id: true, name: true, seedPosition: true, externalTeamId: true, logoUrl: true, abbreviation: true } },
+            winner: { select: { id: true, name: true, seedPosition: true, externalTeamId: true, logoUrl: true, abbreviation: true } },
           },
           orderBy: [{ round: 'asc' }, { position: 'asc' }],
         },
@@ -60,6 +60,11 @@ export async function GET(
           isBye: matchup.isBye,
           roundRobinRound: matchup.roundRobinRound,
           nextMatchupId: matchup.nextMatchupId,
+          externalGameId: matchup.externalGameId,
+          homeScore: matchup.homeScore,
+          awayScore: matchup.awayScore,
+          gameStatus: matchup.gameStatus,
+          gameStartTime: matchup.gameStartTime?.toISOString() ?? null,
         }
       })
     )

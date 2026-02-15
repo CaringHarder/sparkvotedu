@@ -93,6 +93,10 @@ model Bracket {
   playInEnabled            Boolean      @default(false) @map("play_in_enabled")
   maxEntrants              Int?         @map("max_entrants")
   revealedUpToRound        Int?         @map("revealed_up_to_round")
+  externalTournamentId     String?      @map("external_tournament_id")
+  dataSource               String?      @map("data_source")
+  lastSyncAt               DateTime?    @map("last_sync_at")
+  sportGender              String?      @map("sport_gender")
   createdAt                DateTime     @default(now()) @map("created_at")
   updatedAt                DateTime     @updatedAt @map("updated_at")
 
@@ -107,12 +111,15 @@ model Bracket {
 }
 
 model BracketEntrant {
-  id           String   @id @default(uuid())
-  name         String
-  seedPosition Int      @map("seed_position")
-  bracketId    String   @map("bracket_id")
-  bracket      Bracket  @relation(fields: [bracketId], references: [id], onDelete: Cascade)
-  createdAt    DateTime @default(now()) @map("created_at")
+  id             String   @id @default(uuid())
+  name           String
+  seedPosition   Int      @map("seed_position")
+  bracketId      String   @map("bracket_id")
+  bracket        Bracket  @relation(fields: [bracketId], references: [id], onDelete: Cascade)
+  externalTeamId Int?     @map("external_team_id")
+  logoUrl        String?  @map("logo_url")
+  abbreviation   String?
+  createdAt      DateTime @default(now()) @map("created_at")
 
   matchupsAsEntrant1    Matchup[] @relation("entrant1")
   matchupsAsEntrant2    Matchup[] @relation("entrant2")
@@ -144,6 +151,11 @@ model Matchup {
   bracketRegion    String?         @map("bracket_region")
   isBye            Boolean         @default(false) @map("is_bye")
   roundRobinRound  Int?            @map("round_robin_round")
+  externalGameId   Int?            @map("external_game_id")
+  homeScore        Int?            @map("home_score")
+  awayScore        Int?            @map("away_score")
+  gameStatus       String?         @map("game_status")
+  gameStartTime    DateTime?       @map("game_start_time")
   createdAt        DateTime        @default(now()) @map("created_at")
 
   votes       Vote[]
