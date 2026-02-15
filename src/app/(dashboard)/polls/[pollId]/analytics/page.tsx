@@ -7,8 +7,13 @@ import {
   getPollParticipation,
   getPollVoteDistribution,
 } from '@/lib/dal/analytics'
+import { canAccess } from '@/lib/gates/features'
 import { ParticipationSummary } from '@/components/analytics/participation-summary'
 import { PollVoteDistribution } from '@/components/analytics/poll-vote-distribution'
+import { CSVExportButton } from '@/components/analytics/csv-export-button'
+import { UpgradePrompt } from '@/components/billing/upgrade-prompt'
+import { getPollExportData } from '@/actions/analytics'
+import type { SubscriptionTier } from '@/lib/gates/tiers'
 
 export default async function PollAnalyticsPage({
   params,
@@ -29,6 +34,9 @@ export default async function PollAnalyticsPage({
     redirect('/activities')
   }
 
+  const tier = (teacher.subscriptionTier ?? 'free') as SubscriptionTier
+  const csvAccess = canAccess(tier, 'csvExport')
+
   // Fetch analytics data in parallel
   const [participation, voteDistribution] = await Promise.all([
     getPollParticipation(pollId),
@@ -46,7 +54,23 @@ export default async function PollAnalyticsPage({
           <ArrowLeft className="h-3.5 w-3.5" />
           Back to poll
         </Link>
-        <h1 className="text-2xl font-bold">Analytics: {poll.question}</h1>
+        <div className="flex items-center justify-between gap-4">
+          <h1 className="text-2xl font-bold">Analytics: {poll.question}</h1>
+          <div className="flex items-center gap-2">
+            {csvAccess.allowed ? (
+              <CSVExportButton
+                exportAction={() => getPollExportData(pollId)}
+              />
+            ) : (
+              <UpgradePrompt
+                currentTier={tier}
+                requiredTier={csvAccess.upgradeTarget!}
+                featureName="CSV Export"
+                href="/billing"
+              />
+            )}
+          </div>
+        </div>
       </div>
 
       {/* Participation Summary */}

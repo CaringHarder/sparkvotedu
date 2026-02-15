@@ -8,10 +8,16 @@ import {
   getBracketVoteDistribution,
   getPredictiveAnalytics,
 } from '@/lib/dal/analytics'
+import { canAccess } from '@/lib/gates/features'
 import { ParticipationSummary } from '@/components/analytics/participation-summary'
 import { VoteDistribution } from '@/components/analytics/vote-distribution'
+import { CSVExportButton } from '@/components/analytics/csv-export-button'
 import { PredictionLeaderboard } from '@/components/bracket/prediction-leaderboard'
 import { UpgradePrompt } from '@/components/billing/upgrade-prompt'
+import {
+  getBracketExportData,
+  getPredictiveExportData,
+} from '@/actions/analytics'
 import type { SubscriptionTier } from '@/lib/gates/tiers'
 
 export default async function BracketAnalyticsPage({
@@ -32,7 +38,8 @@ export default async function BracketAnalyticsPage({
   }
 
   const isPredictive = bracket.bracketType === 'predictive'
-  const tier = teacher.subscriptionTier as SubscriptionTier
+  const tier = (teacher.subscriptionTier ?? 'free') as SubscriptionTier
+  const csvAccess = canAccess(tier, 'csvExport')
 
   // Fetch analytics data in parallel
   const [participation, voteDistribution, predictiveData] = await Promise.all([
@@ -56,7 +63,31 @@ export default async function BracketAnalyticsPage({
           <ArrowLeft className="h-3.5 w-3.5" />
           Back to bracket
         </Link>
-        <h1 className="text-2xl font-bold">Analytics: {bracket.name}</h1>
+        <div className="flex items-center justify-between gap-4">
+          <h1 className="text-2xl font-bold">Analytics: {bracket.name}</h1>
+          <div className="flex items-center gap-2">
+            {csvAccess.allowed ? (
+              <>
+                <CSVExportButton
+                  exportAction={() => getBracketExportData(bracketId)}
+                />
+                {isPredictive && tier === 'pro_plus' && (
+                  <CSVExportButton
+                    exportAction={() => getPredictiveExportData(bracketId)}
+                    label="Export Predictions CSV"
+                  />
+                )}
+              </>
+            ) : (
+              <UpgradePrompt
+                currentTier={tier}
+                requiredTier={csvAccess.upgradeTarget!}
+                featureName="CSV Export"
+                href="/billing"
+              />
+            )}
+          </div>
+        </div>
       </div>
 
       {/* Participation Summary */}
