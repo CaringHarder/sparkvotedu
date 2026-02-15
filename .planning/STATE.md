@@ -5,23 +5,23 @@
 See: .planning/PROJECT.md (updated 2026-01-28)
 
 **Core value:** Teachers can instantly engage any classroom through voting -- on any topic, in any format -- and see participation happen in real time.
-**Current focus:** Phase 7.1 (Predictive Auto-Resolution) -- COMPLETE. All 10 plans delivered (4 original + 6 gap closure). Ready for Phase 8.
+**Current focus:** Phase 8 (Sports Integration) -- Plan 1 of 4 complete. Provider abstraction and schema foundation delivered.
 
 ## Current Position
 
-Phase: 7.1 of 10 (Predictive Auto-Resolution Mode - INSERTED)
-Plan: 10 of 10 in current phase
-Status: Phase complete
-Last activity: 2026-02-15 -- Completed 07.1-10-PLAN.md (R3 gap closure: 32+ entrant predictive bracket layout)
+Phase: 8 of 10 (Sports Integration)
+Plan: 1 of 4 in current phase
+Status: In progress
+Last activity: 2026-02-15 -- Completed 08-01-PLAN.md (Sports data provider foundation)
 
-Progress: [################] 100% (84/84 plans)
+Progress: [################--] 94% (85/88 plans)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 84
+- Total plans completed: 85
 - Average duration: ~3.5 min
-- Total execution time: ~5.0 hours
+- Total execution time: ~5.1 hours
 
 **By Phase:**
 
@@ -38,9 +38,11 @@ Progress: [################] 100% (84/84 plans)
 
 | 07.1-predictive-auto-resolution | 10/10 | ~29m | ~2.9m |
 
+| 08-sports-integration | 1/4 | ~6m | ~6m |
+
 **Recent Trend:**
-- Last 5 plans: 07.1-06 (~2m), 07.1-07 (~2m), 07.1-08 (~1.5m), 07.1-09 (~40s), 07.1-10 (~2m)
-- Trend: Phase 7.1 fully complete with all 10 plans (4 original + 6 gap closure). All 84 plans across Phases 1-7.1 delivered.
+- Last 5 plans: 07.1-08 (~1.5m), 07.1-09 (~40s), 07.1-10 (~2m), 08-01 (~6m)
+- Trend: Phase 8 started. Plan 08-01 took 6m (heavier foundation plan with schema + provider + 9 construction site updates).
 
 *Updated after each plan completion*
 
@@ -324,6 +326,11 @@ Recent decisions affecting current work:
 - [07.1-10]: Inline SVG accuracy badges via accuracyMap prop instead of separate absolute-positioned SVG overlay
 - [07.1-10]: RegionBracketView for >= 32 entrants in BracketAccuracyView matches AdvancedVotingView conditional pattern
 - [07.1-10]: accuracyMap typed as Record<string, 'correct' | 'incorrect' | null> for simple prop forwarding through component tree
+- [08-01]: Raw SportsDataIO types isolated in sportsdataio/ directory with pure mapper bridge -- never imported outside
+- [08-01]: Provider factory uses cached singleton (created once per process) with lazy env var read
+- [08-01]: All new Prisma sports fields optional/nullable -- zero migration risk for existing data
+- [08-01]: BracketEntrantData extended with externalTeamId, logoUrl, abbreviation for team logo display
+- [08-01]: MatchupData extended with externalGameId, homeScore, awayScore, gameStatus, gameStartTime for live scores
 
 ### Pending Todos
 
@@ -335,6 +342,7 @@ Recent decisions affecting current work:
 - ~~Unify 32+ bracket layout across predictive modes on teacher dashboard~~ (DONE - PredictiveDiagram helper renders RegionBracketView for 32+)
 - ~~Add option to show or hide seed numbers for entrants when creating bracket~~ (DONE - showSeedNumbers boolean on Bracket model, toggle in creation form, passed through all diagram components)
 - Add visual bracket placement with drag-and-drop seeding (let teachers place matchups on the bracket, not just reorder a list) → Phase 11
+- Add SPORTSDATAIO_API_KEY to .env.local (sign up at https://sportsdata.io/free-trial)
 
 ### Roadmap Evolution
 
@@ -342,12 +350,12 @@ Recent decisions affecting current work:
 
 ### Blockers/Concerns
 
-- [Research]: Sports API provider selection is LOW confidence -- needs deep research before Phase 8
+- ~~[Research]: Sports API provider selection is LOW confidence -- needs deep research before Phase 8~~ (RESOLVED - SportsDataIO selected, provider abstraction built in 08-01)
 - [Research]: Device fingerprinting collision rates on identical school hardware need real-world validation in Phase 2
 
 ## Session Continuity
 
 Last session: 2026-02-15
-Stopped at: Completed 07.1-10-PLAN.md (R3 gap closure: 32+ entrant predictive bracket layout + accuracy badge alignment)
+Stopped at: Completed 08-01-PLAN.md (Sports data provider foundation)
 Resume file: None
-Note: Phase 7.1 fully complete with all 10 plans (4 original + 6 gap closure). All 84 plans across Phases 1-7.1 delivered. Ready for Phase 8 (Sports Integration).
+Note: Phase 8 started. Plan 08-01 complete (provider abstraction, SportsDataIO implementation, schema extensions). 85 total plans delivered.
