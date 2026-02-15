@@ -139,12 +139,14 @@ export function useRealtimeBracket(bracketId: string, batchIntervalMs = 2000) {
           type === 'round_advanced' ||
           type === 'voting_opened' ||
           type === 'bracket_completed' ||
-          type === 'prediction_status_changed'
+          type === 'prediction_status_changed' ||
+          type === 'reveal_round' ||
+          type === 'reveal_complete'
         ) {
           fetchBracketState()
         }
 
-        if (type === 'bracket_completed') {
+        if (type === 'bracket_completed' || type === 'reveal_complete') {
           setBracketCompleted(true)
         }
       })
