@@ -206,7 +206,7 @@ Plans:
   3. Teacher clicks "Release Results" and students see the bracket progressively fill in with winners derived from their collective predictions
   4. Prediction leaderboard correctly scores student accuracy against the prediction-derived outcomes
   5. Students see a reveal experience showing how predictions translated to bracket results
-**Plans**: 8 plans
+**Plans**: 9 plans
 
 Plans:
 - [x] 07.1-01-PLAN.md — Tabulation engine TDD (pure function, types, schemas, DB column)
@@ -217,6 +217,7 @@ Plans:
 - [x] 07.1-06-PLAN.md — Gap closure: duplicate leaderboard guard + completed state presentation mode
 - [x] 07.1-07-PLAN.md — Gap closure: accuracy badge unicode + podium cold-start + closed prediction enforcement
 - [x] 07.1-08-PLAN.md — Gap closure R2: completed bracket podium routing + auto-mode button consolidation
+- [ ] 07.1-09-PLAN.md — Gap closure R3: real-time reveal event handling for student progressive updates
 
 ### Phase 8: Sports Integration
 **Goal**: Teachers can browse real sports tournaments, import them as classroom prediction brackets, and results update automatically from live game data
@@ -287,7 +288,7 @@ Note: Phase 3 depends only on Phase 1 (not Phase 2), so Phases 2 and 3 could the
 | 5. Polls | 10/10 | Complete | 2026-01-31 |
 | 6. Billing & Subscriptions | 5/5 | Complete | 2026-02-01 |
 | 7. Advanced Brackets | 34/34 | Complete | 2026-02-08 |
-| 7.1 Predictive Auto-Resolution | 8/8 | Complete | 2026-02-14 |
+| 7.1 Predictive Auto-Resolution | 8/9 | Gap closure R3 | - |
 | 8. Sports Integration | 0/5 | Not started | - |
 | 9. Analytics | 0/4 | Not started | - |
 | 10. Landing Page & Polish | 0/5 | Not started | - |
