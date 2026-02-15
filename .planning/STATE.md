@@ -334,6 +334,7 @@ Recent decisions affecting current work:
 - Add STRIPE_SECRET_KEY and STRIPE_WEBHOOK_SECRET to .env.local
 - ~~Unify 32+ bracket layout across predictive modes on teacher dashboard~~ (DONE - PredictiveDiagram helper renders RegionBracketView for 32+)
 - Add option to show or hide seed numbers for entrants when creating bracket
+- Add visual bracket placement with drag-and-drop seeding (let teachers place matchups on the bracket, not just reorder a list)
 
 ### Blockers/Concerns
 
