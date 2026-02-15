@@ -226,18 +226,17 @@ Plans:
 **Depends on**: Phase 7
 **Requirements**: SPRT-01, SPRT-02, SPRT-03, SPRT-04
 **Success Criteria** (what must be TRUE):
-  1. Teacher can browse a catalog of available sports tournaments (NCAA March Madness, NCAA FBS, NBA, NHL, MLB playoffs)
+  1. Teacher can browse available NCAA March Madness tournaments (men's and women's) during active tournament season
   2. Teacher can import a sports tournament as a predictive bracket for their class with one click
   3. Sports bracket results auto-update as real games are played (within the API refresh interval)
   4. Teacher can manually override any sports bracket result if the API data is delayed or incorrect
-**Plans**: TBD
+**Plans**: 4 plans
 
 Plans:
-- [ ] 08-01: Sports API provider integration and data normalization
-- [ ] 08-02: Server-side cache and scheduled fetch (cron)
-- [ ] 08-03: Teacher UI for browsing and importing sports tournaments
-- [ ] 08-04: Auto-resolution engine (real results advance brackets)
-- [ ] 08-05: Manual override for sports bracket results
+- [ ] 08-01-PLAN.md — Sports provider abstraction, SportsDataIO client, schema extensions, type updates
+- [ ] 08-02-PLAN.md — Sports bracket creation DAL, sync engine, server actions, logo resolver
+- [ ] 08-03-PLAN.md — Tournament browser UI, import page, sports matchup box, bracket diagram integration
+- [ ] 08-04-PLAN.md — Cron-based score sync endpoint, live dashboard sports mode, manual override
 
 ### Phase 9: Analytics
 **Goal**: Teachers can view participation and voting data for their brackets and polls, export data as CSV, and see predictive bracket scoring details
@@ -305,7 +304,7 @@ Note: Phase 3 depends only on Phase 1 (not Phase 2), so Phases 2 and 3 could the
 | 6. Billing & Subscriptions | 5/5 | Complete | 2026-02-01 |
 | 7. Advanced Brackets | 34/34 | Complete | 2026-02-08 |
 | 7.1 Predictive Auto-Resolution | 10/10 | Complete | 2026-02-15 |
-| 8. Sports Integration | 0/5 | Not started | - |
+| 8. Sports Integration | 0/4 | Not started | - |
 | 9. Analytics | 0/4 | Not started | - |
 | 10. Landing Page & Polish | 0/5 | Not started | - |
 | 11. Visual Bracket Placement | 0/0 | Not started | - |
