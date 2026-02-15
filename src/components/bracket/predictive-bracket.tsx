@@ -919,6 +919,17 @@ function AdvancedPredictionMode({
     return map
   }, [myPredictions])
 
+  // Matchup IDs still needing predictions (for region nav counts)
+  const pendingPredictionIds = useMemo(() => {
+    const ids = new Set<string>()
+    for (const m of augmentedMatchups) {
+      if (m.entrant1Id && m.entrant2Id && !m.isBye && !selections[m.id]) {
+        ids.add(m.id)
+      }
+    }
+    return ids
+  }, [augmentedMatchups, selections])
+
   function handleSubmit() {
     startTransition(async () => {
       const predictions = Object.entries(selections).map(([matchupId, predictedWinnerId]) => ({
@@ -993,7 +1004,7 @@ function AdvancedPredictionMode({
           )}
         </div>
         <div className="rounded-lg border p-3">
-          <BracketDiagram
+          <PredictiveDiagram
             matchups={augmentedMatchups}
             totalRounds={totalRounds}
             bracketSize={bracket.maxEntrants ?? bracket.size}
@@ -1021,13 +1032,14 @@ function AdvancedPredictionMode({
 
       {/* Interactive bracket diagram -- uses augmentedMatchups to show speculative entrants */}
       <div className="rounded-lg border p-3">
-        <BracketDiagram
+        <PredictiveDiagram
           matchups={augmentedMatchups}
           totalRounds={totalRounds}
           bracketSize={bracket.maxEntrants ?? bracket.size}
           onEntrantClick={(matchupId, entrantId) => handleSelect(matchupId, entrantId)}
           votedEntrantIds={votedEntrantIds}
           allowPendingClick
+          pendingPredictionIds={pendingPredictionIds}
         />
       </div>
 
@@ -1054,11 +1066,15 @@ function PredictiveDiagram(props: {
   totalRounds: number
   bracketSize: number
   votedEntrantIds?: Record<string, string | null>
+  onEntrantClick?: (matchupId: string, entrantId: string) => void
+  allowPendingClick?: boolean
+  pendingPredictionIds?: Set<string>
 }) {
   if (props.bracketSize >= 32) {
     return <RegionBracketView {...props} />
   }
-  return <BracketDiagram {...props} />
+  const { pendingPredictionIds, ...diagramProps } = props
+  return <BracketDiagram {...diagramProps} />
 }
 
 function PredictionStatusBadge({ status }: { status: string }) {

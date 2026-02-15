@@ -148,6 +148,8 @@ interface RegionBracketViewProps {
   selectedMatchupId?: string | null
   /** Prediction accuracy data forwarded to child BracketDiagrams */
   accuracyMap?: Record<string, 'correct' | 'incorrect' | null>
+  /** Matchup IDs pending prediction — used for region counts in prediction mode */
+  pendingPredictionIds?: Set<string>
 }
 
 // --- Component ---
@@ -163,6 +165,7 @@ export function RegionBracketView({
   onMatchupClick,
   selectedMatchupId,
   accuracyMap,
+  pendingPredictionIds,
 }: RegionBracketViewProps) {
   const { regions, connectingRegion, regionRounds } = useMemo(
     () => computeRegions(matchups, totalRounds),
@@ -254,14 +257,16 @@ export function RegionBracketView({
     return filterVoteLabels(voteLabels, activeTab?.matchups ?? [])
   }, [voteLabels, activeTab, isConsolidated])
 
-  // Voting matchup count per tab (for nav cards)
+  // Matchup count per tab (voting status or pending predictions)
   const votingCounts = useMemo(() => {
     const counts: Record<string, number> = {}
     for (const tab of allTabs) {
-      counts[tab.key] = tab.matchups.filter((m) => m.status === 'voting').length
+      counts[tab.key] = pendingPredictionIds
+        ? tab.matchups.filter((m) => pendingPredictionIds.has(m.id)).length
+        : tab.matchups.filter((m) => m.status === 'voting').length
     }
     return counts
-  }, [allTabs])
+  }, [allTabs, pendingPredictionIds])
 
   // --- Consolidated view: all remaining regions in a mirrored 2x2 grid ---
   if (isConsolidated && consolidation) {
