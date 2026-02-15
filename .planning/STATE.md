@@ -5,21 +5,21 @@
 See: .planning/PROJECT.md (updated 2026-01-28)
 
 **Core value:** Teachers can instantly engage any classroom through voting -- on any topic, in any format -- and see participation happen in real time.
-**Current focus:** Phase 8 (Sports Integration) -- Complete. All 4 plans delivered: provider, DAL/actions, UI components, and automated sync + live dashboard.
+**Current focus:** Phase 9 (Analytics) -- Plan 01 complete. Analytics DAL and bracket analytics page delivered.
 
 ## Current Position
 
-Phase: 8 of 10 (Sports Integration)
-Plan: 4 of 4 in current phase
-Status: Phase complete
-Last activity: 2026-02-15 -- Completed 08-04-PLAN.md (Automated sync and sports live dashboard)
+Phase: 9 of 10 (Analytics)
+Plan: 1 of 3 in current phase
+Status: In progress
+Last activity: 2026-02-15 -- Completed 09-01-PLAN.md (Analytics DAL and bracket analytics page)
 
-Progress: [##################] 100% (88/88 plans)
+Progress: [##################] 100% (89/91 plans)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 88
+- Total plans completed: 89
 - Average duration: ~3.5 min
 - Total execution time: ~5.3 hours
 
@@ -40,9 +40,11 @@ Progress: [##################] 100% (88/88 plans)
 
 | 08-sports-integration | 4/4 | ~20m | ~5m |
 
+| 09-analytics | 1/3 | ~3m | ~3m |
+
 **Recent Trend:**
-- Last 5 plans: 08-01 (~6m), 08-02 (~2m), 08-03 (~6m), 08-04 (~6m)
-- Trend: Phase 8 complete. 08-04 at 6m (cron endpoint + live dashboard enhancements). Consistent ~5m/plan for sports integration.
+- Last 5 plans: 08-02 (~2m), 08-03 (~6m), 08-04 (~6m), 09-01 (~3m)
+- Trend: Phase 9 started. 09-01 at 3m (analytics DAL + bracket analytics page). Fast execution with existing data model.
 
 *Updated after each plan completion*
 
@@ -346,6 +348,9 @@ Recent decisions affecting current work:
 - [08-04]: Sports brackets render through existing SE diagram path (RegionBracketView for 64 entrants) -- no new diagram component needed
 - [08-04]: Manual override uses advanceMatchup (bracket-type agnostic) rather than overrideMatchupWinner (predictive-gated)
 - [08-04]: SE voting controls hidden for sports brackets (auto-sync, not manual voting)
+- [09-01]: Predictive scoring detail gated to pro_plus directly (no TIER_LIMITS key -- predictive brackets are Pro Plus only)
+- [09-01]: Single groupBy query for batch vote distribution avoids N+1 across all matchups
+- [09-01]: Borda scores used as 'votes' metric for ranked poll distribution (percentage of total Borda points)
 
 ### Pending Todos
 
@@ -372,6 +377,6 @@ Recent decisions affecting current work:
 ## Session Continuity
 
 Last session: 2026-02-15
-Stopped at: Completed 08-04-PLAN.md (Automated sync and sports live dashboard)
+Stopped at: Completed 09-01-PLAN.md (Analytics DAL and bracket analytics page)
 Resume file: None
-Note: Phase 8 complete. All 4 plans delivered: provider, DAL/actions, UI components, automated sync + live dashboard. 88 total plans delivered.
+Note: Phase 9 started. Plan 01 complete: analytics DAL with 5 aggregation functions, bracket analytics page with participation summary and vote distribution. 89 total plans delivered.
