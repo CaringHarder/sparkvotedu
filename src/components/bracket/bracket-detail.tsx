@@ -152,13 +152,13 @@ export function BracketDetail({ bracket, totalRounds, sessions, standings = [], 
         {/* Main content area */}
         <div className="min-w-0 flex-1 space-y-4">
           {isPredictive ? (
-            <div className={isPredictiveAuto ? '' : 'grid grid-cols-1 gap-6 lg:grid-cols-2'}>
+            <div className="space-y-4">
               <PredictiveBracket
                 bracket={bracket}
                 participantId=""
                 isTeacher={true}
               />
-              {!isPredictiveAuto && (bracket.status === 'active' || bracket.status === 'completed') && (
+              {!isPredictiveAuto && (bracket.status === 'active' || bracket.status === 'completed') && predictionScores.length > 0 && (
                 <PredictionLeaderboard
                   bracketId={bracket.id}
                   initialScores={predictionScores}

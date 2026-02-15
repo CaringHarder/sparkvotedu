@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback, useTransition, useMemo } from 'react'
+import { useRouter } from 'next/navigation'
 import { Trophy, Check, Edit3, Lock, ChevronRight, Loader2, Maximize2, Minimize2 } from 'lucide-react'
 import type { BracketWithDetails, MatchupData, PredictionData, PredictionScore, TabulationResult } from '@/lib/bracket/types'
 import {
@@ -90,6 +91,7 @@ function TeacherPredictiveView({
   leaderboard: PredictionScore[]
 }) {
   const [isPending, startTransition] = useTransition()
+  const router = useRouter()
   const isAutoMode = bracket.predictiveResolutionMode === 'auto'
 
   // Auto-mode state
@@ -614,21 +616,21 @@ function TeacherPredictiveView({
         {predictionStatus === 'predictions_open' && (
           <button
             type="button"
-            onClick={() => handleStatusChange('active')}
+            onClick={() => {
+              startTransition(async () => {
+                const result = await updatePredictionStatus({
+                  bracketId: bracket.id,
+                  status: 'active',
+                })
+                if (!result || !('error' in result)) {
+                  router.push(`/brackets/${bracket.id}/live`)
+                }
+              })
+            }}
             disabled={isPending}
             className="rounded-md bg-green-600 px-3 py-1.5 text-xs font-medium text-white shadow-sm transition-colors hover:bg-green-700 disabled:opacity-50"
           >
-            Close Predictions & Start
-          </button>
-        )}
-        {predictionStatus === 'active' && (
-          <button
-            type="button"
-            onClick={() => handleStatusChange('completed')}
-            disabled={isPending}
-            className="rounded-md bg-orange-600 px-3 py-1.5 text-xs font-medium text-white shadow-sm transition-colors hover:bg-orange-700 disabled:opacity-50"
-          >
-            Complete
+            Close Predictions & Go Live
           </button>
         )}
       </div>
