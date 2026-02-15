@@ -189,6 +189,7 @@ export async function createBracketDAL(
     predictiveResolutionMode?: string
     playInEnabled?: boolean
     viewingMode?: string
+    showSeedNumbers?: boolean
   },
   entrants: { name: string; seedPosition: number }[]
 ) {
@@ -242,6 +243,7 @@ export async function createBracketDAL(
         predictiveResolutionMode: data.predictiveResolutionMode ?? null,
         playInEnabled: data.playInEnabled ?? false,
         viewingMode: data.viewingMode ?? 'advanced',
+        showSeedNumbers: data.showSeedNumbers ?? true,
       },
     })
 
@@ -313,6 +315,7 @@ async function createDoubleElimBracketDAL(
     predictiveMode?: string
     predictiveResolutionMode?: string
     playInEnabled?: boolean
+    showSeedNumbers?: boolean
   },
   entrants: { name: string; seedPosition: number }[]
 ) {
@@ -359,6 +362,7 @@ async function createDoubleElimBracketDAL(
         sessionId: data.sessionId ?? null,
         bracketType: 'double_elimination',
         playInEnabled,
+        showSeedNumbers: data.showSeedNumbers ?? true,
       },
     })
 

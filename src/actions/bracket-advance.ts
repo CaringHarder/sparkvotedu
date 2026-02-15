@@ -300,10 +300,12 @@ export async function updateBracketVotingSettings(input: unknown) {
     const updateData: {
       viewingMode?: string
       showVoteCounts?: boolean
+      showSeedNumbers?: boolean
       votingTimerSeconds?: number | null
     } = {}
     if (settings.viewingMode !== undefined) updateData.viewingMode = settings.viewingMode
     if (settings.showVoteCounts !== undefined) updateData.showVoteCounts = settings.showVoteCounts
+    if (settings.showSeedNumbers !== undefined) updateData.showSeedNumbers = settings.showSeedNumbers
     if (settings.votingTimerSeconds !== undefined)
       updateData.votingTimerSeconds = settings.votingTimerSeconds
 
@@ -319,6 +321,7 @@ export async function updateBracketVotingSettings(input: unknown) {
       bracket: {
         viewingMode: updated.viewingMode,
         showVoteCounts: updated.showVoteCounts,
+        showSeedNumbers: updated.showSeedNumbers,
         votingTimerSeconds: updated.votingTimerSeconds,
       },
     }

@@ -96,6 +96,7 @@ export interface BracketData {
   status: BracketStatus
   viewingMode: string
   showVoteCounts: boolean
+  showSeedNumbers: boolean
   votingTimerSeconds: number | null
   teacherId: string
   sessionId: string | null

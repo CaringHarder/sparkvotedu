@@ -344,6 +344,7 @@ export function DoubleElimDiagram({
                     onMatchupClick={onMatchupClick}
                     selectedMatchupId={selectedMatchupId}
                     voteLabels={voteLabels}
+                    showSeedNumbers={bracket.showSeedNumbers}
                   />
                 </BracketZoomWrapper>
               ) : (
@@ -356,6 +357,7 @@ export function DoubleElimDiagram({
                   onMatchupClick={onMatchupClick}
                   selectedMatchupId={selectedMatchupId}
                   voteLabels={voteLabels}
+                  showSeedNumbers={bracket.showSeedNumbers}
                 />
               )}
             </div>
@@ -387,6 +389,7 @@ export function DoubleElimDiagram({
                     selectedMatchupId={selectedMatchupId}
                     voteLabels={voteLabels}
                     compactVertical
+                    showSeedNumbers={bracket.showSeedNumbers}
                   />
                 </BracketZoomWrapper>
               ) : (
@@ -400,6 +403,7 @@ export function DoubleElimDiagram({
                   selectedMatchupId={selectedMatchupId}
                   voteLabels={voteLabels}
                   compactVertical
+                  showSeedNumbers={bracket.showSeedNumbers}
                 />
               )}
             </div>

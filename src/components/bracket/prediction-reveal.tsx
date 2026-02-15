@@ -303,6 +303,7 @@ function BracketAccuracyView({
             totalRounds={totalRounds}
             bracketSize={bracket.maxEntrants ?? bracket.size}
             accuracyMap={accuracyMap}
+            showSeedNumbers={bracket.showSeedNumbers}
           />
         ) : (
           <BracketDiagram
@@ -310,6 +311,7 @@ function BracketAccuracyView({
             totalRounds={totalRounds}
             bracketSize={bracket.maxEntrants ?? bracket.size}
             accuracyMap={accuracyMap}
+            showSeedNumbers={bracket.showSeedNumbers}
           />
         )}
       </div>

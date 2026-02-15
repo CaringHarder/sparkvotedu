@@ -96,6 +96,7 @@ export function BracketForm() {
   const [predictiveResolutionMode, setPredictiveResolutionMode] = useState<PredictiveResolutionMode>('vote_based')
   const [playInEnabled, setPlayInEnabled] = useState(false)
   const [viewingMode, setViewingMode] = useState<'simple' | 'advanced'>('advanced')
+  const [showSeedNumbers, setShowSeedNumbers] = useState(true)
 
   // Step 2: Entrants
   const [entrants, setEntrants] = useState<FormEntrant[]>([])
@@ -260,6 +261,7 @@ export function BracketForm() {
         description: description.trim() || undefined,
         size,
         bracketType,
+        showSeedNumbers,
       }
 
       // Add type-specific options
@@ -313,6 +315,7 @@ export function BracketForm() {
     predictiveResolutionMode,
     playInEnabled,
     viewingMode,
+    showSeedNumbers,
     entrants,
     router,
   ])
@@ -641,6 +644,25 @@ export function BracketForm() {
               </div>
             )}
 
+            {/* Display options (all bracket types) */}
+            <div className="space-y-3 rounded-lg border p-4">
+              <h4 className="text-sm font-medium">Display Options</h4>
+              <label className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  checked={showSeedNumbers}
+                  onChange={(e) => setShowSeedNumbers(e.target.checked)}
+                  className="h-4 w-4 rounded border-gray-300"
+                />
+                <div>
+                  <span className="text-sm">Show seed numbers</span>
+                  <p className="text-xs text-muted-foreground">
+                    Display seed position numbers next to entrant names in the bracket
+                  </p>
+                </div>
+              </label>
+            </div>
+
             <div className="flex justify-end pt-4">
               <Button
                 onClick={() => setStep(2)}
@@ -867,6 +889,12 @@ export function BracketForm() {
                   </p>
                 </div>
               )}
+              <div>
+                <span className="text-sm font-medium text-muted-foreground">Display</span>
+                <p className="text-sm">
+                  Seed numbers: {showSeedNumbers ? 'Visible' : 'Hidden'}
+                </p>
+              </div>
             </div>
 
             {/* Entrant list (read-only) */}

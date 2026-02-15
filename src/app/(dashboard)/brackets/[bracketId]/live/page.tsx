@@ -127,6 +127,7 @@ export default async function LiveDashboardPage({ params }: PageProps) {
     status: bracket.status as BracketStatus,
     viewingMode: bracket.viewingMode,
     showVoteCounts: bracket.showVoteCounts,
+    showSeedNumbers: bracket.showSeedNumbers,
     votingTimerSeconds: bracket.votingTimerSeconds,
     teacherId: bracket.teacherId,
     sessionId: bracket.sessionId,

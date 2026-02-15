@@ -32,6 +32,7 @@ interface BracketStateResponse {
   status: string
   viewingMode: string
   showVoteCounts: boolean
+  showSeedNumbers: boolean
   votingTimerSeconds: number | null
   predictionStatus?: string | null
   matchups: MatchupState[]

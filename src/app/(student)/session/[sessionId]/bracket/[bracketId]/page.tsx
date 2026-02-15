@@ -30,6 +30,7 @@ interface BracketStateResponse {
   status: string
   viewingMode: string
   showVoteCounts: boolean
+  showSeedNumbers: boolean
   votingTimerSeconds: number | null
   bracketType: string
   predictionStatus: string | null
@@ -709,6 +710,12 @@ function PredictiveStudentView({
   const [fetchedScores, setFetchedScores] = useState<import('@/lib/bracket/types').PredictionScore[]>([])
   const [dataFetched, setDataFetched] = useState(false)
 
+  // Lift vote state so it survives tab-switch unmount/remount
+  const [liveVotes, setLiveVotes] = useState<Record<string, string | null>>(initialVotes)
+  const handleVoteUpdate = useCallback((matchupId: string, entrantId: string) => {
+    setLiveVotes((prev) => ({ ...prev, [matchupId]: entrantId }))
+  }, [])
+
   // Real-time bracket updates (includes predictionStatus tracking)
   const { matchups: realtimeMatchups, predictionStatus: realtimePredictionStatus } =
     useRealtimeBracket(bracket.id)
@@ -844,7 +851,8 @@ function PredictiveStudentView({
         <AdvancedVotingView
           bracket={liveBracket}
           participantId={participantId}
-          initialVotes={initialVotes}
+          initialVotes={liveVotes}
+          onVoteUpdate={handleVoteUpdate}
         />
       ) : (
         <PredictionLeaderboard
@@ -908,6 +916,7 @@ function toBracketWithDetails(
     status: data.status as 'draft' | 'active' | 'completed',
     viewingMode: data.viewingMode,
     showVoteCounts: data.showVoteCounts,
+    showSeedNumbers: data.showSeedNumbers ?? true,
     votingTimerSeconds: data.votingTimerSeconds,
     teacherId: '', // Not available from public API (and not needed for student view)
     sessionId: null,

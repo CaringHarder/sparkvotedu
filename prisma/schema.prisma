@@ -78,6 +78,7 @@ model Bracket {
   status             String       @default("draft")
   viewingMode        String       @default("advanced") @map("viewing_mode")
   showVoteCounts     Boolean      @default(true) @map("show_vote_counts")
+  showSeedNumbers    Boolean      @default(true) @map("show_seed_numbers")
   votingTimerSeconds Int?         @map("voting_timer_seconds")
   teacherId                String       @map("teacher_id")
   teacher                  Teacher      @relation(fields: [teacherId], references: [id])

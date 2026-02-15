@@ -63,6 +63,8 @@ export const createBracketSchema = z.object({
   playInEnabled: z.boolean().optional(),
   // Viewing mode (only used for single_elimination)
   viewingMode: z.enum(['simple', 'advanced']).optional(),
+  // Seed number visibility
+  showSeedNumbers: z.boolean().optional(),
 })
 
 export const entrantSchema = z.object({
@@ -118,6 +120,7 @@ export const updateBracketVotingSettingsSchema = z.object({
   bracketId: z.string().uuid(),
   viewingMode: z.enum(['simple', 'advanced']).optional(),
   showVoteCounts: z.boolean().optional(),
+  showSeedNumbers: z.boolean().optional(),
   votingTimerSeconds: z.number().int().positive().nullable().optional(),
 })
 

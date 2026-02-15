@@ -49,6 +49,8 @@ interface BracketDiagramProps {
   skipZoom?: boolean
   /** Prediction accuracy data: matchupId -> 'correct' | 'incorrect' | null. Renders inline SVG badges. */
   accuracyMap?: Record<string, 'correct' | 'incorrect' | null>
+  /** Whether to show seed position numbers next to entrant names */
+  showSeedNumbers?: boolean
 }
 
 // --- Round label mapping ---
@@ -136,6 +138,7 @@ function MatchupBox({
   onMatchupClick,
   isSelected,
   allowPendingClick,
+  showSeedNumbers,
 }: {
   matchup: MatchupData
   x: number
@@ -146,13 +149,20 @@ function MatchupBox({
   onMatchupClick?: (matchupId: string) => void
   isSelected?: boolean
   allowPendingClick?: boolean
+  showSeedNumbers?: boolean
 }) {
   const isByeMatchup = matchup.isBye === true
   // For bye matchups: show "BYE" for the null slot, real entrant name for the other
   const isBye1 = isByeMatchup && matchup.entrant1 == null
   const isBye2 = isByeMatchup && matchup.entrant2 == null
-  const entrant1Name = isBye1 ? 'BYE' : getEntrantName(matchup.entrant1)
-  const entrant2Name = isBye2 ? 'BYE' : getEntrantName(matchup.entrant2)
+  const rawName1 = isBye1 ? 'BYE' : getEntrantName(matchup.entrant1)
+  const rawName2 = isBye2 ? 'BYE' : getEntrantName(matchup.entrant2)
+  const entrant1Name = showSeedNumbers && matchup.entrant1?.seedPosition != null && !isBye1
+    ? `${matchup.entrant1.seedPosition}. ${rawName1}`
+    : rawName1
+  const entrant2Name = showSeedNumbers && matchup.entrant2?.seedPosition != null && !isBye2
+    ? `${matchup.entrant2.seedPosition}. ${rawName2}`
+    : rawName2
   const isEntrant1Winner = matchup.winnerId != null && matchup.winnerId === matchup.entrant1Id
   const isEntrant2Winner = matchup.winnerId != null && matchup.winnerId === matchup.entrant2Id
   const isTBD1 = !isBye1 && matchup.entrant1 == null
@@ -464,7 +474,7 @@ function getCompactPositions(
 }
 
 // --- Main BracketDiagram component ---
-export function BracketDiagram({ matchups, totalRounds, className, bracketSize, onEntrantClick, votedEntrantIds, voteLabels, onMatchupClick, selectedMatchupId, compactVertical, allowPendingClick, mirrorX, skipZoom, accuracyMap }: BracketDiagramProps) {
+export function BracketDiagram({ matchups, totalRounds, className, bracketSize, onEntrantClick, votedEntrantIds, voteLabels, onMatchupClick, selectedMatchupId, compactVertical, allowPendingClick, mirrorX, skipZoom, accuracyMap, showSeedNumbers }: BracketDiagramProps) {
   const roundLabels = useMemo(() => getRoundLabels(totalRounds), [totalRounds])
 
   // Compact positioning for non-SE structures (e.g. losers bracket)
@@ -594,6 +604,7 @@ export function BracketDiagram({ matchups, totalRounds, className, bracketSize, 
             onMatchupClick={onMatchupClick}
             isSelected={selectedMatchupId === matchup.id}
             allowPendingClick={allowPendingClick}
+            showSeedNumbers={showSeedNumbers}
           />
         ))}
 

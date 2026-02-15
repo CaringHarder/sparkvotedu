@@ -1039,6 +1039,7 @@ export function LiveDashboard({
                 voteLabels={voteLabels}
                 onMatchupClick={handleMatchupClick}
                 selectedMatchupId={selectedMatchupId}
+                showSeedNumbers={bracket.showSeedNumbers}
               />
             ) : (
               <BracketDiagram
@@ -1047,6 +1048,7 @@ export function LiveDashboard({
                 voteLabels={voteLabels}
                 onMatchupClick={handleMatchupClick}
                 selectedMatchupId={selectedMatchupId}
+                showSeedNumbers={bracket.showSeedNumbers}
               />
             )
           )}

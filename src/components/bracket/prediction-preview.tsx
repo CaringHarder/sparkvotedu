@@ -153,6 +153,7 @@ export function PredictionPreview({
           bracketSize={bracket.maxEntrants ?? bracket.size}
           onMatchupClick={handleMatchupClick}
           selectedMatchupId={selectedMatchupId}
+          showSeedNumbers={bracket.showSeedNumbers}
         />
       </div>
 

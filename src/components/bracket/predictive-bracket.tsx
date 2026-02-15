@@ -225,6 +225,7 @@ function TeacherPredictiveView({
               matchups={bracket.matchups}
               totalRounds={totalRounds}
               bracketSize={bracket.maxEntrants ?? bracket.size}
+              showSeedNumbers={bracket.showSeedNumbers}
             />
           </div>
         </div>
@@ -347,6 +348,7 @@ function TeacherPredictiveView({
                     matchups={bracket.matchups}
                     totalRounds={totalRounds}
                     bracketSize={bracket.maxEntrants ?? bracket.size}
+                    showSeedNumbers={bracket.showSeedNumbers}
                   />
                 </div>
               ) : (
@@ -437,6 +439,7 @@ function TeacherPredictiveView({
                 matchups={bracket.matchups}
                 totalRounds={totalRounds}
                 bracketSize={bracket.maxEntrants ?? bracket.size}
+                showSeedNumbers={bracket.showSeedNumbers}
               />
             </div>
           ) : (
@@ -519,6 +522,7 @@ function TeacherPredictiveView({
                       matchups={bracket.matchups}
                       totalRounds={totalRounds}
                       bracketSize={bracket.maxEntrants ?? bracket.size}
+                      showSeedNumbers={bracket.showSeedNumbers}
                     />
                   </div>
                 ) : (
@@ -540,6 +544,7 @@ function TeacherPredictiveView({
               matchups={bracket.matchups}
               totalRounds={totalRounds}
               bracketSize={bracket.maxEntrants ?? bracket.size}
+              showSeedNumbers={bracket.showSeedNumbers}
             />
           </div>
 
@@ -585,6 +590,7 @@ function TeacherPredictiveView({
             matchups={bracket.matchups}
             totalRounds={totalRounds}
             bracketSize={bracket.maxEntrants ?? bracket.size}
+            showSeedNumbers={bracket.showSeedNumbers}
           />
         </div>
       </div>
@@ -641,6 +647,7 @@ function TeacherPredictiveView({
           matchups={bracket.matchups}
           totalRounds={totalRounds}
           bracketSize={bracket.maxEntrants ?? bracket.size}
+          showSeedNumbers={bracket.showSeedNumbers}
         />
       </div>
 
@@ -978,6 +985,7 @@ function AdvancedPredictionMode({
               totalRounds={totalRounds}
               bracketSize={bracket.maxEntrants ?? bracket.size}
               votedEntrantIds={existingMap}
+              showSeedNumbers={bracket.showSeedNumbers}
             />
           </div>
         )}
@@ -1011,6 +1019,7 @@ function AdvancedPredictionMode({
             totalRounds={totalRounds}
             bracketSize={bracket.maxEntrants ?? bracket.size}
             votedEntrantIds={votedEntrantIds}
+            showSeedNumbers={bracket.showSeedNumbers}
           />
         </div>
       </div>
@@ -1042,6 +1051,7 @@ function AdvancedPredictionMode({
           votedEntrantIds={votedEntrantIds}
           allowPendingClick
           pendingPredictionIds={pendingPredictionIds}
+          showSeedNumbers={bracket.showSeedNumbers}
         />
       </div>
 
@@ -1071,6 +1081,7 @@ function PredictiveDiagram(props: {
   onEntrantClick?: (matchupId: string, entrantId: string) => void
   allowPendingClick?: boolean
   pendingPredictionIds?: Set<string>
+  showSeedNumbers?: boolean
 }) {
   if (props.bracketSize >= 32) {
     return <RegionBracketView {...props} />

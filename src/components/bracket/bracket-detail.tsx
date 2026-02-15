@@ -222,11 +222,13 @@ export function BracketDetail({ bracket, totalRounds, sessions, standings = [], 
                   matchups={bracket.matchups}
                   totalRounds={totalRounds}
                   bracketSize={bracket.maxEntrants ?? bracket.size}
+                  showSeedNumbers={bracket.showSeedNumbers}
                 />
               ) : (
                 <BracketDiagram
                   matchups={bracket.matchups}
                   totalRounds={totalRounds}
+                  showSeedNumbers={bracket.showSeedNumbers}
                 />
               )}
             </div>
@@ -303,9 +305,11 @@ export function BracketDetail({ bracket, totalRounds, sessions, standings = [], 
                       key={entrant.id}
                       className="flex items-center gap-1.5 text-xs"
                     >
-                      <span className="w-5 text-right text-muted-foreground">
-                        {entrant.seedPosition}
-                      </span>
+                      {bracket.showSeedNumbers && (
+                        <span className="w-5 text-right text-muted-foreground">
+                          {entrant.seedPosition}
+                        </span>
+                      )}
                       <span className="truncate">{entrant.name}</span>
                     </div>
                   ))}

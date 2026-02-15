@@ -25,6 +25,7 @@ export async function createRoundRobinBracketDAL(
     predictiveMode?: string
     predictiveResolutionMode?: string
     playInEnabled?: boolean
+    showSeedNumbers?: boolean
   },
   entrants: { name: string; seedPosition: number }[]
 ) {
@@ -48,6 +49,7 @@ export async function createRoundRobinBracketDAL(
         predictiveMode: null,
         predictiveResolutionMode: null,
         playInEnabled: false,
+        showSeedNumbers: data.showSeedNumbers ?? true,
       },
     })
 

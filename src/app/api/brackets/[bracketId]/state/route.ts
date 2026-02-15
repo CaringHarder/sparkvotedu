@@ -70,6 +70,7 @@ export async function GET(
       status: bracket.status,
       viewingMode: bracket.viewingMode,
       showVoteCounts: bracket.showVoteCounts,
+      showSeedNumbers: bracket.showSeedNumbers,
       votingTimerSeconds: bracket.votingTimerSeconds,
       bracketType: bracket.bracketType,
       predictionStatus: bracket.predictionStatus,

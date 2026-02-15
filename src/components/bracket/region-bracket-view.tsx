@@ -150,6 +150,8 @@ interface RegionBracketViewProps {
   accuracyMap?: Record<string, 'correct' | 'incorrect' | null>
   /** Matchup IDs pending prediction — used for region counts in prediction mode */
   pendingPredictionIds?: Set<string>
+  /** Whether to show seed position numbers next to entrant names */
+  showSeedNumbers?: boolean
 }
 
 // --- Component ---
@@ -166,6 +168,7 @@ export function RegionBracketView({
   selectedMatchupId,
   accuracyMap,
   pendingPredictionIds,
+  showSeedNumbers,
 }: RegionBracketViewProps) {
   const { regions, connectingRegion, regionRounds } = useMemo(
     () => computeRegions(matchups, totalRounds),
@@ -306,6 +309,7 @@ export function RegionBracketView({
                 onMatchupClick={onMatchupClick}
                 selectedMatchupId={selectedMatchupId}
                 accuracyMap={accuracyMap}
+                showSeedNumbers={showSeedNumbers}
               />
             </div>
           ))}
@@ -363,6 +367,7 @@ export function RegionBracketView({
             selectedMatchupId={selectedMatchupId}
             skipZoom
             accuracyMap={accuracyMap}
+            showSeedNumbers={showSeedNumbers}
           />
         </div>
       )}

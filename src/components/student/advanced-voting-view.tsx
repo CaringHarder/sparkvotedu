@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, useTransition, useCallback } from 'react'
 import { BracketDiagram } from '@/components/bracket/bracket-diagram'
-import { QuadrantBracketLayout } from '@/components/bracket/quadrant-bracket-layout'
+import { RegionBracketView } from '@/components/bracket/region-bracket-view'
 import { WinnerReveal } from '@/components/bracket/winner-reveal'
 import { CelebrationScreen } from '@/components/bracket/celebration-screen'
 import { useRealtimeBracket } from '@/hooks/use-realtime-bracket'
@@ -13,6 +13,8 @@ interface AdvancedVotingViewProps {
   bracket: BracketWithDetails
   participantId: string
   initialVotes: Record<string, string | null>
+  /** Notify parent of vote so state survives unmount/remount (tab switches) */
+  onVoteUpdate?: (matchupId: string, entrantId: string) => void
 }
 
 /**
@@ -26,6 +28,7 @@ export function AdvancedVotingView({
   bracket,
   participantId,
   initialVotes,
+  onVoteUpdate,
 }: AdvancedVotingViewProps) {
   const [showCelebration, setShowCelebration] = useState(false)
   const [revealState, setRevealState] = useState<{
@@ -95,6 +98,7 @@ export function AdvancedVotingView({
     (matchupId: string, entrantId: string) => {
       // Optimistic update
       setVotes((prev) => ({ ...prev, [matchupId]: entrantId }))
+      onVoteUpdate?.(matchupId, entrantId)
 
       startTransition(async () => {
         const result = await castVote({
@@ -108,7 +112,7 @@ export function AdvancedVotingView({
         }
       })
     },
-    [participantId, initialVotes]
+    [participantId, initialVotes, onVoteUpdate]
   )
 
   // Count votable matchups and voted matchups
@@ -163,13 +167,14 @@ export function AdvancedVotingView({
 
       {/* Interactive bracket diagram */}
       <div className="rounded-lg border p-3">
-        {(bracket.maxEntrants ?? bracket.size) >= 64 ? (
-          <QuadrantBracketLayout
+        {(bracket.maxEntrants ?? bracket.size) >= 32 ? (
+          <RegionBracketView
             matchups={currentMatchups}
             totalRounds={totalRounds}
+            bracketSize={bracket.maxEntrants ?? bracket.size}
             onEntrantClick={handleEntrantClick}
             votedEntrantIds={votes}
-            bracketSize={bracket.maxEntrants ?? bracket.size}
+            showSeedNumbers={bracket.showSeedNumbers}
           />
         ) : (
           <BracketDiagram
@@ -177,6 +182,7 @@ export function AdvancedVotingView({
             totalRounds={totalRounds}
             onEntrantClick={handleEntrantClick}
             votedEntrantIds={votes}
+            showSeedNumbers={bracket.showSeedNumbers}
           />
         )}
       </div>
