@@ -23,6 +23,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [ ] **Phase 8: Sports Integration** - Real sports tournament brackets from external APIs for classroom prediction competitions
 - [ ] **Phase 9: Analytics** - Participation metrics, vote distribution views, CSV export, and predictive leaderboard scoring
 - [ ] **Phase 10: Landing Page & Polish** - Public landing page, responsive design audit, and interface refinement
+- [ ] **Phase 11: Visual Bracket Placement** - Drag-and-drop seeding where teachers place entrants directly on the bracket diagram
 
 ## Phase Details
 
@@ -273,10 +274,24 @@ Plans:
 - [ ] 10-04: Responsive design audit (desktop, tablet, mobile)
 - [ ] 10-05: Final polish and deployment preparation
 
+### Phase 11: Visual Bracket Placement
+**Goal**: Teachers can drag entrants from a pool into bracket diagram positions, swap entrants within the bracket, and toggle between list reorder and visual placement modes
+**Depends on**: Phase 7
+**Success Criteria** (what must be TRUE):
+  1. Teacher can see the bracket diagram with empty slots during bracket creation and drag entrants from a pool into specific positions
+  2. Teacher can swap entrants between positions by dragging within the bracket
+  3. Matchup pairings update in real-time as teachers place entrants
+  4. Teacher can toggle between linear list reorder (current) and visual bracket placement modes
+  5. Bye slots are handled correctly for non-power-of-2 brackets in visual placement mode
+**Plans**: TBD
+
+Plans:
+- [ ] TBD (run /gsd:plan-phase 11 to break down)
+
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7 -> 7.1 -> 8 -> 9 -> 10
+Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7 -> 7.1 -> 8 -> 9 -> 10 -> 11
 
 Note: Phase 3 depends only on Phase 1 (not Phase 2), so Phases 2 and 3 could theoretically run in parallel. Phase 6 depends only on Phase 1, so it could be pulled earlier if billing urgency requires it. However, the recommended linear order above maximizes coherence: build the user flows (auth, student, brackets, voting, polls) before layering on billing, advanced features, and polish.
 
@@ -293,3 +308,4 @@ Note: Phase 3 depends only on Phase 1 (not Phase 2), so Phases 2 and 3 could the
 | 8. Sports Integration | 0/5 | Not started | - |
 | 9. Analytics | 0/4 | Not started | - |
 | 10. Landing Page & Polish | 0/5 | Not started | - |
+| 11. Visual Bracket Placement | 0/0 | Not started | - |

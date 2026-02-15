@@ -333,8 +333,12 @@ Recent decisions affecting current work:
 - Create Stripe Products (Pro, Pro Plus) with Monthly/Annual prices and add Price IDs to .env.local
 - Add STRIPE_SECRET_KEY and STRIPE_WEBHOOK_SECRET to .env.local
 - ~~Unify 32+ bracket layout across predictive modes on teacher dashboard~~ (DONE - PredictiveDiagram helper renders RegionBracketView for 32+)
-- Add option to show or hide seed numbers for entrants when creating bracket
-- Add visual bracket placement with drag-and-drop seeding (let teachers place matchups on the bracket, not just reorder a list)
+- ~~Add option to show or hide seed numbers for entrants when creating bracket~~ (DONE - showSeedNumbers boolean on Bracket model, toggle in creation form, passed through all diagram components)
+- Add visual bracket placement with drag-and-drop seeding (let teachers place matchups on the bracket, not just reorder a list) → Phase 11
+
+### Roadmap Evolution
+
+- Phase 11 added: Visual Bracket Placement — drag-and-drop seeding where teachers place entrants directly on the bracket diagram
 
 ### Blockers/Concerns
 
