@@ -5,21 +5,21 @@
 See: .planning/PROJECT.md (updated 2026-01-28)
 
 **Core value:** Teachers can instantly engage any classroom through voting -- on any topic, in any format -- and see participation happen in real time.
-**Current focus:** Phase 7.1 (Predictive Auto-Resolution) -- R3 gap closure in progress. Plan 09 of 10 complete.
+**Current focus:** Phase 7.1 (Predictive Auto-Resolution) -- COMPLETE. All 10 plans delivered (4 original + 6 gap closure). Ready for Phase 8.
 
 ## Current Position
 
 Phase: 7.1 of 10 (Predictive Auto-Resolution Mode - INSERTED)
-Plan: 9 of 10 in current phase
-Status: R3 gap closure in progress
-Last activity: 2026-02-15 -- Completed 07.1-09-PLAN.md (R3 gap closure: reveal event handling)
+Plan: 10 of 10 in current phase
+Status: Phase complete
+Last activity: 2026-02-15 -- Completed 07.1-10-PLAN.md (R3 gap closure: 32+ entrant predictive bracket layout)
 
-Progress: [###############] ~98% (83/84 plans)
+Progress: [################] 100% (84/84 plans)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 83
+- Total plans completed: 84
 - Average duration: ~3.5 min
 - Total execution time: ~5.0 hours
 
@@ -36,11 +36,11 @@ Progress: [###############] ~98% (83/84 plans)
 
 | 07-advanced-brackets | 34/34 | ~87.1m | ~2.6m |
 
-| 07.1-predictive-auto-resolution | 9/10 | ~27m | ~3.0m |
+| 07.1-predictive-auto-resolution | 10/10 | ~29m | ~2.9m |
 
 **Recent Trend:**
-- Last 5 plans: 07.1-05 (~TBD), 07.1-06 (~2m), 07.1-07 (~2m), 07.1-08 (~1.5m), 07.1-09 (~40s)
-- Trend: R3 gap closure plans executing rapidly. 1 plan remaining in Phase 7.1.
+- Last 5 plans: 07.1-06 (~2m), 07.1-07 (~2m), 07.1-08 (~1.5m), 07.1-09 (~40s), 07.1-10 (~2m)
+- Trend: Phase 7.1 fully complete with all 10 plans (4 original + 6 gap closure). All 84 plans across Phases 1-7.1 delivered.
 
 *Updated after each plan completion*
 
@@ -321,6 +321,9 @@ Recent decisions affecting current work:
 - [07.1-08]: Single combined "Close Predictions & Prepare Results" button replaces Fragment-wrapped two-button layout in auto-mode teacher UI
 - [07.1-09]: reveal_round and reveal_complete event types added to useRealtimeBracket alongside existing 5 types
 - [07.1-09]: reveal_complete triggers setBracketCompleted(true) for podium celebration path
+- [07.1-10]: Inline SVG accuracy badges via accuracyMap prop instead of separate absolute-positioned SVG overlay
+- [07.1-10]: RegionBracketView for >= 32 entrants in BracketAccuracyView matches AdvancedVotingView conditional pattern
+- [07.1-10]: accuracyMap typed as Record<string, 'correct' | 'incorrect' | null> for simple prop forwarding through component tree
 
 ### Pending Todos
 
@@ -338,6 +341,6 @@ Recent decisions affecting current work:
 ## Session Continuity
 
 Last session: 2026-02-15
-Stopped at: Completed 07.1-09-PLAN.md (R3 gap closure: reveal event handling in useRealtimeBracket)
-Resume file: .planning/phases/07.1-predictive-auto-resolution/07.1-10-PLAN.md
-Note: 83/84 plans complete. 1 remaining R3 gap closure plan (07.1-10) before Phase 7.1 fully closes.
+Stopped at: Completed 07.1-10-PLAN.md (R3 gap closure: 32+ entrant predictive bracket layout + accuracy badge alignment)
+Resume file: None
+Note: Phase 7.1 fully complete with all 10 plans (4 original + 6 gap closure). All 84 plans across Phases 1-7.1 delivered. Ready for Phase 8 (Sports Integration).
