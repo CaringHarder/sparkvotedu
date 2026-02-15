@@ -21,7 +21,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 7: Advanced Brackets** - Double-elimination, round-robin, predictive brackets, and non-power-of-two support
 - [x] **Phase 7.1: Predictive Auto-Resolution Mode** - Third resolution mode where predictions auto-count as votes without voting rounds (INSERTED)
 - [x] **Phase 8: Sports Integration** - Real sports tournament brackets from external APIs for classroom prediction competitions
-- [ ] **Phase 9: Analytics** - Participation metrics, vote distribution views, CSV export, and predictive leaderboard scoring
+- [x] **Phase 9: Analytics** - Participation metrics, vote distribution views, CSV export, and predictive leaderboard scoring
 - [ ] **Phase 10: Landing Page & Polish** - Public landing page, responsive design audit, and interface refinement
 - [ ] **Phase 11: Visual Bracket Placement** - Drag-and-drop seeding where teachers place entrants directly on the bracket diagram
 
@@ -250,9 +250,9 @@ Plans:
 **Plans**: 3 plans
 
 Plans:
-- [ ] 09-01-PLAN.md — Analytics DAL aggregation functions + bracket analytics page with participation and vote distribution
-- [ ] 09-02-PLAN.md — Poll analytics page + analytics hub + sidebar navigation
-- [ ] 09-03-PLAN.md — Tier-gated CSV export for brackets, polls, and predictive scoring
+- [x] 09-01-PLAN.md — Analytics DAL aggregation functions + bracket analytics page with participation and vote distribution
+- [x] 09-02-PLAN.md — Poll analytics page + analytics hub + sidebar navigation
+- [x] 09-03-PLAN.md — Tier-gated CSV export for brackets, polls, and predictive scoring
 
 ### Phase 10: Landing Page & Polish
 **Goal**: The public-facing site has a polished landing page with branding and pricing, and the entire application delivers a sleek, responsive experience on all devices
@@ -304,6 +304,6 @@ Note: Phase 3 depends only on Phase 1 (not Phase 2), so Phases 2 and 3 could the
 | 7. Advanced Brackets | 34/34 | Complete | 2026-02-08 |
 | 7.1 Predictive Auto-Resolution | 10/10 | Complete | 2026-02-15 |
 | 8. Sports Integration | 4/4 | Complete | 2026-02-15 |
-| 9. Analytics | 0/3 | Not started | - |
+| 9. Analytics | 3/3 | Complete | 2026-02-15 |
 | 10. Landing Page & Polish | 0/5 | Not started | - |
 | 11. Visual Bracket Placement | 0/0 | Not started | - |

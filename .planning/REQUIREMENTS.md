@@ -76,10 +76,10 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Analytics
 
-- [ ] **ANLYT-01**: Teacher can view participation count per bracket/poll
-- [ ] **ANLYT-02**: Teacher can view vote distribution per matchup/poll option
-- [ ] **ANLYT-03**: Teacher can export bracket/poll data as CSV (Pro and above)
-- [ ] **ANLYT-04**: Predictive bracket leaderboard shows scoring breakdown per student (Pro Plus)
+- [x] **ANLYT-01**: Teacher can view participation count per bracket/poll
+- [x] **ANLYT-02**: Teacher can view vote distribution per matchup/poll option
+- [x] **ANLYT-03**: Teacher can export bracket/poll data as CSV (Pro and above)
+- [x] **ANLYT-04**: Predictive bracket leaderboard shows scoring breakdown per student (Pro Plus)
 
 ### Billing & Subscriptions
 
@@ -189,10 +189,10 @@ Which phases cover which requirements. Updated during roadmap creation.
 | SPRT-02 | Phase 8: Sports Integration | Pending |
 | SPRT-03 | Phase 8: Sports Integration | Pending |
 | SPRT-04 | Phase 8: Sports Integration | Pending |
-| ANLYT-01 | Phase 9: Analytics | Pending |
-| ANLYT-02 | Phase 9: Analytics | Pending |
-| ANLYT-03 | Phase 9: Analytics | Pending |
-| ANLYT-04 | Phase 9: Analytics | Pending |
+| ANLYT-01 | Phase 9: Analytics | Complete |
+| ANLYT-02 | Phase 9: Analytics | Complete |
+| ANLYT-03 | Phase 9: Analytics | Complete |
+| ANLYT-04 | Phase 9: Analytics | Complete |
 | BILL-01 | Phase 6: Billing & Subscriptions | Complete |
 | BILL-02 | Phase 6: Billing & Subscriptions | Complete |
 | BILL-03 | Phase 6: Billing & Subscriptions | Complete |
