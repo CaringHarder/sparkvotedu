@@ -235,8 +235,8 @@ Plans:
 Plans:
 - [x] 08-01-PLAN.md — Sports provider abstraction, SportsDataIO client, schema extensions, type updates
 - [x] 08-02-PLAN.md — Sports bracket creation DAL, sync engine, server actions, logo resolver
-- [ ] 08-03-PLAN.md — Tournament browser UI, import page, sports matchup box, bracket diagram integration
-- [ ] 08-04-PLAN.md — Cron-based score sync endpoint, live dashboard sports mode, manual override
+- [x] 08-03-PLAN.md — Tournament browser UI, import page, sports matchup box, bracket diagram integration
+- [x] 08-04-PLAN.md — Cron-based score sync endpoint, live dashboard sports mode, manual override
 
 ### Phase 9: Analytics
 **Goal**: Teachers can view participation and voting data for their brackets and polls, export data as CSV, and see predictive bracket scoring details
@@ -304,7 +304,7 @@ Note: Phase 3 depends only on Phase 1 (not Phase 2), so Phases 2 and 3 could the
 | 6. Billing & Subscriptions | 5/5 | Complete | 2026-02-01 |
 | 7. Advanced Brackets | 34/34 | Complete | 2026-02-08 |
 | 7.1 Predictive Auto-Resolution | 10/10 | Complete | 2026-02-15 |
-| 8. Sports Integration | 0/4 | Not started | - |
+| 8. Sports Integration | 4/4 | Complete | 2026-02-15 |
 | 9. Analytics | 0/4 | Not started | - |
 | 10. Landing Page & Polish | 0/5 | Not started | - |
 | 11. Visual Bracket Placement | 0/0 | Not started | - |
