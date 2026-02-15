@@ -93,7 +93,7 @@ export function BracketForm() {
   const [roundRobinVotingStyle, setRoundRobinVotingStyle] = useState<RoundRobinVotingStyle>('simple')
   const [roundRobinStandingsMode, setRoundRobinStandingsMode] = useState<RoundRobinStandingsMode>('live')
   const [predictiveMode, setPredictiveMode] = useState<PredictiveMode>('simple')
-  const [predictiveResolutionMode, setPredictiveResolutionMode] = useState<PredictiveResolutionMode>('manual')
+  const [predictiveResolutionMode, setPredictiveResolutionMode] = useState<PredictiveResolutionMode>('vote_based')
   const [playInEnabled, setPlayInEnabled] = useState(false)
   const [viewingMode, setViewingMode] = useState<'simple' | 'advanced'>('advanced')
 
@@ -593,9 +593,8 @@ export function BracketForm() {
                   <Label className="text-xs text-muted-foreground">Resolution Mode</Label>
                   <div className="flex flex-col gap-2">
                     {([
-                      { value: 'manual' as const, label: 'Manual', description: 'Teacher picks each winner manually.' },
-                      { value: 'vote_based' as const, label: 'Vote Based', description: 'Students vote on matchups, then predictions are scored.' },
-                      { value: 'auto' as const, label: 'Predictive', description: 'Predictions auto-resolve the bracket. Teacher paces the reveal.' },
+                      { value: 'vote_based' as const, label: 'Predict then Vote', description: 'Students predict bracket, then Live Vote to pick winners.' },
+                      { value: 'auto' as const, label: 'Prediction is the Vote', description: 'Predictions auto-resolve the bracket. Teacher paces the reveal.' },
                     ]).map((option) => (
                       <label key={option.value} className="flex items-start gap-1.5">
                         <input
@@ -850,7 +849,7 @@ export function BracketForm() {
                   <span className="text-sm font-medium text-muted-foreground">Options</span>
                   <p className="text-sm">
                     Mode: {predictiveMode} /
-                    Resolution: {predictiveResolutionMode === 'auto' ? 'Predictive' : predictiveResolutionMode === 'vote_based' ? 'Vote Based' : 'Manual'}
+                    Resolution: {predictiveResolutionMode === 'auto' ? 'Prediction is the Vote' : 'Predict then Vote'}
                   </p>
                 </div>
               )}
