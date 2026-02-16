@@ -28,8 +28,19 @@ export function LandingNav() {
           />
         </Link>
 
-        {/* Right: Log In link + Sign Up button */}
-        <div className="flex items-center gap-4">
+        {/* Right: Join Class + Log In link + Sign Up button */}
+        <div className="flex items-center gap-3 sm:gap-4">
+          <Button
+            asChild
+            variant="outline"
+            size="sm"
+            className="border-brand-blue/30 text-brand-blue hover:bg-brand-blue/5 hover:text-brand-blue-dark"
+          >
+            <Link href="/join">
+              <span className="sm:hidden">Join</span>
+              <span className="hidden sm:inline">Join Class</span>
+            </Link>
+          </Button>
           <Link
             href="/login"
             className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
