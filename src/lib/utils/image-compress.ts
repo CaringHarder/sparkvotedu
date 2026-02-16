@@ -7,13 +7,13 @@
  * Uses the Canvas API (createImageBitmap + canvas.toBlob) -- no external
  * library needed. ~15 lines of core logic.
  *
- * Default: max 800px on longest side, JPEG quality 0.8.
- * This produces good visual quality for poll option thumbnails (~200px card)
- * and teacher views (~400px) while keeping files under ~200KB.
+ * Default: max 1200px on longest side, JPEG quality 0.8.
+ * This produces good quality for poll option display and bracket entry
+ * thumbnails while keeping files well under the 5MB bucket limit.
  */
 export async function compressImage(
   file: File,
-  maxDimension: number = 800,
+  maxDimension: number = 1200,
   quality: number = 0.8
 ): Promise<File> {
   const bitmap = await createImageBitmap(file)

@@ -19,7 +19,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 
 const uploadUrlSchema = z.object({
   fileName: z.string().min(1),
-  contentType: z.string().regex(/^image\/(jpeg|png|webp|gif)$/),
+  contentType: z.string().regex(/^image\/(jpeg|png|webp)$/),
 })
 
 export async function POST(

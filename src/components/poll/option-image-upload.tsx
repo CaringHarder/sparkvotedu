@@ -16,7 +16,7 @@ interface OptionImageUploadProps {
  *
  * Flow:
  * 1. User clicks "Add Image" button (triggers hidden file input)
- * 2. Client compresses image via Canvas API (max 800px, JPEG 0.8)
+ * 2. Client compresses image via Canvas API (max 1200px, JPEG 0.8)
  * 3. Fetches a signed upload URL from /api/polls/[pollId]/upload-url
  * 4. Uploads compressed file directly to Supabase Storage via PUT
  * 5. Calls onImageUrl with the public URL
@@ -102,7 +102,7 @@ export function OptionImageUpload({
       <input
         ref={fileInputRef}
         type="file"
-        accept="image/jpeg,image/png,image/webp,image/gif"
+        accept="image/jpeg,image/png,image/webp"
         onChange={handleFileSelect}
         className="hidden"
       />
