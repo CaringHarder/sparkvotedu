@@ -263,14 +263,14 @@ Plans:
   2. Teacher interface (dashboard, bracket creator, analytics) feels sleek and intuitive with consistent design language
   3. Student interface (join flow, voting, bracket view) is simple and requires zero instruction to use
   4. Application works well on desktop, tablet, and mobile with no broken layouts or unusable interactions
-**Plans**: TBD
+**Plans**: 5 plans
 
 Plans:
-- [ ] 10-01: Landing page with branding, pitch, and pricing
-- [ ] 10-02: Teacher interface design audit and refinement
-- [ ] 10-03: Student interface design audit and refinement
-- [ ] 10-04: Responsive design audit (desktop, tablet, mobile)
-- [ ] 10-05: Final polish and deployment preparation
+- [ ] 10-01-PLAN.md — Brand infrastructure: color system, dark mode (next-themes), logo assets, skeleton component
+- [ ] 10-02-PLAN.md — Landing page: hero, features, pricing, class code input, branded sections
+- [ ] 10-03-PLAN.md — Teacher dashboard polish: visual refresh, sidebar redesign, skeleton loading, auth branding
+- [ ] 10-04-PLAN.md — Student experience polish: branded layout, join flow, celebration enhancements
+- [ ] 10-05-PLAN.md — Responsive design audit: mobile navigation, bracket mobile view, breakpoint fixes
 
 ### Phase 11: Visual Bracket Placement
 **Goal**: Teachers can drag entrants from a pool into bracket diagram positions, swap entrants within the bracket, and toggle between list reorder and visual placement modes
@@ -305,5 +305,5 @@ Note: Phase 3 depends only on Phase 1 (not Phase 2), so Phases 2 and 3 could the
 | 7.1 Predictive Auto-Resolution | 10/10 | Complete | 2026-02-15 |
 | 8. Sports Integration | 4/4 | Complete | 2026-02-15 |
 | 9. Analytics | 3/3 | Complete | 2026-02-15 |
-| 10. Landing Page & Polish | 0/5 | Not started | - |
+| 10. Landing Page & Polish | 0/5 | Planned | - |
 | 11. Visual Bracket Placement | 0/0 | Not started | - |
