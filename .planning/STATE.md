@@ -47,5 +47,6 @@ None -- all former todos are now tracked as v1.1 requirements.
 ## Session Continuity
 
 Last session: 2026-02-16
-Stopped at: Roadmap created for v1.1 milestone
+Stopped at: Phase 14 context gathered
+Resume file: .planning/phases/14-service-configuration/14-CONTEXT.md
 Resume: `/gsd:plan-phase 14` to begin Phase 14 planning
