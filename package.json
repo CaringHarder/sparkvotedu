@@ -12,6 +12,8 @@
     "test:watch": "vitest"
   },
   "dependencies": {
+    "@dnd-kit/dom": "^0.3.0",
+    "@dnd-kit/react": "^0.3.0",
     "@fingerprintjs/fingerprintjs": "^5.0.1",
     "@prisma/adapter-pg": "^7.3.0",
     "@prisma/client": "^7.3.0",
