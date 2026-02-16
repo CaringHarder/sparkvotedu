@@ -59,11 +59,11 @@ Plans:
   1. Visual bracket placement step fills the full page width instead of being constrained to a sidebar
   2. Students see a "Join Class" action in the landing page header (accessible without scrolling)
   3. Landing page logo displays at correct size and background colors render correctly across the page
-**Plans**: TBD
+**Plans**: 2 plans
 
 Plans:
-- [ ] 15-01: Move visual bracket placement to full-width creation step
-- [ ] 15-02: Fix landing page header and styling issues
+- [ ] 15-01-PLAN.md -- Move visual bracket placement to full-width creation step
+- [ ] 15-02-PLAN.md -- Fix landing page header and styling issues
 
 ### Phase 16: Legal Pages
 **Goal**: Required legal pages exist and are accessible before public launch
