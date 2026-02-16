@@ -3,7 +3,7 @@ import { getTeacherSessions } from '@/lib/dal/class-session'
 import { getTeacherBillingOverview } from '@/lib/dal/billing'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
-import { Plus, ArrowRight } from 'lucide-react'
+import { Plus, ArrowRight, Users, Sparkles, Zap } from 'lucide-react'
 import { PlanBadge } from '@/components/billing/plan-badge'
 import { TIER_LIMITS, type SubscriptionTier } from '@/lib/gates/tiers'
 
@@ -23,82 +23,114 @@ export async function DashboardShell() {
   const tier = (billing.tier || 'free') as SubscriptionTier
   const limits = TIER_LIMITS[tier]
 
+  // Calculate usage percentages for progress bars
+  const liveBracketPct = limits.maxLiveBrackets === Infinity
+    ? 0
+    : Math.round((billing.usage.liveBrackets / limits.maxLiveBrackets) * 100)
+  const draftBracketPct = limits.maxDraftBrackets === Infinity
+    ? 0
+    : Math.round((billing.usage.draftBrackets / limits.maxDraftBrackets) * 100)
+
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-8">
+      {/* Welcome section */}
       <div>
-        <h1 className="text-2xl font-bold tracking-tight">
-          Welcome, {displayName}
+        <h1 className="text-3xl font-bold tracking-tight">
+          Welcome back, <span className="text-brand-blue">{displayName}</span>
         </h1>
-        <p className="text-muted-foreground">
+        <p className="mt-1 text-muted-foreground">
           Here is your teaching dashboard
         </p>
       </div>
 
-      <div className="flex items-center gap-2">
-        <PlanBadge tier={tier} />
-      </div>
-
+      {/* Action cards grid */}
       <div className="grid gap-4 sm:grid-cols-2">
+        {/* Create Session card -- primary CTA */}
         <Link
           href="/sessions"
-          className="flex items-center gap-3 rounded-lg border bg-card p-4 transition-colors hover:bg-accent"
+          className="group relative overflow-hidden rounded-xl border border-brand-blue/20 bg-gradient-to-br from-brand-blue/5 via-background to-brand-blue/10 p-5 shadow-sm transition-all duration-200 hover:border-brand-blue/40 hover:shadow-md dark:from-brand-blue/10 dark:to-brand-blue/5"
         >
-          <div className="flex h-10 w-10 items-center justify-center rounded-md bg-primary text-primary-foreground">
-            <Plus className="h-5 w-5" />
+          <div className="flex items-start gap-4">
+            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-brand-blue text-white shadow-sm">
+              <Plus className="h-6 w-6" />
+            </div>
+            <div className="min-w-0">
+              <p className="text-base font-semibold text-foreground">Create Session</p>
+              <p className="mt-0.5 text-sm text-muted-foreground">
+                Start a new class session and engage your students
+              </p>
+            </div>
           </div>
-          <div>
-            <p className="font-medium">Create Session</p>
-            <p className="text-sm text-muted-foreground">Start a new class session</p>
-          </div>
+          {/* Hover arrow indicator */}
+          <ArrowRight className="absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2 text-brand-blue opacity-0 transition-all duration-200 group-hover:translate-x-0 group-hover:opacity-100" />
         </Link>
 
-        <div className="rounded-lg border bg-card p-4">
+        {/* Plan & Usage card */}
+        <div className="relative overflow-hidden rounded-xl border bg-card p-5 shadow-sm">
           <div className="flex items-center justify-between">
-            <p className="text-sm font-medium text-muted-foreground">
-              Plan &amp; Usage
-            </p>
+            <p className="text-sm font-semibold text-foreground">Plan & Usage</p>
             <PlanBadge tier={tier} />
           </div>
-          <div className="mt-3 space-y-1.5 text-sm">
-            {limits.maxLiveBrackets === Infinity ? (
-              <p>
-                <span className="font-medium">{billing.usage.liveBrackets}</span>{' '}
-                live brackets
-              </p>
-            ) : (
-              <p>
-                <span className="font-medium">{billing.usage.liveBrackets}</span>{' '}
-                of {limits.maxLiveBrackets} live brackets
-              </p>
-            )}
-            {limits.maxDraftBrackets === Infinity ? (
-              <p>
-                <span className="font-medium">{billing.usage.draftBrackets}</span>{' '}
-                draft brackets
-              </p>
-            ) : (
-              <p>
-                <span className="font-medium">{billing.usage.draftBrackets}</span>{' '}
-                of {limits.maxDraftBrackets} draft brackets
-              </p>
-            )}
+
+          <div className="mt-4 space-y-3">
+            {/* Live brackets usage */}
+            <div>
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-muted-foreground">Live brackets</span>
+                <span className="font-medium tabular-nums">
+                  {limits.maxLiveBrackets === Infinity
+                    ? billing.usage.liveBrackets
+                    : `${billing.usage.liveBrackets} / ${limits.maxLiveBrackets}`}
+                </span>
+              </div>
+              {limits.maxLiveBrackets !== Infinity && (
+                <div className="mt-1.5 h-1.5 w-full overflow-hidden rounded-full bg-muted">
+                  <div
+                    className="h-full rounded-full bg-brand-blue transition-all duration-300"
+                    style={{ width: `${Math.min(liveBracketPct, 100)}%` }}
+                  />
+                </div>
+              )}
+            </div>
+
+            {/* Draft brackets usage */}
+            <div>
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-muted-foreground">Draft brackets</span>
+                <span className="font-medium tabular-nums">
+                  {limits.maxDraftBrackets === Infinity
+                    ? billing.usage.draftBrackets
+                    : `${billing.usage.draftBrackets} / ${limits.maxDraftBrackets}`}
+                </span>
+              </div>
+              {limits.maxDraftBrackets !== Infinity && (
+                <div className="mt-1.5 h-1.5 w-full overflow-hidden rounded-full bg-muted">
+                  <div
+                    className="h-full rounded-full bg-brand-amber transition-all duration-300"
+                    style={{ width: `${Math.min(draftBracketPct, 100)}%` }}
+                  />
+                </div>
+              )}
+            </div>
           </div>
+
           <Link
             href="/billing"
-            className="mt-3 inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline"
+            className="mt-4 inline-flex items-center gap-1.5 text-xs font-medium text-brand-blue hover:underline"
           >
-            View Plan <ArrowRight className="h-3 w-3" />
+            Manage Plan <ArrowRight className="h-3 w-3" />
           </Link>
         </div>
       </div>
 
+      {/* Active Sessions section */}
       {activeSessions.length > 0 && (
-        <div className="space-y-3">
+        <div className="space-y-4">
           <div className="flex items-center justify-between">
-            <h2 className="text-lg font-semibold">Active Sessions</h2>
+            <h2 className="text-lg font-semibold tracking-tight">Active Sessions</h2>
             <Link
               href="/sessions"
-              className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
+              className="flex items-center gap-1 text-sm font-medium text-brand-blue hover:underline"
             >
               View all <ArrowRight className="h-4 w-4" />
             </Link>
@@ -108,25 +140,46 @@ export async function DashboardShell() {
               <Link
                 key={session.id}
                 href={`/sessions/${session.id}`}
-                className="rounded-lg border bg-card p-4 transition-colors hover:bg-accent"
+                className="group rounded-xl border bg-card p-4 shadow-sm transition-all duration-200 hover:border-brand-amber/40 hover:shadow-md"
               >
-                <p className="font-medium">{session.name || 'Unnamed Session'}</p>
-                <p className="mt-1 font-mono text-lg font-bold">{session.code}</p>
-                <p className="mt-1 text-sm text-muted-foreground">
-                  {session._count.participants} student{session._count.participants !== 1 ? 's' : ''}
+                <div className="flex items-start justify-between">
+                  <p className="font-medium text-foreground">{session.name || 'Unnamed Session'}</p>
+                  <span className="inline-flex items-center rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-medium text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400">
+                    Live
+                  </span>
+                </div>
+                <p className="mt-2 font-mono text-xl font-bold tracking-wider text-brand-amber">
+                  {session.code}
                 </p>
+                <div className="mt-2 flex items-center gap-1.5 text-sm text-muted-foreground">
+                  <Users className="h-3.5 w-3.5" />
+                  <span>
+                    {session._count.participants} student{session._count.participants !== 1 ? 's' : ''}
+                  </span>
+                </div>
               </Link>
             ))}
           </div>
         </div>
       )}
 
+      {/* Empty state */}
       {activeSessions.length === 0 && (
-        <div className="rounded-lg border bg-card p-8 text-center">
-          <p className="text-muted-foreground">No active sessions yet.</p>
+        <div className="rounded-xl border border-dashed border-border/80 bg-muted/20 p-10 text-center">
+          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-brand-blue/10">
+            <Sparkles className="h-7 w-7 text-brand-blue" />
+          </div>
+          <h3 className="mt-4 text-base font-semibold text-foreground">No active sessions</h3>
           <p className="mt-1 text-sm text-muted-foreground">
-            Create a session to get your students engaged.
+            Create a session to start engaging your students with brackets and polls.
           </p>
+          <Link
+            href="/sessions"
+            className="mt-4 inline-flex items-center gap-2 rounded-lg bg-brand-blue px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-brand-blue-dark"
+          >
+            <Zap className="h-4 w-4" />
+            Create your first session
+          </Link>
         </div>
       )}
     </div>
