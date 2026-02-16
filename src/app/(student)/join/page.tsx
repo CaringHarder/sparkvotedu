@@ -1,3 +1,4 @@
+import Image from 'next/image'
 import { JoinForm } from '@/components/student/join-form'
 
 export default async function JoinPage({
@@ -9,10 +10,18 @@ export default async function JoinPage({
 
   return (
     <div className="flex flex-col items-center gap-8 pt-12">
-      <div className="flex flex-col items-center gap-2 text-center">
-        <h1 className="text-3xl font-bold tracking-tight">SparkVotEDU</h1>
+      <div className="flex flex-col items-center gap-3 text-center">
+        <Image
+          src="/logo-icon.png"
+          alt="SparkVotEDU"
+          width={48}
+          height={48}
+          className="h-12 w-12"
+          priority
+        />
+        <h1 className="text-3xl font-bold tracking-tight">Join a Session</h1>
         <p className="text-sm text-muted-foreground">
-          Ignite student voice through voting
+          Enter your 6-digit class code to get started
         </p>
       </div>
 

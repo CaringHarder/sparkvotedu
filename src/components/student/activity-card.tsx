@@ -14,18 +14,29 @@ interface ActivityCardProps {
  * Displays the activity name, type icon (bracket vs poll), participant count,
  * and a "Voted" indicator if the student has already voted.
  *
+ * Visual differentiation: brand-blue for brackets, brand-amber for polls.
  * Responsive: works on mobile (stacked) and desktop (grid).
  */
 export function ActivityCard({ activity, onClick }: ActivityCardProps) {
+  const isBracket = activity.type === 'bracket'
+
   return (
     <Card
-      className="cursor-pointer transition-all hover:shadow-md hover:border-primary/30"
+      className={`cursor-pointer transition-all hover:shadow-md ${
+        isBracket
+          ? 'hover:border-brand-blue/40'
+          : 'hover:border-brand-amber/40'
+      }`}
       onClick={onClick}
     >
       <CardContent className="flex flex-col items-center gap-3 px-4 py-5 text-center">
-        {/* Icon */}
-        <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10">
-          {activity.type === 'bracket' ? (
+        {/* Icon with brand color differentiation */}
+        <div
+          className={`flex h-12 w-12 items-center justify-center rounded-xl ${
+            isBracket ? 'bg-brand-blue/10' : 'bg-brand-amber/10'
+          }`}
+        >
+          {isBracket ? (
             <svg
               xmlns="http://www.w3.org/2000/svg"
               width="22"
@@ -36,7 +47,7 @@ export function ActivityCard({ activity, onClick }: ActivityCardProps) {
               strokeWidth="2"
               strokeLinecap="round"
               strokeLinejoin="round"
-              className="text-primary"
+              className="text-brand-blue"
             >
               <path d="M10 3H6a2 2 0 0 0-2 2v14c0 1.1.9 2 2 2h4" />
               <path d="M14 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4" />
@@ -52,7 +63,7 @@ export function ActivityCard({ activity, onClick }: ActivityCardProps) {
               strokeWidth="2"
               strokeLinecap="round"
               strokeLinejoin="round"
-              className="text-primary"
+              className="text-brand-amber"
             >
               <path d="M18 20V10" />
               <path d="M12 20V4" />
@@ -65,16 +76,22 @@ export function ActivityCard({ activity, onClick }: ActivityCardProps) {
         <div className="w-full min-w-0">
           <h3 className="font-medium leading-snug line-clamp-2">{activity.name}</h3>
           <p className="mt-1 text-xs text-muted-foreground">
-            {activity.type === 'bracket' ? 'Bracket' : 'Poll'}
+            <span
+              className={`font-medium ${
+                isBracket ? 'text-brand-blue' : 'text-brand-amber'
+              }`}
+            >
+              {isBracket ? 'Bracket' : 'Poll'}
+            </span>
             {' '}&middot;{' '}
             {activity.participantCount} participant
             {activity.participantCount !== 1 ? 's' : ''}
           </p>
         </div>
 
-        {/* Voted badge */}
-        {activity.hasVoted && (
-          <div className="flex items-center gap-1 rounded-full bg-green-100 px-2.5 py-1 text-xs font-medium text-green-700 dark:bg-green-900/30 dark:text-green-400">
+        {/* Status indicator */}
+        {activity.hasVoted ? (
+          <div className="flex items-center gap-1.5 rounded-full bg-green-100 px-2.5 py-1 text-xs font-medium text-green-700 dark:bg-green-900/30 dark:text-green-400">
             <svg
               xmlns="http://www.w3.org/2000/svg"
               width="12"
@@ -89,6 +106,15 @@ export function ActivityCard({ activity, onClick }: ActivityCardProps) {
               <path d="M20 6 9 17l-5-5" />
             </svg>
             Voted
+          </div>
+        ) : (
+          <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+            <span
+              className={`inline-block h-2 w-2 rounded-full animate-pulse ${
+                isBracket ? 'bg-brand-blue' : 'bg-brand-amber'
+              }`}
+            />
+            Active
           </div>
         )}
       </CardContent>

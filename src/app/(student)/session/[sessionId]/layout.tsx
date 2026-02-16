@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { SessionHeader } from '@/components/student/session-header'
+import { Skeleton } from '@/components/ui/skeleton'
 
 interface ParticipantStore {
   participantId: string
@@ -42,8 +43,30 @@ export default function SessionLayout({
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-16">
-        <p className="text-sm text-muted-foreground">Loading...</p>
+      <div className="flex flex-col">
+        {/* Skeleton header */}
+        <div className="flex items-center justify-between border-b border-border/60 px-4 py-2.5">
+          <div className="flex items-center gap-2">
+            <Skeleton className="h-5 w-5 rounded" />
+            <Skeleton className="h-4 w-20" />
+          </div>
+          <div className="flex items-center gap-2">
+            <Skeleton className="h-7 w-24 rounded-md" />
+            <Skeleton className="h-8 w-8 rounded-md" />
+          </div>
+        </div>
+        {/* Skeleton content area */}
+        <div className="px-4 py-6">
+          <div className="space-y-4">
+            <Skeleton className="mx-auto h-6 w-48" />
+            <div className="grid grid-cols-2 gap-3">
+              <Skeleton className="h-32 rounded-xl" />
+              <Skeleton className="h-32 rounded-xl" />
+              <Skeleton className="h-32 rounded-xl" />
+              <Skeleton className="h-32 rounded-xl" />
+            </div>
+          </div>
+        </div>
       </div>
     )
   }
@@ -52,8 +75,9 @@ export default function SessionLayout({
     // No stored identity -- redirect to join
     router.push('/join')
     return (
-      <div className="flex items-center justify-center py-16">
-        <p className="text-sm text-muted-foreground">Redirecting...</p>
+      <div className="flex flex-col items-center justify-center gap-3 py-16">
+        <Skeleton className="h-5 w-5 rounded-full" />
+        <Skeleton className="h-4 w-32" />
       </div>
     )
   }

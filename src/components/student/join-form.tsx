@@ -4,7 +4,6 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useDeviceIdentity } from '@/hooks/use-device-identity'
 import { joinSession } from '@/actions/student'
-import { Button } from '@/components/ui/button'
 
 export function JoinForm({ initialCode = '' }: { initialCode?: string }) {
   const [code, setCode] = useState(initialCode)
@@ -74,22 +73,22 @@ export function JoinForm({ initialCode = '' }: { initialCode?: string }) {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="flex flex-col items-center gap-4">
+    <form onSubmit={handleSubmit} className="flex flex-col items-center gap-5">
       <div className={`w-full ${shake ? 'animate-shake' : ''}`}>
         <input
           type="text"
           inputMode="numeric"
           pattern="[0-9]*"
           maxLength={6}
-          placeholder="Enter class code"
+          placeholder="000000"
           value={code}
           onChange={handleCodeChange}
           autoFocus
           disabled={loading}
-          className={`w-full rounded-lg border-2 bg-background px-4 py-4 text-center text-3xl font-bold tracking-[0.3em] outline-none transition-colors placeholder:text-lg placeholder:font-normal placeholder:tracking-normal ${
+          className={`w-full rounded-xl border-2 bg-background px-4 py-5 text-center text-4xl font-bold tracking-[0.4em] outline-none transition-all placeholder:text-muted-foreground/30 placeholder:tracking-[0.4em] ${
             error
               ? 'border-destructive focus:border-destructive'
-              : 'border-input focus:border-ring'
+              : 'border-input focus:border-brand-blue focus:ring-2 focus:ring-brand-blue/20'
           }`}
         />
       </div>
@@ -104,14 +103,23 @@ export function JoinForm({ initialCode = '' }: { initialCode?: string }) {
         </p>
       )}
 
-      <Button
+      <button
         type="submit"
-        size="lg"
         disabled={!isValid || !ready || loading}
-        className="w-full text-lg"
+        className="min-h-[48px] w-full rounded-xl bg-brand-blue px-6 py-3.5 text-lg font-semibold text-white shadow-sm transition-all hover:bg-brand-blue-dark focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-blue disabled:cursor-not-allowed disabled:opacity-50"
       >
-        {loading ? 'Joining...' : 'Join'}
-      </Button>
+        {loading ? (
+          <span className="inline-flex items-center gap-2">
+            <svg className="h-5 w-5 animate-spin" viewBox="0 0 24 24" fill="none">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+            </svg>
+            Joining...
+          </span>
+        ) : (
+          'Join Session'
+        )}
+      </button>
     </form>
   )
 }
