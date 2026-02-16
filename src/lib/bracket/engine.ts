@@ -29,7 +29,7 @@ export function calculateRounds(entrantCount: number): number {
  * buildSeedOrder(4)  // [1, 4, 2, 3]
  * buildSeedOrder(8)  // [1, 8, 4, 5, 2, 7, 3, 6]
  */
-function buildSeedOrder(bracketSize: number): number[] {
+export function buildSeedOrder(bracketSize: number): number[] {
   let seeds = [1]
   let roundSize = 2
 
