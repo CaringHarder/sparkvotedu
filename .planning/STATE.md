@@ -5,21 +5,21 @@
 See: .planning/PROJECT.md (updated 2026-01-28)
 
 **Core value:** Teachers can instantly engage any classroom through voting -- on any topic, in any format -- and see participation happen in real time.
-**Current focus:** Phase 11 (Visual Bracket Placement) -- Plans 01+02+03 complete, 3 remaining.
+**Current focus:** Phase 11 (Visual Bracket Placement) -- Plans 01+02+03+04 complete, 2 remaining.
 
 ## Current Position
 
 Phase: 11 of 11 (Visual Bracket Placement)
-Plan: 3 of 6 in current phase
+Plan: 4 of 6 in current phase
 Status: In Progress
-Last activity: 2026-02-16 -- Completed 11-02-PLAN.md (DnD placement components)
+Last activity: 2026-02-16 -- Completed 11-04-PLAN.md (Mode toggle + form integration)
 
-Progress: [####################] 99/102 plans (97%)
+Progress: [####################] 100/102 plans (98%)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 99
+- Total plans completed: 100
 - Average duration: ~3.5 min
 - Total execution time: ~5.5 hours
 
@@ -44,11 +44,11 @@ Progress: [####################] 99/102 plans (97%)
 
 | 10-landing-page-and-polish | 5/5 | ~36m | ~7.2m |
 
-| 11-visual-bracket-placement | 3/6 | ~8m | ~2.7m |
+| 11-visual-bracket-placement | 4/6 | ~10m | ~2.5m |
 
 **Recent Trend:**
-- Last 5 plans: 10-05 (~25m), 11-01 (~3m), 11-03 (~2m), 11-02 (~3m)
-- Trend: Phase 11 progressing well. Plan 02 in ~3m (DnD placement components with @dnd-kit/react). 3 of 6 plans complete.
+- Last 5 plans: 11-01 (~3m), 11-03 (~2m), 11-02 (~3m), 11-04 (~2m)
+- Trend: Phase 11 progressing well. Plan 04 in ~2m (mode toggle + form integration). 4 of 6 plans complete.
 
 *Updated after each plan completion*
 
@@ -397,6 +397,10 @@ Recent decisions affecting current work:
 - [11-02]: EntrantPool shows all real entrants (seedPosition <= entrantCount) as view over entrants array (not separate data)
 - [11-02]: Desktop sidebar + mobile chip bar pattern using hidden/md:block responsive toggle for EntrantPool
 - [11-02]: PlacementBracket responsive grid adapts columns (1-4) based on matchup count breakpoints
+- [11-04]: handleVisualPlacement sets entrants directly (no seedPosition renumbering) since placement components manage positions
+- [11-04]: PlacementModeToggle appears only when entrants.length > 0 (visual placement needs entrants to be useful)
+- [11-04]: Edit form Entrant interface extended with id field, initialized from bracket.entrants[].id for stable keys
+- [11-04]: bracketType passed from server page with fallback to single_elimination for pre-existing brackets
 
 ### Pending Todos
 
@@ -423,6 +427,6 @@ Recent decisions affecting current work:
 ## Session Continuity
 
 Last session: 2026-02-16
-Stopped at: Completed 11-02-PLAN.md (DnD placement components)
-Resume file: .planning/phases/11-visual-bracket-placement/11-04-PLAN.md
-Note: Phase 11 in progress. Plans 01+02+03 complete. 4 components created: PlacementProvider, EntrantPool, PlacementSlot, PlacementBracket. @dnd-kit/react installed. Ready for Plan 04 (wizard integration).
+Stopped at: Completed 11-04-PLAN.md (Mode toggle + form integration)
+Resume file: .planning/phases/11-visual-bracket-placement/11-05-PLAN.md
+Note: Phase 11 in progress. Plans 01+02+03+04 complete. PlacementModeToggle created and integrated into both bracket-form.tsx and bracket-edit-form.tsx. Visual placement available for all bracket types. 2 plans remaining (05: large bracket nav, 06: testing/polish).
