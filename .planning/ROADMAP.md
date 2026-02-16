@@ -45,11 +45,11 @@
   1. Teacher can sign in with Google, Microsoft, and Apple OAuth on the production domain
   2. Poll image uploads succeed and images display correctly from Supabase Storage
   3. SportsDataIO cron sync job authenticates and runs successfully in Vercel production
-**Plans**: TBD
+**Plans**: 2 plans
 
 Plans:
-- [ ] 14-01: Configure OAuth providers and Supabase Storage
-- [ ] 14-02: Configure Stripe webhook and Vercel CRON_SECRET
+- [ ] 14-01-PLAN.md -- Prepare codebase for production: update env docs, cron schedule, image constraints, health endpoint
+- [ ] 14-02-PLAN.md -- Configure external services (OAuth, Storage, Stripe, cron) and verify end-to-end
 
 ### Phase 15: UX Polish
 **Goal**: Key UX improvements are live before public launch
@@ -127,7 +127,7 @@ Phases 14, 15, 16 can run in parallel (no dependencies). Phase 17 depends on Pha
 | 9. Analytics | v1.0 | 3/3 | Complete | 2026-02-15 |
 | 10. Landing Page & Polish | v1.0 | 5/5 | Complete | 2026-02-15 |
 | 11. Visual Bracket Placement | v1.0 | 6/6 | Complete | 2026-02-16 |
-| 14. Service Configuration | v1.1 | 0/2 | Not started | - |
+| 14. Service Configuration | v1.1 | 0/2 | In progress | - |
 | 15. UX Polish | v1.1 | 0/2 | Not started | - |
 | 16. Legal Pages | v1.1 | 0/1 | Not started | - |
 | 17. Admin Panel | v1.1 | 0/3 | Not started | - |
