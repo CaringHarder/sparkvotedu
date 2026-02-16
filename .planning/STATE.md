@@ -5,16 +5,16 @@
 See: .planning/PROJECT.md (updated 2026-02-16)
 
 **Core value:** Teachers can instantly engage any classroom through voting -- on any topic, in any format -- and see participation happen in real time.
-**Current focus:** Phase 14 complete - verifying goal achievement
+**Current focus:** Phase 15 UX Polish -- full-width visual bracket placement
 
 ## Current Position
 
-Phase: 14 of 18 (Service Configuration)
-Plan: 2 of 2 in current phase
-Status: Verifying
-Last activity: 2026-02-16 -- Completed 14-02 (external service configuration)
+Phase: 15 of 18 (UX Polish)
+Plan: 1 of 2 in current phase
+Status: Executing
+Last activity: 2026-02-16 -- Completed 15-01 (full-width visual bracket placement)
 
-Progress: [######################........] 72% (v1.0 complete, v1.1 2/9 plans)
+Progress: [#######################.......] 78% (v1.0 complete, v1.1 3/9 plans)
 
 ## Performance Metrics
 
@@ -25,13 +25,14 @@ Progress: [######################........] 72% (v1.0 complete, v1.1 2/9 plans)
 - Timeline: 20 days (2026-01-28 to 2026-02-16)
 
 **v1.1:**
-- Plans: 2/9 complete
+- Plans: 3/9 complete
 - Phases: 0/5 complete
 
 | Phase | Plan | Duration | Tasks | Files |
 |-------|------|----------|-------|-------|
 | 14-01 | Service Config Prep | 2min | 3 | 6 |
 | 14-02 | External Service Config | 90min | 2 | 4 |
+| 15-01 | Full-Width Visual Placement | 2min | 1 | 1 |
 
 ## Accumulated Context
 
@@ -46,6 +47,8 @@ All v1.0 decisions archived in PROJECT.md Key Decisions table.
 - [14-02] Supabase custom domain at api.sparkvotedu.com for branded OAuth
 - [14-02] Poll image upload UI deferred to Phase 15
 - [14-02] Stripe production webhook deferred
+- [15-01] Input controls stay at max-w-2xl in full-width mode for readability
+- [15-01] Step indicator gets own max-w-2xl wrapper for centering
 
 ### Pending Todos
 
@@ -60,6 +63,6 @@ None -- all former todos are now tracked as v1.1 requirements.
 ## Session Continuity
 
 Last session: 2026-02-16
-Stopped at: Phase 14 verification
-Resume file: .planning/phases/14-service-configuration/14-02-SUMMARY.md
-Resume: Phase 14 verification in progress
+Stopped at: Completed 15-01-PLAN.md
+Resume file: .planning/phases/15-ux-polish/15-01-SUMMARY.md
+Resume: Continue with 15-02-PLAN.md
