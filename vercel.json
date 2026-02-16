@@ -2,7 +2,7 @@
   "crons": [
     {
       "path": "/api/cron/sports-sync",
-      "schedule": "*/2 * * * *"
+      "schedule": "*/15 * * * *"
     }
   ]
 }
