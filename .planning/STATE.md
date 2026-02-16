@@ -5,23 +5,23 @@
 See: .planning/PROJECT.md (updated 2026-01-28)
 
 **Core value:** Teachers can instantly engage any classroom through voting -- on any topic, in any format -- and see participation happen in real time.
-**Current focus:** Phase 10 (Landing Page & Polish) -- COMPLETE. All 5 plans delivered.
+**Current focus:** Phase 11 (Visual Bracket Placement) -- Plan 01 complete, 5 remaining.
 
 ## Current Position
 
-Phase: 10 of 10 (Landing Page & Polish)
-Plan: 5 of 5 in current phase
-Status: Phase 10 COMPLETE
-Last activity: 2026-02-15 -- Completed 10-05-PLAN.md (Responsive design audit + landing page rewrite)
+Phase: 11 of 11 (Visual Bracket Placement)
+Plan: 1 of 6 in current phase
+Status: In Progress
+Last activity: 2026-02-16 -- Completed 11-01-PLAN.md (Placement pure functions with TDD)
 
-Progress: [####################] 96/96 plans (100%)
+Progress: [####################] 97/102 plans (95%)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 96
+- Total plans completed: 97
 - Average duration: ~3.5 min
-- Total execution time: ~5.4 hours
+- Total execution time: ~5.5 hours
 
 **By Phase:**
 
@@ -44,9 +44,11 @@ Progress: [####################] 96/96 plans (100%)
 
 | 10-landing-page-and-polish | 5/5 | ~36m | ~7.2m |
 
+| 11-visual-bracket-placement | 1/6 | ~3m | ~3m |
+
 **Recent Trend:**
-- Last 5 plans: 10-01 (~2m), 10-02 (~2m), 10-03 (~2m), 10-04 (~5m), 10-05 (~25m)
-- Trend: Phase 10 COMPLETE. Plan 05 in ~25m (includes checkpoint feedback iteration). Responsive design audit, mobile navigation, landing page rewrite. All 96 plans delivered across 10 phases.
+- Last 5 plans: 10-03 (~2m), 10-04 (~5m), 10-05 (~25m), 11-01 (~3m)
+- Trend: Phase 11 started. Plan 01 in ~3m (TDD placement pure functions). Seed-to-slot mapping, swap logic, auto-seed, bye tracking.
 
 *Updated after each plan completion*
 
@@ -381,6 +383,10 @@ Recent decisions affecting current work:
 - [10-04]: Staggered podium reveal order: 3rd (0.5s), 2nd (1.5s), 1st (2.5s) for dramatic buildup
 - [10-04]: 800ms pause after countdown "1" before winner reveal text for maximum classroom impact
 - [10-04]: Custom branded join button with brand-blue background instead of shadcn Button
+- [11-01]: buildSeedOrder exported from engine.ts for reuse by placement module (export keyword only, no implementation change)
+- [11-01]: PlacementEntrant minimal interface (id, name, seedPosition) for data-layer independence from Prisma types
+- [11-01]: Immutable placement operations: all functions return new arrays, never mutate input
+- [11-01]: Swap-based placement: placeEntrantInSlot delegates to swapSlots for both entrant-entrant and entrant-bye cases
 
 ### Pending Todos
 
@@ -406,7 +412,7 @@ Recent decisions affecting current work:
 
 ## Session Continuity
 
-Last session: 2026-02-15
-Stopped at: Phase 10 COMPLETE -- all 5 plans delivered
-Resume file: N/A (phase complete, pending verification)
-Note: Phase 10 complete. All 96 plans across 10 phases delivered. Landing page rewritten to match production sparkvotedu.com. Mobile navigation, responsive design, dark mode on student side all working. Ready for phase verification.
+Last session: 2026-02-16
+Stopped at: Completed 11-01-PLAN.md (Placement pure functions with TDD)
+Resume file: .planning/phases/11-visual-bracket-placement/11-02-PLAN.md
+Note: Phase 11 started. Plan 01 complete: placement pure functions (seedToSlot, slotToSeed, swapSlots, autoSeed, getByeSlots, placeEntrantInSlot) with 37 tests. Ready for Plan 02 (bracket slot components).
