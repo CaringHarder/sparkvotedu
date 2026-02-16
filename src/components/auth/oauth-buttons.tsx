@@ -75,8 +75,6 @@ function LoadingSpinner({ className }: { className?: string }) {
 
 const providers: { id: OAuthProvider; label: string; icon: typeof GoogleIcon }[] = [
   { id: 'google', label: 'Continue with Google', icon: GoogleIcon },
-  { id: 'azure', label: 'Continue with Microsoft', icon: MicrosoftIcon },
-  { id: 'apple', label: 'Continue with Apple', icon: AppleIcon },
 ]
 
 export function OAuthButtons() {
