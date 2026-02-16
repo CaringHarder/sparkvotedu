@@ -281,10 +281,15 @@ Plans:
   3. Matchup pairings update in real-time as teachers place entrants
   4. Teacher can toggle between linear list reorder (current) and visual bracket placement modes
   5. Bye slots are handled correctly for non-power-of-2 brackets in visual placement mode
-**Plans**: TBD
+**Plans**: 6 plans
 
 Plans:
-- [ ] TBD (run /gsd:plan-phase 11 to break down)
+- [ ] 11-01-PLAN.md — Placement pure functions TDD (seed-to-slot mapping, swap logic, auto-seed, bye slots)
+- [ ] 11-02-PLAN.md — Install @dnd-kit + DnD provider, entrant pool, placement slot, placement bracket grid
+- [ ] 11-03-PLAN.md — Round-robin matchup grid visual placement
+- [ ] 11-04-PLAN.md — Mode toggle + integration into bracket-form.tsx and bracket-edit-form.tsx
+- [ ] 11-05-PLAN.md — Large bracket section navigation (32+), bye handling polish, auto-seed and remove interactions
+- [ ] 11-06-PLAN.md — Visual verification checkpoint (all bracket types, interactions, responsive)
 
 ## Progress
 
@@ -306,4 +311,4 @@ Note: Phase 3 depends only on Phase 1 (not Phase 2), so Phases 2 and 3 could the
 | 8. Sports Integration | 4/4 | Complete | 2026-02-15 |
 | 9. Analytics | 3/3 | Complete | 2026-02-15 |
 | 10. Landing Page & Polish | 0/5 | Planned | - |
-| 11. Visual Bracket Placement | 0/0 | Not started | - |
+| 11. Visual Bracket Placement | 0/6 | Planned | - |
