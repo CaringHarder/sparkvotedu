@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
 import {
   buildSlotMap,
   seedToSlot,
@@ -152,47 +152,11 @@ export function PlacementBracket({
 
   const showSectionNav = sections.length > 1
 
-  // Handler to reset an entrant's placement (auto-seed position)
-  const handleResetEntrant = useCallback(
-    (entrantId: string) => {
-      const entrant = entrants.find((e) => e.id === entrantId)
-      if (!entrant) return
-
-      // Find the entrant's index in the original array and assign seedPosition = index + 1
-      const idx = entrants.indexOf(entrant)
-      const autoSeedPosition = idx + 1
-
-      // If the auto-seed position is taken by someone else, swap
-      const occupant = entrants.find(
-        (e) => e.id !== entrantId && e.seedPosition === autoSeedPosition
-      )
-
-      if (occupant) {
-        // Swap seed positions
-        const updated = entrants.map((e) => {
-          if (e.id === entrantId) return { ...e, seedPosition: autoSeedPosition }
-          if (e.id === occupant.id) return { ...e, seedPosition: entrant.seedPosition }
-          return e
-        })
-        onEntrantsChange(updated)
-      } else {
-        const updated = entrants.map((e) =>
-          e.id === entrantId ? { ...e, seedPosition: autoSeedPosition } : e
-        )
-        onEntrantsChange(updated)
-      }
-    },
-    [entrants, onEntrantsChange]
-  )
-
-  // Responsive grid columns based on section matchup count (always 8 or fewer per section)
+  // Responsive grid columns — cap at 2 to keep entrant names readable
   const gridCols = useMemo(() => {
     const count = sectionMatchups.length
     if (count <= 2) return 'grid-cols-1 md:grid-cols-2'
-    if (count <= 4) return 'grid-cols-1 md:grid-cols-2'
-    if (count <= 8) return 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3'
-    if (count <= 16) return 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4'
-    return 'grid-cols-1 md:grid-cols-2 lg:grid-cols-4'
+    return 'grid-cols-1 md:grid-cols-2'
   }, [sectionMatchups.length])
 
   return (
@@ -292,7 +256,6 @@ export function PlacementBracket({
                     isBye={topIsBye}
                     matchupPosition={matchup.position}
                     slotPosition={1}
-                    onResetEntrant={handleResetEntrant}
                   />
 
                   {/* VS divider */}
@@ -308,7 +271,6 @@ export function PlacementBracket({
                     isBye={bottomIsBye}
                     matchupPosition={matchup.position}
                     slotPosition={2}
-                    onResetEntrant={handleResetEntrant}
                   />
                 </div>
               )

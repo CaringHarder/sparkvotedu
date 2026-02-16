@@ -1,16 +1,13 @@
 'use client'
 
 import { useCallback, useMemo, useState } from 'react'
-import { useDraggable, useDroppable } from '@dnd-kit/react'
 import { Sparkles } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
   autoSeed,
-  seedToSlot,
-  slotToSeed,
   type PlacementEntrant,
 } from '@/lib/bracket/placement'
-import { usePlacementContext, type PlacementDragData } from './placement-provider'
+import { usePlacementContext } from './placement-provider'
 
 interface EntrantPoolProps {
   entrants: PlacementEntrant[]
@@ -21,7 +18,7 @@ interface EntrantPoolProps {
   layout?: 'sidebar' | 'inline'
 }
 
-/** A single draggable entrant chip in the pool */
+/** A single clickable entrant chip in the pool */
 function PoolEntrant({
   entrant,
   layout,
@@ -32,14 +29,6 @@ function PoolEntrant({
   const { selectedEntrantId, setSelectedEntrantId } = usePlacementContext()
   const isSelected = selectedEntrantId === entrant.id
 
-  const { ref, isDragSource } = useDraggable({
-    id: `pool-${entrant.id}`,
-    data: {
-      type: 'entrant',
-      entrantId: entrant.id,
-    } satisfies PlacementDragData,
-  })
-
   const handleClick = useCallback(() => {
     setSelectedEntrantId(isSelected ? null : entrant.id)
   }, [isSelected, entrant.id, setSelectedEntrantId])
@@ -47,15 +36,12 @@ function PoolEntrant({
   if (layout === 'inline') {
     return (
       <button
-        ref={ref}
         type="button"
         onClick={handleClick}
         className={`flex shrink-0 items-center gap-1.5 rounded-full border px-3 py-1.5 text-sm transition-all ${
-          isDragSource
-            ? 'opacity-50'
-            : isSelected
-              ? 'border-primary bg-primary/10 ring-2 ring-primary'
-              : 'border-border bg-background hover:bg-muted'
+          isSelected
+            ? 'border-primary bg-primary/10 ring-2 ring-primary'
+            : 'border-border bg-background hover:bg-muted'
         }`}
       >
         <span className="flex h-5 w-5 items-center justify-center rounded-full bg-muted font-mono text-[10px] font-semibold">
@@ -68,15 +54,12 @@ function PoolEntrant({
 
   return (
     <button
-      ref={ref}
       type="button"
       onClick={handleClick}
       className={`flex w-full items-center gap-2 rounded-md border px-3 py-2 text-left text-sm transition-all ${
-        isDragSource
-          ? 'opacity-50'
-          : isSelected
-            ? 'border-primary bg-primary/10 ring-2 ring-primary'
-            : 'border-border bg-background hover:bg-muted'
+        isSelected
+          ? 'border-primary bg-primary/10 ring-2 ring-primary'
+          : 'border-border bg-background hover:bg-muted'
       }`}
     >
       <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded bg-muted font-mono text-xs font-medium">
@@ -96,19 +79,6 @@ export function EntrantPool({
 }: EntrantPoolProps) {
   const [showConfirm, setShowConfirm] = useState(false)
 
-  // Make the pool area a droppable zone for drag-back-to-pool
-  const { ref: poolDropRef, isDropTarget } = useDroppable({
-    id: 'entrant-pool',
-    data: {
-      type: 'pool',
-    } satisfies PlacementDragData,
-  })
-
-  // Compute which entrants are unplaced (not manually placed in a slot)
-  // An entrant is "in the pool" if their seedPosition has not been manually changed
-  // from the auto-seed default. But since we can't distinguish manual from auto,
-  // we show ALL real entrants (seedPosition <= entrantCount) in the pool as draggable
-  // items that are available for placement. The bracket grid shows where each is placed.
   const poolEntrants = useMemo(() => {
     return entrants
       .filter((e) => e.seedPosition <= entrantCount)
@@ -141,12 +111,7 @@ export function EntrantPool({
 
   if (layout === 'inline') {
     return (
-      <div
-        ref={poolDropRef}
-        className={`space-y-2 rounded-lg transition-colors ${
-          isDropTarget ? 'bg-primary/5 ring-2 ring-primary/30' : ''
-        }`}
-      >
+      <div className="space-y-2 rounded-lg">
         <div className="flex items-center justify-between">
           <h3 className="text-sm font-medium text-muted-foreground">
             Entrants ({poolEntrants.length})
@@ -188,12 +153,7 @@ export function EntrantPool({
   }
 
   return (
-    <div
-      ref={poolDropRef}
-      className={`space-y-3 rounded-lg transition-colors ${
-        isDropTarget ? 'bg-primary/5 ring-2 ring-primary/30' : ''
-      }`}
-    >
+    <div className="space-y-3 rounded-lg">
       <div className="flex items-center justify-between">
         <h3 className="text-sm font-semibold">
           Entrants ({poolEntrants.length})
@@ -222,7 +182,7 @@ export function EntrantPool({
         </div>
       )}
       <p className="text-xs text-muted-foreground">
-        Drag an entrant to a bracket slot, or click to select then click a slot.
+        Click an entrant to select, then click a bracket slot to place.
       </p>
       <div className="space-y-1">
         {poolEntrants.map((entrant) => (
