@@ -1,8 +1,9 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, usePathname } from 'next/navigation'
 import { SessionHeader } from '@/components/student/session-header'
+import { MobileBottomNav } from '@/components/student/mobile-bottom-nav'
 import { Skeleton } from '@/components/ui/skeleton'
 
 interface ParticipantStore {
@@ -23,6 +24,10 @@ export default function SessionLayout({
   const [loading, setLoading] = useState(true)
   const [sessionId, setSessionId] = useState<string | null>(null)
   const router = useRouter()
+  const pathname = usePathname()
+
+  // Hide bottom nav on welcome page (only show in active session)
+  const isWelcomePage = pathname.endsWith('/welcome')
 
   useEffect(() => {
     params.then(({ sessionId: sid }) => {
@@ -89,7 +94,12 @@ export default function SessionLayout({
         participantId={participant.participantId}
         rerollUsed={participant.rerollUsed}
       />
-      <div className="px-4 py-6">{children}</div>
+      {/* Add bottom padding on mobile for bottom nav clearance */}
+      <div className={`px-4 py-6 ${!isWelcomePage ? 'pb-20 md:pb-6' : ''}`}>
+        {children}
+      </div>
+      {/* Mobile bottom navigation (hidden on welcome page and on desktop) */}
+      {!isWelcomePage && <MobileBottomNav sessionId={sessionId} />}
     </div>
   )
 }
