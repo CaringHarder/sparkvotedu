@@ -1,7 +1,7 @@
 # Requirements: SparkVotEDU
 
 **Defined:** 2026-02-16
-**Core Value:** Teachers can instantly engage any classroom through voting — on any topic, in any format — and see participation happen in real time.
+**Core Value:** Teachers can instantly engage any classroom through voting -- on any topic, in any format -- and see participation happen in real time.
 
 ## v1.1 Requirements
 
@@ -71,27 +71,27 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| CONFIG-01 | — | Pending |
-| CONFIG-02 | — | Pending |
-| CONFIG-03 | — | Pending |
-| UX-01 | — | Pending |
-| UX-02 | — | Pending |
-| UX-03 | — | Pending |
-| LEGAL-01 | — | Pending |
-| LEGAL-02 | — | Pending |
-| ADMIN-01 | — | Pending |
-| ADMIN-02 | — | Pending |
-| ADMIN-03 | — | Pending |
-| ADMIN-04 | — | Pending |
-| ADMIN-05 | — | Pending |
-| ADMIN-06 | — | Pending |
-| DEPLOY-01 | — | Pending |
+| CONFIG-01 | Phase 14 | Pending |
+| CONFIG-02 | Phase 14 | Pending |
+| CONFIG-03 | Phase 14 | Pending |
+| UX-01 | Phase 15 | Pending |
+| UX-02 | Phase 15 | Pending |
+| UX-03 | Phase 15 | Pending |
+| LEGAL-01 | Phase 16 | Pending |
+| LEGAL-02 | Phase 16 | Pending |
+| ADMIN-01 | Phase 17 | Pending |
+| ADMIN-02 | Phase 17 | Pending |
+| ADMIN-03 | Phase 17 | Pending |
+| ADMIN-04 | Phase 17 | Pending |
+| ADMIN-05 | Phase 17 | Pending |
+| ADMIN-06 | Phase 17 | Pending |
+| DEPLOY-01 | Phase 18 | Pending |
 
 **Coverage:**
 - v1.1 requirements: 15 total
-- Mapped to phases: 0
-- Unmapped: 15 (pending roadmap creation)
+- Mapped to phases: 15
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-02-16*
-*Last updated: 2026-02-16 after initial definition*
+*Last updated: 2026-02-16 after roadmap creation*
