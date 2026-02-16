@@ -66,11 +66,11 @@ export async function createCheckoutSession(priceId: string) {
 export async function createPortalSession() {
   const teacher = await getAuthenticatedTeacher()
   if (!teacher) {
-    return { error: 'Not authenticated' }
+    redirect('/login')
   }
 
   if (!teacher.stripeCustomerId) {
-    return { error: 'No active subscription' }
+    redirect('/billing')
   }
 
   let portalUrl: string
@@ -84,7 +84,7 @@ export async function createPortalSession() {
     portalUrl = session.url
   } catch (err) {
     console.error('Failed to create portal session:', err)
-    return { error: 'Failed to open subscription management. Please try again.' }
+    redirect('/billing')
   }
 
   // redirect() throws internally (Next.js pattern) -- must be outside try/catch
