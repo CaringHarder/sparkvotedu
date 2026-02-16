@@ -5,21 +5,21 @@
 See: .planning/PROJECT.md (updated 2026-01-28)
 
 **Core value:** Teachers can instantly engage any classroom through voting -- on any topic, in any format -- and see participation happen in real time.
-**Current focus:** Phase 10 (Landing Page & Polish) -- IN PROGRESS. Plan 03 complete: dashboard visual refresh.
+**Current focus:** Phase 10 (Landing Page & Polish) -- IN PROGRESS. Plan 04 complete: student experience polish.
 
 ## Current Position
 
 Phase: 10 of 10 (Landing Page & Polish)
-Plan: 3 of 5 in current phase
-Status: Plan 03 complete
-Last activity: 2026-02-15 -- Completed 10-03-PLAN.md (Dashboard visual refresh)
+Plan: 4 of 5 in current phase
+Status: Plan 04 complete
+Last activity: 2026-02-15 -- Completed 10-04-PLAN.md (Student experience polish)
 
-Progress: [###################.] 94/96 plans (98%)
+Progress: [###################.] 95/96 plans (99%)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 94
+- Total plans completed: 95
 - Average duration: ~3.5 min
 - Total execution time: ~5.4 hours
 
@@ -42,11 +42,11 @@ Progress: [###################.] 94/96 plans (98%)
 
 | 09-analytics | 3/3 | ~8m | ~2.7m |
 
-| 10-landing-page-and-polish | 3/5 | ~6m | ~2m |
+| 10-landing-page-and-polish | 4/5 | ~11m | ~2.8m |
 
 **Recent Trend:**
-- Last 5 plans: 09-03 (~3m), 10-01 (~2m), 10-02 (~2m), 10-03 (~2m)
-- Trend: Phase 10 progressing. Plan 03 in ~2m. Dashboard visual refresh with brand colors, skeleton loading, auth branding. 94 plans delivered.
+- Last 5 plans: 10-01 (~2m), 10-02 (~2m), 10-03 (~2m), 10-04 (~5m)
+- Trend: Phase 10 progressing. Plan 04 in ~5m. Student experience polish: branded layout, join flow, celebrations. 95 plans delivered.
 
 *Updated after each plan completion*
 
@@ -375,6 +375,12 @@ Recent decisions affecting current work:
 - [10-03]: Create Session card uses gradient border and bg-gradient for visual prominence as primary CTA
 - [10-03]: Session codes displayed in brand-amber monospace for high visibility
 - [10-03]: Auth layout background uses diagonal gradient from brand-blue/5 to brand-amber/5
+- [10-04]: Brand-blue for brackets, brand-amber for polls visual differentiation in activity cards
+- [10-04]: Circular SVG progress indicator replaces flat progress bar on welcome screen countdown
+- [10-04]: Multi-wave confetti with brand colors (blue, amber, white) for sustained celebration
+- [10-04]: Staggered podium reveal order: 3rd (0.5s), 2nd (1.5s), 1st (2.5s) for dramatic buildup
+- [10-04]: 800ms pause after countdown "1" before winner reveal text for maximum classroom impact
+- [10-04]: Custom branded join button with brand-blue background instead of shadcn Button
 
 ### Pending Todos
 
@@ -401,6 +407,6 @@ Recent decisions affecting current work:
 ## Session Continuity
 
 Last session: 2026-02-15
-Stopped at: Completed 10-03-PLAN.md (Dashboard visual refresh)
-Resume file: .planning/phases/10-landing-page-and-polish/10-04-PLAN.md
-Note: Phase 10 plan 03 complete. Dashboard visual refresh: logo header, theme toggle, brand-blue sidebar, gradient CTA cards, progress bars, skeleton loading, auth branding. 94 total plans delivered.
+Stopped at: Completed 10-04-PLAN.md (Student experience polish)
+Resume file: .planning/phases/10-landing-page-and-polish/10-05-PLAN.md
+Note: Phase 10 plan 04 complete. Student experience polish: branded layout with logo, polished join flow, enhanced celebrations with multi-wave brand confetti, dramatic staggered podium reveal, skeleton loading states. 95 total plans delivered.
