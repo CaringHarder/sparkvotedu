@@ -1,22 +1,21 @@
 import Link from 'next/link'
 import Image from 'next/image'
 import { Button } from '@/components/ui/button'
-import { HomeJoinInput } from '@/components/student/home-join-input'
 
 export function HeroSection() {
   return (
     <section className="relative w-full overflow-hidden">
       {/* Main hero gradient */}
-      <div className="bg-gradient-to-b from-brand-blue via-brand-blue to-brand-blue-dark dark:from-brand-blue-dark dark:via-brand-blue-dark dark:to-brand-blue-dark">
+      <div className="bg-gradient-to-b from-[oklch(0.30_0.12_230)] via-[oklch(0.25_0.10_230)] to-[oklch(0.20_0.08_230)]">
         <div className="relative mx-auto flex max-w-4xl flex-col items-center gap-8 px-4 py-16 text-center sm:px-6 sm:py-24 lg:py-28">
-          {/* Large centered logo */}
+          {/* Large centered logo -- always dark variant (white text) on dark blue hero */}
           <div className="flex flex-col items-center gap-1">
             <Image
-              src="/logo-horizontal.png"
+              src="/logo-horizontal-dark.png"
               alt="SparkVotEDU - Ignite Student Voice Through Voting"
-              width={320}
-              height={180}
-              className="h-auto w-56 sm:w-72 lg:w-80"
+              width={560}
+              height={315}
+              className="h-auto w-80 sm:w-[28rem] lg:w-[560px]"
               priority
             />
           </div>
@@ -51,14 +50,6 @@ export function HeroSection() {
             </Button>
           </div>
 
-          {/* Student class code input */}
-          <div className="w-full max-w-sm">
-            <p className="mb-2 text-sm font-medium text-white/70">
-              Student? Enter your class code:
-            </p>
-            <HomeJoinInput />
-          </div>
-
           {/* Tagline */}
           <div className="flex flex-col items-center gap-1">
             <p className="text-sm font-medium text-white/70">
@@ -69,7 +60,7 @@ export function HeroSection() {
       </div>
 
       {/* Smooth transition from hero blue to white background */}
-      <div className="h-16 bg-gradient-to-b from-brand-blue-dark to-background dark:from-brand-blue-dark dark:to-background sm:h-20" />
+      <div className="h-16 bg-gradient-to-b from-[oklch(0.20_0.08_230)] to-background sm:h-20" />
     </section>
   )
 }

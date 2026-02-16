@@ -690,7 +690,7 @@ export function BracketForm() {
       {/* Step 2: Add Entrants */}
       {step === 2 && size && (
         <Card>
-          <CardHeader className={isFullWidth ? 'mx-auto max-w-2xl' : ''}>
+          <CardHeader>
             <CardTitle>Add Entrants</CardTitle>
             <p className="text-sm text-muted-foreground">
               Add {size} entrants to your bracket using any method below.

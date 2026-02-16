@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import Image from 'next/image'
 import { Button } from '@/components/ui/button'
+import { ThemeToggle } from '@/components/theme-toggle'
 
 export function LandingNav() {
   return (
@@ -13,17 +14,9 @@ export function LandingNav() {
           <Image
             src="/logo-icon.png"
             alt="SparkVotEDU"
-            width={32}
-            height={32}
-            className="block sm:hidden"
-            priority
-          />
-          <Image
-            src="/logo-horizontal.png"
-            alt="SparkVotEDU"
-            width={160}
-            height={90}
-            className="hidden h-10 w-auto sm:block"
+            width={40}
+            height={40}
+            className="h-9 w-9"
             priority
           />
         </Link>
@@ -54,6 +47,7 @@ export function LandingNav() {
           >
             <Link href="/signup">Sign Up</Link>
           </Button>
+          <ThemeToggle />
         </div>
       </div>
     </nav>
