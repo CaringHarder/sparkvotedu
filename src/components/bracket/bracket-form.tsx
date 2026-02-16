@@ -331,10 +331,13 @@ export function BracketForm() {
   // Type label for review
   const typeLabel = BRACKET_TYPE_OPTIONS.find((t) => t.value === bracketType)?.label ?? bracketType
 
+  // Full-width mode: expand when visual placement is active in step 2
+  const isFullWidth = step === 2 && placementMode === 'visual'
+
   return (
-    <div className="mx-auto max-w-2xl">
-      {/* Step indicator */}
-      <div className="mb-8 flex items-center justify-center gap-2">
+    <div className={isFullWidth ? 'mx-auto' : 'mx-auto max-w-2xl'}>
+      {/* Step indicator -- always centered at readable width */}
+      <div className="mx-auto mb-8 flex max-w-2xl items-center justify-center gap-2">
         {[1, 2, 3].map((s) => (
           <div key={s} className="flex items-center gap-2">
             <div
@@ -687,7 +690,7 @@ export function BracketForm() {
       {/* Step 2: Add Entrants */}
       {step === 2 && size && (
         <Card>
-          <CardHeader>
+          <CardHeader className={isFullWidth ? 'mx-auto max-w-2xl' : ''}>
             <CardTitle>Add Entrants</CardTitle>
             <p className="text-sm text-muted-foreground">
               Add {size} entrants to your bracket using any method below.
@@ -699,111 +702,114 @@ export function BracketForm() {
             )}
           </CardHeader>
           <CardContent className="space-y-4">
-            {/* Tab buttons */}
-            <div className="flex gap-1 rounded-lg bg-muted p-1">
-              <button
-                type="button"
-                onClick={() => setActiveTab('manual')}
-                className={`flex flex-1 items-center justify-center gap-1.5 rounded-md px-3 py-2 text-sm font-medium transition-colors ${
-                  activeTab === 'manual'
-                    ? 'bg-background text-foreground shadow-sm'
-                    : 'text-muted-foreground hover:text-foreground'
-                }`}
-              >
-                <Plus className="h-4 w-4" />
-                Manual
-              </button>
-              <button
-                type="button"
-                onClick={() => setActiveTab('csv')}
-                className={`flex flex-1 items-center justify-center gap-1.5 rounded-md px-3 py-2 text-sm font-medium transition-colors ${
-                  activeTab === 'csv'
-                    ? 'bg-background text-foreground shadow-sm'
-                    : 'text-muted-foreground hover:text-foreground'
-                }`}
-              >
-                <Upload className="h-4 w-4" />
-                CSV Upload
-              </button>
-              <button
-                type="button"
-                onClick={() => setActiveTab('topics')}
-                className={`flex flex-1 items-center justify-center gap-1.5 rounded-md px-3 py-2 text-sm font-medium transition-colors ${
-                  activeTab === 'topics'
-                    ? 'bg-background text-foreground shadow-sm'
-                    : 'text-muted-foreground hover:text-foreground'
-                }`}
-              >
-                <List className="h-4 w-4" />
-                Topic Lists
-              </button>
-            </div>
-
-            {/* Tab content */}
-            {activeTab === 'manual' && (
-              <div className="flex gap-2">
-                <Input
-                  placeholder="Enter entrant name..."
-                  value={manualInput}
-                  onChange={(e) => setManualInput(e.target.value)}
-                  onKeyDown={handleManualKeyDown}
-                  maxLength={100}
-                  disabled={entrants.length >= size}
-                />
-                <Button
+            {/* Input controls -- constrained width in full-width mode for readability */}
+            <div className={isFullWidth ? 'mx-auto max-w-2xl space-y-4' : 'space-y-4'}>
+              {/* Tab buttons */}
+              <div className="flex gap-1 rounded-lg bg-muted p-1">
+                <button
                   type="button"
-                  onClick={addManualEntrant}
-                  disabled={!manualInput.trim() || entrants.length >= size}
+                  onClick={() => setActiveTab('manual')}
+                  className={`flex flex-1 items-center justify-center gap-1.5 rounded-md px-3 py-2 text-sm font-medium transition-colors ${
+                    activeTab === 'manual'
+                      ? 'bg-background text-foreground shadow-sm'
+                      : 'text-muted-foreground hover:text-foreground'
+                  }`}
                 >
-                  <Plus className="mr-1 h-4 w-4" />
-                  Add
-                </Button>
+                  <Plus className="h-4 w-4" />
+                  Manual
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setActiveTab('csv')}
+                  className={`flex flex-1 items-center justify-center gap-1.5 rounded-md px-3 py-2 text-sm font-medium transition-colors ${
+                    activeTab === 'csv'
+                      ? 'bg-background text-foreground shadow-sm'
+                      : 'text-muted-foreground hover:text-foreground'
+                  }`}
+                >
+                  <Upload className="h-4 w-4" />
+                  CSV Upload
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setActiveTab('topics')}
+                  className={`flex flex-1 items-center justify-center gap-1.5 rounded-md px-3 py-2 text-sm font-medium transition-colors ${
+                    activeTab === 'topics'
+                      ? 'bg-background text-foreground shadow-sm'
+                      : 'text-muted-foreground hover:text-foreground'
+                  }`}
+                >
+                  <List className="h-4 w-4" />
+                  Topic Lists
+                </button>
               </div>
-            )}
 
-            {activeTab === 'csv' && (
-              <CSVUpload
-                onEntrantsParsed={handleEntrantsFromCSV}
-                maxEntrants={size}
-              />
-            )}
+              {/* Tab content */}
+              {activeTab === 'manual' && (
+                <div className="flex gap-2">
+                  <Input
+                    placeholder="Enter entrant name..."
+                    value={manualInput}
+                    onChange={(e) => setManualInput(e.target.value)}
+                    onKeyDown={handleManualKeyDown}
+                    maxLength={100}
+                    disabled={entrants.length >= size}
+                  />
+                  <Button
+                    type="button"
+                    onClick={addManualEntrant}
+                    disabled={!manualInput.trim() || entrants.length >= size}
+                  >
+                    <Plus className="mr-1 h-4 w-4" />
+                    Add
+                  </Button>
+                </div>
+              )}
 
-            {activeTab === 'topics' && (
-              <TopicPicker
-                onTopicsSelected={handleEntrantsFromTopics}
-                bracketSize={size}
-              />
-            )}
+              {activeTab === 'csv' && (
+                <CSVUpload
+                  onEntrantsParsed={handleEntrantsFromCSV}
+                  maxEntrants={size}
+                />
+              )}
 
-            {/* Entrant counter */}
-            <div className="flex items-center justify-between">
-              <span
-                className={`text-sm font-medium ${
-                  entrants.length === size
-                    ? 'text-green-600 dark:text-green-400'
-                    : entrants.length > 0
-                      ? 'text-amber-600 dark:text-amber-400'
-                      : 'text-muted-foreground'
-                }`}
-              >
-                {entrants.length} / {size} entrants
-              </span>
-              {entrants.length > 0 && entrants.length !== size && (
-                <span className="text-xs text-muted-foreground">
-                  {entrants.length < size
-                    ? `Need ${size - entrants.length} more`
-                    : `Remove ${entrants.length - size}`}
+              {activeTab === 'topics' && (
+                <TopicPicker
+                  onTopicsSelected={handleEntrantsFromTopics}
+                  bracketSize={size}
+                />
+              )}
+
+              {/* Entrant counter */}
+              <div className="flex items-center justify-between">
+                <span
+                  className={`text-sm font-medium ${
+                    entrants.length === size
+                      ? 'text-green-600 dark:text-green-400'
+                      : entrants.length > 0
+                        ? 'text-amber-600 dark:text-amber-400'
+                        : 'text-muted-foreground'
+                  }`}
+                >
+                  {entrants.length} / {size} entrants
                 </span>
+                {entrants.length > 0 && entrants.length !== size && (
+                  <span className="text-xs text-muted-foreground">
+                    {entrants.length < size
+                      ? `Need ${size - entrants.length} more`
+                      : `Remove ${entrants.length - size}`}
+                  </span>
+                )}
+              </div>
+
+              {/* Placement mode toggle (only when entrants exist) */}
+              {entrants.length > 0 && (
+                <PlacementModeToggle
+                  mode={placementMode}
+                  onModeChange={setPlacementMode}
+                />
               )}
             </div>
-
-            {/* Placement mode toggle (only when entrants exist) */}
-            {entrants.length > 0 && (
-              <PlacementModeToggle
-                mode={placementMode}
-                onModeChange={setPlacementMode}
-              />
-            )}
 
             {/* Entrant list (list mode) or visual placement (visual mode) */}
             {placementMode === 'list' ? (
@@ -846,7 +852,7 @@ export function BracketForm() {
             )}
 
             {/* Navigation */}
-            <div className="flex justify-between pt-4">
+            <div className={`flex justify-between pt-4${isFullWidth ? ' mx-auto max-w-2xl' : ''}`}>
               <Button variant="outline" onClick={() => setStep(1)}>
                 <ChevronLeft className="mr-1 h-4 w-4" />
                 Back
