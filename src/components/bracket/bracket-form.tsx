@@ -22,6 +22,9 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { EntrantList } from '@/components/bracket/entrant-list'
 import { CSVUpload } from '@/components/bracket/csv-upload'
 import { TopicPicker } from '@/components/bracket/topic-picker'
+import { PlacementModeToggle } from '@/components/bracket/visual-placement/placement-mode-toggle'
+import { PlacementBracket } from '@/components/bracket/visual-placement/placement-bracket'
+import { PlacementMatchupGrid } from '@/components/bracket/visual-placement/placement-matchup-grid'
 import { createBracket } from '@/actions/bracket'
 import { calculateBracketSizeWithByes } from '@/lib/bracket/byes'
 import type { BracketType, RoundRobinPacing, RoundRobinVotingStyle, RoundRobinStandingsMode, PredictiveMode, PredictiveResolutionMode } from '@/lib/bracket/types'
@@ -102,6 +105,7 @@ export function BracketForm() {
   const [entrants, setEntrants] = useState<FormEntrant[]>([])
   const [activeTab, setActiveTab] = useState<EntrantTab>('manual')
   const [manualInput, setManualInput] = useState('')
+  const [placementMode, setPlacementMode] = useState<'list' | 'visual'>('list')
 
   // Step 3: Submit
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -232,6 +236,10 @@ export function BracketForm() {
 
   const handleReorder = useCallback((reordered: FormEntrant[]) => {
     setEntrants(reordered.map((e, i) => ({ ...e, seedPosition: i + 1 })))
+  }, [])
+
+  const handleVisualPlacement = useCallback((updatedEntrants: FormEntrant[]) => {
+    setEntrants(updatedEntrants)
   }, [])
 
   const handleRemove = useCallback((id: string) => {
@@ -789,15 +797,46 @@ export function BracketForm() {
               )}
             </div>
 
-            {/* Entrant list with bye info */}
-            <EntrantList
-              entrants={entrants}
-              onReorder={handleReorder}
-              onRemove={handleRemove}
-              onEdit={handleEdit}
-              bracketType={bracketType}
-              totalEntrants={size}
-            />
+            {/* Placement mode toggle (only when entrants exist) */}
+            {entrants.length > 0 && (
+              <PlacementModeToggle
+                mode={placementMode}
+                onModeChange={setPlacementMode}
+              />
+            )}
+
+            {/* Entrant list (list mode) or visual placement (visual mode) */}
+            {placementMode === 'list' ? (
+              <EntrantList
+                entrants={entrants}
+                onReorder={handleReorder}
+                onRemove={handleRemove}
+                onEdit={handleEdit}
+                bracketType={bracketType}
+                totalEntrants={size}
+              />
+            ) : entrants.length > 0 ? (
+              bracketType === 'round_robin' ? (
+                <PlacementMatchupGrid
+                  entrants={entrants}
+                  entrantCount={size}
+                  onEntrantsChange={handleVisualPlacement}
+                />
+              ) : (
+                <PlacementBracket
+                  entrants={entrants}
+                  bracketSize={byeInfo?.bracketSize ?? size}
+                  entrantCount={size}
+                  onEntrantsChange={handleVisualPlacement}
+                />
+              )
+            ) : (
+              <div className="rounded-lg border border-dashed p-6 text-center">
+                <p className="text-sm text-muted-foreground">
+                  No entrants added yet. Use the options above to add entrants.
+                </p>
+              </div>
+            )}
 
             {/* Bye helper text */}
             {byeInfo && entrants.length > 0 && (
