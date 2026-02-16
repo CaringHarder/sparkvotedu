@@ -418,6 +418,7 @@ Recent decisions affecting current work:
 - Add visual bracket placement with drag-and-drop seeding (let teachers place matchups on the bracket, not just reorder a list) → Phase 11
 - Add SPORTSDATAIO_API_KEY to .env.local (sign up at https://sportsdata.io/free-trial)
 - Add CRON_SECRET to Vercel environment variables for cron job authentication
+- Move visual placement to full-width creation step (edit page already uses full viewport — creation wizard should match)
 
 ### Roadmap Evolution
 
