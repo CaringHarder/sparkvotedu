@@ -22,7 +22,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 7.1: Predictive Auto-Resolution Mode** - Third resolution mode where predictions auto-count as votes without voting rounds (INSERTED)
 - [x] **Phase 8: Sports Integration** - Real sports tournament brackets from external APIs for classroom prediction competitions
 - [x] **Phase 9: Analytics** - Participation metrics, vote distribution views, CSV export, and predictive leaderboard scoring
-- [ ] **Phase 10: Landing Page & Polish** - Public landing page, responsive design audit, and interface refinement
+- [x] **Phase 10: Landing Page & Polish** - Public landing page, responsive design audit, and interface refinement
 - [ ] **Phase 11: Visual Bracket Placement** - Drag-and-drop seeding where teachers place entrants directly on the bracket diagram
 
 ## Phase Details
@@ -266,11 +266,11 @@ Plans:
 **Plans**: 5 plans
 
 Plans:
-- [ ] 10-01-PLAN.md — Brand infrastructure: color system, dark mode (next-themes), logo assets, skeleton component
-- [ ] 10-02-PLAN.md — Landing page: hero, features, pricing, class code input, branded sections
-- [ ] 10-03-PLAN.md — Teacher dashboard polish: visual refresh, sidebar redesign, skeleton loading, auth branding
-- [ ] 10-04-PLAN.md — Student experience polish: branded layout, join flow, celebration enhancements
-- [ ] 10-05-PLAN.md — Responsive design audit: mobile navigation, bracket mobile view, breakpoint fixes
+- [x] 10-01-PLAN.md — Brand infrastructure: color system, dark mode (next-themes), logo assets, skeleton component
+- [x] 10-02-PLAN.md — Landing page: hero, features, pricing, class code input, branded sections
+- [x] 10-03-PLAN.md — Teacher dashboard polish: visual refresh, sidebar redesign, skeleton loading, auth branding
+- [x] 10-04-PLAN.md — Student experience polish: branded layout, join flow, celebration enhancements
+- [x] 10-05-PLAN.md — Responsive design audit: mobile navigation, bracket mobile view, breakpoint fixes
 
 ### Phase 11: Visual Bracket Placement
 **Goal**: Teachers can drag entrants from a pool into bracket diagram positions, swap entrants within the bracket, and toggle between list reorder and visual placement modes
