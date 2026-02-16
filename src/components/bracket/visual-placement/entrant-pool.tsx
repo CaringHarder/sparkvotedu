@@ -1,8 +1,8 @@
 'use client'
 
-import { useCallback, useMemo } from 'react'
-import { useDraggable } from '@dnd-kit/react'
-import { Sparkles, X } from 'lucide-react'
+import { useCallback, useMemo, useState } from 'react'
+import { useDraggable, useDroppable } from '@dnd-kit/react'
+import { Sparkles } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
   autoSeed,
@@ -94,6 +94,16 @@ export function EntrantPool({
   onEntrantsChange,
   layout = 'sidebar',
 }: EntrantPoolProps) {
+  const [showConfirm, setShowConfirm] = useState(false)
+
+  // Make the pool area a droppable zone for drag-back-to-pool
+  const { ref: poolDropRef, isDropTarget } = useDroppable({
+    id: 'entrant-pool',
+    data: {
+      type: 'pool',
+    } satisfies PlacementDragData,
+  })
+
   // Compute which entrants are unplaced (not manually placed in a slot)
   // An entrant is "in the pool" if their seedPosition has not been manually changed
   // from the auto-seed default. But since we can't distinguish manual from auto,
@@ -105,14 +115,38 @@ export function EntrantPool({
       .sort((a, b) => a.seedPosition - b.seedPosition)
   }, [entrants, entrantCount])
 
+  // Detect if any entrants have been manually placed (not in auto-seed order)
+  const hasManualPlacements = useMemo(() => {
+    return entrants.some((e, i) => e.seedPosition !== i + 1)
+  }, [entrants])
+
   const handleAutoSeed = useCallback(() => {
+    if (hasManualPlacements) {
+      setShowConfirm(true)
+    } else {
+      const updated = autoSeed(entrants)
+      onEntrantsChange(updated)
+    }
+  }, [entrants, onEntrantsChange, hasManualPlacements])
+
+  const confirmAutoSeed = useCallback(() => {
+    setShowConfirm(false)
     const updated = autoSeed(entrants)
     onEntrantsChange(updated)
   }, [entrants, onEntrantsChange])
 
+  const cancelAutoSeed = useCallback(() => {
+    setShowConfirm(false)
+  }, [])
+
   if (layout === 'inline') {
     return (
-      <div className="space-y-2">
+      <div
+        ref={poolDropRef}
+        className={`space-y-2 rounded-lg transition-colors ${
+          isDropTarget ? 'bg-primary/5 ring-2 ring-primary/30' : ''
+        }`}
+      >
         <div className="flex items-center justify-between">
           <h3 className="text-sm font-medium text-muted-foreground">
             Entrants ({poolEntrants.length})
@@ -127,6 +161,19 @@ export function EntrantPool({
             Auto Seed
           </Button>
         </div>
+        {showConfirm && (
+          <div className="flex items-center gap-2 rounded-md border border-amber-300 bg-amber-50 p-2 text-xs dark:border-amber-700 dark:bg-amber-950">
+            <span className="flex-1 text-amber-800 dark:text-amber-200">
+              Reset all placements to default seeding?
+            </span>
+            <Button size="sm" variant="outline" onClick={cancelAutoSeed} className="h-6 px-2 text-xs">
+              Cancel
+            </Button>
+            <Button size="sm" onClick={confirmAutoSeed} className="h-6 px-2 text-xs">
+              Reset
+            </Button>
+          </div>
+        )}
         <div className="flex gap-2 overflow-x-auto pb-2">
           {poolEntrants.map((entrant) => (
             <PoolEntrant
@@ -141,7 +188,12 @@ export function EntrantPool({
   }
 
   return (
-    <div className="space-y-3">
+    <div
+      ref={poolDropRef}
+      className={`space-y-3 rounded-lg transition-colors ${
+        isDropTarget ? 'bg-primary/5 ring-2 ring-primary/30' : ''
+      }`}
+    >
       <div className="flex items-center justify-between">
         <h3 className="text-sm font-semibold">
           Entrants ({poolEntrants.length})
@@ -156,6 +208,19 @@ export function EntrantPool({
           Auto Seed
         </Button>
       </div>
+      {showConfirm && (
+        <div className="flex items-center gap-2 rounded-md border border-amber-300 bg-amber-50 p-2 text-xs dark:border-amber-700 dark:bg-amber-950">
+          <span className="flex-1 text-amber-800 dark:text-amber-200">
+            Reset all placements to default seeding?
+          </span>
+          <Button size="sm" variant="outline" onClick={cancelAutoSeed} className="h-6 px-2 text-xs">
+            Cancel
+          </Button>
+          <Button size="sm" onClick={confirmAutoSeed} className="h-6 px-2 text-xs">
+            Reset
+          </Button>
+        </div>
+      )}
       <p className="text-xs text-muted-foreground">
         Drag an entrant to a bracket slot, or click to select then click a slot.
       </p>

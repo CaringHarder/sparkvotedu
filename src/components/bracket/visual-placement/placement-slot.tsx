@@ -87,6 +87,9 @@ export function PlacementSlot({
 
   const isSelected = placedEntrant != null && selectedEntrantId === placedEntrant.id
 
+  // Show pulse animation on empty/bye slots when an entrant is selected in click-to-place mode
+  const showPlacementGlow = selectedEntrantId != null && !isDragging
+
   // Render empty slot
   if (!placedEntrant && !isBye) {
     return (
@@ -97,9 +100,11 @@ export function PlacementSlot({
         className={`flex h-10 w-full items-center gap-2 rounded-md border border-dashed px-3 transition-all ${
           isDropTarget
             ? 'border-primary bg-primary/5 ring-2 ring-primary/50 shadow-[0_0_8px_rgba(var(--primary),0.3)]'
-            : isDragging
-              ? 'border-primary/30 bg-primary/5'
-              : 'border-muted-foreground/30'
+            : showPlacementGlow
+              ? 'border-primary/40 bg-primary/5 animate-pulse'
+              : isDragging
+                ? 'border-primary/30 bg-primary/5'
+                : 'border-muted-foreground/30'
         }`}
       >
         <span className="text-sm text-muted-foreground/50">
@@ -114,12 +119,15 @@ export function PlacementSlot({
     return (
       <div
         ref={elementRef}
-        className={`flex h-10 w-full items-center gap-2 rounded-md border px-3 transition-all ${
+        onClick={handleClick}
+        className={`flex h-10 w-full cursor-pointer items-center gap-2 rounded-md border px-3 transition-all ${
           isDragSource
             ? 'opacity-50'
             : isDropTarget
               ? 'ring-2 ring-primary/50 shadow-[0_0_8px_rgba(var(--primary),0.3)]'
-              : 'border-border bg-muted/50'
+              : showPlacementGlow
+                ? 'border-primary/40 bg-primary/5 animate-pulse'
+                : 'border-border bg-muted/50'
         }`}
       >
         <span className="italic text-muted-foreground">BYE</span>

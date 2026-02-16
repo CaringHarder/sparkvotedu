@@ -4,6 +4,7 @@ import {
   createContext,
   useCallback,
   useContext,
+  useEffect,
   useState,
 } from 'react'
 import { DragDropProvider } from '@dnd-kit/react'
@@ -11,12 +12,14 @@ import type { DragEndEvent, DragStartEvent } from '@dnd-kit/dom'
 import {
   placeEntrantInSlot,
   swapSlots,
+  autoSeed,
+  seedToSlot,
   type PlacementEntrant,
 } from '@/lib/bracket/placement'
 
 /** Data attached to draggable/droppable items */
 export interface PlacementDragData {
-  type: 'entrant' | 'slot'
+  type: 'entrant' | 'slot' | 'pool'
   entrantId?: string
   slotIndex?: number
   isBye?: boolean
@@ -54,6 +57,17 @@ export function PlacementProvider({
 }: PlacementProviderProps) {
   const [selectedEntrantId, setSelectedEntrantId] = useState<string | null>(null)
   const [isDragging, setIsDragging] = useState(false)
+
+  // Escape key deselects the currently selected entrant
+  useEffect(() => {
+    function handleKeyDown(e: KeyboardEvent) {
+      if (e.key === 'Escape' && selectedEntrantId) {
+        setSelectedEntrantId(null)
+      }
+    }
+    document.addEventListener('keydown', handleKeyDown)
+    return () => document.removeEventListener('keydown', handleKeyDown)
+  }, [selectedEntrantId])
 
   const handleSlotClick = useCallback(
     (slotIndex: number) => {
@@ -124,7 +138,35 @@ export function PlacementProvider({
         return
       }
 
-      // Case 3: drop on pool -- no-op
+      // Case 3: slot -> pool (drag back to pool = reset to auto-seed position)
+      if (sourceData.type === 'slot' && targetData.type === 'pool' && sourceData.entrantId != null) {
+        const entrant = entrants.find((e) => e.id === sourceData.entrantId)
+        if (!entrant) return
+
+        // Reset entrant to their auto-seed position (array index + 1)
+        const idx = entrants.indexOf(entrant)
+        const autoSeedPosition = idx + 1
+
+        // If the auto-seed position is taken by someone else, swap
+        const occupant = entrants.find(
+          (e) => e.id !== sourceData.entrantId && e.seedPosition === autoSeedPosition
+        )
+
+        if (occupant) {
+          const updated = entrants.map((e) => {
+            if (e.id === sourceData.entrantId) return { ...e, seedPosition: autoSeedPosition }
+            if (e.id === occupant.id) return { ...e, seedPosition: entrant.seedPosition }
+            return e
+          })
+          onEntrantsChange(updated)
+        } else {
+          const updated = entrants.map((e) =>
+            e.id === sourceData.entrantId ? { ...e, seedPosition: autoSeedPosition } : e
+          )
+          onEntrantsChange(updated)
+        }
+        return
+      }
     },
     [entrants, bracketSize, onEntrantsChange]
   )
