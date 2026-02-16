@@ -31,7 +31,7 @@
 
 - [x] **Phase 14: Service Configuration** - Configure external services for production (completed 2026-02-16)
 - [x] **Phase 15: UX Polish** - Improve bracket placement UX and fix landing page issues (completed 2026-02-16)
-- [ ] **Phase 16: Legal Pages** - Add privacy policy and terms of service pages
+- [x] **Phase 16: Legal Pages** - Add privacy policy and terms of service pages (completed 2026-02-16)
 - [ ] **Phase 17: Admin Panel** - Build admin dashboard for teacher management
 - [ ] **Phase 18: Production Deploy** - Deploy to sparkvotedu.com
 
@@ -129,6 +129,6 @@ Phases 14, 15, 16 can run in parallel (no dependencies). Phase 17 depends on Pha
 | 11. Visual Bracket Placement | v1.0 | 6/6 | Complete | 2026-02-16 |
 | 14. Service Configuration | v1.1 | Complete    | 2026-02-16 | - |
 | 15. UX Polish | v1.1 | Complete    | 2026-02-16 | - |
-| 16. Legal Pages | v1.1 | 0/1 | Not started | - |
+| 16. Legal Pages | v1.1 | Complete    | 2026-02-16 | - |
 | 17. Admin Panel | v1.1 | 0/3 | Not started | - |
 | 18. Production Deploy | v1.1 | 0/1 | Not started | - |
