@@ -1,12 +1,18 @@
 'use client'
 
-import { useState, useTransition } from 'react'
+import { useState, useTransition, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import { nanoid } from 'nanoid'
 import { ArrowLeft, Plus, Trash2, GripVertical } from 'lucide-react'
 import { updateBracketEntrants } from '@/actions/bracket'
+import { PlacementModeToggle } from '@/components/bracket/visual-placement/placement-mode-toggle'
+import { PlacementBracket } from '@/components/bracket/visual-placement/placement-bracket'
+import { PlacementMatchupGrid } from '@/components/bracket/visual-placement/placement-matchup-grid'
+import { calculateBracketSizeWithByes } from '@/lib/bracket/byes'
 
 interface Entrant {
+  id: string
   name: string
   seedPosition: number
 }
@@ -16,6 +22,7 @@ interface BracketEditFormProps {
     id: string
     name: string
     size: number
+    bracketType: string
     entrants: {
       id: string
       name: string
@@ -30,14 +37,23 @@ export function BracketEditForm({ bracket }: BracketEditFormProps) {
   const [isPending, startTransition] = useTransition()
   const [error, setError] = useState<string | null>(null)
   const [newEntrantName, setNewEntrantName] = useState('')
+  const [placementMode, setPlacementMode] = useState<'list' | 'visual'>('list')
 
-  // Initialize entrants from bracket data
+  // Initialize entrants from bracket data with IDs
   const [entrants, setEntrants] = useState<Entrant[]>(
     bracket.entrants.map((e) => ({
+      id: e.id,
       name: e.name,
       seedPosition: e.seedPosition,
     }))
   )
+
+  // Compute bye info for non-RR brackets
+  const byeInfo = useMemo(() => {
+    if (bracket.bracketType === 'round_robin') return null
+    const info = calculateBracketSizeWithByes(bracket.size)
+    return info.numByes > 0 ? info : null
+  }, [bracket.bracketType, bracket.size])
 
   function handleEntrantNameChange(index: number, name: string) {
     setEntrants((prev) =>
@@ -59,7 +75,7 @@ export function BracketEditForm({ bracket }: BracketEditFormProps) {
 
     setEntrants((prev) => [
       ...prev,
-      { name: newEntrantName.trim(), seedPosition: prev.length + 1 },
+      { id: nanoid(), name: newEntrantName.trim(), seedPosition: prev.length + 1 },
     ])
     setNewEntrantName('')
   }
@@ -86,6 +102,10 @@ export function BracketEditForm({ bracket }: BracketEditFormProps) {
       // Re-number seed positions
       return updated.map((e, i) => ({ ...e, seedPosition: i + 1 }))
     })
+  }
+
+  function handleVisualPlacement(updatedEntrants: Entrant[]) {
+    setEntrants(updatedEntrants)
   }
 
   function handleSave() {
@@ -137,55 +157,83 @@ export function BracketEditForm({ bracket }: BracketEditFormProps) {
         </p>
       </div>
 
-      {/* Entrant list */}
-      <div className="space-y-2">
-        {entrants.map((entrant, index) => (
-          <div
-            key={`${entrant.seedPosition}-${index}`}
-            className="flex items-center gap-2 rounded-md border bg-card px-3 py-2"
-          >
-            <GripVertical className="h-4 w-4 shrink-0 text-muted-foreground" />
-            <span className="w-6 shrink-0 text-xs text-muted-foreground">
-              #{entrant.seedPosition}
-            </span>
-            <input
-              type="text"
-              value={entrant.name}
-              onChange={(e) => handleEntrantNameChange(index, e.target.value)}
-              className="flex-1 bg-transparent text-sm outline-none"
-              placeholder="Entrant name"
-            />
-            <div className="flex items-center gap-1">
-              <button
-                type="button"
-                onClick={() => handleMoveUp(index)}
-                disabled={index === 0}
-                className="rounded p-1 text-xs text-muted-foreground transition-colors hover:bg-accent disabled:opacity-30"
-                title="Move up"
+      {/* Placement mode toggle (only when entrants exist) */}
+      {entrants.length > 0 && (
+        <PlacementModeToggle
+          mode={placementMode}
+          onModeChange={setPlacementMode}
+        />
+      )}
+
+      {/* Entrant list (list mode) or visual placement (visual mode) */}
+      {placementMode === 'list' ? (
+        <>
+          {/* Entrant list */}
+          <div className="space-y-2">
+            {entrants.map((entrant, index) => (
+              <div
+                key={entrant.id}
+                className="flex items-center gap-2 rounded-md border bg-card px-3 py-2"
               >
-                ↑
-              </button>
-              <button
-                type="button"
-                onClick={() => handleMoveDown(index)}
-                disabled={index === entrants.length - 1}
-                className="rounded p-1 text-xs text-muted-foreground transition-colors hover:bg-accent disabled:opacity-30"
-                title="Move down"
-              >
-                ↓
-              </button>
-              <button
-                type="button"
-                onClick={() => handleRemoveEntrant(index)}
-                className="rounded p-1 text-muted-foreground transition-colors hover:bg-red-50 hover:text-red-600"
-                title="Remove"
-              >
-                <Trash2 className="h-3.5 w-3.5" />
-              </button>
-            </div>
+                <GripVertical className="h-4 w-4 shrink-0 text-muted-foreground" />
+                <span className="w-6 shrink-0 text-xs text-muted-foreground">
+                  #{entrant.seedPosition}
+                </span>
+                <input
+                  type="text"
+                  value={entrant.name}
+                  onChange={(e) => handleEntrantNameChange(index, e.target.value)}
+                  className="flex-1 bg-transparent text-sm outline-none"
+                  placeholder="Entrant name"
+                />
+                <div className="flex items-center gap-1">
+                  <button
+                    type="button"
+                    onClick={() => handleMoveUp(index)}
+                    disabled={index === 0}
+                    className="rounded p-1 text-xs text-muted-foreground transition-colors hover:bg-accent disabled:opacity-30"
+                    title="Move up"
+                  >
+                    {'\u2191'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleMoveDown(index)}
+                    disabled={index === entrants.length - 1}
+                    className="rounded p-1 text-xs text-muted-foreground transition-colors hover:bg-accent disabled:opacity-30"
+                    title="Move down"
+                  >
+                    {'\u2193'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleRemoveEntrant(index)}
+                    className="rounded p-1 text-muted-foreground transition-colors hover:bg-red-50 hover:text-red-600"
+                    title="Remove"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </button>
+                </div>
+              </div>
+            ))}
           </div>
-        ))}
-      </div>
+        </>
+      ) : entrants.length > 0 ? (
+        bracket.bracketType === 'round_robin' ? (
+          <PlacementMatchupGrid
+            entrants={entrants}
+            entrantCount={bracket.size}
+            onEntrantsChange={handleVisualPlacement}
+          />
+        ) : (
+          <PlacementBracket
+            entrants={entrants}
+            bracketSize={byeInfo?.bracketSize ?? bracket.size}
+            entrantCount={bracket.size}
+            onEntrantsChange={handleVisualPlacement}
+          />
+        )
+      ) : null}
 
       {/* Add entrant */}
       {entrants.length < bracket.size && (
