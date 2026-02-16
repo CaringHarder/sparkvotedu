@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useMemo } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 import {
   buildSlotMap,
   seedToSlot,
@@ -34,6 +34,14 @@ function buildPlacedMap(
     }
   }
   return map
+}
+
+/** Section definition for large bracket navigation */
+interface PlacementSection {
+  label: string
+  /** Matchup indices into the matchups array (0-based) */
+  startMatchup: number
+  endMatchup: number
 }
 
 export function PlacementBracket({
@@ -87,6 +95,63 @@ export function PlacementBracket({
     return result
   }, [bracketSize, slotMap])
 
+  // Compute sections for large bracket navigation
+  const sections = useMemo<PlacementSection[]>(() => {
+    const r1Matchups = bracketSize / 2
+    const matchupsPerSection = 8 // Always 8 matchups per section for readability
+    const numSections = Math.ceil(r1Matchups / matchupsPerSection)
+
+    if (numSections <= 1) {
+      // Small bracket: single section, no tabs
+      return [{ label: 'All', startMatchup: 0, endMatchup: r1Matchups }]
+    }
+
+    // Label sections
+    const labels =
+      numSections === 2
+        ? ['Top Half', 'Bottom Half']
+        : Array.from({ length: numSections }, (_, i) => `Region ${i + 1}`)
+
+    return labels.map((label, i) => ({
+      label,
+      startMatchup: i * matchupsPerSection,
+      endMatchup: Math.min((i + 1) * matchupsPerSection, r1Matchups),
+    }))
+  }, [bracketSize])
+
+  const [activeSection, setActiveSection] = useState(0)
+
+  // Get matchups for the active section
+  const activeSectionDef = sections[activeSection] ?? sections[0]
+  const sectionMatchups = useMemo(
+    () => matchups.slice(activeSectionDef.startMatchup, activeSectionDef.endMatchup),
+    [matchups, activeSectionDef]
+  )
+
+  // Compute placed counts per section for badges
+  const sectionPlacedCounts = useMemo(() => {
+    return sections.map((section) => {
+      const sectionMs = matchups.slice(section.startMatchup, section.endMatchup)
+      let placed = 0
+      let total = 0
+      for (const m of sectionMs) {
+        // Top slot
+        if (!byeSlotSet.has(m.topSlot)) {
+          total++
+          if (placedMap.has(m.topSlot)) placed++
+        }
+        // Bottom slot
+        if (!byeSlotSet.has(m.bottomSlot)) {
+          total++
+          if (placedMap.has(m.bottomSlot)) placed++
+        }
+      }
+      return { placed, total }
+    })
+  }, [sections, matchups, byeSlotSet, placedMap])
+
+  const showSectionNav = sections.length > 1
+
   // Handler to reset an entrant's placement (auto-seed position)
   const handleResetEntrant = useCallback(
     (entrantId: string) => {
@@ -120,14 +185,15 @@ export function PlacementBracket({
     [entrants, onEntrantsChange]
   )
 
-  // Responsive grid columns based on matchup count
+  // Responsive grid columns based on section matchup count (always 8 or fewer per section)
   const gridCols = useMemo(() => {
-    if (matchups.length <= 2) return 'grid-cols-1 md:grid-cols-2'
-    if (matchups.length <= 4) return 'grid-cols-1 md:grid-cols-2'
-    if (matchups.length <= 8) return 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3'
-    if (matchups.length <= 16) return 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4'
+    const count = sectionMatchups.length
+    if (count <= 2) return 'grid-cols-1 md:grid-cols-2'
+    if (count <= 4) return 'grid-cols-1 md:grid-cols-2'
+    if (count <= 8) return 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3'
+    if (count <= 16) return 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4'
     return 'grid-cols-1 md:grid-cols-2 lg:grid-cols-4'
-  }, [matchups.length])
+  }, [sectionMatchups.length])
 
   return (
     <PlacementProvider
@@ -169,8 +235,41 @@ export function PlacementBracket({
               Round 1 - {matchups.length} Matchups
             </h3>
           </div>
+
+          {/* Section navigation tabs for 32+ brackets */}
+          {showSectionNav && (
+            <div className="mb-4 flex flex-wrap gap-2">
+              {sections.map((section, i) => {
+                const counts = sectionPlacedCounts[i]
+                return (
+                  <button
+                    key={i}
+                    type="button"
+                    onClick={() => setActiveSection(i)}
+                    className={`flex items-center gap-2 rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
+                      activeSection === i
+                        ? 'bg-primary text-primary-foreground'
+                        : 'bg-muted text-muted-foreground hover:text-foreground'
+                    }`}
+                  >
+                    {section.label}
+                    <span
+                      className={`rounded-full px-1.5 py-0.5 text-[10px] font-semibold ${
+                        activeSection === i
+                          ? 'bg-primary-foreground/20 text-primary-foreground'
+                          : 'bg-background text-muted-foreground'
+                      }`}
+                    >
+                      {counts.placed}/{counts.total}
+                    </span>
+                  </button>
+                )
+              })}
+            </div>
+          )}
+
           <div className={`grid gap-3 ${gridCols}`}>
-            {matchups.map((matchup) => {
+            {sectionMatchups.map((matchup) => {
               const topEntrant = placedMap.get(matchup.topSlot) ?? null
               const bottomEntrant = placedMap.get(matchup.bottomSlot) ?? null
               const topIsBye = byeSlotSet.has(matchup.topSlot)
