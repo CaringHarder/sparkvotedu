@@ -5,21 +5,21 @@
 See: .planning/PROJECT.md (updated 2026-01-28)
 
 **Core value:** Teachers can instantly engage any classroom through voting -- on any topic, in any format -- and see participation happen in real time.
-**Current focus:** Phase 11 (Visual Bracket Placement) -- Plans 01+03 complete, 4 remaining.
+**Current focus:** Phase 11 (Visual Bracket Placement) -- Plans 01+02+03 complete, 3 remaining.
 
 ## Current Position
 
 Phase: 11 of 11 (Visual Bracket Placement)
 Plan: 3 of 6 in current phase
 Status: In Progress
-Last activity: 2026-02-16 -- Completed 11-03-PLAN.md (RR matchup grid visual placement)
+Last activity: 2026-02-16 -- Completed 11-02-PLAN.md (DnD placement components)
 
-Progress: [####################] 98/102 plans (96%)
+Progress: [####################] 99/102 plans (97%)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 98
+- Total plans completed: 99
 - Average duration: ~3.5 min
 - Total execution time: ~5.5 hours
 
@@ -44,11 +44,11 @@ Progress: [####################] 98/102 plans (96%)
 
 | 10-landing-page-and-polish | 5/5 | ~36m | ~7.2m |
 
-| 11-visual-bracket-placement | 2/6 | ~5m | ~2.5m |
+| 11-visual-bracket-placement | 3/6 | ~8m | ~2.7m |
 
 **Recent Trend:**
-- Last 5 plans: 10-04 (~5m), 10-05 (~25m), 11-01 (~3m), 11-03 (~2m)
-- Trend: Phase 11 progressing. Plan 03 in ~2m (RR matchup grid with sortable pool). Plans 02+03 executing in parallel.
+- Last 5 plans: 10-05 (~25m), 11-01 (~3m), 11-03 (~2m), 11-02 (~3m)
+- Trend: Phase 11 progressing well. Plan 02 in ~3m (DnD placement components with @dnd-kit/react). 3 of 6 plans complete.
 
 *Updated after each plan completion*
 
@@ -392,6 +392,11 @@ Recent decisions affecting current work:
 - [11-03]: Seed positions reassigned sequentially 1..N on reorder (pool order = seed order)
 - [11-03]: BYE detection by finding seed not present in any round matchup (for odd entrant counts)
 - [11-03]: @dnd-kit/react sortable useSortable with isSortable type guard for DragEnd event handling
+- [11-02]: PlacementDragData discriminated union (type: 'entrant' | 'slot') for onDragEnd source/target routing
+- [11-02]: Combined draggableRef+droppableRef via callback ref merger on occupied PlacementSlot elements for dual drag+drop
+- [11-02]: EntrantPool shows all real entrants (seedPosition <= entrantCount) as view over entrants array (not separate data)
+- [11-02]: Desktop sidebar + mobile chip bar pattern using hidden/md:block responsive toggle for EntrantPool
+- [11-02]: PlacementBracket responsive grid adapts columns (1-4) based on matchup count breakpoints
 
 ### Pending Todos
 
@@ -418,6 +423,6 @@ Recent decisions affecting current work:
 ## Session Continuity
 
 Last session: 2026-02-16
-Stopped at: Completed 11-03-PLAN.md (RR matchup grid visual placement)
+Stopped at: Completed 11-02-PLAN.md (DnD placement components)
 Resume file: .planning/phases/11-visual-bracket-placement/11-04-PLAN.md
-Note: Phase 11 in progress. Plans 01+03 complete. Plan 02 executing in parallel. Plan 03: PlacementMatchupGrid with @dnd-kit sortable pool reorder and live matchup schedule grid. Ready for Plan 04+.
+Note: Phase 11 in progress. Plans 01+02+03 complete. 4 components created: PlacementProvider, EntrantPool, PlacementSlot, PlacementBracket. @dnd-kit/react installed. Ready for Plan 04 (wizard integration).
