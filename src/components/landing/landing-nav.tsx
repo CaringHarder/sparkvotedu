@@ -22,8 +22,8 @@ export function LandingNav() {
             src="/logo-horizontal.png"
             alt="SparkVotEDU"
             width={160}
-            height={40}
-            className="hidden sm:block"
+            height={90}
+            className="hidden h-10 w-auto sm:block"
             priority
           />
         </Link>
