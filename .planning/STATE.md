@@ -5,21 +5,21 @@
 See: .planning/PROJECT.md (updated 2026-01-28)
 
 **Core value:** Teachers can instantly engage any classroom through voting -- on any topic, in any format -- and see participation happen in real time.
-**Current focus:** Phase 11 (Visual Bracket Placement) -- Plan 01 complete, 5 remaining.
+**Current focus:** Phase 11 (Visual Bracket Placement) -- Plans 01+03 complete, 4 remaining.
 
 ## Current Position
 
 Phase: 11 of 11 (Visual Bracket Placement)
-Plan: 1 of 6 in current phase
+Plan: 3 of 6 in current phase
 Status: In Progress
-Last activity: 2026-02-16 -- Completed 11-01-PLAN.md (Placement pure functions with TDD)
+Last activity: 2026-02-16 -- Completed 11-03-PLAN.md (RR matchup grid visual placement)
 
-Progress: [####################] 97/102 plans (95%)
+Progress: [####################] 98/102 plans (96%)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 97
+- Total plans completed: 98
 - Average duration: ~3.5 min
 - Total execution time: ~5.5 hours
 
@@ -44,11 +44,11 @@ Progress: [####################] 97/102 plans (95%)
 
 | 10-landing-page-and-polish | 5/5 | ~36m | ~7.2m |
 
-| 11-visual-bracket-placement | 1/6 | ~3m | ~3m |
+| 11-visual-bracket-placement | 2/6 | ~5m | ~2.5m |
 
 **Recent Trend:**
-- Last 5 plans: 10-03 (~2m), 10-04 (~5m), 10-05 (~25m), 11-01 (~3m)
-- Trend: Phase 11 started. Plan 01 in ~3m (TDD placement pure functions). Seed-to-slot mapping, swap logic, auto-seed, bye tracking.
+- Last 5 plans: 10-04 (~5m), 10-05 (~25m), 11-01 (~3m), 11-03 (~2m)
+- Trend: Phase 11 progressing. Plan 03 in ~2m (RR matchup grid with sortable pool). Plans 02+03 executing in parallel.
 
 *Updated after each plan completion*
 
@@ -387,6 +387,11 @@ Recent decisions affecting current work:
 - [11-01]: PlacementEntrant minimal interface (id, name, seedPosition) for data-layer independence from Prisma types
 - [11-01]: Immutable placement operations: all functions return new arrays, never mutate input
 - [11-01]: Swap-based placement: placeEntrantInSlot delegates to swapSlots for both entrant-entrant and entrant-bye cases
+- [11-03]: RR visual placement is pool reorder + live matchup preview (not drag-to-slot, since RR has no bracket tree)
+- [11-03]: Matchup grid is read-only computed visualization from generateRoundRobinRounds -- no droppable slots in grid
+- [11-03]: Seed positions reassigned sequentially 1..N on reorder (pool order = seed order)
+- [11-03]: BYE detection by finding seed not present in any round matchup (for odd entrant counts)
+- [11-03]: @dnd-kit/react sortable useSortable with isSortable type guard for DragEnd event handling
 
 ### Pending Todos
 
@@ -413,6 +418,6 @@ Recent decisions affecting current work:
 ## Session Continuity
 
 Last session: 2026-02-16
-Stopped at: Completed 11-01-PLAN.md (Placement pure functions with TDD)
-Resume file: .planning/phases/11-visual-bracket-placement/11-02-PLAN.md
-Note: Phase 11 started. Plan 01 complete: placement pure functions (seedToSlot, slotToSeed, swapSlots, autoSeed, getByeSlots, placeEntrantInSlot) with 37 tests. Ready for Plan 02 (bracket slot components).
+Stopped at: Completed 11-03-PLAN.md (RR matchup grid visual placement)
+Resume file: .planning/phases/11-visual-bracket-placement/11-04-PLAN.md
+Note: Phase 11 in progress. Plans 01+03 complete. Plan 02 executing in parallel. Plan 03: PlacementMatchupGrid with @dnd-kit sortable pool reorder and live matchup schedule grid. Ready for Plan 04+.
