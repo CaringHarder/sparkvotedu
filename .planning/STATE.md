@@ -5,16 +5,16 @@
 See: .planning/PROJECT.md (updated 2026-02-16)
 
 **Core value:** Teachers can instantly engage any classroom through voting -- on any topic, in any format -- and see participation happen in real time.
-**Current focus:** Phase 15 complete -- landing page header and hero styling polished
+**Current focus:** Phase 16 complete -- privacy policy and terms of service pages created
 
 ## Current Position
 
-Phase: 15 of 18 (UX Polish)
-Plan: 2 of 2 in current phase
+Phase: 16 of 18 (Legal Pages)
+Plan: 1 of 1 in current phase
 Status: Complete
-Last activity: 2026-02-16 -- Completed 15-02 (landing page header nav and hero styling)
+Last activity: 2026-02-16 -- Completed 16-01 (privacy policy and terms of service pages)
 
-Progress: [########################......] 80% (v1.0 complete, v1.1 4/9 plans)
+Progress: [#########################.....] 83% (v1.0 complete, v1.1 5/9 plans)
 
 ## Performance Metrics
 
@@ -25,8 +25,8 @@ Progress: [########################......] 80% (v1.0 complete, v1.1 4/9 plans)
 - Timeline: 20 days (2026-01-28 to 2026-02-16)
 
 **v1.1:**
-- Plans: 4/9 complete
-- Phases: 1/5 complete (Phase 15)
+- Plans: 5/9 complete
+- Phases: 2/5 complete (Phases 15, 16)
 
 | Phase | Plan | Duration | Tasks | Files |
 |-------|------|----------|-------|-------|
@@ -34,6 +34,7 @@ Progress: [########################......] 80% (v1.0 complete, v1.1 4/9 plans)
 | 14-02 | External Service Config | 90min | 2 | 4 |
 | 15-01 | Full-Width Visual Placement | 2min | 1 | 1 |
 | 15-02 | Landing Page Header & Hero | 3min | 2 | 2 |
+| 16-01 | Privacy Policy & Terms | 2min | 2 | 2 |
 
 ## Accumulated Context
 
@@ -53,6 +54,9 @@ All v1.0 decisions archived in PROJECT.md Key Decisions table.
 - [15-02] Logo aspect ratio corrected from 4:1 to 16:9 to match actual 2880x1620 image file
 - [15-02] Join Class button uses outline variant with brand-blue to distinguish from teacher Sign Up CTA
 - [15-02] Hero-to-content transition uses gradient divider from brand-blue-dark to background
+- [16-01] Teacher-friendly tone for legal pages -- plain English, no dense legalese
+- [16-01] Static server components for legal pages (no "use client" needed)
+- [16-01] max-w-4xl for prose content readability vs max-w-6xl for card layouts
 
 ### Pending Todos
 
@@ -61,12 +65,11 @@ None -- all former todos are now tracked as v1.1 requirements.
 ### Blockers/Concerns
 
 - Device fingerprinting collision rates on identical school hardware need real-world validation
-- Current sparkvotedu.com content needed as reference for legal pages
 - Poll image upload component exists but not wired into poll form UI
 
 ## Session Continuity
 
 Last session: 2026-02-16
-Stopped at: Completed 15-02-PLAN.md (Phase 15 complete)
-Resume file: .planning/phases/15-ux-polish/15-02-SUMMARY.md
-Resume: Phase 15 complete, proceed to Phase 16
+Stopped at: Completed 16-01-PLAN.md (Phase 16 complete)
+Resume file: .planning/phases/16-legal-pages/16-01-SUMMARY.md
+Resume: Phase 16 complete, proceed to Phase 17
