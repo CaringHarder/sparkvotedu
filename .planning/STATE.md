@@ -5,21 +5,21 @@
 See: .planning/PROJECT.md (updated 2026-01-28)
 
 **Core value:** Teachers can instantly engage any classroom through voting -- on any topic, in any format -- and see participation happen in real time.
-**Current focus:** Phase 9 (Analytics) -- COMPLETE. All 3 plans delivered: analytics DAL, bracket/poll analytics pages, CSV export.
+**Current focus:** Phase 10 (Landing Page & Polish) -- IN PROGRESS. Plan 01 complete: brand design system foundation.
 
 ## Current Position
 
-Phase: 9 of 10 (Analytics)
-Plan: 3 of 3 in current phase
-Status: Phase complete
-Last activity: 2026-02-15 -- Completed 09-03-PLAN.md (Tier-gated CSV export)
+Phase: 10 of 10 (Landing Page & Polish)
+Plan: 1 of 5 in current phase
+Status: Plan 01 complete
+Last activity: 2026-02-15 -- Completed 10-01-PLAN.md (Brand design system foundation)
 
-Progress: [##################] 100% (91/91 plans)
+Progress: [##################..] 92/96 plans (96%)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 91
+- Total plans completed: 92
 - Average duration: ~3.5 min
 - Total execution time: ~5.4 hours
 
@@ -42,9 +42,11 @@ Progress: [##################] 100% (91/91 plans)
 
 | 09-analytics | 3/3 | ~8m | ~2.7m |
 
+| 10-landing-page-and-polish | 1/5 | ~2m | ~2m |
+
 **Recent Trend:**
-- Last 5 plans: 08-04 (~6m), 09-01 (~3m), 09-02 (~2m), 09-03 (~3m)
-- Trend: Phase 9 complete. All 3 plans in ~8m. Analytics DAL + pages + CSV export. All 91 plans delivered.
+- Last 5 plans: 09-01 (~3m), 09-02 (~2m), 09-03 (~3m), 10-01 (~2m)
+- Trend: Phase 10 started. Plan 01 in ~2m. Brand colors, dark mode, logo assets, skeleton. 92 plans delivered.
 
 *Updated after each plan completion*
 
@@ -358,6 +360,10 @@ Recent decisions affecting current work:
 - [09-03]: PapaParse unparse for client-side CSV generation (handles escaping, quoting, special characters)
 - [09-03]: Predictive export gated to pro_plus directly (not csvExport) since predictive brackets are Pro Plus only
 - [09-03]: Per-round point columns in predictive export use getPointsForRound for header labels: R1 (1pts), R2 (2pts), etc.
+- [10-01]: oklch color space for brand-blue (hue 230) and brand-amber (hue 75) -- perceptually uniform across light/dark modes
+- [10-01]: Dark variant uses :where(.dark, .dark *) for zero-specificity targeting of both .dark element and descendants
+- [10-01]: ThemeProvider with attribute=class and disableTransitionOnChange for no-FOUC dark mode
+- [10-01]: Logo assets deployed as-is to /public/ -- Next.js Image handles WebP/AVIF conversion at serve time
 
 ### Pending Todos
 
@@ -384,6 +390,6 @@ Recent decisions affecting current work:
 ## Session Continuity
 
 Last session: 2026-02-15
-Stopped at: Completed 09-03-PLAN.md (Tier-gated CSV export) -- Phase 9 COMPLETE
-Resume file: None
-Note: Phase 9 complete. All 3 plans delivered: analytics DAL (09-01), poll analytics + hub + sidebar (09-02), tier-gated CSV export (09-03). 91 total plans delivered across all 9 phases.
+Stopped at: Completed 10-01-PLAN.md (Brand design system foundation)
+Resume file: .planning/phases/10-landing-page-and-polish/10-02-PLAN.md
+Note: Phase 10 started. Plan 01 complete: brand colors (oklch), dark mode (next-themes), ThemeToggle, Skeleton, 5 logo assets in /public/. 92 total plans delivered.
