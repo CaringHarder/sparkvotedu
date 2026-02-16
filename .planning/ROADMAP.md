@@ -73,10 +73,10 @@ Plans:
   1. Navigating to /privacy displays a privacy policy page with content modeled from the current sparkvotedu.com
   2. Navigating to /terms displays a terms of service page with content modeled from the current sparkvotedu.com
   3. Both pages are linked from the site footer and accessible without authentication
-**Plans**: TBD
+**Plans**: 1 plan
 
 Plans:
-- [ ] 16-01: Create privacy policy and terms of service pages
+- [ ] 16-01-PLAN.md -- Create privacy policy and terms of service pages
 
 ### Phase 17: Admin Panel
 **Goal**: Site owner can manage teachers, accounts, and subscriptions through a protected admin interface
