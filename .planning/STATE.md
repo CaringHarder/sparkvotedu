@@ -5,21 +5,21 @@
 See: .planning/PROJECT.md (updated 2026-01-28)
 
 **Core value:** Teachers can instantly engage any classroom through voting -- on any topic, in any format -- and see participation happen in real time.
-**Current focus:** Phase 11 (Visual Bracket Placement) -- Plans 01+02+03+04 complete, 2 remaining.
+**Current focus:** Phase 11 (Visual Bracket Placement) -- Plans 01+02+03+04+05 complete, 1 remaining.
 
 ## Current Position
 
 Phase: 11 of 11 (Visual Bracket Placement)
-Plan: 4 of 6 in current phase
+Plan: 5 of 6 in current phase
 Status: In Progress
-Last activity: 2026-02-16 -- Completed 11-04-PLAN.md (Mode toggle + form integration)
+Last activity: 2026-02-16 -- Completed 11-05-PLAN.md (Large bracket nav + bye polish)
 
-Progress: [####################] 100/102 plans (98%)
+Progress: [####################] 101/102 plans (99%)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 100
+- Total plans completed: 101
 - Average duration: ~3.5 min
 - Total execution time: ~5.5 hours
 
@@ -44,11 +44,11 @@ Progress: [####################] 100/102 plans (98%)
 
 | 10-landing-page-and-polish | 5/5 | ~36m | ~7.2m |
 
-| 11-visual-bracket-placement | 4/6 | ~10m | ~2.5m |
+| 11-visual-bracket-placement | 5/6 | ~13m | ~2.6m |
 
 **Recent Trend:**
-- Last 5 plans: 11-01 (~3m), 11-03 (~2m), 11-02 (~3m), 11-04 (~2m)
-- Trend: Phase 11 progressing well. Plan 04 in ~2m (mode toggle + form integration). 4 of 6 plans complete.
+- Last 5 plans: 11-03 (~2m), 11-02 (~3m), 11-04 (~2m), 11-05 (~3m)
+- Trend: Phase 11 progressing well. Plan 05 in ~3m (section nav + bye polish). 5 of 6 plans complete.
 
 *Updated after each plan completion*
 
@@ -401,6 +401,10 @@ Recent decisions affecting current work:
 - [11-04]: PlacementModeToggle appears only when entrants.length > 0 (visual placement needs entrants to be useful)
 - [11-04]: Edit form Entrant interface extended with id field, initialized from bracket.entrants[].id for stable keys
 - [11-04]: bracketType passed from server page with fallback to single_elimination for pre-existing brackets
+- [11-05]: Section navigation computed from bracketSize directly (not computeRegions) since placement operates on slot indices, not MatchupData[]
+- [11-05]: 8 matchups per section constant for readability regardless of bracket size
+- [11-05]: Placed counts exclude bye slots (only count real entrant placement slots)
+- [11-05]: Drag-to-pool resets entrant to auto-seed position (array index + 1) with swap if occupied
 
 ### Pending Todos
 
@@ -427,6 +431,6 @@ Recent decisions affecting current work:
 ## Session Continuity
 
 Last session: 2026-02-16
-Stopped at: Completed 11-04-PLAN.md (Mode toggle + form integration)
-Resume file: .planning/phases/11-visual-bracket-placement/11-05-PLAN.md
-Note: Phase 11 in progress. Plans 01+02+03+04 complete. PlacementModeToggle created and integrated into both bracket-form.tsx and bracket-edit-form.tsx. Visual placement available for all bracket types. 2 plans remaining (05: large bracket nav, 06: testing/polish).
+Stopped at: Completed 11-05-PLAN.md (Large bracket nav + bye polish)
+Resume file: .planning/phases/11-visual-bracket-placement/11-06-PLAN.md
+Note: Phase 11 in progress. Plans 01+02+03+04+05 complete. Section navigation for 32+ brackets, droppable pool zone, auto-seed confirm, and click-to-place polish all implemented. 1 plan remaining (06: testing/polish).
