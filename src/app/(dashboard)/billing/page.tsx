@@ -4,6 +4,7 @@ import { getTeacherBillingOverview } from '@/lib/dal/billing'
 import { createPortalSession } from '@/actions/billing'
 import { PricingCards } from '@/components/billing/pricing-cards'
 import { TIER_LIMITS, type SubscriptionTier } from '@/lib/gates/tiers'
+import { PLANS } from '@/config/pricing'
 
 export const metadata = {
   title: 'Billing & Plan - SparkVotEDU',
@@ -134,7 +135,15 @@ export default async function BillingPage() {
       {/* Pricing comparison */}
       <div>
         <h2 className="mb-6 text-lg font-semibold">Compare Plans</h2>
-        <PricingCards currentTier={tier} />
+        <PricingCards
+          currentTier={tier}
+          priceIds={{
+            proMonthly: PLANS.pro.monthlyPriceId,
+            proAnnual: PLANS.pro.annualPriceId,
+            proPlusMonthly: PLANS.pro_plus.monthlyPriceId,
+            proPlusAnnual: PLANS.pro_plus.annualPriceId,
+          }}
+        />
       </div>
     </div>
   )

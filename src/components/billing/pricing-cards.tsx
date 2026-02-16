@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { Check } from 'lucide-react'
 import type { BillingInterval } from '@/config/pricing'
 import { PLANS, FREE_PLAN } from '@/config/pricing'
-import { createCheckoutSession } from '@/actions/billing'
+import { createCheckoutSession, createPortalSession } from '@/actions/billing'
 import { PricingToggle } from './pricing-toggle'
 import type { SubscriptionTier } from '@/lib/gates/tiers'
 
@@ -15,8 +15,16 @@ function tierIndex(tier: SubscriptionTier): number {
   return TIER_ORDER.indexOf(tier)
 }
 
+interface PlanPriceIds {
+  proMonthly: string
+  proAnnual: string
+  proPlusMonthly: string
+  proPlusAnnual: string
+}
+
 interface PricingCardsProps {
   currentTier?: SubscriptionTier
+  priceIds?: PlanPriceIds
 }
 
 function SubscribeButton({
@@ -26,18 +34,32 @@ function SubscribeButton({
   priceId: string
   label: string
 }) {
+  const [error, setError] = useState<string | null>(null)
+  const [pending, setPending] = useState(false)
+
   return (
     <form
       action={async () => {
-        await createCheckoutSession(priceId)
+        setError(null)
+        setPending(true)
+        const result = await createCheckoutSession(priceId)
+        // If we reach here, redirect didn't fire — must be an error
+        if (result?.error) {
+          setError(result.error)
+        }
+        setPending(false)
       }}
     >
       <button
         type="submit"
-        className="w-full rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
+        disabled={pending}
+        className="w-full rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-50"
       >
-        {label}
+        {pending ? 'Redirecting…' : label}
       </button>
+      {error && (
+        <p className="mt-2 text-center text-xs text-destructive">{error}</p>
+      )}
     </form>
   )
 }
@@ -55,12 +77,13 @@ function FeatureList({ features }: { features: readonly string[] }) {
   )
 }
 
-export function PricingCards({ currentTier }: PricingCardsProps) {
+export function PricingCards({ currentTier, priceIds }: PricingCardsProps) {
   const [interval, setInterval] = useState<BillingInterval>('monthly')
 
   const isAuthenticated = currentTier !== undefined
 
   // Build card data for all 3 tiers
+  // Price IDs must come from server via props (process.env is undefined in client bundles)
   const cards: Array<{
     tier: SubscriptionTier
     name: string
@@ -89,7 +112,7 @@ export function PricingCards({ currentTier }: PricingCardsProps) {
       priceNote: interval === 'annual' ? 'per month, billed annually' : 'per month',
       features: PLANS.pro.features,
       popular: PLANS.pro.popular,
-      priceId: interval === 'monthly' ? PLANS.pro.monthlyPriceId : PLANS.pro.annualPriceId,
+      priceId: priceIds ? (interval === 'monthly' ? priceIds.proMonthly : priceIds.proAnnual) : null,
     },
     {
       tier: 'pro_plus',
@@ -99,7 +122,7 @@ export function PricingCards({ currentTier }: PricingCardsProps) {
       priceNote: interval === 'annual' ? 'per month, billed annually' : 'per month',
       features: PLANS.pro_plus.features,
       popular: PLANS.pro_plus.popular,
-      priceId: interval === 'monthly' ? PLANS.pro_plus.monthlyPriceId : PLANS.pro_plus.annualPriceId,
+      priceId: priceIds ? (interval === 'monthly' ? priceIds.proPlusMonthly : priceIds.proPlusAnnual) : null,
     },
   ]
 
@@ -186,9 +209,14 @@ export function PricingCards({ currentTier }: PricingCardsProps) {
                 )}
 
                 {isDowngrade && (
-                  <p className="text-center text-xs text-muted-foreground">
-                    Manage via Subscription Settings
-                  </p>
+                  <form action={createPortalSession}>
+                    <button
+                      type="submit"
+                      className="w-full rounded-lg border border-border bg-background px-4 py-2.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+                    >
+                      Manage Subscription
+                    </button>
+                  </form>
                 )}
               </div>
             </div>
