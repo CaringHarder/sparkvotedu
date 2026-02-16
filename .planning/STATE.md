@@ -5,19 +5,18 @@
 See: .planning/PROJECT.md (updated 2026-02-16)
 
 **Core value:** Teachers can instantly engage any classroom through voting -- on any topic, in any format -- and see participation happen in real time.
-**Current focus:** v1.0 MVP shipped. Planning next milestone.
+**Current focus:** v1.1 Production Readiness & Deploy
 
 ## Current Position
 
-Milestone: v1.0 MVP — SHIPPED 2026-02-16
-Status: Complete
-Last activity: 2026-02-16 — Milestone v1.0 archived
-
-Progress: [####################] 101/101 plans (100%)
+Phase: Not started (defining requirements)
+Plan: —
+Status: Defining requirements
+Last activity: 2026-02-16 — Milestone v1.1 started
 
 ## Performance Metrics
 
-**Velocity:**
+**Velocity (v1.0):**
 - Total plans completed: 101
 - Total commits: 447 (215 feat/fix)
 - Total LOC: 41,773 TypeScript
@@ -36,6 +35,7 @@ All v1.0 decisions archived in PROJECT.md Key Decisions table.
 - Configure production Stripe webhook URL for sparkvotedu.com
 - Add CRON_SECRET to Vercel environment variables for cron job authentication
 - Move visual placement to full-width creation step
+- Deploy to sparkvotedu.com
 
 ### Blockers/Concerns
 
@@ -44,5 +44,5 @@ All v1.0 decisions archived in PROJECT.md Key Decisions table.
 ## Session Continuity
 
 Last session: 2026-02-16
-Stopped at: v1.0 milestone archived
-Resume: /gsd:new-milestone for next version
+Stopped at: Defining v1.1 requirements
+Resume: Continue requirements definition

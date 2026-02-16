@@ -38,7 +38,14 @@ Teachers can instantly engage any classroom through voting — on any topic, in 
 
 ### Active
 
-(Fresh for next milestone — define with `/gsd:new-milestone`)
+<!-- Current milestone: v1.1 Production Readiness & Deploy -->
+
+- [ ] Configure OAuth providers (Google, Microsoft, Apple) in external consoles and Supabase
+- [ ] Create poll-images bucket in Supabase Storage
+- [ ] Configure production Stripe webhook URL for sparkvotedu.com
+- [ ] Add CRON_SECRET to Vercel environment variables
+- [ ] Move visual bracket placement to full-width creation step
+- [ ] Deploy to sparkvotedu.com on Vercel
 
 ### Out of Scope
 
@@ -93,4 +100,17 @@ Teachers can instantly engage any classroom through voting — on any topic, in 
 | Native overflow scroll over custom pan/zoom | Custom pointer-capture drag conflicted with button clicks | Good — eliminated all interaction conflicts |
 
 ---
-*Last updated: 2026-02-16 after v1.0 milestone*
+## Current Milestone: v1.1 Production Readiness & Deploy
+
+**Goal:** Get SparkVotEDU production-ready and live on sparkvotedu.com — configure external services, polish UX, and deploy.
+
+**Target features:**
+- OAuth provider configuration (Google, Microsoft, Apple)
+- Supabase Storage bucket for poll images
+- Production Stripe webhook
+- Vercel CRON_SECRET for SportsDataIO sync
+- Visual bracket placement UX improvement (full-width creation step)
+- Deployment to sparkvotedu.com
+
+---
+*Last updated: 2026-02-16 after v1.1 milestone started*
