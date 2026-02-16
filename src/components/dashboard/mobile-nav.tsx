@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
+import { createPortal } from 'react-dom'
 import Image from 'next/image'
 import { Menu, X } from 'lucide-react'
 import { SidebarNav } from '@/components/dashboard/sidebar-nav'
@@ -12,11 +13,19 @@ import { ThemeToggle } from '@/components/theme-toggle'
  *
  * Renders a hamburger button (visible only on md:hidden) that opens
  * a left-sliding drawer containing the full sidebar navigation,
- * sign-out button, and theme toggle. All interactive elements have
- * minimum 44x44px touch targets for mobile accessibility.
+ * sign-out button, and theme toggle. The drawer and backdrop are
+ * portaled to document.body to escape the header's backdrop-filter
+ * stacking context. All interactive elements have minimum 44x44px
+ * touch targets for mobile accessibility.
  */
 export function MobileNav() {
   const [isOpen, setIsOpen] = useState(false)
+  const [mounted, setMounted] = useState(false)
+
+  // Portal needs client-side mount
+  useEffect(() => {
+    setMounted(true)
+  }, [])
 
   // Close drawer on Escape key
   useEffect(() => {
@@ -42,18 +51,8 @@ export function MobileNav() {
 
   const close = useCallback(() => setIsOpen(false), [])
 
-  return (
+  const drawer = (
     <>
-      {/* Hamburger button -- 44x44px touch target */}
-      <button
-        type="button"
-        onClick={() => setIsOpen(true)}
-        className="inline-flex h-11 w-11 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-accent hover:text-foreground md:hidden"
-        aria-label="Open navigation menu"
-      >
-        <Menu className="h-5 w-5" />
-      </button>
-
       {/* Backdrop overlay */}
       <div
         className={`fixed inset-0 z-40 bg-black/50 backdrop-blur-sm transition-opacity duration-300 md:hidden ${
@@ -114,6 +113,23 @@ export function MobileNav() {
           </div>
         </div>
       </div>
+    </>
+  )
+
+  return (
+    <>
+      {/* Hamburger button -- 44x44px touch target */}
+      <button
+        type="button"
+        onClick={() => setIsOpen(true)}
+        className="inline-flex h-11 w-11 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-accent hover:text-foreground md:hidden"
+        aria-label="Open navigation menu"
+      >
+        <Menu className="h-5 w-5" />
+      </button>
+
+      {/* Portal drawer to body to escape header's backdrop-filter stacking context */}
+      {mounted && createPortal(drawer, document.body)}
     </>
   )
 }
