@@ -5,21 +5,21 @@
 See: .planning/PROJECT.md (updated 2026-01-28)
 
 **Core value:** Teachers can instantly engage any classroom through voting -- on any topic, in any format -- and see participation happen in real time.
-**Current focus:** Phase 10 (Landing Page & Polish) -- IN PROGRESS. Plan 01 complete: brand design system foundation.
+**Current focus:** Phase 10 (Landing Page & Polish) -- IN PROGRESS. Plan 02 complete: full landing page assembly.
 
 ## Current Position
 
 Phase: 10 of 10 (Landing Page & Polish)
-Plan: 1 of 5 in current phase
-Status: Plan 01 complete
-Last activity: 2026-02-15 -- Completed 10-01-PLAN.md (Brand design system foundation)
+Plan: 2 of 5 in current phase
+Status: Plan 02 complete
+Last activity: 2026-02-15 -- Completed 10-02-PLAN.md (Landing page assembly)
 
-Progress: [##################..] 92/96 plans (96%)
+Progress: [###################.] 93/96 plans (97%)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 92
+- Total plans completed: 93
 - Average duration: ~3.5 min
 - Total execution time: ~5.4 hours
 
@@ -42,11 +42,11 @@ Progress: [##################..] 92/96 plans (96%)
 
 | 09-analytics | 3/3 | ~8m | ~2.7m |
 
-| 10-landing-page-and-polish | 1/5 | ~2m | ~2m |
+| 10-landing-page-and-polish | 2/5 | ~4m | ~2m |
 
 **Recent Trend:**
-- Last 5 plans: 09-01 (~3m), 09-02 (~2m), 09-03 (~3m), 10-01 (~2m)
-- Trend: Phase 10 started. Plan 01 in ~2m. Brand colors, dark mode, logo assets, skeleton. 92 plans delivered.
+- Last 5 plans: 09-02 (~2m), 09-03 (~3m), 10-01 (~2m), 10-02 (~2m)
+- Trend: Phase 10 progressing. Plan 02 in ~2m. Full landing page with 7 sections. 93 plans delivered.
 
 *Updated after each plan completion*
 
@@ -364,6 +364,11 @@ Recent decisions affecting current work:
 - [10-01]: Dark variant uses :where(.dark, .dark *) for zero-specificity targeting of both .dark element and descendants
 - [10-01]: ThemeProvider with attribute=class and disableTransitionOnChange for no-FOUC dark mode
 - [10-01]: Logo assets deployed as-is to /public/ -- Next.js Image handles WebP/AVIF conversion at serve time
+- [10-02]: Minimal nav with only logo + ThemeToggle + Sign In (no multi-link navbar per user decision)
+- [10-02]: HomeJoinInput reused in both hero and final CTA for dual student entry points
+- [10-02]: PricingCards called with no props for public visitor mode (Get Started links)
+- [10-02]: Brand-blue gradient on hero headline text and solid brand-blue background on final CTA section
+- [10-02]: Responsive icon/horizontal logo in nav (icon on mobile, horizontal lockup on desktop)
 
 ### Pending Todos
 
@@ -390,6 +395,6 @@ Recent decisions affecting current work:
 ## Session Continuity
 
 Last session: 2026-02-15
-Stopped at: Completed 10-01-PLAN.md (Brand design system foundation)
-Resume file: .planning/phases/10-landing-page-and-polish/10-02-PLAN.md
-Note: Phase 10 started. Plan 01 complete: brand colors (oklch), dark mode (next-themes), ThemeToggle, Skeleton, 5 logo assets in /public/. 92 total plans delivered.
+Stopped at: Completed 10-02-PLAN.md (Landing page assembly)
+Resume file: .planning/phases/10-landing-page-and-polish/10-03-PLAN.md
+Note: Phase 10 plan 02 complete. Full landing page with 7 sections: nav, hero, how-it-works, features, pricing (PricingCards reuse), final CTA, footer. Brand colors throughout. 93 total plans delivered.
