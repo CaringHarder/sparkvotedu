@@ -69,11 +69,11 @@ export default async function BracketAnalyticsPage({
             {csvAccess.allowed ? (
               <>
                 <CSVExportButton
-                  exportAction={() => getBracketExportData(bracketId)}
+                  exportAction={getBracketExportData.bind(null, bracketId)}
                 />
                 {isPredictive && tier === 'pro_plus' && (
                   <CSVExportButton
-                    exportAction={() => getPredictiveExportData(bracketId)}
+                    exportAction={getPredictiveExportData.bind(null, bracketId)}
                     label="Export Predictions CSV"
                   />
                 )}

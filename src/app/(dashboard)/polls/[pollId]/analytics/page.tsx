@@ -59,7 +59,7 @@ export default async function PollAnalyticsPage({
           <div className="flex items-center gap-2">
             {csvAccess.allowed ? (
               <CSVExportButton
-                exportAction={() => getPollExportData(pollId)}
+                exportAction={getPollExportData.bind(null, pollId)}
               />
             ) : (
               <UpgradePrompt
