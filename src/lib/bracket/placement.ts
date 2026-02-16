@@ -1,5 +1,4 @@
 import { buildSeedOrder } from './engine'
-import { calculateBracketSizeWithByes } from './byes'
 
 /**
  * Entrant data for placement operations.
