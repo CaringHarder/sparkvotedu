@@ -120,7 +120,7 @@ export function AdvancedVotingView({
   const votedCount = votableMatchups.filter((m) => votes[m.id] != null).length
 
   return (
-    <div className="flex flex-col px-4 py-4">
+    <div className="flex flex-col px-2 py-3 sm:px-4 sm:py-4">
       {/* Winner Reveal overlay */}
       {revealState && (
         <WinnerReveal
@@ -140,8 +140,8 @@ export function AdvancedVotingView({
       )}
 
       {/* Header */}
-      <div className="mb-3 flex flex-wrap items-center gap-3">
-        <h1 className="text-lg font-bold">{bracket.name}</h1>
+      <div className="mb-3 flex flex-wrap items-center gap-2 sm:gap-3">
+        <h1 className="text-base font-bold sm:text-lg">{bracket.name}</h1>
         {votableMatchups.length > 0 && (
           <span className="rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-medium text-green-700 dark:bg-green-900/30 dark:text-green-400">
             Tap to vote
@@ -166,7 +166,7 @@ export function AdvancedVotingView({
       </div>
 
       {/* Interactive bracket diagram */}
-      <div className="rounded-lg border p-3">
+      <div className="overflow-x-auto rounded-lg border p-1.5 sm:p-3">
         {(bracket.maxEntrants ?? bracket.size) >= 32 ? (
           <RegionBracketView
             matchups={currentMatchups}

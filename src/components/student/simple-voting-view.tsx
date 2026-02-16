@@ -178,10 +178,10 @@ export function SimpleVotingView({
   const allVoted = currentIndex >= votableMatchups.length
 
   return (
-    <div className="mx-auto max-w-md px-4 py-6">
+    <div className="mx-auto max-w-md px-2 py-4 sm:px-4 sm:py-6">
       {winnerRevealOverlay}
       {celebrationOverlay}
-      <h1 className="mb-6 text-center text-2xl font-bold">{bracketName}</h1>
+      <h1 className="mb-4 text-center text-xl font-bold sm:mb-6 sm:text-2xl">{bracketName}</h1>
 
       {/* Progress indicator (hidden once all voted) */}
       {!allVoted && !showConfirmation && (
