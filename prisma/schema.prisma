@@ -11,6 +11,7 @@ model Teacher {
   id               String   @id @default(uuid())
   email            String   @unique
   name             String?
+  role             String   @default("teacher")
   avatarUrl        String?  @map("avatar_url")
   subscriptionTier String   @default("free") @map("subscription_tier")
   stripeCustomerId String?  @map("stripe_customer_id")
