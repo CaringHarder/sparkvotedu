@@ -71,16 +71,36 @@ export async function proxy(request: NextRequest) {
     return NextResponse.redirect(url)
   }
 
-  // Admin route protection: check role for /admin paths
+  // Admin route protection: check role and deactivation for /admin paths
   if (claims && pathname.startsWith('/admin')) {
     const teacher = await prisma.teacher.findUnique({
       where: { supabaseAuthId: claims.sub },
-      select: { role: true },
+      select: { role: true, deactivatedAt: true },
     })
+
+    if (teacher?.deactivatedAt) {
+      const url = request.nextUrl.clone()
+      url.pathname = '/login'
+      return NextResponse.redirect(url)
+    }
 
     if (teacher?.role !== 'admin') {
       const url = request.nextUrl.clone()
       url.pathname = '/dashboard'
+      return NextResponse.redirect(url)
+    }
+  }
+
+  // Dashboard route protection: block deactivated teachers (belt-and-suspenders)
+  if (claims && pathname.startsWith('/dashboard')) {
+    const teacher = await prisma.teacher.findUnique({
+      where: { supabaseAuthId: claims.sub },
+      select: { deactivatedAt: true },
+    })
+
+    if (teacher?.deactivatedAt) {
+      const url = request.nextUrl.clone()
+      url.pathname = '/login'
       return NextResponse.redirect(url)
     }
   }

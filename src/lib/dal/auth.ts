@@ -39,5 +39,10 @@ export async function getAuthenticatedTeacher() {
     })
   }
 
+  // Block deactivated teachers (secondary safeguard -- Supabase ban is primary)
+  if (teacher.deactivatedAt) {
+    return null
+  }
+
   return teacher
 }
