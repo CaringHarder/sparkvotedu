@@ -10,11 +10,11 @@ See: .planning/PROJECT.md (updated 2026-02-16)
 ## Current Position
 
 Phase: 17 of 18 (Admin Panel)
-Plan: 1 of 4 in current phase
+Plan: 2 of 4 in current phase
 Status: In Progress
-Last activity: 2026-02-17 -- Completed 17-01 (admin shell, role column, proxy protection)
+Last activity: 2026-02-17 -- Completed 17-02 (teacher list, stat bar, detail panel)
 
-Progress: [##########################....] 86% (v1.0 complete, v1.1 6/9 plans)
+Progress: [###########################...] 89% (v1.0 complete, v1.1 7/9 plans)
 
 ## Performance Metrics
 
@@ -25,7 +25,7 @@ Progress: [##########################....] 86% (v1.0 complete, v1.1 6/9 plans)
 - Timeline: 20 days (2026-01-28 to 2026-02-16)
 
 **v1.1:**
-- Plans: 6/9 complete
+- Plans: 7/9 complete
 - Phases: 2/5 complete (Phases 15, 16), Phase 17 in progress
 
 | Phase | Plan | Duration | Tasks | Files |
@@ -36,6 +36,7 @@ Progress: [##########################....] 86% (v1.0 complete, v1.1 6/9 plans)
 | 15-02 | Landing Page Header & Hero | 3min | 2 | 2 |
 | 16-01 | Privacy Policy & Terms | 2min | 2 | 2 |
 | 17-01 | Admin Shell & Role Auth | 4min | 3 | 8 |
+| 17-02 | Teacher List & Detail Panel | 3min | 2 | 9 |
 
 ## Accumulated Context
 
@@ -62,6 +63,10 @@ All v1.0 decisions archived in PROJECT.md Key Decisions table.
 - [17-01] Amber accent for admin UI to distinguish from blue teacher dashboard
 - [17-01] Double auth gate: proxy redirect + layout getAuthenticatedAdmin() for defense-in-depth
 - [17-01] Separate AdminSidebarNav component for admin navigation
+- [17-02] URL search params for filter state enables server-side data fetching without client state management
+- [17-02] TeacherListWrapper client bridge pattern separates server data flow from client interaction
+- [17-02] Native select elements for admin filters instead of shadcn Select to keep dependencies minimal
+- [17-02] Slide-out panel fixed to top-14 to align below admin header bar
 
 ### Pending Todos
 
@@ -75,6 +80,6 @@ None -- all former todos are now tracked as v1.1 requirements.
 ## Session Continuity
 
 Last session: 2026-02-17
-Stopped at: Completed 17-01-PLAN.md
-Resume file: .planning/phases/17-admin-panel/17-01-SUMMARY.md
-Resume: 17-01 complete, proceed to 17-02 (stat bar + teacher list)
+Stopped at: Completed 17-02-PLAN.md
+Resume file: .planning/phases/17-admin-panel/17-02-SUMMARY.md
+Resume: 17-02 complete, proceed to 17-03 (account actions: deactivate, reactivate, tier override)
