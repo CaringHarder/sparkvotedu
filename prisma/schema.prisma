@@ -12,6 +12,7 @@ model Teacher {
   email            String   @unique
   name             String?
   role             String   @default("teacher")
+  deactivatedAt    DateTime?  @map("deactivated_at")
   avatarUrl        String?  @map("avatar_url")
   subscriptionTier String   @default("free") @map("subscription_tier")
   stripeCustomerId String?  @map("stripe_customer_id")

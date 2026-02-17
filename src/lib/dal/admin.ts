@@ -1,5 +1,8 @@
 import { getAuthenticatedTeacher } from '@/lib/dal/auth'
 import { prisma } from '@/lib/prisma'
+import { createAdminClient } from '@/lib/supabase/admin'
+import { randomBytes } from 'crypto'
+import type { SubscriptionTier } from '@/lib/gates/tiers'
 
 /**
  * Authenticate and authorize an admin user.
@@ -238,7 +241,9 @@ export interface TeacherDetail {
   email: string
   subscriptionTier: string
   createdAt: Date
+  deactivatedAt: Date | null
   role: string
+  supabaseAuthId: string
   _count: {
     brackets: number
     polls: number
@@ -265,7 +270,9 @@ export async function getTeacherDetail(
       email: true,
       subscriptionTier: true,
       createdAt: true,
+      deactivatedAt: true,
       role: true,
+      supabaseAuthId: true,
       _count: {
         select: {
           brackets: true,
@@ -311,9 +318,123 @@ export async function getTeacherDetail(
     email: teacher.email,
     subscriptionTier: teacher.subscriptionTier,
     createdAt: teacher.createdAt,
+    deactivatedAt: teacher.deactivatedAt,
     role: teacher.role,
+    supabaseAuthId: teacher.supabaseAuthId,
     _count: teacher._count,
     totalStudents: studentCount,
     lastActive,
   }
+}
+
+// ---------------------------------------------------------------------------
+// Account management: deactivate, reactivate, tier override, create
+// ---------------------------------------------------------------------------
+
+const VALID_TIERS: SubscriptionTier[] = ['free', 'pro', 'pro_plus']
+
+/**
+ * Deactivate a teacher account.
+ *
+ * Sets deactivatedAt in Prisma and bans the user in Supabase Auth
+ * (876000h ban = ~100 years = effectively permanent).
+ */
+export async function deactivateTeacherAccount(teacherId: string) {
+  const teacher = await prisma.teacher.update({
+    where: { id: teacherId },
+    data: { deactivatedAt: new Date() },
+  })
+
+  // Ban in Supabase Auth to block login
+  const admin = createAdminClient()
+  await admin.auth.admin.updateUserById(teacher.supabaseAuthId, {
+    ban_duration: '876000h',
+  })
+
+  return teacher
+}
+
+/**
+ * Reactivate a previously deactivated teacher account.
+ *
+ * Clears deactivatedAt in Prisma and removes the Supabase Auth ban.
+ */
+export async function reactivateTeacherAccount(teacherId: string) {
+  const teacher = await prisma.teacher.update({
+    where: { id: teacherId },
+    data: { deactivatedAt: null },
+  })
+
+  // Unban in Supabase Auth
+  const admin = createAdminClient()
+  await admin.auth.admin.updateUserById(teacher.supabaseAuthId, {
+    ban_duration: 'none',
+  })
+
+  return teacher
+}
+
+/**
+ * Override a teacher's subscription tier.
+ *
+ * Validates the tier is one of the allowed values before updating.
+ */
+export async function overrideTeacherTier(
+  teacherId: string,
+  tier: string
+) {
+  if (!VALID_TIERS.includes(tier as SubscriptionTier)) {
+    throw new Error(`Invalid tier: ${tier}. Must be one of: ${VALID_TIERS.join(', ')}`)
+  }
+
+  return prisma.teacher.update({
+    where: { id: teacherId },
+    data: { subscriptionTier: tier },
+  })
+}
+
+/**
+ * Create a new teacher account with a temporary password.
+ *
+ * Creates the user in Supabase Auth (with email auto-confirmed) and
+ * the corresponding Prisma Teacher record. Returns the teacher and
+ * the temporary password (shown once to the admin, never stored).
+ */
+export async function createTeacherWithTempPassword(data: {
+  name: string
+  email: string
+  tier: string
+}) {
+  if (!VALID_TIERS.includes(data.tier as SubscriptionTier)) {
+    throw new Error(`Invalid tier: ${data.tier}. Must be one of: ${VALID_TIERS.join(', ')}`)
+  }
+
+  // Generate a 12-character temporary password
+  const tempPassword = randomBytes(9).toString('base64').slice(0, 12)
+
+  // Create user in Supabase Auth
+  const admin = createAdminClient()
+  const { data: authData, error: authError } =
+    await admin.auth.admin.createUser({
+      email: data.email,
+      password: tempPassword,
+      email_confirm: true,
+      user_metadata: { name: data.name },
+    })
+
+  if (authError || !authData.user) {
+    throw new Error(authError?.message ?? 'Failed to create auth user')
+  }
+
+  // Create Prisma Teacher record
+  const teacher = await prisma.teacher.create({
+    data: {
+      supabaseAuthId: authData.user.id,
+      email: data.email,
+      name: data.name,
+      subscriptionTier: data.tier,
+    },
+  })
+
+  return { teacher, tempPassword }
 }
