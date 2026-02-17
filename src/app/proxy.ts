@@ -1,5 +1,6 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
+import { prisma } from '@/lib/prisma'
 
 const AUTH_PAGES = ['/login', '/signup', '/forgot-password', '/update-password', '/auth']
 const PUBLIC_PAGES = ['/', '/join', '/pricing']
@@ -68,6 +69,20 @@ export async function proxy(request: NextRequest) {
     const url = request.nextUrl.clone()
     url.pathname = '/dashboard'
     return NextResponse.redirect(url)
+  }
+
+  // Admin route protection: check role for /admin paths
+  if (claims && pathname.startsWith('/admin')) {
+    const teacher = await prisma.teacher.findUnique({
+      where: { supabaseAuthId: claims.sub },
+      select: { role: true },
+    })
+
+    if (teacher?.role !== 'admin') {
+      const url = request.nextUrl.clone()
+      url.pathname = '/dashboard'
+      return NextResponse.redirect(url)
+    }
   }
 
   return supabaseResponse
