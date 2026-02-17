@@ -88,12 +88,12 @@ Plans:
   3. Admin can click into a teacher detail page showing their brackets, sessions, and usage breakdown
   4. Admin can deactivate a teacher account (blocking login) and reactivate it (restoring access)
   5. Admin can override a teacher's subscription tier and create new teacher accounts with temporary passwords
-**Plans**: TBD
+**Plans**: 3 plans
 
 Plans:
-- [ ] 17-01: Admin authentication and dashboard shell
-- [ ] 17-02: Teacher list and detail views
-- [ ] 17-03: Teacher account management actions
+- [ ] 17-01-PLAN.md -- Admin role migration, auth DAL, proxy protection, admin layout shell, seed script
+- [ ] 17-02-PLAN.md -- Teacher list with search/filters/pagination, stat bar, slide-out detail panel
+- [ ] 17-03-PLAN.md -- Deactivate/reactivate, tier override, create teacher account with temp password
 
 ### Phase 18: Production Deploy
 **Goal**: SparkVotEDU is live and accessible at sparkvotedu.com
