@@ -5,16 +5,16 @@
 See: .planning/PROJECT.md (updated 2026-02-16)
 
 **Core value:** Teachers can instantly engage any classroom through voting -- on any topic, in any format -- and see participation happen in real time.
-**Current focus:** Phase 16 complete -- privacy policy and terms of service pages created
+**Current focus:** Phase 17 in progress -- admin panel with role-based access
 
 ## Current Position
 
-Phase: 16 of 18 (Legal Pages)
-Plan: 1 of 1 in current phase
-Status: Complete
-Last activity: 2026-02-16 -- Completed 16-01 (privacy policy and terms of service pages)
+Phase: 17 of 18 (Admin Panel)
+Plan: 1 of 4 in current phase
+Status: In Progress
+Last activity: 2026-02-17 -- Completed 17-01 (admin shell, role column, proxy protection)
 
-Progress: [#########################.....] 83% (v1.0 complete, v1.1 5/9 plans)
+Progress: [##########################....] 86% (v1.0 complete, v1.1 6/9 plans)
 
 ## Performance Metrics
 
@@ -25,8 +25,8 @@ Progress: [#########################.....] 83% (v1.0 complete, v1.1 5/9 plans)
 - Timeline: 20 days (2026-01-28 to 2026-02-16)
 
 **v1.1:**
-- Plans: 5/9 complete
-- Phases: 2/5 complete (Phases 15, 16)
+- Plans: 6/9 complete
+- Phases: 2/5 complete (Phases 15, 16), Phase 17 in progress
 
 | Phase | Plan | Duration | Tasks | Files |
 |-------|------|----------|-------|-------|
@@ -35,6 +35,7 @@ Progress: [#########################.....] 83% (v1.0 complete, v1.1 5/9 plans)
 | 15-01 | Full-Width Visual Placement | 2min | 1 | 1 |
 | 15-02 | Landing Page Header & Hero | 3min | 2 | 2 |
 | 16-01 | Privacy Policy & Terms | 2min | 2 | 2 |
+| 17-01 | Admin Shell & Role Auth | 4min | 3 | 8 |
 
 ## Accumulated Context
 
@@ -57,6 +58,10 @@ All v1.0 decisions archived in PROJECT.md Key Decisions table.
 - [16-01] Teacher-friendly tone for legal pages -- plain English, no dense legalese
 - [16-01] Static server components for legal pages (no "use client" needed)
 - [16-01] max-w-4xl for prose content readability vs max-w-6xl for card layouts
+- [17-01] String role column instead of enum for future extensibility
+- [17-01] Amber accent for admin UI to distinguish from blue teacher dashboard
+- [17-01] Double auth gate: proxy redirect + layout getAuthenticatedAdmin() for defense-in-depth
+- [17-01] Separate AdminSidebarNav component for admin navigation
 
 ### Pending Todos
 
@@ -69,7 +74,7 @@ None -- all former todos are now tracked as v1.1 requirements.
 
 ## Session Continuity
 
-Last session: 2026-02-16
-Stopped at: Completed 16-01-PLAN.md (Phase 16 complete)
-Resume file: .planning/phases/16-legal-pages/16-01-SUMMARY.md
-Resume: Phase 16 complete, proceed to Phase 17
+Last session: 2026-02-17
+Stopped at: Completed 17-01-PLAN.md
+Resume file: .planning/phases/17-admin-panel/17-01-SUMMARY.md
+Resume: 17-01 complete, proceed to 17-02 (stat bar + teacher list)
