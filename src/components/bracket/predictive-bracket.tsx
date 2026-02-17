@@ -1147,15 +1147,19 @@ function MatchupPredictionCard({
         <button
           type="button"
           onClick={() => entrant1 && onSelect(entrant1.id)}
-          className={`rounded-md border px-3 py-2 text-left text-sm transition-colors ${
+          className={`flex items-center gap-1.5 rounded-md border px-3 py-2 text-left text-sm transition-colors ${
             selectedWinnerId === entrant1?.id
               ? 'border-primary bg-primary/10 font-semibold text-primary'
               : 'hover:border-primary/50 hover:bg-accent'
           }`}
         >
-          {entrant1?.name ?? 'TBD'}
+          {entrant1?.logoUrl && (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={entrant1.logoUrl} alt="" className="h-5 w-5 shrink-0 rounded-full object-cover" />
+          )}
+          <span className="truncate">{entrant1?.name ?? 'TBD'}</span>
           {selectedWinnerId === entrant1?.id && (
-            <Check className="ml-1 inline h-3.5 w-3.5" />
+            <Check className="ml-auto h-3.5 w-3.5 shrink-0" />
           )}
         </button>
 
@@ -1165,16 +1169,20 @@ function MatchupPredictionCard({
         <button
           type="button"
           onClick={() => entrant2 && onSelect(entrant2.id)}
-          className={`rounded-md border px-3 py-2 text-right text-sm transition-colors ${
+          className={`flex items-center gap-1.5 rounded-md border px-3 py-2 text-right text-sm transition-colors ${
             selectedWinnerId === entrant2?.id
               ? 'border-primary bg-primary/10 font-semibold text-primary'
               : 'hover:border-primary/50 hover:bg-accent'
           }`}
         >
           {selectedWinnerId === entrant2?.id && (
-            <Check className="mr-1 inline h-3.5 w-3.5" />
+            <Check className="mr-auto h-3.5 w-3.5 shrink-0" />
           )}
-          {entrant2?.name ?? 'TBD'}
+          {entrant2?.logoUrl && (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={entrant2.logoUrl} alt="" className="h-5 w-5 shrink-0 rounded-full object-cover" />
+          )}
+          <span className="truncate">{entrant2?.name ?? 'TBD'}</span>
         </button>
       </div>
     </div>
@@ -1208,6 +1216,10 @@ function ReadOnlyPredictions({
               R{matchup.round}M{matchup.position}
             </span>
             <ChevronRight className="h-3 w-3 text-muted-foreground" />
+            {selectedEntrant?.logoUrl && (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={selectedEntrant.logoUrl} alt="" className="h-4 w-4 shrink-0 rounded-full object-cover" />
+            )}
             <span className={selectedEntrant ? 'font-medium' : 'italic text-muted-foreground'}>
               {selectedEntrant?.name ?? 'No prediction'}
             </span>
