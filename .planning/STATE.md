@@ -10,11 +10,11 @@ See: .planning/PROJECT.md (updated 2026-02-16)
 ## Current Position
 
 Phase: 17 of 18 (Admin Panel)
-Plan: 2 of 4 in current phase
+Plan: 3 of 4 in current phase
 Status: In Progress
-Last activity: 2026-02-17 -- Completed 17-02 (teacher list, stat bar, detail panel)
+Last activity: 2026-02-17 -- Completed 17-03 (account actions: deactivate, reactivate, tier override, create)
 
-Progress: [###########################...] 89% (v1.0 complete, v1.1 7/9 plans)
+Progress: [############################..] 91% (v1.0 complete, v1.1 8/9 plans)
 
 ## Performance Metrics
 
@@ -25,7 +25,7 @@ Progress: [###########################...] 89% (v1.0 complete, v1.1 7/9 plans)
 - Timeline: 20 days (2026-01-28 to 2026-02-16)
 
 **v1.1:**
-- Plans: 7/9 complete
+- Plans: 8/9 complete
 - Phases: 2/5 complete (Phases 15, 16), Phase 17 in progress
 
 | Phase | Plan | Duration | Tasks | Files |
@@ -37,6 +37,7 @@ Progress: [###########################...] 89% (v1.0 complete, v1.1 7/9 plans)
 | 16-01 | Privacy Policy & Terms | 2min | 2 | 2 |
 | 17-01 | Admin Shell & Role Auth | 4min | 3 | 8 |
 | 17-02 | Teacher List & Detail Panel | 3min | 2 | 9 |
+| 17-03 | Account Actions | 5min | 3 | 11 |
 
 ## Accumulated Context
 
@@ -67,6 +68,10 @@ All v1.0 decisions archived in PROJECT.md Key Decisions table.
 - [17-02] TeacherListWrapper client bridge pattern separates server data flow from client interaction
 - [17-02] Native select elements for admin filters instead of shadcn Select to keep dependencies minimal
 - [17-02] Slide-out panel fixed to top-14 to align below admin header bar
+- [17-03] Type-to-confirm "DEACTIVATE" for destructive account deactivation
+- [17-03] Three-level deactivation enforcement: Supabase ban, DAL check, proxy redirect
+- [17-03] crypto.randomBytes for temp password generation (cryptographically secure)
+- [17-03] window.confirm for reactivation (simple confirm dialog per plan spec)
 
 ### Pending Todos
 
@@ -80,6 +85,6 @@ None -- all former todos are now tracked as v1.1 requirements.
 ## Session Continuity
 
 Last session: 2026-02-17
-Stopped at: Completed 17-02-PLAN.md
-Resume file: .planning/phases/17-admin-panel/17-02-SUMMARY.md
-Resume: 17-02 complete, proceed to 17-03 (account actions: deactivate, reactivate, tier override)
+Stopped at: Completed 17-03-PLAN.md
+Resume file: .planning/phases/17-admin-panel/17-03-SUMMARY.md
+Resume: 17-03 complete, proceed to 17-04 (final admin plan)
