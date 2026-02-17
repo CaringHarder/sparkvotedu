@@ -3,6 +3,7 @@ import { getAdminStats, getTeacherList } from '@/lib/dal/admin'
 import { StatBar } from '@/components/admin/stat-bar'
 import { TeacherFilters } from '@/components/admin/teacher-filters'
 import { TeacherListWrapper } from '@/components/admin/teacher-list-wrapper'
+import { CreateTeacherDialog } from '@/components/admin/create-teacher-dialog'
 
 interface AdminOverviewPageProps {
   searchParams: Promise<{
@@ -35,11 +36,14 @@ export default async function AdminOverviewPage({
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight">Admin Overview</h1>
-        <p className="text-muted-foreground">
-          Platform statistics and teacher management.
-        </p>
+      <div className="flex items-start justify-between">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight">Admin Overview</h1>
+          <p className="text-muted-foreground">
+            Platform statistics and teacher management.
+          </p>
+        </div>
+        <CreateTeacherDialog />
       </div>
 
       <StatBar stats={stats} />

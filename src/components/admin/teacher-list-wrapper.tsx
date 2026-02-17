@@ -1,6 +1,7 @@
 'use client'
 
 import { useCallback, useState, useTransition } from 'react'
+import { useRouter } from 'next/navigation'
 import { TeacherList } from './teacher-list'
 import { TeacherDetailPanel } from './teacher-detail-panel'
 import { getTeacherDetailAction } from '@/actions/admin'
@@ -21,6 +22,7 @@ export function TeacherListWrapper({
   pageSize,
   totalPages,
 }: TeacherListWrapperProps) {
+  const router = useRouter()
   const [selectedTeacherId, setSelectedTeacherId] = useState<string | null>(
     null
   )
@@ -50,6 +52,17 @@ export function TeacherListWrapper({
     setTeacherDetail(null)
   }, [])
 
+  // Re-fetch teacher detail after an action modifies it and refresh the page data
+  const handleRefresh = useCallback(() => {
+    if (selectedTeacherId) {
+      startTransition(async () => {
+        const detail = await getTeacherDetailAction(selectedTeacherId)
+        setTeacherDetail(detail)
+      })
+    }
+    router.refresh()
+  }, [selectedTeacherId, router])
+
   return (
     <div className="relative">
       <TeacherList
@@ -65,6 +78,7 @@ export function TeacherListWrapper({
         teacher={isPending ? null : teacherDetail}
         open={selectedTeacherId !== null}
         onClose={handleClosePanel}
+        onRefresh={handleRefresh}
       />
     </div>
   )
