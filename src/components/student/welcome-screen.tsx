@@ -136,7 +136,7 @@ export function WelcomeScreen({
             delay: 0.2,
           }}
         >
-          {funName}
+          You&apos;re now {funName}!
         </motion.p>
       </motion.div>
 
