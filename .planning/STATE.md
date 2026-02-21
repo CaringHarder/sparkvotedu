@@ -5,14 +5,16 @@
 See: .planning/PROJECT.md (updated 2026-02-21)
 
 **Core value:** Teachers can instantly engage any classroom through voting -- on any topic, in any format -- and see participation happen in real time.
-**Current focus:** v1.2 Classroom Hardening — fix real-world issues from first deployment
+**Current focus:** Phase 19 -- Security & Schema Foundation (v1.2 Classroom Hardening)
 
 ## Current Position
 
-Phase: Not started (defining requirements)
-Plan: —
-Status: Defining requirements
-Last activity: 2026-02-21 — Milestone v1.2 started
+Phase: 19 of 22 (Security & Schema Foundation)
+Plan: 0 of TBD in current phase
+Status: Ready to plan
+Last activity: 2026-02-21 -- Roadmap created for v1.2 Classroom Hardening
+
+Progress: [####################..........] 68% (110/TBD plans -- 110 completed across v1.0+v1.1, v1.2 plans TBD)
 
 ## Performance Metrics
 
@@ -31,11 +33,20 @@ Last activity: 2026-02-21 — Milestone v1.2 started
 - LOC: 45,280 TypeScript (final)
 - Timeline: 6 days (2026-02-16 to 2026-02-21)
 
+**v1.2 Classroom Hardening (in progress):**
+- Phases: 4 (19-22)
+- Plans: TBD (pending phase planning)
+- Requirements: 15
+
 ## Accumulated Context
 
 ### Decisions
 
-All decisions archived in PROJECT.md Key Decisions table.
+All prior decisions archived in PROJECT.md Key Decisions table.
+Recent decisions for v1.2:
+- Deny-all RLS (no per-row policies) -- Prisma bypasses RLS via bypassrls user; deny-all locks PostgREST surface
+- First-name identity over device fingerprint -- 24 students on identical Chromebooks produced only 6 fingerprints
+- Additive schema migration -- keep device_id column (nullable), add first_name; no destructive changes
 
 ### Pending Todos
 
@@ -43,10 +54,11 @@ None.
 
 ### Blockers/Concerns
 
-- Microsoft and Apple OAuth held for launch -- code complete, needs console config
+- Microsoft and Apple OAuth held -- code complete, needs console config (not blocking v1.2)
+- FingerprintJS cleanup deferred to post-classroom-verification (CLEAN-01, CLEAN-02 in future requirements)
 
 ## Session Continuity
 
 Last session: 2026-02-21
-Stopped at: v1.2 milestone started, defining requirements
-Resume: Continue with requirements definition and roadmap creation
+Stopped at: v1.2 roadmap created, ready to plan Phase 19
+Resume: `/gsd:plan-phase 19`

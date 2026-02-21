@@ -4,6 +4,7 @@
 
 - **v1.0 MVP** -- Phases 1-11 (shipped 2026-02-16) | [Archive](milestones/v1.0-ROADMAP.md)
 - **v1.1 Production Readiness & Deploy** -- Phases 14-18 (shipped 2026-02-21) | [Archive](milestones/v1.1-ROADMAP.md)
+- **v1.2 Classroom Hardening** -- Phases 19-22 (in progress)
 
 ## Phases
 
@@ -36,7 +37,79 @@
 
 </details>
 
+### v1.2 Classroom Hardening (In Progress)
+
+**Milestone Goal:** Fix real-world classroom issues discovered during first deployment -- replace failed device fingerprinting with name-based student identity, fix bugs, harden security, and polish UX.
+
+- [ ] **Phase 19: Security & Schema Foundation** - RLS on all 12 tables + additive schema migration for name-based identity
+- [ ] **Phase 20: Name-Based Student Identity** - Students join with first name instead of device fingerprint
+- [ ] **Phase 21: Poll Realtime Bug Fix** - Teacher poll dashboard updates in real-time when students vote
+- [ ] **Phase 22: UX Polish** - Presentation contrast, session naming, and terminology unification
+
+## Phase Details
+
+### Phase 19: Security & Schema Foundation
+**Goal**: Supabase tables are locked down from direct client access, and the database schema is ready for the name-based identity overhaul
+**Depends on**: Phase 18 (production deploy)
+**Requirements**: SEC-01, SEC-02, SEC-03
+**Success Criteria** (what must be TRUE):
+  1. A curl request using the Supabase anon key against any of the 12 public tables returns an empty array (no data leaked)
+  2. All existing application features (teacher dashboard, student voting, bracket advancement, polls) continue to function identically after RLS enablement
+  3. The `student_participants` table has a `first_name` column and `device_id` is nullable, verified by Prisma schema and a successful migration
+**Plans**: TBD
+
+Plans:
+- [ ] 19-01: TBD
+- [ ] 19-02: TBD
+
+### Phase 20: Name-Based Student Identity
+**Goal**: Students can join and rejoin any session using their first name, with graceful handling of duplicate names and preserved fun-name anonymity
+**Depends on**: Phase 19 (schema must have `first_name` column)
+**Requirements**: IDENT-01, IDENT-02, IDENT-03, IDENT-04, IDENT-05, IDENT-06
+**Success Criteria** (what must be TRUE):
+  1. A student can join a session by entering the session code and their first name (no device fingerprint prompt, no device-dependent behavior)
+  2. A student who types their name in different casing (e.g., "jake" vs "Jake") is recognized as the same student, not created as a duplicate
+  3. When a second student enters an already-taken first name, they see a disambiguation prompt and can differentiate themselves (e.g., add last initial)
+  4. After joining, the student is assigned a random fun name for display (Kahoot-style anonymity preserved in polls and brackets)
+  5. A student can rejoin from any device using their first name and can edit their name after joining
+**Plans**: TBD
+
+Plans:
+- [ ] 20-01: TBD
+- [ ] 20-02: TBD
+- [ ] 20-03: TBD
+
+### Phase 21: Poll Realtime Bug Fix
+**Goal**: Teacher poll live dashboard reflects student votes in real-time without stale data
+**Depends on**: Phase 19 (RLS must be verified so realtime subscriptions are confirmed working)
+**Requirements**: FIX-01, FIX-02
+**Success Criteria** (what must be TRUE):
+  1. When a student submits a poll vote, the teacher's live dashboard updates within 2 seconds without manual refresh
+  2. When a teacher activates a poll, the poll channel receives the activation broadcast (not just the activity channel), and any student or teacher client subscribed to that poll sees the status change
+**Plans**: TBD
+
+Plans:
+- [ ] 21-01: TBD
+
+### Phase 22: UX Polish
+**Goal**: Classroom presentation is readable on projectors, sessions are identifiable by name, and activation terminology is consistent across the product
+**Depends on**: Phase 19 (no schema dependency, but phases execute sequentially)
+**Requirements**: UX-01, UX-02, UX-03, UX-04
+**Success Criteria** (what must be TRUE):
+  1. Ranked poll presentation mode shows all medal cards (gold, silver, bronze, and remaining items) with clearly readable text contrast, verifiable on a projector or low-brightness display
+  2. Session selection dropdowns throughout the teacher dashboard display the session name (e.g., "Period 3 History") instead of session number or code, with a sensible fallback for unnamed sessions
+  3. A teacher can edit the session name directly from the dashboard without navigating away
+  4. All activation buttons and status badges across brackets and polls use a single consistent term ("Go Live" / "Live") instead of mixed "Activate" / "Go Live" terminology
+**Plans**: TBD
+
+Plans:
+- [ ] 22-01: TBD
+- [ ] 22-02: TBD
+
 ## Progress
+
+**Execution Order:**
+Phases execute in numeric order: 19 -> 20 -> 21 -> 22
 
 | Phase | Milestone | Plans | Status | Completed |
 |-------|-----------|-------|--------|-----------|
@@ -57,3 +130,7 @@
 | 16. Legal Pages | v1.1 | 1/1 | Complete | 2026-02-16 |
 | 17. Admin Panel | v1.1 | 3/3 | Complete | 2026-02-17 |
 | 18. Production Deploy | v1.1 | 1/1 | Complete | 2026-02-21 |
+| 19. Security & Schema Foundation | v1.2 | 0/TBD | Not started | - |
+| 20. Name-Based Student Identity | v1.2 | 0/TBD | Not started | - |
+| 21. Poll Realtime Bug Fix | v1.2 | 0/TBD | Not started | - |
+| 22. UX Polish | v1.2 | 0/TBD | Not started | - |

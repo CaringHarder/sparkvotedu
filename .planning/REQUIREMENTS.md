@@ -1,7 +1,7 @@
 # Requirements: SparkVotEDU
 
 **Defined:** 2026-02-21
-**Core Value:** Teachers can instantly engage any classroom through voting — on any topic, in any format — and see participation happen in real time.
+**Core Value:** Teachers can instantly engage any classroom through voting -- on any topic, in any format -- and see participation happen in real time.
 
 ## v1.2 Requirements
 
@@ -63,27 +63,27 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| IDENT-01 | — | Pending |
-| IDENT-02 | — | Pending |
-| IDENT-03 | — | Pending |
-| IDENT-04 | — | Pending |
-| IDENT-05 | — | Pending |
-| IDENT-06 | — | Pending |
-| SEC-01 | — | Pending |
-| SEC-02 | — | Pending |
-| SEC-03 | — | Pending |
-| FIX-01 | — | Pending |
-| FIX-02 | — | Pending |
-| UX-01 | — | Pending |
-| UX-02 | — | Pending |
-| UX-03 | — | Pending |
-| UX-04 | — | Pending |
+| IDENT-01 | Phase 20 | Pending |
+| IDENT-02 | Phase 20 | Pending |
+| IDENT-03 | Phase 20 | Pending |
+| IDENT-04 | Phase 20 | Pending |
+| IDENT-05 | Phase 20 | Pending |
+| IDENT-06 | Phase 20 | Pending |
+| SEC-01 | Phase 19 | Pending |
+| SEC-02 | Phase 19 | Pending |
+| SEC-03 | Phase 19 | Pending |
+| FIX-01 | Phase 21 | Pending |
+| FIX-02 | Phase 21 | Pending |
+| UX-01 | Phase 22 | Pending |
+| UX-02 | Phase 22 | Pending |
+| UX-03 | Phase 22 | Pending |
+| UX-04 | Phase 22 | Pending |
 
 **Coverage:**
 - v1.2 requirements: 15 total
-- Mapped to phases: 0
-- Unmapped: 15
+- Mapped to phases: 15
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-02-21*
-*Last updated: 2026-02-21 after initial definition*
+*Last updated: 2026-02-21 after roadmap creation*
