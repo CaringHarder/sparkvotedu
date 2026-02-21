@@ -18,9 +18,9 @@ Requirements for v1.2 Classroom Hardening. Each maps to roadmap phases.
 
 ### Security
 
-- [ ] **SEC-01**: All 12 public Supabase tables have RLS enabled with deny-all policy
-- [ ] **SEC-02**: Prisma server-side operations continue to function after RLS enablement (bypass verified)
-- [ ] **SEC-03**: Direct PostgREST/Supabase client access returns no data for unauthenticated requests
+- [x] **SEC-01**: All 12 public Supabase tables have RLS enabled with deny-all policy
+- [x] **SEC-02**: Prisma server-side operations continue to function after RLS enablement (bypass verified)
+- [x] **SEC-03**: Direct PostgREST/Supabase client access returns no data for unauthenticated requests
 
 ### Bug Fixes
 
@@ -69,9 +69,9 @@ Which phases cover which requirements. Updated during roadmap creation.
 | IDENT-04 | Phase 20 | Pending |
 | IDENT-05 | Phase 20 | Pending |
 | IDENT-06 | Phase 20 | Pending |
-| SEC-01 | Phase 19 | Pending |
-| SEC-02 | Phase 19 | Pending |
-| SEC-03 | Phase 19 | Pending |
+| SEC-01 | Phase 19 | Complete |
+| SEC-02 | Phase 19 | Complete |
+| SEC-03 | Phase 19 | Complete |
 | FIX-01 | Phase 21 | Pending |
 | FIX-02 | Phase 21 | Pending |
 | UX-01 | Phase 22 | Pending |

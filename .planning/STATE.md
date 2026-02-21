@@ -10,11 +10,11 @@ See: .planning/PROJECT.md (updated 2026-02-21)
 ## Current Position
 
 Phase: 19 of 22 (Security & Schema Foundation)
-Plan: 0 of 2 in current phase
-Status: Planned -- ready to execute
-Last activity: 2026-02-21 -- Phase 19 planned (2 plans, 1 wave)
+Plan: 2 of 2 in current phase
+Status: Plan 19-02 complete -- validation & banner shipped
+Last activity: 2026-02-21 -- Completed 19-02 (first-name validation + upgrade banner)
 
-Progress: [####################..........] 68% (110/112 plans -- 110 completed across v1.0+v1.1, 2 planned for Phase 19)
+Progress: [######################........] 72% (112/112 plans -- 110 v1.0+v1.1, 2 completed Phase 19)
 
 ## Performance Metrics
 
@@ -47,6 +47,10 @@ Recent decisions for v1.2:
 - Deny-all RLS (no per-row policies) -- Prisma bypasses RLS via bypassrls user; deny-all locks PostgREST surface
 - First-name identity over device fingerprint -- 24 students on identical Chromebooks produced only 6 fingerprints
 - Additive schema migration -- keep device_id column (nullable), add first_name; no destructive changes
+- Preserve name casing as entered -- no auto-capitalize; case-insensitive matching at lookup time (Phase 20)
+- Reject emojis with error (not strip) -- "Please use letters only -- no emojis"
+- Profanity wholeWord mode + whitelist for legitimate names (Dick, Fanny, etc.) to avoid false positives
+- Fail-silent banner when localStorage unavailable -- better to miss notification than show forever
 
 ### Pending Todos
 
@@ -60,5 +64,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-02-21
-Stopped at: Phase 19 planned
-Resume: `/gsd:execute-phase 19`
+Stopped at: Completed 19-02-PLAN.md (validation & banner)
+Resume: Execute 19-01-PLAN.md (database migration) or advance to Phase 20
