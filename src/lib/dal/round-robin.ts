@@ -27,7 +27,7 @@ export async function createRoundRobinBracketDAL(
     playInEnabled?: boolean
     showSeedNumbers?: boolean
   },
-  entrants: { name: string; seedPosition: number }[]
+  entrants: { name: string; seedPosition: number; logoUrl?: string | null }[]
 ) {
   // Generate round-robin schedule from engine
   const rounds = generateRoundRobinRounds(entrants.length)
@@ -61,6 +61,7 @@ export async function createRoundRobinBracketDAL(
           name: entrant.name,
           seedPosition: entrant.seedPosition,
           bracketId: created.id,
+          logoUrl: entrant.logoUrl ?? null,
         },
       })
       entrantIdBySeed.set(entrant.seedPosition, record.id)

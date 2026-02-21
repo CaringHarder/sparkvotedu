@@ -323,9 +323,22 @@ function MatchupBox({
         </rect>
       )}
 
+      {/* Top entrant logo */}
+      {matchup.entrant1?.logoUrl && !isBye1 && (
+        <image
+          href={matchup.entrant1.logoUrl}
+          x={x + 4}
+          y={y + 5}
+          width={16}
+          height={16}
+          preserveAspectRatio="xMidYMid meet"
+          style={{ pointerEvents: 'none' }}
+        />
+      )}
+
       {/* Top entrant name */}
       <text
-        x={x + 8}
+        x={x + (matchup.entrant1?.logoUrl && !isBye1 ? 24 : 8)}
         y={y + 19}
         style={{
           fill: isBye1
@@ -391,9 +404,22 @@ function MatchupBox({
         </rect>
       )}
 
+      {/* Bottom entrant logo */}
+      {matchup.entrant2?.logoUrl && !isBye2 && (
+        <image
+          href={matchup.entrant2.logoUrl}
+          x={x + 4}
+          y={y + MATCH_HEIGHT / 2 + 5}
+          width={16}
+          height={16}
+          preserveAspectRatio="xMidYMid meet"
+          style={{ pointerEvents: 'none' }}
+        />
+      )}
+
       {/* Bottom entrant name */}
       <text
-        x={x + 8}
+        x={x + (matchup.entrant2?.logoUrl && !isBye2 ? 24 : 8)}
         y={y + 44}
         style={{
           fill: isBye2

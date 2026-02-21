@@ -34,6 +34,7 @@ interface FormEntrant {
   id: string
   name: string
   seedPosition: number
+  logoUrl?: string | null
 }
 
 type EntrantTab = 'manual' | 'csv' | 'topics'
@@ -254,6 +255,12 @@ export function BracketForm() {
     )
   }, [])
 
+  const handleImageChange = useCallback((id: string, logoUrl: string | null) => {
+    setEntrants((prev) =>
+      prev.map((e) => (e.id === id ? { ...e, logoUrl } : e))
+    )
+  }, [])
+
   const canProceedStep2 = size !== null && entrants.length === size
 
   // --- Step 3 handlers ---
@@ -294,6 +301,7 @@ export function BracketForm() {
         entrants: entrants.map((e) => ({
           name: e.name,
           seedPosition: e.seedPosition,
+          logoUrl: e.logoUrl ?? null,
         })),
       })
 
@@ -818,6 +826,7 @@ export function BracketForm() {
                 onReorder={handleReorder}
                 onRemove={handleRemove}
                 onEdit={handleEdit}
+                onImageChange={handleImageChange}
                 bracketType={bracketType}
                 totalEntrants={size}
               />

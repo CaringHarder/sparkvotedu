@@ -191,7 +191,7 @@ export async function createBracketDAL(
     viewingMode?: string
     showSeedNumbers?: boolean
   },
-  entrants: { name: string; seedPosition: number }[]
+  entrants: { name: string; seedPosition: number; logoUrl?: string | null }[]
 ) {
   // Validate entrants count matches bracket size (actual entrants, not bracket size including byes)
   if (entrants.length !== data.size) {
@@ -255,6 +255,7 @@ export async function createBracketDAL(
           name: entrant.name,
           seedPosition: entrant.seedPosition,
           bracketId: created.id,
+          logoUrl: entrant.logoUrl ?? null,
         },
       })
       entrantIdBySeed.set(entrant.seedPosition, record.id)
@@ -317,7 +318,7 @@ async function createDoubleElimBracketDAL(
     playInEnabled?: boolean
     showSeedNumbers?: boolean
   },
-  entrants: { name: string; seedPosition: number }[]
+  entrants: { name: string; seedPosition: number; logoUrl?: string | null }[]
 ) {
   // Determine effective WB size (next power of 2 for byes)
   const needsByes = !isPowerOfTwo(data.size)
@@ -374,6 +375,7 @@ async function createDoubleElimBracketDAL(
           name: entrant.name,
           seedPosition: entrant.seedPosition,
           bracketId: created.id,
+          logoUrl: entrant.logoUrl ?? null,
         },
       })
       entrantIdBySeed.set(entrant.seedPosition, record.id)
@@ -616,7 +618,7 @@ export async function updateBracketStatusDAL(
 export async function updateBracketEntrantsDAL(
   bracketId: string,
   teacherId: string,
-  entrants: { name: string; seedPosition: number }[]
+  entrants: { name: string; seedPosition: number; logoUrl?: string | null }[]
 ) {
   const bracket = await prisma.bracket.findFirst({
     where: { id: bracketId, teacherId },
@@ -672,6 +674,7 @@ export async function updateBracketEntrantsDAL(
           name: entrant.name,
           seedPosition: entrant.seedPosition,
           bracketId,
+          logoUrl: entrant.logoUrl ?? null,
         },
       })
       entrantIdBySeed.set(entrant.seedPosition, record.id)

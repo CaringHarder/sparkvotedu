@@ -5,6 +5,7 @@ import { getAuthenticatedTeacher } from '@/lib/dal/auth'
 import {
   createPollDAL,
   updatePollDAL,
+  updatePollOptionsDAL,
   deletePollDAL,
   updatePollStatusDAL,
   assignPollToSessionDAL,
@@ -126,6 +127,51 @@ export async function updatePoll(input: unknown) {
     return { success: true }
   } catch {
     return { error: 'Failed to update poll' }
+  }
+}
+
+// Schema for updating poll options (text, imageUrl, position)
+const updatePollOptionsSchema = z.object({
+  pollId: z.string().uuid(),
+  options: z.array(
+    z.object({
+      id: z.string(),
+      text: z.string().min(1).max(200),
+      imageUrl: z.string().url().nullable().optional(),
+      position: z.number().int().min(0),
+    })
+  ),
+})
+
+/**
+ * Update poll options (text, imageUrl, position).
+ * Used when editing an existing poll's options (e.g., adding images).
+ * Auth -> validate -> DAL -> revalidate -> return
+ */
+export async function updatePollOptions(input: unknown) {
+  const teacher = await getAuthenticatedTeacher()
+  if (!teacher) {
+    return { error: 'Not authenticated' }
+  }
+
+  const parsed = updatePollOptionsSchema.safeParse(input)
+  if (!parsed.success) {
+    return { error: 'Invalid option data', issues: parsed.error.issues }
+  }
+
+  const { pollId, options } = parsed.data
+
+  try {
+    const result = await updatePollOptionsDAL(pollId, teacher.id, options)
+    if (!result) {
+      return { error: 'Poll not found' }
+    }
+
+    revalidatePath('/activities')
+    revalidatePath(`/polls/${pollId}`)
+    return { success: true }
+  } catch {
+    return { error: 'Failed to update poll options' }
   }
 }
 

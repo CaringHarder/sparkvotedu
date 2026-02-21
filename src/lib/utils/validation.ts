@@ -73,6 +73,7 @@ export const entrantSchema = z.object({
     .min(1, 'Entrant name is required')
     .max(100, 'Entrant name must be 100 characters or less'),
   seedPosition: z.number().int().positive(),
+  logoUrl: z.string().url().nullable().optional(),
 })
 
 export const updateEntrantsSchema = z.object({

@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { nanoid } from 'nanoid'
 import { ArrowLeft, Plus, Trash2, GripVertical } from 'lucide-react'
+import { EntrantImageUpload } from '@/components/bracket/entrant-image-upload'
 import { updateBracketEntrants } from '@/actions/bracket'
 import { PlacementModeToggle } from '@/components/bracket/visual-placement/placement-mode-toggle'
 import { PlacementBracket } from '@/components/bracket/visual-placement/placement-bracket'
@@ -15,6 +16,7 @@ interface Entrant {
   id: string
   name: string
   seedPosition: number
+  logoUrl?: string | null
 }
 
 interface BracketEditFormProps {
@@ -28,6 +30,7 @@ interface BracketEditFormProps {
       name: string
       seedPosition: number
       bracketId: string
+      logoUrl?: string | null
     }[]
   }
 }
@@ -45,6 +48,7 @@ export function BracketEditForm({ bracket }: BracketEditFormProps) {
       id: e.id,
       name: e.name,
       seedPosition: e.seedPosition,
+      logoUrl: e.logoUrl ?? null,
     }))
   )
 
@@ -104,6 +108,12 @@ export function BracketEditForm({ bracket }: BracketEditFormProps) {
     })
   }
 
+  function handleImageChange(id: string, logoUrl: string | null) {
+    setEntrants((prev) =>
+      prev.map((e) => (e.id === id ? { ...e, logoUrl } : e))
+    )
+  }
+
   function handleVisualPlacement(updatedEntrants: Entrant[]) {
     setEntrants(updatedEntrants)
   }
@@ -128,6 +138,7 @@ export function BracketEditForm({ bracket }: BracketEditFormProps) {
         entrants: entrants.map((e) => ({
           name: e.name.trim(),
           seedPosition: e.seedPosition,
+          logoUrl: e.logoUrl ?? null,
         })),
       })
 
@@ -179,6 +190,12 @@ export function BracketEditForm({ bracket }: BracketEditFormProps) {
                 <span className="w-6 shrink-0 text-xs text-muted-foreground">
                   #{entrant.seedPosition}
                 </span>
+                <EntrantImageUpload
+                  bracketId={bracket.id}
+                  existingImageUrl={entrant.logoUrl}
+                  onImageUrl={(url) => handleImageChange(entrant.id, url)}
+                  onRemove={() => handleImageChange(entrant.id, null)}
+                />
                 <input
                   type="text"
                   value={entrant.name}

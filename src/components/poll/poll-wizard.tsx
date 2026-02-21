@@ -90,7 +90,7 @@ export function PollWizard({ template }: PollWizardProps) {
 
     const validOptions = options
       .filter((o) => o.text.trim().length > 0)
-      .map((o, i) => ({ text: o.text.trim(), position: i }))
+      .map((o, i) => ({ text: o.text.trim(), position: i, imageUrl: o.imageUrl ?? null }))
 
     try {
       const result = await createPoll({

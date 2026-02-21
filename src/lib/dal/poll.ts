@@ -148,6 +148,44 @@ export async function updatePollDAL(
 }
 
 /**
+ * Update poll options (text, imageUrl, position) in bulk.
+ * Verifies teacher ownership. Uses a transaction to update each option.
+ * Only updates options that belong to the poll.
+ * Returns updated poll with options or null if not found/not owned.
+ */
+export async function updatePollOptionsDAL(
+  pollId: string,
+  teacherId: string,
+  options: { id: string; text: string; imageUrl?: string | null; position: number }[]
+) {
+  const poll = await prisma.poll.findFirst({
+    where: { id: pollId, teacherId },
+  })
+
+  if (!poll) {
+    return null
+  }
+
+  return prisma.$transaction(async (tx) => {
+    for (const option of options) {
+      await tx.pollOption.updateMany({
+        where: { id: option.id, pollId },
+        data: {
+          text: option.text,
+          imageUrl: option.imageUrl ?? null,
+          position: option.position,
+        },
+      })
+    }
+
+    return tx.poll.findUniqueOrThrow({
+      where: { id: pollId },
+      include: { options: { orderBy: { position: 'asc' } } },
+    })
+  })
+}
+
+/**
  * Delete a poll. Verifies teacher ownership.
  * Cascade handles options and votes.
  * Returns true if deleted, false if not found/not owned.

@@ -12,12 +12,14 @@ import {
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { calculateBracketSizeWithByes } from '@/lib/bracket/byes'
+import { EntrantImageUpload } from '@/components/bracket/entrant-image-upload'
 import type { BracketType } from '@/lib/bracket/types'
 
 interface EntrantItem {
   id: string
   name: string
   seedPosition: number
+  logoUrl?: string | null
 }
 
 interface EntrantListProps {
@@ -25,11 +27,15 @@ interface EntrantListProps {
   onReorder: (entrants: EntrantItem[]) => void
   onRemove: (id: string) => void
   onEdit: (id: string, newName: string) => void
+  /** Called when an entrant's image is uploaded or removed */
+  onImageChange?: (id: string, logoUrl: string | null) => void
   disabled?: boolean
   /** Bracket type for bye calculation (defaults to single_elimination) */
   bracketType?: BracketType
   /** Total entrant count for the bracket (used for bye calculation) */
   totalEntrants?: number
+  /** Bracket ID for image upload URL scoping (null for new brackets) */
+  bracketId?: string | null
 }
 
 export function EntrantList({
@@ -37,9 +43,11 @@ export function EntrantList({
   onReorder,
   onRemove,
   onEdit,
+  onImageChange,
   disabled = false,
   bracketType = 'single_elimination',
   totalEntrants,
+  bracketId = null,
 }: EntrantListProps) {
   const [dragIndex, setDragIndex] = useState<number | null>(null)
   const [dragOverIndex, setDragOverIndex] = useState<number | null>(null)
@@ -199,6 +207,25 @@ export function EntrantList({
             <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded bg-muted font-mono text-xs font-medium">
               {entrant.seedPosition}
             </span>
+
+            {/* Entrant image */}
+            {!disabled && !isEditing && onImageChange && (
+              <EntrantImageUpload
+                bracketId={bracketId}
+                existingImageUrl={entrant.logoUrl}
+                onImageUrl={(url) => onImageChange(entrant.id, url)}
+                onRemove={() => onImageChange(entrant.id, null)}
+              />
+            )}
+            {/* Show image preview in disabled/read-only mode */}
+            {(disabled || !onImageChange) && entrant.logoUrl && (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={entrant.logoUrl}
+                alt=""
+                className="h-8 w-8 rounded border object-cover"
+              />
+            )}
 
             {/* Name (editable) */}
             {isEditing ? (

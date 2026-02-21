@@ -10,7 +10,7 @@ import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { OptionList } from '@/components/poll/option-list'
 import type { OptionItem } from '@/components/poll/option-list'
-import { createPoll, updatePoll } from '@/actions/poll'
+import { createPoll, updatePoll, updatePollOptions } from '@/actions/poll'
 import type { PollTemplate } from '@/lib/poll/templates'
 import type { PollType } from '@/lib/poll/types'
 
@@ -89,11 +89,12 @@ export function PollForm({ template, existingPoll }: PollFormProps) {
       .map((o, i) => ({
         text: o.text.trim(),
         position: i,
+        imageUrl: o.imageUrl ?? null,
       }))
 
     try {
       if (isEditing && existingPoll) {
-        // Update existing poll
+        // Update existing poll fields
         const result = await updatePoll({
           pollId: existingPoll.id,
           question: question.trim(),
@@ -107,6 +108,28 @@ export function PollForm({ template, existingPoll }: PollFormProps) {
         if (result && 'error' in result) {
           setError(result.error as string)
           return
+        }
+
+        // Update options (text, imageUrl, position) using the original option IDs
+        const optionsToUpdate = options
+          .filter((o) => o.text.trim().length > 0)
+          .map((o, i) => ({
+            id: o.id,
+            text: o.text.trim(),
+            imageUrl: o.imageUrl ?? null,
+            position: i,
+          }))
+
+        if (optionsToUpdate.length > 0) {
+          const optionResult = await updatePollOptions({
+            pollId: existingPoll.id,
+            options: optionsToUpdate,
+          })
+
+          if (optionResult && 'error' in optionResult) {
+            setError(optionResult.error as string)
+            return
+          }
         }
 
         router.refresh()
@@ -245,7 +268,7 @@ export function PollForm({ template, existingPoll }: PollFormProps) {
         {/* Options */}
         <div className="space-y-2">
           <Label>Options</Label>
-          <OptionList options={options} onChange={setOptions} />
+          <OptionList options={options} onChange={setOptions} pollId={existingPoll?.id} />
         </div>
 
         {/* Settings */}

@@ -5,6 +5,7 @@ import { nanoid } from 'nanoid'
 import { GripVertical, X, Plus } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { OptionImageUpload } from '@/components/poll/option-image-upload'
 
 export interface OptionItem {
   id: string
@@ -18,6 +19,8 @@ interface OptionListProps {
   maxOptions?: number
   minOptions?: number
   disabled?: boolean
+  /** When provided, enables image upload for each option (requires existing poll for signed URL) */
+  pollId?: string
 }
 
 export function OptionList({
@@ -26,6 +29,7 @@ export function OptionList({
   maxOptions = 32,
   minOptions = 2,
   disabled = false,
+  pollId,
 }: OptionListProps) {
   const [dragIndex, setDragIndex] = useState<number | null>(null)
   const [dragOverIndex, setDragOverIndex] = useState<number | null>(null)
@@ -49,6 +53,20 @@ export function OptionList({
       onChange(options.filter((o) => o.id !== id))
     },
     [options, minOptions, onChange]
+  )
+
+  const updateOptionImage = useCallback(
+    (id: string, imageUrl: string) => {
+      onChange(options.map((o) => (o.id === id ? { ...o, imageUrl } : o)))
+    },
+    [options, onChange]
+  )
+
+  const removeOptionImage = useCallback(
+    (id: string) => {
+      onChange(options.map((o) => (o.id === id ? { ...o, imageUrl: undefined } : o)))
+    },
+    [options, onChange]
   )
 
   // --- Drag-and-drop (HTML5 native, same as entrant-list) ---
@@ -153,6 +171,16 @@ export function OptionList({
               maxLength={200}
               disabled={disabled}
             />
+
+            {/* Image upload (only in edit mode when pollId exists) */}
+            {pollId && !disabled && (
+              <OptionImageUpload
+                pollId={pollId}
+                existingImageUrl={option.imageUrl ?? null}
+                onImageUrl={(url) => updateOptionImage(option.id, url)}
+                onRemove={() => removeOptionImage(option.id)}
+              />
+            )}
 
             {/* Remove button */}
             {!disabled && (
