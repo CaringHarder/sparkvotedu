@@ -43,3 +43,7 @@ prisma/generated/
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# editor swap files
+*.swp
+*.swo
