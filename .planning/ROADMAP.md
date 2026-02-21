@@ -56,11 +56,11 @@
   1. A curl request using the Supabase anon key against any of the 12 public tables returns an empty array (no data leaked)
   2. All existing application features (teacher dashboard, student voting, bracket advancement, polls) continue to function identically after RLS enablement
   3. The `student_participants` table has a `first_name` column and `device_id` is nullable, verified by Prisma schema and a successful migration
-**Plans**: TBD
+**Plans**: 2 plans
 
 Plans:
-- [ ] 19-01: TBD
-- [ ] 19-02: TBD
+- [ ] 19-01-PLAN.md -- Database migration: deny-all RLS on 12 tables, schema changes (first_name, device_id nullable), content data wipe
+- [ ] 19-02-PLAN.md -- Name validation utility (profanity filter, emoji rejection, Unicode support) and upgrade banner for teacher dashboard
 
 ### Phase 20: Name-Based Student Identity
 **Goal**: Students can join and rejoin any session using their first name, with graceful handling of duplicate names and preserved fun-name anonymity
@@ -130,7 +130,7 @@ Phases execute in numeric order: 19 -> 20 -> 21 -> 22
 | 16. Legal Pages | v1.1 | 1/1 | Complete | 2026-02-16 |
 | 17. Admin Panel | v1.1 | 3/3 | Complete | 2026-02-17 |
 | 18. Production Deploy | v1.1 | 1/1 | Complete | 2026-02-21 |
-| 19. Security & Schema Foundation | v1.2 | 0/TBD | Not started | - |
+| 19. Security & Schema Foundation | v1.2 | 0/2 | Planned | - |
 | 20. Name-Based Student Identity | v1.2 | 0/TBD | Not started | - |
 | 21. Poll Realtime Bug Fix | v1.2 | 0/TBD | Not started | - |
 | 22. UX Polish | v1.2 | 0/TBD | Not started | - |
