@@ -45,14 +45,24 @@ Teachers can instantly engage any classroom through voting — on any topic, in 
 
 ### Active
 
-<!-- No active milestone — use /gsd:new-milestone to start next -->
+## Current Milestone: v1.2 Classroom Hardening
+
+**Goal:** Fix real-world classroom issues discovered during first deployment — replace failed device fingerprinting with name-based student identity, fix bugs, harden security, and polish UX.
+
+**Target features:**
+- Student identity overhaul: session code + first name (replaces device fingerprinting)
+- Poll live update bug fix (teacher dashboard not reflecting student votes in real-time)
+- Presentation mode readability fixes (contrast on ranked poll cards)
+- Session name display in teacher dashboard (show name, not number; editable)
+- Activate vs Go Live UX clarification across bracket types and polls
+- Supabase RLS security hardening (all 12 public tables)
 
 ### Out of Scope
 
 - Native mobile apps — web-first, responsive design handles mobile
 - Real-time chat or messaging between students — not a communication tool
 - LMS integration (Canvas, Google Classroom) — defer to future version
-- Student accounts with passwords — anonymous-only by design
+- Student accounts with passwords/email — first-name-only identity preserves anonymity
 - Content moderation AI — manual teacher control
 - Multi-language / i18n — English only
 - AI-generated bracket content — unpredictable in K-12
@@ -70,20 +80,17 @@ Teachers can instantly engage any classroom through voting — on any topic, in 
 
 **Deployment:** sparkvotedu.com on Vercel. Health endpoint at /api/health monitors Supabase Auth, Supabase Storage, Stripe, SportsDataIO, and cron secret. Branded auth domain at api.sparkvotedu.com.
 
-**Classroom environment:** Students share identical school-issued laptops. Device fingerprinting combines canvas, WebGL, audio context, fonts, screen, timezone for differentiation.
+**Classroom environment:** Students share identical school-issued Chromebooks. Device fingerprinting tested with 24 students — only 6 unique fingerprints generated. Identical hardware defeats canvas/WebGL/audio differentiation. Moving to first-name-based identity (session code + first name, case-insensitive, duplicates prompted to differentiate).
 
 **Known items for future work:**
 - Microsoft and Apple OAuth configured in code but held for launch (Google + email/password only)
-- Poll image upload component exists but not yet wired into poll form UI
-- Production Stripe webhook not yet configured
-- Device fingerprinting collision rates on identical school hardware need real-world validation
 
 ## Constraints
 
 - **Deployment**: sparkvotedu.com on Vercel (live)
 - **Branding**: Existing logo, "Ignite student voice through voting" motto
 - **Pricing**: Free / Pro ($12/mo) / Pro Plus ($20/mo) tier structure is fixed
-- **Privacy**: Students are anonymous — no PII, device fingerprinting for session continuity only
+- **Privacy**: Students are anonymous — first name only (no email/password), random fun names for display
 - **Tech stack**: Next.js 16, Prisma v7, Supabase, Stripe, SportsDataIO
 
 ## Key Decisions
@@ -91,7 +98,7 @@ Teachers can instantly engage any classroom through voting — on any topic, in 
 | Decision | Rationale | Outcome |
 |----------|-----------|---------|
 | Rebuild from scratch vs iterate | Current codebase had quality/UX/architecture issues from vibe coding | ✓ Good — clean architecture, 45K LOC |
-| Anonymous student identity via device fingerprinting | Students shouldn't need accounts; school devices share models | ✓ Good — FingerprintJS + localStorage UUID |
+| Anonymous student identity via device fingerprinting | Students shouldn't need accounts; school devices share models | ⚠️ Revisit — failed on identical Chromebooks (24 students → 6 fingerprints), replacing with first-name identity |
 | Freemium over one-time purchase | Teachers upgrade as needs grow; aligns with SaaS education market | ✓ Good — 3-tier Stripe billing |
 | SportsDataIO as sports provider | Best NCAA coverage, reasonable pricing, good documentation | ✓ Good — provider abstraction allows swap |
 | Next.js 16 + Prisma v7 + Supabase | Modern stack, server components, real-time built in | ✓ Good — Turbopack fast dev, Supabase Realtime reliable |
@@ -108,4 +115,4 @@ Teachers can instantly engage any classroom through voting — on any topic, in 
 | Same Vercel project domain reassignment | Quick swap with minimal downtime vs blue-green deployment | ✓ Good — seamless cutover |
 
 ---
-*Last updated: 2026-02-21 after v1.1 milestone*
+*Last updated: 2026-02-21 after v1.2 milestone started*

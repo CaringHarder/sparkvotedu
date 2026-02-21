@@ -5,15 +5,14 @@
 See: .planning/PROJECT.md (updated 2026-02-21)
 
 **Core value:** Teachers can instantly engage any classroom through voting -- on any topic, in any format -- and see participation happen in real time.
-**Current focus:** v1.1 shipped -- sparkvotedu.com is live. Planning next milestone.
+**Current focus:** v1.2 Classroom Hardening — fix real-world issues from first deployment
 
 ## Current Position
 
-Phase: All complete (18 phases across v1.0 + v1.1)
-Status: Between milestones
-Last activity: 2026-02-21 -- v1.1 Production Readiness & Deploy shipped
-
-Progress: [##############################] 100%
+Phase: Not started (defining requirements)
+Plan: —
+Status: Defining requirements
+Last activity: 2026-02-21 — Milestone v1.2 started
 
 ## Performance Metrics
 
@@ -44,13 +43,10 @@ None.
 
 ### Blockers/Concerns
 
-- Device fingerprinting collision rates on identical school hardware need real-world validation
-- Poll image upload component exists but not wired into poll form UI
 - Microsoft and Apple OAuth held for launch -- code complete, needs console config
-- Production Stripe webhook not yet configured
 
 ## Session Continuity
 
 Last session: 2026-02-21
-Stopped at: v1.1 milestone complete, archived
-Resume: Use /gsd:new-milestone to start next milestone
+Stopped at: v1.2 milestone started, defining requirements
+Resume: Continue with requirements definition and roadmap creation
