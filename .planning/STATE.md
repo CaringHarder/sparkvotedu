@@ -10,9 +10,9 @@ See: .planning/PROJECT.md (updated 2026-02-21)
 ## Current Position
 
 Phase: 19 of 22 (Security & Schema Foundation)
-Plan: 2 of 2 in current phase
-Status: Plan 19-02 complete -- validation & banner shipped
-Last activity: 2026-02-21 -- Completed 19-02 (first-name validation + upgrade banner)
+Plan: 2 of 2 in current phase (all complete)
+Status: Phase 19 complete -- RLS + schema migration + validation + banner shipped
+Last activity: 2026-02-21 -- Completed 19-01 (RLS + schema migration + data wipe)
 
 Progress: [######################........] 72% (112/112 plans -- 110 v1.0+v1.1, 2 completed Phase 19)
 
@@ -47,6 +47,8 @@ Recent decisions for v1.2:
 - Deny-all RLS (no per-row policies) -- Prisma bypasses RLS via bypassrls user; deny-all locks PostgREST surface
 - First-name identity over device fingerprint -- 24 students on identical Chromebooks produced only 6 fingerprints
 - Additive schema migration -- keep device_id column (nullable), add first_name; no destructive changes
+- Transitioned from prisma db push to prisma migrate with baseline approach for hand-editable SQL migrations
+- Hand-edited migration SQL to combine data wipe + schema changes + RLS in one atomic migration
 - Preserve name casing as entered -- no auto-capitalize; case-insensitive matching at lookup time (Phase 20)
 - Reject emojis with error (not strip) -- "Please use letters only -- no emojis"
 - Profanity wholeWord mode + whitelist for legitimate names (Dick, Fanny, etc.) to avoid false positives
@@ -64,5 +66,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-02-21
-Stopped at: Completed 19-02-PLAN.md (validation & banner)
-Resume: Execute 19-01-PLAN.md (database migration) or advance to Phase 20
+Stopped at: Completed 19-01-PLAN.md (RLS + schema migration + data wipe)
+Resume: Phase 19 complete -- advance to Phase 20

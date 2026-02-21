@@ -41,7 +41,7 @@
 
 **Milestone Goal:** Fix real-world classroom issues discovered during first deployment -- replace failed device fingerprinting with name-based student identity, fix bugs, harden security, and polish UX.
 
-- [ ] **Phase 19: Security & Schema Foundation** - RLS on all 12 tables + additive schema migration for name-based identity
+- [x] **Phase 19: Security & Schema Foundation** - RLS on all 12 tables + additive schema migration for name-based identity (completed 2026-02-21)
 - [ ] **Phase 20: Name-Based Student Identity** - Students join with first name instead of device fingerprint
 - [ ] **Phase 21: Poll Realtime Bug Fix** - Teacher poll dashboard updates in real-time when students vote
 - [ ] **Phase 22: UX Polish** - Presentation contrast, session naming, and terminology unification
@@ -130,7 +130,7 @@ Phases execute in numeric order: 19 -> 20 -> 21 -> 22
 | 16. Legal Pages | v1.1 | 1/1 | Complete | 2026-02-16 |
 | 17. Admin Panel | v1.1 | 3/3 | Complete | 2026-02-17 |
 | 18. Production Deploy | v1.1 | 1/1 | Complete | 2026-02-21 |
-| 19. Security & Schema Foundation | 1/2 | In Progress|  | - |
+| 19. Security & Schema Foundation | 2/2 | Complete   | 2026-02-21 | - |
 | 20. Name-Based Student Identity | v1.2 | 0/TBD | Not started | - |
 | 21. Poll Realtime Bug Fix | v1.2 | 0/TBD | Not started | - |
 | 22. UX Polish | v1.2 | 0/TBD | Not started | - |
