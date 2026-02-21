@@ -47,14 +47,14 @@ export default async function LiveDashboardPage({ params }: PageProps) {
   }
 
   // Fetch session participants and code if bracket has a session
-  let participants: Array<{ id: string; funName: string; lastSeenAt: Date }> = []
+  let participants: Array<{ id: string; funName: string; firstName: string; lastSeenAt: Date }> = []
   let sessionCode: string | null = null
 
   if (bracket.sessionId) {
     const [sessionParticipants, session] = await Promise.all([
       prisma.studentParticipant.findMany({
         where: { sessionId: bracket.sessionId, banned: false },
-        select: { id: true, funName: true, lastSeenAt: true },
+        select: { id: true, funName: true, firstName: true, lastSeenAt: true },
       }),
       prisma.classSession.findUnique({
         where: { id: bracket.sessionId },
@@ -189,6 +189,7 @@ export default async function LiveDashboardPage({ params }: PageProps) {
   const serializedParticipants = participants.map((p) => ({
     id: p.id,
     funName: p.funName,
+    firstName: p.firstName,
     lastSeenAt: p.lastSeenAt.toISOString(),
   }))
 

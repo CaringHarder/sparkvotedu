@@ -31,6 +31,7 @@ export default async function SessionDetailPage({
     participants: session.participants.map((p) => ({
       id: p.id,
       funName: p.funName,
+      firstName: p.firstName,
       banned: p.banned,
       rerollUsed: p.rerollUsed,
       lastSeenAt: p.lastSeenAt.toISOString(),

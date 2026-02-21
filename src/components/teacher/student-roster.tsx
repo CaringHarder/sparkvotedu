@@ -6,6 +6,7 @@ import { StudentManagement } from './student-management'
 interface ParticipantData {
   id: string
   funName: string
+  firstName: string
   banned: boolean
   rerollUsed: boolean
   lastSeenAt: string
@@ -84,7 +85,7 @@ export function StudentRoster({
                         : ''
                     }
                   >
-                    {p.funName}
+                    {p.funName}{p.firstName ? ` (${p.firstName})` : ''}
                   </span>
                   {p.banned && (
                     <span className="text-xs text-red-500 font-medium">

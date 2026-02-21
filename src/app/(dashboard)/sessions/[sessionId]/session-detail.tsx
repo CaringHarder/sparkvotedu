@@ -13,6 +13,7 @@ import Link from 'next/link'
 interface ParticipantData {
   id: string
   funName: string
+  firstName: string
   banned: boolean
   rerollUsed: boolean
   lastSeenAt: string

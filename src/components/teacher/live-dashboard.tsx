@@ -26,7 +26,7 @@ type DERegion = 'winners' | 'losers' | 'grand_finals'
 interface LiveDashboardProps {
   bracket: BracketWithDetails
   totalRounds: number
-  participants: Array<{ id: string; funName: string; lastSeenAt: string }>
+  participants: Array<{ id: string; funName: string; firstName?: string; lastSeenAt: string }>
   initialVoteCounts: Record<string, VoteCounts>
   initialVoterIds: Record<string, string[]>
   sessionCode?: string | null

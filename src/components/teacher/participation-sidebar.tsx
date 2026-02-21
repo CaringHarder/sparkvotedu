@@ -3,7 +3,7 @@
 import { useMemo } from 'react'
 
 interface ParticipationSidebarProps {
-  participants: Array<{ id: string; funName: string }>
+  participants: Array<{ id: string; funName: string; firstName?: string }>
   connectedIds: Set<string>
   voterIds: string[]
   selectedMatchupId: string | null
@@ -128,7 +128,7 @@ export function ParticipationSidebar({
                 return (
                   <div
                     key={participant.id}
-                    className={`rounded-md border px-2 py-1.5 text-xs transition-colors ${
+                    className={`rounded-md border px-2 py-2 text-xs transition-colors ${
                       !isConnected
                         ? 'border-muted bg-muted/30 text-muted-foreground opacity-50'
                         : hasVoted && selectedMatchupId
@@ -136,18 +136,25 @@ export function ParticipationSidebar({
                           : 'border-border bg-background text-foreground'
                     }`}
                   >
-                    <div className="flex items-center gap-1">
-                      {/* Status indicator dot */}
-                      <span
-                        className={`inline-block h-1.5 w-1.5 rounded-full ${
-                          !isConnected
-                            ? 'bg-gray-400'
-                            : hasVoted && selectedMatchupId
-                              ? 'bg-green-500'
-                              : 'bg-blue-500'
-                        }`}
-                      />
-                      <span className="truncate">{participant.funName}</span>
+                    <div className="flex flex-col gap-0.5">
+                      <div className="flex items-center gap-1">
+                        {/* Status indicator dot */}
+                        <span
+                          className={`inline-block h-1.5 w-1.5 shrink-0 rounded-full ${
+                            !isConnected
+                              ? 'bg-gray-400'
+                              : hasVoted && selectedMatchupId
+                                ? 'bg-green-500'
+                                : 'bg-blue-500'
+                          }`}
+                        />
+                        <span className="truncate">{participant.funName}</span>
+                      </div>
+                      {participant.firstName && (
+                        <span className="truncate text-[10px] text-muted-foreground pl-3">
+                          {participant.firstName}
+                        </span>
+                      )}
                     </div>
                   </div>
                 )
