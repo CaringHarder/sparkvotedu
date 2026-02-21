@@ -66,5 +66,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-02-21
-Stopped at: Completed 19-01-PLAN.md (RLS + schema migration + data wipe)
-Resume: Phase 19 complete -- advance to Phase 20
+Stopped at: Phase 20 context gathered
+Resume: .planning/phases/20-name-based-student-identity/20-CONTEXT.md
