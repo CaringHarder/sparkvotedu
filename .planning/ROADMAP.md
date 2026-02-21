@@ -103,10 +103,10 @@ Plans:
   1. sparkvotedu.com loads the SparkVotEDU application (not the old site)
   2. All core flows work end-to-end on production: teacher signup/login, bracket creation, student join, voting, real-time updates
   3. Stripe checkout and subscription management work on the production domain
-**Plans**: TBD
+**Plans**: 1 plan
 
 Plans:
-- [ ] 18-01: Vercel deployment and domain configuration
+- [ ] 18-01-PLAN.md -- Deploy to Vercel preview, verify health, cutover sparkvotedu.com domain
 
 ## Progress
 
