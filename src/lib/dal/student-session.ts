@@ -52,11 +52,11 @@ export async function findParticipantByRecoveryCode(recoveryCode: string) {
 /**
  * Create a new participant in a session with a unique alliterative fun name.
  * Fetches existing names in the session to ensure uniqueness.
- * firstName defaults to empty string (Phase 20 will add name-based identity flow).
+ * deviceId accepts null for name-based join flow (no device fingerprinting).
  */
 export async function createParticipant(
   sessionId: string,
-  deviceId: string,
+  deviceId: string | null,
   fingerprint?: string,
   firstName: string = ''
 ) {
@@ -175,5 +175,49 @@ export async function banParticipant(participantId: string) {
 export async function removeParticipant(participantId: string): Promise<void> {
   await prisma.studentParticipant.delete({
     where: { id: participantId },
+  })
+}
+
+/**
+ * Find non-banned participants by first name within a session.
+ * Uses case-insensitive matching so "alice", "Alice", and "ALICE" all match.
+ * Returns id, firstName, and funName for disambiguation UI.
+ */
+export async function findParticipantsByFirstName(
+  sessionId: string,
+  firstName: string
+) {
+  return prisma.studentParticipant.findMany({
+    where: {
+      sessionId,
+      firstName: { equals: firstName, mode: 'insensitive' },
+      banned: false,
+    },
+    select: { id: true, firstName: true, funName: true },
+  })
+}
+
+/**
+ * Update a participant's first name.
+ * Returns the updated participant record.
+ */
+export async function updateFirstName(
+  participantId: string,
+  firstName: string
+) {
+  return prisma.studentParticipant.update({
+    where: { id: participantId },
+    data: { firstName },
+  })
+}
+
+/**
+ * Update a participant's lastSeenAt timestamp to now.
+ * Used when a student reclaims their identity.
+ */
+export async function updateLastSeen(participantId: string) {
+  return prisma.studentParticipant.update({
+    where: { id: participantId },
+    data: { lastSeenAt: new Date() },
   })
 }

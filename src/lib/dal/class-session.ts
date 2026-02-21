@@ -41,6 +41,25 @@ export async function findActiveSessionByCode(code: string) {
 }
 
 /**
+ * Find a session by its 6-digit class code regardless of status.
+ * Includes teacher name for the student welcome/results screen.
+ * Returns null if code is invalid.
+ *
+ * Unlike findActiveSessionByCode, this returns ended sessions too --
+ * per locked decision: ended sessions should show results, not just "session ended".
+ */
+export async function findSessionByCode(code: string) {
+  return prisma.classSession.findFirst({
+    where: { code },
+    include: {
+      teacher: {
+        select: { name: true },
+      },
+    },
+  })
+}
+
+/**
  * Get a session with all its participants.
  * Verifies teacher ownership (authorization check).
  * Returns null if session not found or teacher doesn't own it.

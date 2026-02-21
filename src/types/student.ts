@@ -17,10 +17,17 @@ export interface ClassSessionData {
 /** Student participant data within a session */
 export interface StudentParticipantData {
   id: string
+  firstName: string
   funName: string
   rerollUsed: boolean
   recoveryCode: string | null
   sessionId: string
+}
+
+/** A candidate shown during name-disambiguation when duplicates exist */
+export interface DuplicateCandidate {
+  id: string
+  funName: string
 }
 
 /** Result of a student join attempt */
@@ -28,5 +35,7 @@ export interface JoinResult {
   participant?: StudentParticipantData
   session?: ClassSessionData
   returning?: boolean
+  sessionEnded?: boolean
+  duplicates?: DuplicateCandidate[]
   error?: string
 }

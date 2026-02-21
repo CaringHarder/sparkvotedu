@@ -33,6 +33,7 @@ const recoverIdentitySchema = z.object({
 
 function toParticipantData(p: {
   id: string
+  firstName: string
   funName: string
   rerollUsed: boolean
   recoveryCode: string | null
@@ -40,6 +41,7 @@ function toParticipantData(p: {
 }): StudentParticipantData {
   return {
     id: p.id,
+    firstName: p.firstName,
     funName: p.funName,
     rerollUsed: p.rerollUsed,
     recoveryCode: p.recoveryCode,
