@@ -72,12 +72,12 @@ Plans:
   3. When a second student enters an already-taken first name, they see a disambiguation prompt and can differentiate themselves (e.g., add last initial)
   4. After joining, the student is assigned a random fun name for display (Kahoot-style anonymity preserved in polls and brackets)
   5. A student can rejoin from any device using their first name and can edit their name after joining
-**Plans**: TBD
+**Plans**: 3 plans
 
 Plans:
-- [ ] 20-01: TBD
-- [ ] 20-02: TBD
-- [ ] 20-03: TBD
+- [ ] 20-01-PLAN.md -- Server-side foundation: types, DAL functions (findParticipantsByFirstName, findSessionByCode), and server actions (joinSessionByName, claimIdentity, updateParticipantName)
+- [ ] 20-02-PLAN.md -- Student join flow UI: two-step code+name entry, name disambiguation ("Is this you?"), updated welcome screen
+- [ ] 20-03-PLAN.md -- Teacher dashboard name mappings ("Fun Name (Real Name)"), student name-edit dialog, session layout updates
 
 ### Phase 21: Poll Realtime Bug Fix
 **Goal**: Teacher poll live dashboard reflects student votes in real-time without stale data
