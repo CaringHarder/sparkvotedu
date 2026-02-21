@@ -49,8 +49,9 @@ model ClassSession {
 
 model StudentParticipant {
   id           String    @id @default(uuid())
+  firstName    String    @map("first_name") @db.VarChar(50)
   funName      String    @map("fun_name")
-  deviceId     String    @map("device_id")
+  deviceId     String?   @map("device_id")
   fingerprint  String?
   recoveryCode String?   @map("recovery_code")
   rerollUsed   Boolean   @default(false) @map("reroll_used")
@@ -68,6 +69,7 @@ model StudentParticipant {
   @@unique([sessionId, funName])
   @@index([sessionId, fingerprint])
   @@index([recoveryCode])
+  @@index([sessionId, firstName])
   @@map("student_participants")
 }
 

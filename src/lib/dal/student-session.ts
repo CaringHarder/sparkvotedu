@@ -52,11 +52,13 @@ export async function findParticipantByRecoveryCode(recoveryCode: string) {
 /**
  * Create a new participant in a session with a unique alliterative fun name.
  * Fetches existing names in the session to ensure uniqueness.
+ * firstName defaults to empty string (Phase 20 will add name-based identity flow).
  */
 export async function createParticipant(
   sessionId: string,
   deviceId: string,
-  fingerprint?: string
+  fingerprint?: string,
+  firstName: string = ''
 ) {
   // Fetch existing fun names for this session
   const existing = await prisma.studentParticipant.findMany({
@@ -71,6 +73,7 @@ export async function createParticipant(
     data: {
       sessionId,
       funName,
+      firstName,
       deviceId,
       fingerprint: fingerprint ?? null,
     },
