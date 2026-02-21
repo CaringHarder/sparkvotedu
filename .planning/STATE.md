@@ -5,16 +5,16 @@
 See: .planning/PROJECT.md (updated 2026-02-21)
 
 **Core value:** Teachers can instantly engage any classroom through voting -- on any topic, in any format -- and see participation happen in real time.
-**Current focus:** Phase 19 -- Security & Schema Foundation (v1.2 Classroom Hardening)
+**Current focus:** Phase 20 -- Name-Based Student Identity (v1.2 Classroom Hardening)
 
 ## Current Position
 
-Phase: 19 of 22 (Security & Schema Foundation)
-Plan: 2 of 2 in current phase (all complete)
-Status: Phase 19 complete -- RLS + schema migration + validation + banner shipped
-Last activity: 2026-02-21 -- Completed 19-01 (RLS + schema migration + data wipe)
+Phase: 20 of 22 (Name-Based Student Identity)
+Plan: 1 of 3 in current phase (1 complete)
+Status: 20-01 complete -- server-side name-based identity foundation shipped
+Last activity: 2026-02-21 -- Completed 20-01 (types, DAL, server actions)
 
-Progress: [######################........] 72% (112/112 plans -- 110 v1.0+v1.1, 2 completed Phase 19)
+Progress: [######################........] 74% (115/115 plans -- 110 v1.0+v1.1, 2 Phase 19, 1 Phase 20 of 3 planned)
 
 ## Performance Metrics
 
@@ -53,6 +53,8 @@ Recent decisions for v1.2:
 - Reject emojis with error (not strip) -- "Please use letters only -- no emojis"
 - Profanity wholeWord mode + whitelist for legitimate names (Dick, Fanny, etc.) to avoid false positives
 - Fail-silent banner when localStorage unavailable -- better to miss notification than show forever
+- Dynamic prisma import in claimIdentity/updateParticipantName for direct participant lookup by ID
+- sessionEnded flag on JoinResult for ended-session results display rather than error
 
 ### Pending Todos
 
@@ -66,5 +68,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-02-21
-Stopped at: Phase 20 context gathered
-Resume: .planning/phases/20-name-based-student-identity/20-CONTEXT.md
+Stopped at: Completed 20-01-PLAN.md
+Resume: Execute 20-02-PLAN.md (Student Join UI)
