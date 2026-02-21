@@ -1,16 +1,23 @@
 'use server'
 
 import { z } from 'zod'
-import { findActiveSessionByCode } from '@/lib/dal/class-session'
+import {
+  findActiveSessionByCode,
+  findSessionByCode,
+} from '@/lib/dal/class-session'
 import {
   findParticipantByDevice,
   findParticipantByFingerprint,
   findParticipantByRecoveryCode,
+  findParticipantsByFirstName,
   createParticipant,
   updateParticipantDevice,
+  updateFirstName,
+  updateLastSeen,
   rerollParticipantName,
   generateRecoveryCode as generateRecoveryCodeDAL,
 } from '@/lib/dal/student-session'
+import { firstNameSchema } from '@/lib/validations/first-name'
 import type {
   JoinResult,
   StudentParticipantData,
@@ -27,6 +34,21 @@ const joinSessionSchema = z.object({
 const recoverIdentitySchema = z.object({
   recoveryCode: z.string().min(1, 'Recovery code is required'),
   deviceId: z.string().min(1, 'Device ID is required'),
+})
+
+const joinByNameSchema = z.object({
+  code: z.string().regex(/^\d{6}$/, 'Class code must be exactly 6 digits'),
+  firstName: firstNameSchema,
+})
+
+const claimIdentitySchema = z.object({
+  participantId: z.string().min(1, 'Participant ID is required'),
+  sessionCode: z.string().regex(/^\d{6}$/, 'Session code must be exactly 6 digits'),
+})
+
+const updateNameSchema = z.object({
+  participantId: z.string().min(1, 'Participant ID is required'),
+  firstName: firstNameSchema,
 })
 
 // --- Helper ---
@@ -211,4 +233,193 @@ export async function recoverIdentity(
     session: sessionInfo,
     returning: true,
   }
+}
+
+// --- Name-Based Identity Actions ---
+
+/**
+ * Join a class session using a 6-digit code and first name.
+ *
+ * Name-based identity flow (replaces device-fingerprint approach):
+ * 1. Find session by code (active or ended)
+ * 2. If ended, return sessionEnded flag so UI can show results
+ * 3. If active, do case-insensitive name lookup for duplicates
+ * 4. If no duplicates, create new participant
+ * 5. If duplicates, return candidate list for disambiguation
+ *
+ * No authentication required -- students are anonymous.
+ */
+export async function joinSessionByName(input: {
+  code: string
+  firstName: string
+}): Promise<JoinResult> {
+  // Validate input
+  const parsed = joinByNameSchema.safeParse(input)
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0].message }
+  }
+
+  const { code, firstName } = parsed.data
+
+  // Step 1: Find session by code (any status)
+  const session = await findSessionByCode(code)
+  if (!session) {
+    return { error: 'Invalid class code' }
+  }
+
+  const sessionInfo = {
+    id: session.id,
+    code: session.code,
+    name: session.name,
+    status: session.status,
+    teacherName: session.teacher.name,
+  }
+
+  // Step 2: If session ended, return flag for results UI
+  if (session.status === 'ended') {
+    return {
+      session: sessionInfo,
+      sessionEnded: true,
+    }
+  }
+
+  // Step 3: Case-insensitive name lookup
+  const existing = await findParticipantsByFirstName(session.id, firstName)
+
+  // Step 4: No matches -- create new participant (deviceId null for name-based flow)
+  if (existing.length === 0) {
+    const participant = await createParticipant(
+      session.id,
+      null,
+      undefined,
+      firstName
+    )
+    return {
+      participant: toParticipantData(participant),
+      session: sessionInfo,
+      returning: false,
+    }
+  }
+
+  // Step 5: Duplicates found -- return candidates for disambiguation
+  return {
+    duplicates: existing.map((p) => ({ id: p.id, funName: p.funName })),
+    session: sessionInfo,
+  }
+}
+
+/**
+ * Claim an existing participant identity during disambiguation.
+ *
+ * When a student's first name matches multiple participants, the UI
+ * shows their fun names and lets them pick. This action reclaims
+ * the selected identity.
+ *
+ * Security: verifies the participant belongs to the session with
+ * the given code (prevents claiming participants from other sessions).
+ *
+ * No authentication required -- students are anonymous.
+ */
+export async function claimIdentity(input: {
+  participantId: string
+  sessionCode: string
+}): Promise<JoinResult> {
+  // Validate input
+  const parsed = claimIdentitySchema.safeParse(input)
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0].message }
+  }
+
+  const { participantId, sessionCode } = parsed.data
+
+  // Find the session by code
+  const session = await findSessionByCode(sessionCode)
+  if (!session) {
+    return { error: 'Invalid class code' }
+  }
+
+  const sessionInfo = {
+    id: session.id,
+    code: session.code,
+    name: session.name,
+    status: session.status,
+    teacherName: session.teacher.name,
+  }
+
+  // Find participant by ID and verify it belongs to this session
+  const { prisma } = await import('@/lib/prisma')
+  const participant = await prisma.studentParticipant.findUnique({
+    where: { id: participantId },
+  })
+
+  if (!participant) {
+    return { error: 'Participant not found' }
+  }
+
+  if (participant.sessionId !== session.id) {
+    return { error: 'Participant does not belong to this session' }
+  }
+
+  if (participant.banned) {
+    return { error: 'You have been removed from this session' }
+  }
+
+  // Update lastSeenAt
+  const updated = await updateLastSeen(participantId)
+
+  return {
+    participant: toParticipantData(updated),
+    session: sessionInfo,
+    returning: true,
+  }
+}
+
+/**
+ * Update a participant's first name.
+ *
+ * Validates the new name and checks for collisions within the session.
+ * If another (non-self) participant already has this name (case-insensitive),
+ * returns an error.
+ *
+ * No authentication required -- students are anonymous.
+ */
+export async function updateParticipantName(input: {
+  participantId: string
+  firstName: string
+}): Promise<{ participant?: StudentParticipantData; error?: string }> {
+  // Validate input
+  const parsed = updateNameSchema.safeParse(input)
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0].message }
+  }
+
+  const { participantId, firstName } = parsed.data
+
+  // Look up participant to get sessionId
+  const { prisma } = await import('@/lib/prisma')
+  const participant = await prisma.studentParticipant.findUnique({
+    where: { id: participantId },
+  })
+
+  if (!participant) {
+    return { error: 'Participant not found' }
+  }
+
+  // Check for name collision (case-insensitive, excluding self)
+  const existing = await findParticipantsByFirstName(
+    participant.sessionId,
+    firstName
+  )
+  const collision = existing.some((p) => p.id !== participantId)
+  if (collision) {
+    return {
+      error:
+        'That name is already taken in this session. Try a different name.',
+    }
+  }
+
+  // Update the first name
+  const updated = await updateFirstName(participantId, firstName)
+
+  return { participant: toParticipantData(updated) }
 }
