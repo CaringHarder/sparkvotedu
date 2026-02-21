@@ -10,11 +10,11 @@ See: .planning/PROJECT.md (updated 2026-02-21)
 ## Current Position
 
 Phase: 20 of 22 (Name-Based Student Identity)
-Plan: 1 of 3 in current phase (1 complete)
-Status: 20-01 complete -- server-side name-based identity foundation shipped
-Last activity: 2026-02-21 -- Completed 20-01 (types, DAL, server actions)
+Plan: 2 of 3 in current phase (2 complete)
+Status: 20-02 complete -- student join UI with two-step flow and disambiguation
+Last activity: 2026-02-21 -- Completed 20-02 (join flow UI, name entry, disambiguation)
 
-Progress: [######################........] 74% (115/115 plans -- 110 v1.0+v1.1, 2 Phase 19, 1 Phase 20 of 3 planned)
+Progress: [######################........] 74% (115/115 plans -- 110 v1.0+v1.1, 2 Phase 19, 2 Phase 20 of 3 planned)
 
 ## Performance Metrics
 
@@ -55,6 +55,8 @@ Recent decisions for v1.2:
 - Fail-silent banner when localStorage unavailable -- better to miss notification than show forever
 - Dynamic prisma import in claimIdentity/updateParticipantName for direct participant lookup by ID
 - sessionEnded flag on JoinResult for ended-session results display rather than error
+- NameDisambiguation rendered inline in NameEntryForm (no separate route) for smooth flow
+- Two-click claim confirmation ("That's me!" -> "Confirm") to prevent accidental identity theft
 
 ### Pending Todos
 
@@ -68,5 +70,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-02-21
-Stopped at: Completed 20-01-PLAN.md
-Resume: Execute 20-02-PLAN.md (Student Join UI)
+Stopped at: Completed 20-02-PLAN.md
+Resume: Execute 20-03-PLAN.md (Teacher Dashboard)
