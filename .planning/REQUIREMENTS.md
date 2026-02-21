@@ -35,7 +35,7 @@ Requirements for v1.1 Production Readiness & Deploy. Each maps to roadmap phases
 
 ### Deployment
 
-- [ ] **DEPLOY-01**: Application is deployed and live on sparkvotedu.com via Vercel
+- [x] **DEPLOY-01**: Application is deployed and live on sparkvotedu.com via Vercel
 
 ## Future Requirements
 
@@ -85,7 +85,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | ADMIN-04 | Phase 17 | Pending |
 | ADMIN-05 | Phase 17 | Pending |
 | ADMIN-06 | Phase 17 | Pending |
-| DEPLOY-01 | Phase 18 | Pending |
+| DEPLOY-01 | Phase 18 | Complete |
 
 **Coverage:**
 - v1.1 requirements: 15 total

@@ -5,16 +5,16 @@
 See: .planning/PROJECT.md (updated 2026-02-16)
 
 **Core value:** Teachers can instantly engage any classroom through voting -- on any topic, in any format -- and see participation happen in real time.
-**Current focus:** Phase 17 in progress -- admin panel with role-based access
+**Current focus:** All phases complete -- SparkVotEDU live at sparkvotedu.com
 
 ## Current Position
 
-Phase: 17 of 18 (Admin Panel)
-Plan: 3 of 4 in current phase
-Status: In Progress
-Last activity: 2026-02-17 -- Completed 17-03 (account actions: deactivate, reactivate, tier override, create)
+Phase: 18 of 18 (Production Deploy)
+Plan: 1 of 1 in current phase
+Status: Complete
+Last activity: 2026-02-21 -- Completed 18-01 (deploy to Vercel, verify health, cutover sparkvotedu.com)
 
-Progress: [############################..] 91% (v1.0 complete, v1.1 8/9 plans)
+Progress: [##############################] 100% (v1.0 complete, v1.1 9/9 plans)
 
 ## Performance Metrics
 
@@ -38,6 +38,7 @@ Progress: [############################..] 91% (v1.0 complete, v1.1 8/9 plans)
 | 17-01 | Admin Shell & Role Auth | 4min | 3 | 8 |
 | 17-02 | Teacher List & Detail Panel | 3min | 2 | 9 |
 | 17-03 | Account Actions | 5min | 3 | 11 |
+| 18-01 | Production Deploy | 15min | 4 | 3 |
 
 ## Accumulated Context
 
@@ -72,6 +73,9 @@ All v1.0 decisions archived in PROJECT.md Key Decisions table.
 - [17-03] Three-level deactivation enforcement: Supabase ban, DAL check, proxy redirect
 - [17-03] crypto.randomBytes for temp password generation (cryptographically secure)
 - [17-03] window.confirm for reactivation (simple confirm dialog per plan spec)
+- [18-01] User ran vercel --prod directly instead of CLI automation (equivalent outcome)
+- [18-01] Preview env var issues are expected -- production-only config is correct behavior
+- [18-01] Lazy Stripe client initialization to avoid build-time env var requirements
 
 ### Pending Todos
 
@@ -85,6 +89,6 @@ None -- all former todos are now tracked as v1.1 requirements.
 ## Session Continuity
 
 Last session: 2026-02-21
-Stopped at: Phase 18 context gathered
-Resume file: .planning/phases/18-production-deploy/18-CONTEXT.md
-Resume: Phase 18 context captured, proceed to /gsd:plan-phase 18
+Stopped at: Completed 18-01-PLAN.md -- SparkVotEDU live at sparkvotedu.com
+Resume file: .planning/phases/18-production-deploy/18-01-SUMMARY.md
+Resume: All phases complete. v1.1 milestone shipped.

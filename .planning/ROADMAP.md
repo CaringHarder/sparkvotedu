@@ -3,7 +3,7 @@
 ## Milestones
 
 - **v1.0 MVP** -- Phases 1-11 (shipped 2026-02-16) | [Archive](milestones/v1.0-ROADMAP.md)
-- **v1.1 Production Readiness & Deploy** -- Phases 14-18 (in progress)
+- **v1.1 Production Readiness & Deploy** -- Phases 14-18 (shipped 2026-02-21)
 
 ## Phases
 
@@ -33,7 +33,7 @@
 - [x] **Phase 15: UX Polish** - Improve bracket placement UX and fix landing page issues (completed 2026-02-16)
 - [x] **Phase 16: Legal Pages** - Add privacy policy and terms of service pages (completed 2026-02-16)
 - [x] **Phase 17: Admin Panel** - Build admin dashboard for teacher management (completed 2026-02-17)
-- [ ] **Phase 18: Production Deploy** - Deploy to sparkvotedu.com
+- [x] **Phase 18: Production Deploy** - Deploy to sparkvotedu.com (completed 2026-02-21)
 
 ## Phase Details
 
@@ -131,4 +131,4 @@ Phases 14, 15, 16 can run in parallel (no dependencies). Phase 17 depends on Pha
 | 15. UX Polish | v1.1 | Complete    | 2026-02-16 | - |
 | 16. Legal Pages | v1.1 | Complete    | 2026-02-16 | - |
 | 17. Admin Panel | v1.1 | Complete    | 2026-02-17 | - |
-| 18. Production Deploy | v1.1 | 0/1 | Not started | - |
+| 18. Production Deploy | v1.1 | 1/1 | Complete | 2026-02-21 |
