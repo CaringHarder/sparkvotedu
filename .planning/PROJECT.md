@@ -2,7 +2,7 @@
 
 ## What This Is
 
-A web application that lets teachers create polls and tournament-style brackets for their classes, where students participate anonymously. Teachers manage brackets (single-elimination, double-elimination, round-robin, predictive), advance winners by vote or by choice, and watch results on a live dashboard. Students join via class code, get a random fun name, and vote — no account needed. The platform uses a freemium model (Free / Pro / Pro Plus) with Stripe billing to gate bracket types, quantity limits, and advanced features. It integrates with SportsDataIO to auto-generate real NCAA March Madness tournament brackets for classroom prediction competitions. Visual bracket placement lets teachers drag entrants into specific bracket positions during creation.
+A web application that lets teachers create polls and tournament-style brackets for their classes, where students participate anonymously. Teachers manage brackets (single-elimination, double-elimination, round-robin, predictive), advance winners by vote or by choice, and watch results on a live dashboard. Students join via class code, get a random fun name, and vote — no account needed. The platform uses a freemium model (Free / Pro / Pro Plus) with Stripe billing to gate bracket types, quantity limits, and advanced features. It integrates with SportsDataIO to auto-generate real NCAA March Madness tournament brackets for classroom prediction competitions. Visual bracket placement lets teachers drag entrants into specific bracket positions during creation. An admin panel lets the site owner manage teachers, accounts, and subscriptions.
 
 ## Core Value
 
@@ -35,17 +35,17 @@ Teachers can instantly engage any classroom through voting — on any topic, in 
 - Sleek, intuitive interface for both teachers and students — v1.0
 - Landing page with branding, pitch, and pricing — v1.0
 - Visual bracket placement (click-to-place seeding) — v1.0
+- ✓ External service configuration (Google OAuth, Supabase Storage, health endpoint) — v1.1
+- ✓ Full-width visual bracket placement in creation wizard — v1.1
+- ✓ Join Class button in landing page header — v1.1
+- ✓ Landing page logo and styling fixes — v1.1
+- ✓ Privacy policy and terms of service pages — v1.1
+- ✓ Admin panel with role-based access, teacher management, account actions — v1.1
+- ✓ Production deployment at sparkvotedu.com — v1.1
 
 ### Active
 
-<!-- Current milestone: v1.1 Production Readiness & Deploy -->
-
-- [ ] Configure OAuth providers (Google, Microsoft, Apple) in external consoles and Supabase
-- [ ] Create poll-images bucket in Supabase Storage
-- [ ] Configure production Stripe webhook URL for sparkvotedu.com
-- [ ] Add CRON_SECRET to Vercel environment variables
-- [ ] Move visual bracket placement to full-width creation step
-- [ ] Deploy to sparkvotedu.com on Vercel
+<!-- No active milestone — use /gsd:new-milestone to start next -->
 
 ### Out of Scope
 
@@ -60,27 +60,27 @@ Teachers can instantly engage any classroom through voting — on any topic, in 
 - Gamification with persistent points — conflicts with anonymous design
 - Collaborative bracket editing — one teacher per bracket
 - Offline mode — real-time is core value
+- Admin password reset for teachers — self-service forgot-password flow exists
 
 ## Context
 
-**Current state:** v1.0 MVP shipped 2026-02-16. 41,773 LOC TypeScript across 564 files.
+**Current state:** v1.1 shipped 2026-02-21. Live at sparkvotedu.com. 45,280 LOC TypeScript across 570+ files.
 
 **Tech stack:** Next.js 16 (App Router, Turbopack), Prisma v7, Supabase (auth + realtime + storage), Stripe (billing), SportsDataIO (sports data), Tailwind CSS v4, shadcn/ui, Framer Motion.
 
-**Deployment target:** sparkvotedu.com — replaces current vibe-coded implementation.
+**Deployment:** sparkvotedu.com on Vercel. Health endpoint at /api/health monitors Supabase Auth, Supabase Storage, Stripe, SportsDataIO, and cron secret. Branded auth domain at api.sparkvotedu.com.
 
 **Classroom environment:** Students share identical school-issued laptops. Device fingerprinting combines canvas, WebGL, audio context, fonts, screen, timezone for differentiation.
 
-**Known tech debt:**
-- OAuth providers (Google, Microsoft, Apple) need external console configuration — code complete
-- Production Stripe webhook needs configuration for sparkvotedu.com
-- SportsDataIO API key and Vercel CRON_SECRET needed for production
-- poll-images Supabase Storage bucket needs creation
-- Visual bracket placement UX improvement: move to full-width creation step
+**Known items for future work:**
+- Microsoft and Apple OAuth configured in code but held for launch (Google + email/password only)
+- Poll image upload component exists but not yet wired into poll form UI
+- Production Stripe webhook not yet configured
+- Device fingerprinting collision rates on identical school hardware need real-world validation
 
 ## Constraints
 
-- **Deployment**: Must deploy to sparkvotedu.com, replacing the current site
+- **Deployment**: sparkvotedu.com on Vercel (live)
 - **Branding**: Existing logo, "Ignite student voice through voting" motto
 - **Pricing**: Free / Pro ($12/mo) / Pro Plus ($20/mo) tier structure is fixed
 - **Privacy**: Students are anonymous — no PII, device fingerprinting for session continuity only
@@ -90,27 +90,22 @@ Teachers can instantly engage any classroom through voting — on any topic, in 
 
 | Decision | Rationale | Outcome |
 |----------|-----------|---------|
-| Rebuild from scratch vs iterate | Current codebase had quality/UX/architecture issues from vibe coding | Good — clean architecture, 41K LOC |
-| Anonymous student identity via device fingerprinting | Students shouldn't need accounts; school devices share models | Good — FingerprintJS + localStorage UUID |
-| Freemium over one-time purchase | Teachers upgrade as needs grow; aligns with SaaS education market | Good — 3-tier Stripe billing |
-| SportsDataIO as sports provider | Best NCAA coverage, reasonable pricing, good documentation | Good — provider abstraction allows swap |
-| Next.js 16 + Prisma v7 + Supabase | Modern stack, server components, real-time built in | Good — Turbopack fast dev, Supabase Realtime reliable |
-| Click-to-place over drag-and-drop | @dnd-kit v0.3.0 had intermittent pointer sensor issues | Good — simpler, works on all devices |
-| Predictive auto-resolution as third mode | Reduces teacher work for prediction-only brackets | Good — popular feature for sports brackets |
-| Native overflow scroll over custom pan/zoom | Custom pointer-capture drag conflicted with button clicks | Good — eliminated all interaction conflicts |
+| Rebuild from scratch vs iterate | Current codebase had quality/UX/architecture issues from vibe coding | ✓ Good — clean architecture, 45K LOC |
+| Anonymous student identity via device fingerprinting | Students shouldn't need accounts; school devices share models | ✓ Good — FingerprintJS + localStorage UUID |
+| Freemium over one-time purchase | Teachers upgrade as needs grow; aligns with SaaS education market | ✓ Good — 3-tier Stripe billing |
+| SportsDataIO as sports provider | Best NCAA coverage, reasonable pricing, good documentation | ✓ Good — provider abstraction allows swap |
+| Next.js 16 + Prisma v7 + Supabase | Modern stack, server components, real-time built in | ✓ Good — Turbopack fast dev, Supabase Realtime reliable |
+| Click-to-place over drag-and-drop | @dnd-kit v0.3.0 had intermittent pointer sensor issues | ✓ Good — simpler, works on all devices |
+| Predictive auto-resolution as third mode | Reduces teacher work for prediction-only brackets | ✓ Good — popular feature for sports brackets |
+| Native overflow scroll over custom pan/zoom | Custom pointer-capture drag conflicted with button clicks | ✓ Good — eliminated all interaction conflicts |
+| Google OAuth only for v1.1 launch | Microsoft/Apple need additional console config; Google covers 90%+ of edu | ✓ Good — unblocked launch |
+| Supabase custom domain for branded OAuth | api.sparkvotedu.com looks professional in OAuth consent screen | ✓ Good — branded experience |
+| String role column for admin | Enum would require migration for each new role | ✓ Good — future-proof extensibility |
+| Amber accent for admin UI | Visual distinction from blue teacher dashboard | ✓ Good — clear UX separation |
+| Double auth gate for admin | Proxy redirect + layout check for defense-in-depth | ✓ Good — no bypass possible |
+| Type-to-confirm for destructive actions | Extra friction before deactivating teacher accounts | ✓ Good — prevents accidental deactivation |
+| Lazy Stripe client initialization | Eager init crashed Vercel builds during static page generation | ✓ Good — Proxy-based, zero overhead |
+| Same Vercel project domain reassignment | Quick swap with minimal downtime vs blue-green deployment | ✓ Good — seamless cutover |
 
 ---
-## Current Milestone: v1.1 Production Readiness & Deploy
-
-**Goal:** Get SparkVotEDU production-ready and live on sparkvotedu.com — configure external services, polish UX, and deploy.
-
-**Target features:**
-- OAuth provider configuration (Google, Microsoft, Apple)
-- Supabase Storage bucket for poll images
-- Production Stripe webhook
-- Vercel CRON_SECRET for SportsDataIO sync
-- Visual bracket placement UX improvement (full-width creation step)
-- Deployment to sparkvotedu.com
-
----
-*Last updated: 2026-02-16 after v1.1 milestone started*
+*Last updated: 2026-02-21 after v1.1 milestone*
