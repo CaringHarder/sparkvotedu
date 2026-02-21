@@ -9,6 +9,7 @@ import { Skeleton } from '@/components/ui/skeleton'
 interface ParticipantStore {
   participantId: string
   funName: string
+  firstName?: string
   sessionId: string
   rerollUsed: boolean
 }
@@ -93,6 +94,7 @@ export default function SessionLayout({
         funName={participant.funName}
         participantId={participant.participantId}
         rerollUsed={participant.rerollUsed}
+        firstName={participant.firstName}
       />
       {/* Add bottom padding on mobile for bottom nav clearance */}
       <div className={`px-4 py-6 ${!isWelcomePage ? 'pb-20 md:pb-6' : ''}`}>

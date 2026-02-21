@@ -10,20 +10,24 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { RerollButton } from './reroll-button'
 import { RecoveryCodeDialog } from './recovery-code-dialog'
+import { EditNameDialog } from './edit-name-dialog'
 
 interface SessionHeaderProps {
   funName: string
   participantId: string
   rerollUsed: boolean
+  firstName?: string
 }
 
 export function SessionHeader({
   funName: initialFunName,
   participantId,
   rerollUsed: initialRerollUsed,
+  firstName: initialFirstName,
 }: SessionHeaderProps) {
   const [funName, setFunName] = useState(initialFunName)
   const [rerollUsed, setRerollUsed] = useState(initialRerollUsed)
+  const [firstName, setFirstName] = useState(initialFirstName ?? '')
 
   function handleReroll(newName: string) {
     setFunName(newName)
@@ -38,6 +42,27 @@ export function SessionHeader({
           if (data.participantId === participantId) {
             data.funName = newName
             data.rerollUsed = true
+            localStorage.setItem(key, JSON.stringify(data))
+            break
+          }
+        }
+      }
+    } catch {
+      // localStorage not available
+    }
+  }
+
+  function handleNameUpdated(newName: string) {
+    setFirstName(newName)
+
+    // Update localStorage with new first name
+    try {
+      const keys = Object.keys(localStorage)
+      for (const key of keys) {
+        if (key.startsWith('sparkvotedu_session_')) {
+          const data = JSON.parse(localStorage.getItem(key) || '{}')
+          if (data.participantId === participantId) {
+            data.firstName = newName
             localStorage.setItem(key, JSON.stringify(data))
             break
           }
@@ -94,6 +119,11 @@ export function SessionHeader({
               participantId={participantId}
               disabled={rerollUsed}
               onReroll={handleReroll}
+            />
+            <EditNameDialog
+              participantId={participantId}
+              currentFirstName={firstName}
+              onNameUpdated={handleNameUpdated}
             />
             <RecoveryCodeDialog participantId={participantId} />
           </DropdownMenuContent>
