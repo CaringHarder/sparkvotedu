@@ -72,7 +72,7 @@ export function PresentationMode({
 
       {/* Content area -- scaled up for projectors */}
       <div className="flex-1 overflow-auto p-6 md:p-10">
-        <div className="mx-auto max-w-5xl [&_*]:text-white [&_.text-muted-foreground]:text-white/60 [&_.bg-muted]:bg-white/10 [&_.border]:border-white/20 [&_.bg-card]:bg-white/5 [&_.text-foreground]:text-white [&_.fill-foreground]:fill-white [&_.fill-muted-foreground]:fill-white/60">
+        <div className="mx-auto max-w-5xl text-white [&_.text-muted-foreground]:text-white/60 [&_.bg-muted]:bg-white/10 [&_.border]:border-white/20 [&_.bg-card]:bg-white/5 [&_.text-foreground]:text-white [&_.fill-foreground]:fill-white [&_.fill-muted-foreground]:fill-white/60">
           {children}
         </div>
       </div>

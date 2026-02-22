@@ -117,7 +117,7 @@ export function PresentationResults({
               >
                 <div
                   className={`absolute inset-y-0 left-0 rounded-full transition-all duration-500 ${
-                    isMedal ? 'bg-black/30' : 'bg-indigo-500'
+                    isMedal ? 'bg-indigo-600' : 'bg-indigo-500'
                   }`}
                   style={{ width: `${barPct}%` }}
                 />
