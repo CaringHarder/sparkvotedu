@@ -43,7 +43,7 @@
 
 - [x] **Phase 19: Security & Schema Foundation** - RLS on all 12 tables + additive schema migration for name-based identity (completed 2026-02-21)
 - [x] **Phase 20: Name-Based Student Identity** - Students join with first name instead of device fingerprint (completed 2026-02-21)
-- [ ] **Phase 21: Poll Realtime Bug Fix** - Teacher poll dashboard updates in real-time when students vote (gap closure in progress)
+- [x] **Phase 21: Poll Realtime Bug Fix** - Teacher poll dashboard updates in real-time when students vote (gap closure in progress) (completed 2026-02-22)
 - [ ] **Phase 22: UX Polish** - Presentation contrast, session naming, and terminology unification
 
 ## Phase Details
@@ -134,5 +134,5 @@ Phases execute in numeric order: 19 -> 20 -> 21 -> 22
 | 18. Production Deploy | v1.1 | 1/1 | Complete | 2026-02-21 |
 | 19. Security & Schema Foundation | v1.2 | 2/2 | Complete | 2026-02-21 |
 | 20. Name-Based Student Identity | v1.2 | 3/3 | Complete | 2026-02-21 |
-| 21. Poll Realtime Bug Fix | v1.2 | 2/3 | Gap closure | 2026-02-22 |
+| 21. Poll Realtime Bug Fix | 3/3 | Complete   | 2026-02-22 | 2026-02-22 |
 | 22. UX Polish | v1.2 | 0/TBD | Not started | - |

@@ -24,7 +24,7 @@ Requirements for v1.2 Classroom Hardening. Each maps to roadmap phases.
 
 ### Bug Fixes
 
-- [ ] **FIX-01**: Teacher dashboard updates in real-time when students submit poll choices
+- [x] **FIX-01**: Teacher dashboard updates in real-time when students submit poll choices
 - [ ] **FIX-02**: Poll activation broadcasts to the poll channel (not just the activity channel)
 
 ### UX Polish
@@ -72,7 +72,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | SEC-01 | Phase 19 | Complete |
 | SEC-02 | Phase 19 | Complete |
 | SEC-03 | Phase 19 | Complete |
-| FIX-01 | Phase 21 | Pending |
+| FIX-01 | Phase 21 | Complete |
 | FIX-02 | Phase 21 | Pending |
 | UX-01 | Phase 22 | Pending |
 | UX-02 | Phase 22 | Pending |

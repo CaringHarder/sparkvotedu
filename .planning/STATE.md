@@ -10,11 +10,11 @@ See: .planning/PROJECT.md (updated 2026-02-21)
 ## Current Position
 
 Phase: 21 of 22 (Poll Realtime Bug Fix) -- COMPLETE
-Plan: 2 of 2 in current phase (2 complete)
-Status: Phase 21 complete -- all poll realtime bugs fixed + teacher dashboard polished
-Last activity: 2026-02-21 -- Completed 21-02 (teacher dashboard dynamic participation + bar chart polish)
+Plan: 3 of 3 in current phase (3 complete)
+Status: Phase 21 complete -- all poll realtime bugs fixed + teacher dashboard polished + participant-join broadcast gap closed
+Last activity: 2026-02-21 -- Completed 21-03 (participant-join broadcast for stale denominator fix)
 
-Progress: [########################......] 78% (117/117 plans -- 110 v1.0+v1.1, 2 Phase 19, 3 Phase 20, 2 Phase 21)
+Progress: [########################......] 78% (118/118 plans -- 110 v1.0+v1.1, 2 Phase 19, 3 Phase 20, 3 Phase 21)
 
 ## Performance Metrics
 
@@ -63,6 +63,8 @@ Recent decisions for v1.2:
 - SSR fallback for participantCount: use initialParticipantCount until hook returns non-zero value (Phase 21)
 - Connection status label "Near-realtime" instead of "Polling mode" -- less alarming for teacher projecting screen (Phase 21)
 - Leading option uses border-transparent on non-leaders for consistent bar chart padding (Phase 21)
+- broadcastParticipantJoined uses activities:{sessionId} channel with distinct event name participant_joined (Phase 21)
+- useRealtimePoll subscribes to activities channel for participant_joined to re-fetch participantCount on student join (Phase 21)
 
 ### Pending Todos
 
@@ -76,5 +78,5 @@ Recent decisions for v1.2:
 ## Session Continuity
 
 Last session: 2026-02-21
-Stopped at: Completed 21-02-PLAN.md (teacher dashboard dynamic participation + bar chart polish)
-Resume: Phase 21 complete. Ready for Phase 22 or further classroom hardening.
+Stopped at: Completed 21-03-PLAN.md (participant-join broadcast for stale denominator fix)
+Resume: Phase 21 complete (3/3 plans). Ready for Phase 22 or further classroom hardening.
