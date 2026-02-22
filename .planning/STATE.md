@@ -78,5 +78,5 @@ Recent decisions for v1.2:
 ## Session Continuity
 
 Last session: 2026-02-21
-Stopped at: Completed 21-03-PLAN.md (participant-join broadcast for stale denominator fix)
-Resume: Phase 21 complete (3/3 plans). Ready for Phase 22 or further classroom hardening.
+Stopped at: Phase 22 context gathered
+Resume: .planning/phases/22-ux-polish/22-CONTEXT.md — ready for /gsd:plan-phase 22
