@@ -35,7 +35,7 @@ interface PollStateResponse {
  * @param pollId - The poll ID to subscribe to
  * @param batchIntervalMs - How often to flush accumulated vote updates (default 2000ms)
  */
-export function useRealtimePoll(pollId: string, batchIntervalMs = 2000) {
+export function useRealtimePoll(pollId: string, sessionId?: string | null, batchIntervalMs = 2000) {
   const supabase = useMemo(() => createClient(), [])
   const [voteCounts, setVoteCounts] = useState<Record<string, number>>({})
   const [totalVotes, setTotalVotes] = useState(0)
@@ -125,6 +125,18 @@ export function useRealtimePoll(pollId: string, batchIntervalMs = 2000) {
         }
       })
 
+    // Subscribe to activities channel for participant_joined events
+    // so teacher dashboard updates participantCount when new students join
+    let activitiesChannel: ReturnType<typeof supabase.channel> | null = null
+    if (sessionId) {
+      activitiesChannel = supabase
+        .channel(`activities:${sessionId}`)
+        .on('broadcast', { event: 'participant_joined' }, () => {
+          fetchPollState()
+        })
+        .subscribe()
+    }
+
     // Transport fallback: if WebSocket doesn't connect within 5 seconds,
     // switch to HTTP polling every 3 seconds
     const wsTimeout = setTimeout(() => {
@@ -139,11 +151,12 @@ export function useRealtimePoll(pollId: string, batchIntervalMs = 2000) {
 
     return () => {
       supabase.removeChannel(channel)
+      if (activitiesChannel) supabase.removeChannel(activitiesChannel)
       clearInterval(flushInterval)
       clearTimeout(wsTimeout)
       if (pollInterval) clearInterval(pollInterval)
     }
-  }, [pollId, supabase, batchIntervalMs, fetchPollState])
+  }, [pollId, sessionId, supabase, batchIntervalMs, fetchPollState])
 
   return { voteCounts, totalVotes, pollStatus, bordaScores, transport, participantCount, refetch: fetchPollState }
 }

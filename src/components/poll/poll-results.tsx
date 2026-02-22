@@ -43,7 +43,7 @@ export function PollResults({
   onRevealDismissed,
 }: PollResultsProps) {
   const { voteCounts, totalVotes, pollStatus, bordaScores, transport, participantCount } =
-    useRealtimePoll(poll.id)
+    useRealtimePoll(poll.id, poll.sessionId)
 
   const [chartType, setChartType] = useState<ChartType>('bar')
   const [showReveal, setShowReveal] = useState(false)
