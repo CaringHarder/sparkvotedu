@@ -10,9 +10,9 @@ See: .planning/PROJECT.md (updated 2026-02-21)
 ## Current Position
 
 Phase: 22 of 22 (UX Polish) -- IN PROGRESS
-Plan: 2 of 3 in current phase (2 complete)
-Status: Phase 22 plan 02 complete -- session name editing with click-to-edit inline component
-Last activity: 2026-02-22 -- Completed 22-02 (session name editing)
+Plan: 3 of 3 in current phase (2 complete: 01, 02)
+Status: Phase 22 plan 01 complete -- projector-optimized PresentationResults with medal cards
+Last activity: 2026-02-22 -- Completed 22-01 (presentation results for ranked polls)
 
 Progress: [#########################.....] 80% (120/121 plans -- 110 v1.0+v1.1, 2 Phase 19, 3 Phase 20, 3 Phase 21, 2 Phase 22)
 
@@ -67,6 +67,8 @@ Recent decisions for v1.2:
 - useRealtimePoll subscribes to activities channel for participant_joined to re-fetch participantCount on student join (Phase 21)
 - Blur-to-save pattern (no Save/Cancel buttons) for inline session name editing -- minimal friction (Phase 22)
 - Empty name submission clears to null via DAL trim -- unnamed sessions show "Unnamed Session -- date" fallback (Phase 22)
+- PresentationMode rendering moved from PollLiveClient into PollResults where bordaScores is in scope (Phase 22)
+- No Framer Motion animations in PresentationResults for reliable projector rendering (Phase 22)
 
 ### Pending Todos
 
@@ -80,5 +82,5 @@ Recent decisions for v1.2:
 ## Session Continuity
 
 Last session: 2026-02-22
-Stopped at: Completed 22-02-PLAN.md (session name editing)
+Stopped at: Completed 22-01-PLAN.md (presentation results for ranked polls)
 Resume: Continue with 22-03-PLAN.md
