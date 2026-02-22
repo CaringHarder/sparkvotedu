@@ -1,5 +1,5 @@
 ---
-status: complete
+status: diagnosed
 phase: 21-poll-realtime-bug-fix
 source: [21-01-SUMMARY.md, 21-02-SUMMARY.md]
 started: 2026-02-22T00:00:00Z
@@ -58,7 +58,14 @@ skipped: 2
   reason: "User reported: the active 2nd user joined the session, but the active didn't change until the 2nd user submitted a vote."
   severity: major
   test: 3
-  root_cause: ""
-  artifacts: []
-  missing: []
-  debug_session: ""
+  root_cause: "fetchPollState only triggers on poll-channel broadcast events (poll_activated, poll_closed, poll_archived). Student join writes a participant row but emits no broadcast to any channel. The poll_vote_update handler only updates batched vote counts, never calls fetchPollState. So participantCount stays stale until a lifecycle event occurs."
+  artifacts:
+    - path: "src/actions/student.ts"
+      issue: "joinSession/joinSessionByName call createParticipant but emit no broadcast"
+    - path: "src/hooks/use-realtime-poll.ts"
+      issue: "No listener for participant-join events; fetchPollState only called on lifecycle events"
+    - path: "src/lib/realtime/broadcast.ts"
+      issue: "No broadcastParticipantJoined or equivalent function exists"
+  missing:
+    - "Broadcast to activities:{sessionId} channel when a new participant joins"
+    - "useRealtimePoll must listen for participant-join events or periodically re-fetch participantCount"
