@@ -9,12 +9,12 @@ See: .planning/PROJECT.md (updated 2026-02-21)
 
 ## Current Position
 
-Phase: 22 of 22 (UX Polish) -- IN PROGRESS
-Plan: 3 of 3 in current phase (2 complete: 01, 02)
-Status: Phase 22 plan 01 complete -- projector-optimized PresentationResults with medal cards
-Last activity: 2026-02-22 -- Completed 22-01 (presentation results for ranked polls)
+Phase: 22 of 22 (UX Polish) -- COMPLETE
+Plan: 3 of 3 in current phase (3 complete: 01, 02, 03)
+Status: Phase 22 complete -- all UX polish plans executed
+Last activity: 2026-02-22 -- Completed 22-03 (terminology & session dropdown polish)
 
-Progress: [#########################.....] 80% (120/121 plans -- 110 v1.0+v1.1, 2 Phase 19, 3 Phase 20, 3 Phase 21, 2 Phase 22)
+Progress: [##############################] 100% (121/121 plans -- 110 v1.0+v1.1, 2 Phase 19, 3 Phase 20, 3 Phase 21, 3 Phase 22)
 
 ## Performance Metrics
 
@@ -69,6 +69,9 @@ Recent decisions for v1.2:
 - Empty name submission clears to null via DAL trim -- unnamed sessions show "Unnamed Session -- date" fallback (Phase 22)
 - PresentationMode rendering moved from PollLiveClient into PollResults where bordaScores is in scope (Phase 22)
 - No Framer Motion animations in PresentationResults for reliable projector rendering (Phase 22)
+- "Start" replaces "Activate" for action buttons; "View Live" for navigation links to active sessions (Phase 22)
+- "End"/"End Poll" replaces "Close"/"Close Poll" for stopping active activities (Phase 22)
+- "Active" badge replaces "Live" badge on dashboard shell session cards (Phase 22)
 
 ### Pending Todos
 
@@ -82,5 +85,5 @@ Recent decisions for v1.2:
 ## Session Continuity
 
 Last session: 2026-02-22
-Stopped at: Completed 22-01-PLAN.md (presentation results for ranked polls)
-Resume: Continue with 22-03-PLAN.md
+Stopped at: Completed 22-03-PLAN.md (terminology & session dropdown polish)
+Resume: Phase 22 complete. All v1.2 phases (19-22) executed.
