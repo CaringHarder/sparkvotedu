@@ -36,6 +36,13 @@ interface BarChartProps {
 export function AnimatedBarChart({ data, total }: BarChartProps) {
   const maxCount = Math.max(...data.map((d) => d.count), 1)
 
+  // Determine leading option (only if there are actual votes)
+  const leadingOptionId = data.reduce(
+    (leader, d) => (d.count > (leader?.count ?? 0) ? d : leader),
+    data[0]
+  )?.optionId
+  const leadingId = total > 0 && maxCount > 0 ? leadingOptionId : null
+
   return (
     <div className="space-y-3">
       <AnimatePresence mode="popLayout">
@@ -43,6 +50,7 @@ export function AnimatedBarChart({ data, total }: BarChartProps) {
           const pct = total > 0 ? Math.round((d.count / total) * 100) : 0
           const widthPct = (d.count / maxCount) * 100
           const color = d.color ?? COLORS[i % COLORS.length]
+          const isLeading = d.optionId === leadingId
 
           return (
             <motion.div
@@ -51,12 +59,20 @@ export function AnimatedBarChart({ data, total }: BarChartProps) {
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: -20 }}
               transition={{ delay: i * 0.05, duration: 0.3 }}
-              className="space-y-1"
+              className={`space-y-1 ${
+                isLeading
+                  ? 'border-l-2 border-primary pl-2'
+                  : 'border-l-2 border-transparent pl-2'
+              }`}
             >
               {/* Label row */}
               <div className="flex items-baseline justify-between gap-2">
                 <span className="truncate text-sm font-medium">{d.label}</span>
-                <span className="shrink-0 text-sm text-muted-foreground">
+                <span className={`shrink-0 text-sm tabular-nums transition-all duration-300 ${
+                  isLeading
+                    ? 'font-semibold text-foreground'
+                    : 'text-muted-foreground'
+                }`}>
                   {d.count} vote{d.count !== 1 ? 's' : ''} ({pct}%)
                 </span>
               </div>
