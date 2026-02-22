@@ -86,10 +86,11 @@ Plans:
 **Success Criteria** (what must be TRUE):
   1. When a student submits a poll vote, the teacher's live dashboard updates within 2 seconds without manual refresh
   2. When a teacher activates a poll, the poll channel receives the activation broadcast (not just the activity channel), and any student or teacher client subscribed to that poll sees the status change
-**Plans**: TBD
+**Plans**: 2 plans
 
 Plans:
-- [ ] 21-01: TBD
+- [ ] 21-01-PLAN.md -- Server-side bug fixes: dual-channel broadcast on poll activation/close/archive (FIX-02), dynamic participantCount in poll state API and useRealtimePoll hook (FIX-01 foundation)
+- [ ] 21-02-PLAN.md -- Teacher dashboard UI: dynamic participation indicator, leading-option bar chart styling, smooth vote count transitions, enhanced connection status indicator
 
 ### Phase 22: UX Polish
 **Goal**: Classroom presentation is readable on projectors, sessions are identifiable by name, and activation terminology is consistent across the product
