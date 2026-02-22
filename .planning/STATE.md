@@ -66,7 +66,7 @@ Recent decisions for v1.2:
 
 ### Pending Todos
 
-None.
+- Fix go live button in polling (area: ui) -- students can see/vote on poll before teacher clicks Go Live
 
 ### Blockers/Concerns
 
