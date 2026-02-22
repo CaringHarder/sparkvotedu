@@ -33,6 +33,14 @@ export async function GET(
       return NextResponse.json({ error: 'Poll not found' }, { status: 404 })
     }
 
+    // Dynamic participant count for session
+    let participantCount = 0
+    if (poll.sessionId) {
+      participantCount = await prisma.studentParticipant.count({
+        where: { sessionId: poll.sessionId, banned: false },
+      })
+    }
+
     let voteCounts: Record<string, number> = {}
     let totalVotes = 0
     let bordaScores: { optionId: string; points: number }[] | undefined
@@ -66,6 +74,7 @@ export async function GET(
       options: poll.options,
       voteCounts,
       totalVotes,
+      participantCount,
       ...(bordaScores ? { bordaScores } : {}),
     })
   } catch {

@@ -16,6 +16,7 @@ interface PollStateResponse {
   options: { id: string; text: string; imageUrl: string | null; position: number }[]
   voteCounts: Record<string, number>
   totalVotes: number
+  participantCount?: number
   bordaScores?: BordaScore[]
 }
 
@@ -40,6 +41,7 @@ export function useRealtimePoll(pollId: string, batchIntervalMs = 2000) {
   const [totalVotes, setTotalVotes] = useState(0)
   const [pollStatus, setPollStatus] = useState<PollStatus>('draft')
   const [bordaScores, setBordaScores] = useState<BordaScore[] | null>(null)
+  const [participantCount, setParticipantCount] = useState(0)
   const [transport, setTransport] = useState<'websocket' | 'polling'>('websocket')
 
   // Ref for batching vote updates -- accumulates between flushes
@@ -56,6 +58,10 @@ export function useRealtimePoll(pollId: string, batchIntervalMs = 2000) {
       setVoteCounts(data.voteCounts)
       setTotalVotes(data.totalVotes)
       setPollStatus(data.status)
+
+      if (data.participantCount !== undefined) {
+        setParticipantCount(data.participantCount)
+      }
 
       if (data.bordaScores) {
         setBordaScores(data.bordaScores)
@@ -139,5 +145,5 @@ export function useRealtimePoll(pollId: string, batchIntervalMs = 2000) {
     }
   }, [pollId, supabase, batchIntervalMs, fetchPollState])
 
-  return { voteCounts, totalVotes, pollStatus, bordaScores, transport, refetch: fetchPollState }
+  return { voteCounts, totalVotes, pollStatus, bordaScores, transport, participantCount, refetch: fetchPollState }
 }
