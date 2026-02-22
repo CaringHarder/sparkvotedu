@@ -231,17 +231,29 @@ export async function updatePollStatus(input: unknown) {
       return { error: result.error }
     }
 
-    // Broadcast based on new status
-    if (status === 'active' && result.sessionId) {
-      broadcastActivityUpdate(result.sessionId).catch(console.error)
+    // Broadcast based on new status -- dual-channel pattern
+    // Both the poll-specific channel (poll:{pollId}) and the activity channel
+    // (activities:{sessionId}) must receive the event so that both the teacher
+    // dashboard poll view AND the student activity grid update in real time.
+    if (status === 'active') {
+      broadcastPollUpdate(pollId, 'poll_activated').catch(console.error)
+      if (result.sessionId) {
+        broadcastActivityUpdate(result.sessionId).catch(console.error)
+      }
     }
 
     if (status === 'closed') {
       broadcastPollUpdate(pollId, 'poll_closed').catch(console.error)
+      if (result.sessionId) {
+        broadcastActivityUpdate(result.sessionId).catch(console.error)
+      }
     }
 
     if (status === 'archived') {
       broadcastPollUpdate(pollId, 'poll_archived').catch(console.error)
+      if (result.sessionId) {
+        broadcastActivityUpdate(result.sessionId).catch(console.error)
+      }
     }
 
     revalidatePath('/activities')
