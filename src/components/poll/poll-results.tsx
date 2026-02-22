@@ -6,6 +6,8 @@ import { useRealtimePoll } from '@/hooks/use-realtime-poll'
 import { AnimatedBarChart } from '@/components/poll/bar-chart'
 import { DonutChart } from '@/components/poll/donut-chart'
 import { RankedLeaderboard } from '@/components/poll/ranked-leaderboard'
+import { PresentationResults } from '@/components/poll/presentation-results'
+import { PresentationMode } from '@/components/poll/presentation-mode'
 import { PollReveal } from '@/components/poll/poll-reveal'
 import type { PollWithOptions } from '@/lib/poll/types'
 import type { BordaLeaderboardEntry } from '@/lib/poll/borda'
@@ -25,6 +27,9 @@ interface PollResultsProps {
   initialParticipantCount: number
   forceReveal?: boolean
   onRevealDismissed?: () => void
+  presenting?: boolean
+  pollTitle?: string
+  onExitPresentation?: () => void
 }
 
 /**
@@ -41,6 +46,9 @@ export function PollResults({
   initialParticipantCount,
   forceReveal,
   onRevealDismissed,
+  presenting,
+  pollTitle,
+  onExitPresentation,
 }: PollResultsProps) {
   const { voteCounts, totalVotes, pollStatus, bordaScores, transport, participantCount } =
     useRealtimePoll(poll.id, poll.sessionId)
@@ -204,6 +212,30 @@ export function PollResults({
             onRevealDismissed?.()
           }}
         />
+      )}
+
+      {/* Presentation mode overlay -- rendered here so bordaScores is in scope */}
+      {presenting && (
+        <PresentationMode
+          title={pollTitle ?? ''}
+          onExit={() => onExitPresentation?.()}
+        >
+          {poll.pollType === 'ranked' ? (
+            <PresentationResults
+              options={poll.options}
+              bordaScores={leaderboardEntries}
+              totalVoters={liveTotalVotes}
+            />
+          ) : (
+            <div className="space-y-4">
+              {chartType === 'bar' ? (
+                <AnimatedBarChart data={chartData} total={liveTotalVotes} />
+              ) : (
+                <DonutChart data={chartData} total={liveTotalVotes} />
+              )}
+            </div>
+          )}
+        </PresentationMode>
       )}
     </div>
   )

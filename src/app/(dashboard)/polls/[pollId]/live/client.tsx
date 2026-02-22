@@ -6,7 +6,6 @@ import Link from 'next/link'
 import { ArrowLeft, Maximize, XCircle, RotateCcw } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { PollResults } from '@/components/poll/poll-results'
-import { PresentationMode } from '@/components/poll/presentation-mode'
 import { QRCodeDisplay } from '@/components/teacher/qr-code-display'
 import { updatePollStatus } from '@/actions/poll'
 import type { PollWithOptions, PollStatus } from '@/lib/poll/types'
@@ -86,6 +85,9 @@ export function PollLiveClient({
       initialParticipantCount={initialParticipantCount}
       forceReveal={forceReveal}
       onRevealDismissed={() => setForceReveal(false)}
+      presenting={presenting}
+      pollTitle={poll.question}
+      onExitPresentation={() => setPresenting(false)}
     />
   )
 
@@ -163,15 +165,6 @@ export function PollLiveClient({
         </Button>
       </div>
 
-      {/* Presentation mode overlay */}
-      {presenting && (
-        <PresentationMode
-          title={poll.question}
-          onExit={() => setPresenting(false)}
-        >
-          {resultsContent}
-        </PresentationMode>
-      )}
     </div>
   )
 }
