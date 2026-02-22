@@ -45,13 +45,14 @@ export default async function BracketDetailPage({
   // Fetch teacher's active sessions for session assignment
   const sessions = await prisma.classSession.findMany({
     where: { teacherId: teacher.id, status: 'active' },
-    select: { id: true, code: true, createdAt: true },
+    select: { id: true, code: true, createdAt: true, name: true },
     orderBy: { createdAt: 'desc' },
   })
 
   const serializedSessions = sessions.map((s) => ({
     id: s.id,
     code: s.code,
+    name: s.name,
     createdAt: s.createdAt.toISOString(),
   }))
 

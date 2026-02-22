@@ -51,6 +51,7 @@ interface PollDetailData {
 interface SessionInfo {
   id: string
   code: string
+  name: string | null
   createdAt: string
 }
 
@@ -252,7 +253,7 @@ export function PollDetailView({ poll, sessions }: PollDetailViewProps) {
               <option value="">No session</option>
               {sessions.map((s) => (
                 <option key={s.id} value={s.id}>
-                  Session {s.code}
+                  {s.name ? `${s.name} (${s.code})` : `Unnamed Session (${s.code})`}
                 </option>
               ))}
             </select>

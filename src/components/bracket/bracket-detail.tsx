@@ -19,6 +19,7 @@ import { triggerSportsSync } from '@/actions/sports'
 interface SessionInfo {
   id: string
   code: string
+  name: string | null
   createdAt: string
 }
 
@@ -325,7 +326,7 @@ export function BracketDetail({ bracket, totalRounds, sessions, standings = [], 
                   <option value="">No session</option>
                   {sessions.map((s) => (
                     <option key={s.id} value={s.id}>
-                      Session {s.code}
+                      {s.name ? `${s.name} (${s.code})` : `Unnamed Session (${s.code})`}
                     </option>
                   ))}
                 </select>
@@ -410,7 +411,7 @@ export function BracketDetail({ bracket, totalRounds, sessions, standings = [], 
                 <option value="">No session</option>
                 {sessions.map((s) => (
                   <option key={s.id} value={s.id}>
-                    Session {s.code}
+                    {s.name ? `${s.name} (${s.code})` : `Unnamed Session (${s.code})`}
                   </option>
                 ))}
               </select>

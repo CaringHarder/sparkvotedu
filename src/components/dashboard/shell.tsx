@@ -143,9 +143,9 @@ export async function DashboardShell() {
                 className="group rounded-xl border bg-card p-4 shadow-sm transition-all duration-200 hover:border-brand-amber/40 hover:shadow-md"
               >
                 <div className="flex items-start justify-between">
-                  <p className="font-medium text-foreground">{session.name || 'Unnamed Session'}</p>
+                  <p className="font-medium text-foreground">{session.name || `Unnamed Session \u2014 ${new Date(session.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`}</p>
                   <span className="inline-flex items-center rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-medium text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400">
-                    Live
+                    Active
                   </span>
                 </div>
                 <p className="mt-2 font-mono text-xl font-bold tracking-wider text-brand-amber">

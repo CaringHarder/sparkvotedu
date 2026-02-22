@@ -170,7 +170,7 @@ export function TournamentBrowser({ sessions }: TournamentBrowserProps) {
         >
           {sessions.map((s) => (
             <option key={s.id} value={s.id}>
-              {s.name ? `${s.name} (${s.code})` : `Session ${s.code}`}
+              {s.name ? `${s.name} (${s.code})` : `Unnamed Session (${s.code})`}
             </option>
           ))}
         </select>
