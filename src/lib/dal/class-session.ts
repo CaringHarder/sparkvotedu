@@ -122,3 +122,26 @@ export async function getTeacherSessions(teacherId: string) {
     },
   })
 }
+
+/**
+ * Update a session's name.
+ * Verifies teacher ownership before updating.
+ * Empty/whitespace-only name clears back to null.
+ * Throws if session not found or teacher doesn't own it.
+ */
+export async function updateSessionName(
+  sessionId: string,
+  teacherId: string,
+  name: string
+) {
+  const session = await prisma.classSession.findFirst({
+    where: { id: sessionId, teacherId },
+  })
+  if (!session) {
+    throw new Error('Session not found or unauthorized')
+  }
+  return prisma.classSession.update({
+    where: { id: sessionId },
+    data: { name: name.trim() || null },
+  })
+}

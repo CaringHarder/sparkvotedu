@@ -6,6 +6,7 @@ import {
   endSession as endSessionDAL,
   getTeacherSessions as getTeacherSessionsDAL,
   getSessionWithParticipants as getSessionWithParticipantsDAL,
+  updateSessionName as updateSessionNameDAL,
 } from '@/lib/dal/class-session'
 import {
   banParticipant as banParticipantDAL,
@@ -164,5 +165,30 @@ export async function getSessionWithParticipants(sessionId: string) {
     }
   } catch {
     return { error: 'Failed to fetch session' }
+  }
+}
+
+/**
+ * Update a session's name.
+ * Requires teacher authentication and session ownership.
+ * Empty name clears back to null (unnamed).
+ */
+export async function updateSessionName(sessionId: string, name: string) {
+  const teacher = await getAuthenticatedTeacher()
+  if (!teacher) {
+    return { error: 'Not authenticated' }
+  }
+
+  try {
+    await updateSessionNameDAL(sessionId, teacher.id, name)
+    return { success: true }
+  } catch (error) {
+    if (
+      error instanceof Error &&
+      error.message === 'Session not found or unauthorized'
+    ) {
+      return { error: 'Session not found or unauthorized' }
+    }
+    return { error: 'Failed to update session name' }
   }
 }
