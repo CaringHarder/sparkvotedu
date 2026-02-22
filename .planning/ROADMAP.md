@@ -101,12 +101,13 @@ Plans:
   1. Ranked poll presentation mode shows all medal cards (gold, silver, bronze, and remaining items) with clearly readable text contrast, verifiable on a projector or low-brightness display
   2. Session selection dropdowns throughout the teacher dashboard display the session name (e.g., "Period 3 History") instead of session number or code, with a sensible fallback for unnamed sessions
   3. A teacher can edit the session name directly from the dashboard without navigating away
-  4. All activation buttons and status badges across brackets and polls use a single consistent term ("Go Live" / "Live") instead of mixed "Activate" / "Go Live" terminology
-**Plans**: TBD
+  4. All activation buttons and status badges across brackets and polls use a single consistent term ("Start" / "Active") instead of mixed "Activate" / "Go Live" terminology
+**Plans**: 3 plans
 
 Plans:
-- [ ] 22-01: TBD
-- [ ] 22-02: TBD
+- [ ] 22-01-PLAN.md -- Projector-optimized presentation results: PresentationResults component with high-contrast medal cards, large text, dark background
+- [ ] 22-02-PLAN.md -- Session name editing: updateSessionName DAL/action, EditableSessionName component, click-to-edit on session detail, fallback format with date
+- [ ] 22-03-PLAN.md -- Terminology unification + session name dropdowns: "Start"/"End" replaces "Activate"/"Go Live", session dropdowns show names, dashboard badge update
 
 ## Progress
 
@@ -134,5 +135,5 @@ Phases execute in numeric order: 19 -> 20 -> 21 -> 22
 | 18. Production Deploy | v1.1 | 1/1 | Complete | 2026-02-21 |
 | 19. Security & Schema Foundation | v1.2 | 2/2 | Complete | 2026-02-21 |
 | 20. Name-Based Student Identity | v1.2 | 3/3 | Complete | 2026-02-21 |
-| 21. Poll Realtime Bug Fix | 3/3 | Complete    | 2026-02-22 | 2026-02-22 |
-| 22. UX Polish | v1.2 | 0/TBD | Not started | - |
+| 21. Poll Realtime Bug Fix | v1.2 | 3/3 | Complete | 2026-02-22 |
+| 22. UX Polish | v1.2 | 0/3 | Not started | - |
