@@ -79,6 +79,7 @@ Recent decisions for v1.2:
 - Make sessions archiveable with delete and recover (area: ui) -- teachers need to archive, delete, or recover sessions
 - Unify celebration animations across all brackets and polls (area: ui) -- double elimination has the ideal 3-2-1 countdown + stars; polls and other brackets differ
 - Round robin simple vote should match single bracket simple mode (area: ui) -- round robin requires Next button and looks small vs single bracket's full-sized presentation
+- Round robin and predictive brackets dont auto-show on student dashboard (area: ui) -- requires manual refresh to see newly activated brackets
 
 ### Blockers/Concerns
 
