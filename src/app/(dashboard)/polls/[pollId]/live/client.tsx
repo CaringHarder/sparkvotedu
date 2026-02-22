@@ -132,7 +132,7 @@ export function PollLiveClient({
             className="gap-1.5"
           >
             <XCircle className="h-4 w-4" />
-            {isPending ? 'Closing...' : 'Close Poll'}
+            {isPending ? 'Ending...' : 'End Poll'}
           </Button>
         )}
 

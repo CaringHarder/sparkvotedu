@@ -66,7 +66,7 @@ const STATUS_ACTIONS: Record<
 > = {
   draft: [
     {
-      label: 'Activate',
+      label: 'Start',
       newStatus: 'active',
       className:
         'bg-green-600 text-white hover:bg-green-700',
@@ -74,7 +74,7 @@ const STATUS_ACTIONS: Record<
   ],
   active: [
     {
-      label: 'Close',
+      label: 'End',
       newStatus: 'closed',
       className:
         'bg-amber-600 text-white hover:bg-amber-700',
@@ -191,7 +191,7 @@ export function PollDetailView({ poll, sessions }: PollDetailViewProps) {
               className="inline-flex items-center gap-1.5 rounded-md bg-green-600 px-3 py-1.5 text-xs font-medium text-white shadow-sm transition-colors hover:bg-green-700"
             >
               <Radio className="h-3.5 w-3.5 animate-pulse" />
-              Go Live
+              View Live
             </Link>
           )}
 

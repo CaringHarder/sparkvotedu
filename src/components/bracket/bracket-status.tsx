@@ -78,7 +78,7 @@ export function BracketLifecycleControls({
             disabled={isPending}
             className="rounded-md bg-green-600 px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-green-700 disabled:opacity-50"
           >
-            {isPending ? 'Updating...' : 'Activate'}
+            {isPending ? 'Updating...' : 'Start'}
           </button>
         )}
 

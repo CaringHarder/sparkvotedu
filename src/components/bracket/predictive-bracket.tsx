@@ -636,7 +636,7 @@ function TeacherPredictiveView({
             disabled={isPending}
             className="rounded-md bg-green-600 px-3 py-1.5 text-xs font-medium text-white shadow-sm transition-colors hover:bg-green-700 disabled:opacity-50"
           >
-            Close Predictions & Go Live
+            Close Predictions & Start
           </button>
         )}
       </div>

@@ -159,14 +159,14 @@ export function BracketCard({ bracket }: BracketCardProps) {
 
       {/* Actions bar */}
       <div className="flex items-center gap-1.5 border-t px-3 py-2">
-        {/* Go Live — active brackets with a session */}
+        {/* View Live — active brackets */}
         {bracket.status === 'active' && (
           <Link
             href={`/brackets/${bracket.id}/live`}
             className="inline-flex items-center gap-1 rounded-md bg-green-600 px-2.5 py-1 text-xs font-medium text-white transition-colors hover:bg-green-700"
           >
             <Radio className="h-3 w-3 animate-pulse" />
-            Go Live
+            View Live
           </Link>
         )}
 
