@@ -77,7 +77,7 @@ export default async function PollLivePage({
       initialVoteCounts={initialVoteCounts}
       initialTotalVotes={initialTotalVotes}
       sessionCode={sessionCode}
-      participantCount={participantCount}
+      initialParticipantCount={participantCount}
     />
   )
 }

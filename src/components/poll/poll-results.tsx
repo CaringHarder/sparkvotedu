@@ -22,7 +22,7 @@ interface PollResultsProps {
   poll: PollWithOptions
   initialVoteCounts: Record<string, number>
   initialTotalVotes: number
-  connectedStudents: number
+  initialParticipantCount: number
   forceReveal?: boolean
   onRevealDismissed?: () => void
 }
@@ -38,11 +38,11 @@ export function PollResults({
   poll,
   initialVoteCounts,
   initialTotalVotes,
-  connectedStudents,
+  initialParticipantCount,
   forceReveal,
   onRevealDismissed,
 }: PollResultsProps) {
-  const { voteCounts, totalVotes, pollStatus, bordaScores, transport } =
+  const { voteCounts, totalVotes, pollStatus, bordaScores, transport, participantCount } =
     useRealtimePoll(poll.id)
 
   const [chartType, setChartType] = useState<ChartType>('bar')
@@ -52,6 +52,7 @@ export function PollResults({
   const liveVoteCounts = Object.keys(voteCounts).length > 0 ? voteCounts : initialVoteCounts
   const liveTotalVotes = totalVotes > 0 ? totalVotes : initialTotalVotes
   const liveStatus = pollStatus !== 'draft' ? pollStatus : poll.status
+  const liveParticipantCount = participantCount > 0 ? participantCount : initialParticipantCount
 
   // Trigger reveal from parent's forceReveal prop (eliminates race condition)
   useEffect(() => {
@@ -91,8 +92,8 @@ export function PollResults({
 
   // Participation rate
   const participationPct =
-    connectedStudents > 0
-      ? Math.round((liveTotalVotes / connectedStudents) * 100)
+    liveParticipantCount > 0
+      ? Math.round((liveTotalVotes / liveParticipantCount) * 100)
       : 0
 
   // Build BordaLeaderboardEntry[] from bordaScores (which are BordaScore[])
@@ -130,12 +131,13 @@ export function PollResults({
           <span className="text-sm font-medium capitalize">{liveStatus}</span>
         </div>
         <div className="h-4 w-px bg-border" />
-        <span className="text-sm text-muted-foreground">
-          {liveTotalVotes} of {connectedStudents} voted ({participationPct}%)
+        <span className="text-sm text-muted-foreground tabular-nums">
+          {liveTotalVotes} of {liveParticipantCount} voted ({participationPct}%)
         </span>
         {transport === 'polling' && (
-          <span className="rounded bg-amber-100 px-1.5 py-0.5 text-[10px] font-medium text-amber-700">
-            Polling mode
+          <span className="inline-flex items-center gap-1 rounded bg-amber-100 px-1.5 py-0.5 text-[10px] font-medium text-amber-700">
+            <span className="inline-block h-1.5 w-1.5 rounded-full bg-amber-500 animate-pulse" />
+            Near-realtime
           </span>
         )}
       </div>

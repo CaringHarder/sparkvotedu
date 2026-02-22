@@ -16,7 +16,7 @@ interface PollLiveClientProps {
   initialVoteCounts: Record<string, number>
   initialTotalVotes: number
   sessionCode: string | null
-  participantCount: number
+  initialParticipantCount: number
 }
 
 /**
@@ -33,7 +33,7 @@ export function PollLiveClient({
   initialVoteCounts,
   initialTotalVotes,
   sessionCode,
-  participantCount,
+  initialParticipantCount,
 }: PollLiveClientProps) {
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
@@ -83,7 +83,7 @@ export function PollLiveClient({
       poll={poll}
       initialVoteCounts={initialVoteCounts}
       initialTotalVotes={initialTotalVotes}
-      connectedStudents={participantCount}
+      initialParticipantCount={initialParticipantCount}
       forceReveal={forceReveal}
       onRevealDismissed={() => setForceReveal(false)}
     />
