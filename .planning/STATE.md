@@ -5,16 +5,16 @@
 See: .planning/PROJECT.md (updated 2026-02-21)
 
 **Core value:** Teachers can instantly engage any classroom through voting -- on any topic, in any format -- and see participation happen in real time.
-**Current focus:** Phase 20 -- Name-Based Student Identity (v1.2 Classroom Hardening)
+**Current focus:** Phase 21 -- Poll Realtime Bug Fix (v1.2 Classroom Hardening)
 
 ## Current Position
 
-Phase: 20 of 22 (Name-Based Student Identity)
-Plan: 3 of 3 in current phase (3 complete -- phase complete)
-Status: Phase 20 complete -- name-based student identity fully shipped
-Last activity: 2026-02-21 -- Completed 20-03 (teacher dashboard name mappings, student name edit)
+Phase: 21 of 22 (Poll Realtime Bug Fix)
+Plan: 1 of 2 in current phase (1 complete)
+Status: Executing Phase 21 -- plan 01 complete (broadcast wiring + participantCount)
+Last activity: 2026-02-21 -- Completed 21-01 (poll broadcast wiring fix + dynamic participant count)
 
-Progress: [#######################.......] 76% (115/115 plans -- 110 v1.0+v1.1, 2 Phase 19, 3 Phase 20 of 3 planned)
+Progress: [#######################.......] 77% (116/117 plans -- 110 v1.0+v1.1, 2 Phase 19, 3 Phase 20, 1 Phase 21 of 2 planned)
 
 ## Performance Metrics
 
@@ -58,6 +58,8 @@ Recent decisions for v1.2:
 - NameDisambiguation rendered inline in NameEntryForm (no separate route) for smooth flow
 - Two-click claim confirmation ("That's me!" -> "Confirm") to prevent accidental identity theft
 - Added firstName to bracket live page participant query to ensure ParticipationSidebar shows real names in bracket context
+- Poll lifecycle dual-channel broadcast pattern: poll:{pollId} + activities:{sessionId} for all transitions (Phase 21)
+- participantCount filters banned=false to match active participant denominator (Phase 21)
 
 ### Pending Todos
 
@@ -71,5 +73,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-02-21
-Stopped at: Phase 21 context gathered
-Resume: .planning/phases/21-poll-realtime-bug-fix/21-CONTEXT.md
+Stopped at: Completed 21-01-PLAN.md (poll broadcast wiring + participantCount)
+Resume: Execute 21-02-PLAN.md next
