@@ -81,12 +81,17 @@ export function SessionCreator() {
         <CardTitle>Create Session</CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="flex gap-3">
-          <Input
-            placeholder="Session name (optional)"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-          />
+        <div className="flex gap-3 items-end">
+          <div className="flex-1 space-y-1">
+            <label className="text-xs font-medium text-muted-foreground">
+              Session name <span className="text-muted-foreground/60">(optional)</span>
+            </label>
+            <Input
+              placeholder="e.g., Period 3 History"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+            />
+          </div>
           <Button onClick={handleCreate} disabled={isPending}>
             {isPending ? 'Creating...' : 'Create Session'}
           </Button>

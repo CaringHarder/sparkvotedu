@@ -8,7 +8,14 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { QRCodeDisplay } from '@/components/teacher/qr-code-display'
 import { StudentRoster } from '@/components/teacher/student-roster'
+import { EditableSessionName } from '@/components/teacher/editable-session-name'
 import Link from 'next/link'
+
+function getSessionFallback(createdAt: string): string {
+  const date = new Date(createdAt)
+  const formatted = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+  return `Unnamed Session \u2014 ${formatted}`
+}
 
 interface ParticipantData {
   id: string
@@ -59,7 +66,7 @@ export function SessionDetail({ session }: SessionDetailProps) {
           Sessions
         </Link>
         <span className="text-sm text-muted-foreground">/</span>
-        <span className="text-sm">{session.name || 'Unnamed Session'}</span>
+        <span className="text-sm">{session.name || getSessionFallback(session.createdAt)}</span>
       </div>
 
       <Card>
@@ -67,7 +74,12 @@ export function SessionDetail({ session }: SessionDetailProps) {
           <div className="flex items-start justify-between">
             <div className="space-y-1">
               <CardTitle className="text-xl">
-                {session.name || 'Unnamed Session'}
+                <EditableSessionName
+                  sessionId={session.id}
+                  value={session.name}
+                  fallback={getSessionFallback(session.createdAt)}
+                  className="text-xl font-bold"
+                />
               </CardTitle>
               <p className="text-sm text-muted-foreground">
                 Created {new Date(session.createdAt).toLocaleDateString()}

@@ -43,7 +43,7 @@ export default async function SessionsPage() {
                   <CardHeader>
                     <div className="flex items-start justify-between">
                       <CardTitle className="text-base">
-                        {session.name || 'Unnamed Session'}
+                        {session.name || `Unnamed Session \u2014 ${new Date(session.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`}
                       </CardTitle>
                       <Badge
                         variant={
