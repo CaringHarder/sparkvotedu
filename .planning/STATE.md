@@ -9,12 +9,12 @@ See: .planning/PROJECT.md (updated 2026-02-21)
 
 ## Current Position
 
-Phase: 21 of 22 (Poll Realtime Bug Fix)
-Plan: 1 of 2 in current phase (1 complete)
-Status: Executing Phase 21 -- plan 01 complete (broadcast wiring + participantCount)
-Last activity: 2026-02-21 -- Completed 21-01 (poll broadcast wiring fix + dynamic participant count)
+Phase: 21 of 22 (Poll Realtime Bug Fix) -- COMPLETE
+Plan: 2 of 2 in current phase (2 complete)
+Status: Phase 21 complete -- all poll realtime bugs fixed + teacher dashboard polished
+Last activity: 2026-02-21 -- Completed 21-02 (teacher dashboard dynamic participation + bar chart polish)
 
-Progress: [#######################.......] 77% (116/117 plans -- 110 v1.0+v1.1, 2 Phase 19, 3 Phase 20, 1 Phase 21 of 2 planned)
+Progress: [########################......] 78% (117/117 plans -- 110 v1.0+v1.1, 2 Phase 19, 3 Phase 20, 2 Phase 21)
 
 ## Performance Metrics
 
@@ -60,6 +60,9 @@ Recent decisions for v1.2:
 - Added firstName to bracket live page participant query to ensure ParticipationSidebar shows real names in bracket context
 - Poll lifecycle dual-channel broadcast pattern: poll:{pollId} + activities:{sessionId} for all transitions (Phase 21)
 - participantCount filters banned=false to match active participant denominator (Phase 21)
+- SSR fallback for participantCount: use initialParticipantCount until hook returns non-zero value (Phase 21)
+- Connection status label "Near-realtime" instead of "Polling mode" -- less alarming for teacher projecting screen (Phase 21)
+- Leading option uses border-transparent on non-leaders for consistent bar chart padding (Phase 21)
 
 ### Pending Todos
 
@@ -73,5 +76,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-02-21
-Stopped at: Completed 21-01-PLAN.md (poll broadcast wiring + participantCount)
-Resume: Execute 21-02-PLAN.md next
+Stopped at: Completed 21-02-PLAN.md (teacher dashboard dynamic participation + bar chart polish)
+Resume: Phase 21 complete. Ready for Phase 22 or further classroom hardening.
