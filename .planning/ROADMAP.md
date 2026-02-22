@@ -134,5 +134,5 @@ Phases execute in numeric order: 19 -> 20 -> 21 -> 22
 | 18. Production Deploy | v1.1 | 1/1 | Complete | 2026-02-21 |
 | 19. Security & Schema Foundation | v1.2 | 2/2 | Complete | 2026-02-21 |
 | 20. Name-Based Student Identity | v1.2 | 3/3 | Complete | 2026-02-21 |
-| 21. Poll Realtime Bug Fix | 3/3 | Complete   | 2026-02-22 | 2026-02-22 |
+| 21. Poll Realtime Bug Fix | 3/3 | Complete    | 2026-02-22 | 2026-02-22 |
 | 22. UX Polish | v1.2 | 0/TBD | Not started | - |
