@@ -31,7 +31,7 @@ Requirements for v1.2 Classroom Hardening. Each maps to roadmap phases.
 
 - [ ] **UX-01**: Presentation mode ranked poll cards have readable text contrast on all items (light and dark backgrounds)
 - [ ] **UX-02**: Session selection dropdowns show session name (not session number/code)
-- [ ] **UX-03**: Session name is editable from the teacher dashboard
+- [x] **UX-03**: Session name is editable from the teacher dashboard
 - [ ] **UX-04**: "Activate" and "Go Live" terminology is unified to a single clear term across all bracket types and polls
 
 ## Future Requirements
@@ -76,7 +76,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | FIX-02 | Phase 21 | Pending |
 | UX-01 | Phase 22 | Pending |
 | UX-02 | Phase 22 | Pending |
-| UX-03 | Phase 22 | Pending |
+| UX-03 | Phase 22 | Complete |
 | UX-04 | Phase 22 | Pending |
 
 **Coverage:**

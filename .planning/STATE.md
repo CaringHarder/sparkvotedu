@@ -5,16 +5,16 @@
 See: .planning/PROJECT.md (updated 2026-02-21)
 
 **Core value:** Teachers can instantly engage any classroom through voting -- on any topic, in any format -- and see participation happen in real time.
-**Current focus:** Phase 21 -- Poll Realtime Bug Fix (v1.2 Classroom Hardening)
+**Current focus:** Phase 22 -- UX Polish (v1.2 Classroom Hardening)
 
 ## Current Position
 
-Phase: 21 of 22 (Poll Realtime Bug Fix) -- COMPLETE
-Plan: 3 of 3 in current phase (3 complete)
-Status: Phase 21 complete -- all poll realtime bugs fixed + teacher dashboard polished + participant-join broadcast gap closed
-Last activity: 2026-02-21 -- Completed 21-03 (participant-join broadcast for stale denominator fix)
+Phase: 22 of 22 (UX Polish) -- IN PROGRESS
+Plan: 2 of 3 in current phase (2 complete)
+Status: Phase 22 plan 02 complete -- session name editing with click-to-edit inline component
+Last activity: 2026-02-22 -- Completed 22-02 (session name editing)
 
-Progress: [########################......] 78% (118/118 plans -- 110 v1.0+v1.1, 2 Phase 19, 3 Phase 20, 3 Phase 21)
+Progress: [#########################.....] 80% (120/121 plans -- 110 v1.0+v1.1, 2 Phase 19, 3 Phase 20, 3 Phase 21, 2 Phase 22)
 
 ## Performance Metrics
 
@@ -65,6 +65,8 @@ Recent decisions for v1.2:
 - Leading option uses border-transparent on non-leaders for consistent bar chart padding (Phase 21)
 - broadcastParticipantJoined uses activities:{sessionId} channel with distinct event name participant_joined (Phase 21)
 - useRealtimePoll subscribes to activities channel for participant_joined to re-fetch participantCount on student join (Phase 21)
+- Blur-to-save pattern (no Save/Cancel buttons) for inline session name editing -- minimal friction (Phase 22)
+- Empty name submission clears to null via DAL trim -- unnamed sessions show "Unnamed Session -- date" fallback (Phase 22)
 
 ### Pending Todos
 
@@ -77,6 +79,6 @@ Recent decisions for v1.2:
 
 ## Session Continuity
 
-Last session: 2026-02-21
-Stopped at: Phase 22 context gathered
-Resume: .planning/phases/22-ux-polish/22-CONTEXT.md — ready for /gsd:plan-phase 22
+Last session: 2026-02-22
+Stopped at: Completed 22-02-PLAN.md (session name editing)
+Resume: Continue with 22-03-PLAN.md
