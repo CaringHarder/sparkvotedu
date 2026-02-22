@@ -123,6 +123,24 @@ export async function broadcastActivityUpdate(
   })
 }
 
+/**
+ * Broadcast a participant-joined event to a session channel.
+ *
+ * Sent after a new participant is created. The teacher's poll live
+ * dashboard listens for this event to re-fetch participantCount,
+ * updating the "X of Y voted" denominator in real time.
+ * Payload is empty -- the hook re-fetches from the server.
+ */
+export async function broadcastParticipantJoined(
+  sessionId: string
+): Promise<void> {
+  await broadcastMessage({
+    topic: `activities:${sessionId}`,
+    event: 'participant_joined',
+    payload: {},
+  })
+}
+
 // ---------------------------------------------------------------------------
 // Poll broadcast functions
 // ---------------------------------------------------------------------------

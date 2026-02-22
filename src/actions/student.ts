@@ -17,6 +17,7 @@ import {
   rerollParticipantName,
   generateRecoveryCode as generateRecoveryCodeDAL,
 } from '@/lib/dal/student-session'
+import { broadcastParticipantJoined } from '@/lib/realtime/broadcast'
 import { firstNameSchema } from '@/lib/validations/first-name'
 import type {
   JoinResult,
@@ -149,6 +150,7 @@ export async function joinSession(input: {
     deviceId,
     fingerprint
   )
+  broadcastParticipantJoined(session.id).catch(() => {})
   return {
     participant: toParticipantData(participant),
     session: sessionInfo,
@@ -294,6 +296,7 @@ export async function joinSessionByName(input: {
       undefined,
       firstName
     )
+    broadcastParticipantJoined(session.id).catch(() => {})
     return {
       participant: toParticipantData(participant),
       session: sessionInfo,
