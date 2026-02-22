@@ -76,6 +76,7 @@ Recent decisions for v1.2:
 ### Pending Todos
 
 - Fix go live button in polling (area: ui) -- students can see/vote on poll before teacher clicks Go Live
+- Make sessions archiveable with delete and recover (area: ui) -- teachers need to archive, delete, or recover sessions
 
 ### Blockers/Concerns
 
