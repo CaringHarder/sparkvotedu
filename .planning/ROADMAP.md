@@ -43,7 +43,7 @@
 
 - [x] **Phase 19: Security & Schema Foundation** - RLS on all 12 tables + additive schema migration for name-based identity (completed 2026-02-21)
 - [x] **Phase 20: Name-Based Student Identity** - Students join with first name instead of device fingerprint (completed 2026-02-21)
-- [x] **Phase 21: Poll Realtime Bug Fix** - Teacher poll dashboard updates in real-time when students vote (completed 2026-02-22)
+- [ ] **Phase 21: Poll Realtime Bug Fix** - Teacher poll dashboard updates in real-time when students vote (gap closure in progress)
 - [ ] **Phase 22: UX Polish** - Presentation contrast, session naming, and terminology unification
 
 ## Phase Details
@@ -86,11 +86,12 @@ Plans:
 **Success Criteria** (what must be TRUE):
   1. When a student submits a poll vote, the teacher's live dashboard updates within 2 seconds without manual refresh
   2. When a teacher activates a poll, the poll channel receives the activation broadcast (not just the activity channel), and any student or teacher client subscribed to that poll sees the status change
-**Plans**: 2 plans
+**Plans**: 3 plans
 
 Plans:
-- [ ] 21-01-PLAN.md -- Server-side bug fixes: dual-channel broadcast on poll activation/close/archive (FIX-02), dynamic participantCount in poll state API and useRealtimePoll hook (FIX-01 foundation)
-- [ ] 21-02-PLAN.md -- Teacher dashboard UI: dynamic participation indicator, leading-option bar chart styling, smooth vote count transitions, enhanced connection status indicator
+- [x] 21-01-PLAN.md -- Server-side bug fixes: dual-channel broadcast on poll activation/close/archive (FIX-02), dynamic participantCount in poll state API and useRealtimePoll hook (FIX-01 foundation)
+- [x] 21-02-PLAN.md -- Teacher dashboard UI: dynamic participation indicator, leading-option bar chart styling, smooth vote count transitions, enhanced connection status indicator
+- [ ] 21-03-PLAN.md -- Gap closure: broadcast participant-join events and subscribe useRealtimePoll to update participation denominator dynamically
 
 ### Phase 22: UX Polish
 **Goal**: Classroom presentation is readable on projectors, sessions are identifiable by name, and activation terminology is consistent across the product
@@ -131,7 +132,7 @@ Phases execute in numeric order: 19 -> 20 -> 21 -> 22
 | 16. Legal Pages | v1.1 | 1/1 | Complete | 2026-02-16 |
 | 17. Admin Panel | v1.1 | 3/3 | Complete | 2026-02-17 |
 | 18. Production Deploy | v1.1 | 1/1 | Complete | 2026-02-21 |
-| 19. Security & Schema Foundation | 2/2 | Complete    | 2026-02-21 | - |
-| 20. Name-Based Student Identity | 3/3 | Complete    | 2026-02-21 | - |
-| 21. Poll Realtime Bug Fix | 2/2 | Complete   | 2026-02-22 | - |
+| 19. Security & Schema Foundation | v1.2 | 2/2 | Complete | 2026-02-21 |
+| 20. Name-Based Student Identity | v1.2 | 3/3 | Complete | 2026-02-21 |
+| 21. Poll Realtime Bug Fix | v1.2 | 2/3 | Gap closure | 2026-02-22 |
 | 22. UX Polish | v1.2 | 0/TBD | Not started | - |
