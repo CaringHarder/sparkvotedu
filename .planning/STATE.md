@@ -71,5 +71,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-02-21
-Stopped at: Completed 20-03-PLAN.md (Phase 20 complete)
-Resume: Begin Phase 21 planning
+Stopped at: Phase 21 context gathered
+Resume: .planning/phases/21-poll-realtime-bug-fix/21-CONTEXT.md
