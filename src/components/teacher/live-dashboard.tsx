@@ -320,19 +320,53 @@ export function LiveDashboard({
     setShowCelebration(true)
   }, [])
 
-  // Fallback: if bracket completed but reveal never triggered, go straight to celebration
+  // Fallback: if bracket completed but reveal never triggered, show WinnerReveal then celebration
   // DE brackets excluded -- they use dedicated DE fallback (Path 2) with WinnerReveal -> handleRevealComplete -> CelebrationScreen
   useEffect(() => {
     if (bracketCompleted && !revealState && !hasShownRevealRef.current && !isDoubleElim) {
+      hasShownRevealRef.current = true
+      // RR and SE: compute champion + runner-up from matchup results
       const timer = setTimeout(() => {
-        // Double-check: if reveal path already handled celebration, skip fallback
-        if (!hasShownRevealRef.current) {
-          setShowCelebration(true)
+        // For RR: derive winner from matchup wins; for SE: use final matchup winner
+        let champ = 'Champion'
+        let runnerUp = ''
+        if (isRoundRobin) {
+          // Compute wins from decided matchups
+          const wins = new Map<string, { count: number; name: string }>()
+          for (const m of currentMatchups) {
+            if (m.status === 'decided' && m.winner) {
+              const prev = wins.get(m.winner.id) ?? { count: 0, name: m.winner.name }
+              wins.set(m.winner.id, { count: prev.count + 1, name: m.winner.name })
+            }
+          }
+          const sorted = [...wins.entries()].sort((a, b) => b[1].count - a[1].count)
+          champ = sorted[0]?.[1].name ?? 'Champion'
+          runnerUp = sorted[1]?.[1].name ?? ''
+        } else {
+          // SE: final matchup
+          const finalMatchup = currentMatchups.find(
+            (m) => m.round === totalRounds && m.position === 1
+          )
+          champ = finalMatchup?.winner?.name ?? 'Champion'
+          // Runner-up is the other entrant in the final
+          const winnerId = finalMatchup?.winnerId
+          if (finalMatchup?.entrant1Id === winnerId) {
+            runnerUp = finalMatchup?.entrant2?.name ?? ''
+          } else {
+            runnerUp = finalMatchup?.entrant1?.name ?? ''
+          }
         }
+        setRevealState({
+          winnerName: champ,
+          entrant1Name: champ,
+          entrant2Name: runnerUp,
+          entrant1Votes: 0,
+          entrant2Votes: 0,
+        })
       }, 2000)
       return () => clearTimeout(timer)
     }
-  }, [bracketCompleted, revealState, isDoubleElim])
+  }, [bracketCompleted, revealState, isDoubleElim, isRoundRobin, currentMatchups, totalRounds])
 
   // Get voter IDs for selected matchup
   const currentVoterIds = useMemo(() => {

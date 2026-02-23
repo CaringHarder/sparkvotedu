@@ -39,6 +39,7 @@ export function AdvancedVotingView({
   const [votes, setVotes] = useState<Record<string, string | null>>(initialVotes)
   const [isPending, startTransition] = useTransition()
   const prevMatchupStatusRef = useRef<Record<string, string>>({})
+  const hasShownRevealRef = useRef(false)
 
   // Real-time bracket updates
   const { matchups: realtimeMatchups, bracketCompleted, transport } =
@@ -63,6 +64,7 @@ export function AdvancedVotingView({
         matchup.round === totalRounds &&
         matchup.position === 1
       ) {
+        hasShownRevealRef.current = true
         setRevealState({
           winnerName: matchup.winner.name,
           entrant1Name: matchup.entrant1?.name ?? 'TBD',
@@ -77,13 +79,23 @@ export function AdvancedVotingView({
     prevMatchupStatusRef.current = newStatuses
   }, [currentMatchups, totalRounds])
 
-  // Show celebration after bracket completes
+  // Fallback: Show WinnerReveal when bracket completes but status-transition detection missed it
   useEffect(() => {
-    if (bracketCompleted) {
-      const timer = setTimeout(() => setShowCelebration(true), 4000)
+    if (bracketCompleted && !revealState && !hasShownRevealRef.current && !showCelebration) {
+      hasShownRevealRef.current = true
+      const finalMatchup = currentMatchups.find(
+        (m) => m.round === totalRounds && m.position === 1
+      )
+      const timer = setTimeout(() => {
+        setRevealState({
+          winnerName: finalMatchup?.winner?.name ?? 'Champion',
+          entrant1Name: finalMatchup?.entrant1?.name ?? 'TBD',
+          entrant2Name: finalMatchup?.entrant2?.name ?? 'TBD',
+        })
+      }, 2000)
       return () => clearTimeout(timer)
     }
-  }, [bracketCompleted])
+  }, [bracketCompleted, revealState, showCelebration, currentMatchups, totalRounds])
 
   // Derive champion name
   const championName = (() => {
@@ -126,7 +138,10 @@ export function AdvancedVotingView({
         <WinnerReveal
           entrant1Name={revealState.entrant1Name}
           entrant2Name={revealState.entrant2Name}
-          onComplete={() => setRevealState(null)}
+          onComplete={() => {
+            setRevealState(null)
+            setShowCelebration(true)
+          }}
         />
       )}
 

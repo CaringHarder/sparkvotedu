@@ -552,6 +552,10 @@ function RRLiveView({
   const [votedMatchups, setVotedMatchups] = useState<Record<string, string>>({})
   const [activeTab, setActiveTab] = useState<'voting' | 'results'>('voting')
   const [showCelebration, setShowCelebration] = useState(false)
+  const [revealState, setRevealState] = useState<{
+    entrant1Name: string
+    entrant2Name: string
+  } | null>(null)
 
   // Derive simple mode flag
   const isSimpleMode = bracket.roundRobinVotingStyle === 'simple'
@@ -581,13 +585,34 @@ function RRLiveView({
     return Math.max(...activeRounds)
   }, [currentMatchups])
 
-  // Show CelebrationScreen when bracket completes (RR uses direct celebration, no WinnerReveal)
+  // Show WinnerReveal countdown when bracket completes, then chain to CelebrationScreen
   useEffect(() => {
-    if (bracketCompleted) {
-      const timer = setTimeout(() => setShowCelebration(true), 2000)
+    if (bracketCompleted && !revealState && !showCelebration) {
+      // Compute top 2 entrants from decided matchup wins for the reveal display
+      const decidedMatchups = currentMatchups.filter((m) => m.status === 'decided')
+      const wins = new Map<string, { count: number; name: string }>()
+      for (const m of decidedMatchups) {
+        if (m.winner) {
+          const prev = wins.get(m.winner.id) ?? { count: 0, name: m.winner.name }
+          wins.set(m.winner.id, { count: prev.count + 1, name: m.winner.name })
+        }
+      }
+      const sorted = [...wins.entries()].sort((a, b) => b[1].count - a[1].count)
+      const top1 = sorted[0]?.[1].name ?? 'Finalist'
+      const top2 = sorted[1]?.[1].name ?? 'Finalist'
+
+      const timer = setTimeout(() => {
+        setRevealState({ entrant1Name: top1, entrant2Name: top2 })
+      }, 2000)
       return () => clearTimeout(timer)
     }
-  }, [bracketCompleted])
+  }, [bracketCompleted, revealState, showCelebration, currentMatchups])
+
+  // Chain WinnerReveal -> CelebrationScreen
+  const handleRevealComplete = useCallback(() => {
+    setRevealState(null)
+    setShowCelebration(true)
+  }, [])
 
   // Compute champion name from matchup wins for CelebrationScreen
   const championName = useMemo(() => {
@@ -652,6 +677,15 @@ function RRLiveView({
 
   return (
     <div className="px-4 py-6">
+      {/* Winner Reveal countdown overlay */}
+      {revealState && (
+        <WinnerReveal
+          entrant1Name={revealState.entrant1Name}
+          entrant2Name={revealState.entrant2Name}
+          onComplete={handleRevealComplete}
+        />
+      )}
+
       {/* Celebration overlay */}
       {showCelebration && (
         <CelebrationScreen
