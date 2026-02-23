@@ -3,8 +3,10 @@
 import { useEffect, useState, useCallback, useTransition, useRef, useMemo } from 'react'
 import { useParams } from 'next/navigation'
 import Link from 'next/link'
+import { motion, AnimatePresence } from 'motion/react'
 import { SimpleVotingView } from '@/components/student/simple-voting-view'
 import { AdvancedVotingView } from '@/components/student/advanced-voting-view'
+import { MatchupVoteCard } from '@/components/bracket/matchup-vote-card'
 import { DoubleElimDiagram } from '@/components/bracket/double-elim-diagram'
 import { RoundRobinStandings } from '@/components/bracket/round-robin-standings'
 import { RoundRobinMatchups } from '@/components/bracket/round-robin-matchups'
@@ -551,9 +553,24 @@ function RRLiveView({
   const [activeTab, setActiveTab] = useState<'voting' | 'results'>('voting')
   const [showCelebration, setShowCelebration] = useState(false)
 
+  // Derive simple mode flag
+  const isSimpleMode = bracket.roundRobinVotingStyle === 'simple'
+
   // Real-time bracket updates
   const { matchups: realtimeMatchups, transport, bracketCompleted } = useRealtimeBracket(bracket.id)
   const currentMatchups = (realtimeMatchups as MatchupData[] | null) ?? bracket.matchups
+
+  // Votable matchups for simple mode: currently voting, sorted by round then position
+  const votableMatchups = useMemo(() => {
+    return currentMatchups
+      .filter((m) => m.status === 'voting')
+      .sort((a, b) => {
+        const roundA = a.roundRobinRound ?? a.round
+        const roundB = b.roundRobinRound ?? b.round
+        if (roundA !== roundB) return roundA - roundB
+        return a.position - b.position
+      })
+  }, [currentMatchups])
 
   // Fix currentRound: highest round with non-pending matchups (matches teacher LiveDashboard logic)
   const currentRound = useMemo(() => {
@@ -628,6 +645,11 @@ function RRLiveView({
     [participantId]
   )
 
+  // Track vote in parent state without calling server (MatchupVoteCard handles server call via useVote)
+  const handleVoteTracked = useCallback((matchupId: string, entrantId: string) => {
+    setVotedMatchups((prev) => ({ ...prev, [matchupId]: entrantId }))
+  }, [])
+
   return (
     <div className="px-4 py-6">
       {/* Celebration overlay */}
@@ -672,22 +694,151 @@ function RRLiveView({
 
       {/* Tab content */}
       {activeTab === 'voting' ? (
-        <RoundRobinMatchups
-          matchups={currentMatchups}
-          entrants={bracket.entrants}
-          currentRound={currentRound}
-          pacing={(bracket.roundRobinPacing ?? 'round_by_round') as 'round_by_round' | 'all_at_once'}
-          isTeacher={false}
-          onStudentVote={handleStudentVote}
-          votedMatchups={votedMatchups}
-          votingStyle={(bracket.roundRobinVotingStyle ?? 'simple') as 'simple' | 'advanced'}
-        />
+        isSimpleMode ? (
+          <RRSimpleVoting
+            matchups={votableMatchups}
+            allMatchups={currentMatchups}
+            participantId={participantId}
+            bracketId={bracket.id}
+            votedMatchups={votedMatchups}
+            onVoteTracked={handleVoteTracked}
+          />
+        ) : (
+          <RoundRobinMatchups
+            matchups={currentMatchups}
+            entrants={bracket.entrants}
+            currentRound={currentRound}
+            pacing={(bracket.roundRobinPacing ?? 'round_by_round') as 'round_by_round' | 'all_at_once'}
+            isTeacher={false}
+            onStudentVote={handleStudentVote}
+            votedMatchups={votedMatchups}
+            votingStyle="advanced"
+          />
+        )
       ) : (
         <RoundRobinStandings
           standings={standings}
           isLive={bracket.roundRobinStandingsMode === 'live'}
         />
       )}
+    </div>
+  )
+}
+
+/**
+ * RRSimpleVoting: Round-robin simple mode voting with full-sized MatchupVoteCard presentation.
+ *
+ * Shows one matchup at a time with animated slide transitions, identical UX to
+ * single elimination SimpleVotingView. After voting, shows a "Vote Submitted!"
+ * confirmation card before auto-advancing to the next unvoted matchup.
+ *
+ * MatchupVoteCard handles server-side vote submission via its internal useVote hook.
+ * onVoteTracked syncs parent state for tracking without double-submitting.
+ */
+function RRSimpleVoting({
+  matchups,
+  allMatchups: _allMatchups,
+  participantId,
+  bracketId: _bracketId,
+  votedMatchups,
+  onVoteTracked,
+}: {
+  matchups: MatchupData[]
+  allMatchups: MatchupData[]
+  participantId: string
+  bracketId: string
+  votedMatchups: Record<string, string>
+  onVoteTracked: (matchupId: string, entrantId: string) => void
+}) {
+  const [currentIndex, setCurrentIndex] = useState(0)
+  const [showConfirmation, setShowConfirmation] = useState(false)
+
+  // Filter to unvoted matchups (skip already-voted ones)
+  const unvotedMatchups = matchups.filter((m) => !votedMatchups[m.id])
+
+  // Clamp index
+  const safeIndex = Math.max(0, Math.min(currentIndex, unvotedMatchups.length - 1))
+  const currentMatchup = unvotedMatchups[safeIndex]
+
+  // All voted: show waiting state
+  if (unvotedMatchups.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center py-8 text-center">
+        <div className="mb-3 flex h-16 w-16 items-center justify-center rounded-full bg-green-100 dark:bg-green-900/30">
+          <svg viewBox="0 0 20 20" fill="currentColor" className="h-8 w-8 text-green-600 dark:text-green-400">
+            <path fillRule="evenodd" d="M16.704 4.153a.75.75 0 01.143 1.052l-8 10.5a.75.75 0 01-1.127.075l-4.5-4.5a.75.75 0 011.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 011.05-.143z" clipRule="evenodd" />
+          </svg>
+        </div>
+        <p className="text-lg font-semibold text-foreground">All votes in!</p>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Waiting for your teacher to advance the round...
+        </p>
+        <div className="mt-4 h-1.5 w-24 overflow-hidden rounded-full bg-muted">
+          <div className="h-full w-full animate-pulse rounded-full bg-primary/40" />
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <div className="mx-auto max-w-md">
+      {/* Progress indicator */}
+      {!showConfirmation && (
+        <p className="mb-4 text-center text-sm text-muted-foreground">
+          Matchup {safeIndex + 1} of {unvotedMatchups.length}
+        </p>
+      )}
+
+      {/* Animated card area */}
+      <div className="flex justify-center overflow-hidden">
+        <AnimatePresence mode="wait">
+          {showConfirmation ? (
+            <motion.div
+              key={`confirm-${safeIndex}`}
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ x: -300, opacity: 0 }}
+              transition={{ duration: 0.3, ease: 'easeOut' }}
+              className="w-full max-w-md"
+            >
+              <div className="flex min-h-[140px] flex-col items-center justify-center rounded-xl border bg-card p-8 shadow-sm">
+                <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
+                  <svg viewBox="0 0 20 20" fill="currentColor" className="h-6 w-6 text-primary">
+                    <path fillRule="evenodd" d="M16.704 4.153a.75.75 0 01.143 1.052l-8 10.5a.75.75 0 01-1.127.075l-4.5-4.5a.75.75 0 011.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 011.05-.143z" clipRule="evenodd" />
+                  </svg>
+                </div>
+                <p className="text-lg font-semibold text-foreground">Vote Submitted!</p>
+              </div>
+            </motion.div>
+          ) : currentMatchup ? (
+            <motion.div
+              key={`matchup-${currentMatchup.id}`}
+              initial={{ x: 300, opacity: 0 }}
+              animate={{ x: 0, opacity: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              transition={{ duration: 0.3, ease: 'easeOut' }}
+              className="w-full"
+            >
+              <MatchupVoteCard
+                key={currentMatchup.id}
+                matchup={currentMatchup}
+                participantId={participantId}
+                initialVote={votedMatchups[currentMatchup.id] ?? null}
+                onVoteSubmitted={() => {
+                  // MatchupVoteCard's useVote hook already submitted to server
+                  // Just sync parent state for tracking
+                  onVoteTracked(currentMatchup.id, 'tracked')
+                  setShowConfirmation(true)
+                  setTimeout(() => {
+                    setShowConfirmation(false)
+                    setCurrentIndex((i) => i + 1)
+                  }, 1200)
+                }}
+              />
+            </motion.div>
+          ) : null}
+        </AnimatePresence>
+      </div>
     </div>
   )
 }
