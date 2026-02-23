@@ -10,11 +10,11 @@ See: .planning/PROJECT.md (updated 2026-02-21)
 ## Current Position
 
 Phase: 24 of 24 (Bracket & Poll UX Consistency)
-Plan: 1 of 3 in current phase (24-01 complete)
+Plan: 2 of 3 in current phase (24-01, 24-02 complete)
 Status: Executing Phase 24
-Last activity: 2026-02-23 -- Completed 24-01 (bracket & prediction broadcast)
+Last activity: 2026-02-23 -- Completed 24-02 (RR simple mode full-sized card presentation)
 
-Progress: [##############################] 100% (125/127 plans -- 110 v1.0+v1.1, 2 Phase 19, 3 Phase 20, 3 Phase 21, 3 Phase 22, 3 Phase 23, 1 Phase 24)
+Progress: [##############################] 100% (126/127 plans -- 110 v1.0+v1.1, 2 Phase 19, 3 Phase 20, 3 Phase 21, 3 Phase 22, 3 Phase 23, 2 Phase 24)
 
 ## Performance Metrics
 
@@ -84,6 +84,8 @@ Recent decisions for v1.2:
 - Delete button variant="secondary" not variant="destructive" -- classroom tool uses subtle styling, two-step safety net provides protection (Phase 23)
 - Only broadcast for active/completed bracket statuses -- draft transitions do not affect student dashboard (Phase 24)
 - Dynamic prisma import in prediction.ts following existing file convention (no top-level prisma import) (Phase 24)
+- MatchupVoteCard handles server vote via useVote; parent tracks state via handleVoteTracked to avoid double-voting (Phase 24)
+- Advanced mode explicitly set when not in simple mode (votingStyle='advanced') for clear separation (Phase 24)
 
 ### Pending Todos
 
@@ -106,6 +108,6 @@ Recent decisions for v1.2:
 ## Session Continuity
 
 Last session: 2026-02-23
-Stopped at: Completed 24-01-PLAN.md (bracket & prediction broadcast)
-Resume: Continue with 24-02-PLAN.md
-Resume file: .planning/phases/24-bracket-poll-ux-consistency/24-01-SUMMARY.md
+Stopped at: Completed 24-02-PLAN.md (RR simple mode full-sized card presentation)
+Resume: Continue with 24-03-PLAN.md
+Resume file: .planning/phases/24-bracket-poll-ux-consistency/24-02-SUMMARY.md
