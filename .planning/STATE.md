@@ -10,11 +10,11 @@ See: .planning/PROJECT.md (updated 2026-02-21)
 ## Current Position
 
 Phase: 23 of 23 (Session Archiving)
-Plan: 1 of 3 in current phase (23-01 complete)
+Plan: 2 of 3 in current phase (23-01, 23-02 complete)
 Status: Executing Phase 23 plans
-Last activity: 2026-02-23 -- Completed 23-01 (schema + DAL + server actions)
+Last activity: 2026-02-23 -- Completed 23-02 (session card menu + archive dialog UI)
 
-Progress: [##############################] 100% (122/124 plans -- 110 v1.0+v1.1, 2 Phase 19, 3 Phase 20, 3 Phase 21, 3 Phase 22, 1 Phase 23)
+Progress: [##############################] 100% (123/124 plans -- 110 v1.0+v1.1, 2 Phase 19, 3 Phase 20, 3 Phase 21, 3 Phase 22, 2 Phase 23)
 
 ## Performance Metrics
 
@@ -76,6 +76,9 @@ Recent decisions for v1.2:
 - Recovered sessions return as ended -- archiving auto-ends activities, recovery is for data access not resuming (Phase 23)
 - Only archived sessions can be permanently deleted -- two-step safety net per locked decision (Phase 23)
 - Explicit bracket/poll deletion in transaction -- optional sessionId with no cascade means orphaned without explicit deletion (Phase 23)
+- Server component stays server -- SessionCardMenu is client, revalidatePath handles refresh without client wrapper (Phase 23)
+- Absolute-positioned menu overlay rather than client wrapper component -- simpler architecture, no extra file (Phase 23)
+- Simple confirm dialog (Cancel/Action) without type-to-confirm for non-destructive operations like archive (Phase 23)
 
 ### Pending Todos
 
@@ -97,6 +100,6 @@ Recent decisions for v1.2:
 ## Session Continuity
 
 Last session: 2026-02-23
-Stopped at: Completed 23-01-PLAN.md (schema + DAL + server actions)
-Resume: Execute 23-02-PLAN.md (UI components for session archiving)
-Resume file: .planning/phases/23-session-archiving/23-01-SUMMARY.md
+Stopped at: Completed 23-02-PLAN.md (session card menu + archive confirmation dialog)
+Resume: Execute 23-03-PLAN.md (archived sessions page + student access control)
+Resume file: .planning/phases/23-session-archiving/23-02-SUMMARY.md

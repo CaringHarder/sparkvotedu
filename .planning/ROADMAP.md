@@ -138,7 +138,7 @@ Phases execute in numeric order: 19 -> 20 -> 21 -> 22 -> 23
 | 20. Name-Based Student Identity | v1.2 | 3/3 | Complete | 2026-02-21 |
 | 21. Poll Realtime Bug Fix | v1.2 | 3/3 | Complete | 2026-02-22 |
 | 22. UX Polish | v1.2 | 3/3 | Complete | 2026-02-22 |
-| 23. Session Archiving | 1/3 | In Progress|  | - |
+| 23. Session Archiving | 2/3 | In Progress|  | - |
 
 ### Phase 23: Session Archiving
 **Goal**: Teachers can archive, recover, and permanently delete sessions -- includes archivedAt schema migration, archive/unarchive actions, archived sessions tab/filter, permanent delete with cascade, and session list filtering to hide archived by default

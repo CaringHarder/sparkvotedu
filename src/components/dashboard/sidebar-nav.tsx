@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { LayoutDashboard, Users, Zap, Trophy, BarChart3, CreditCard, LineChart } from 'lucide-react'
+import { LayoutDashboard, Users, Archive, Zap, Trophy, BarChart3, CreditCard, LineChart } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 
 interface NavItem {
@@ -22,6 +22,7 @@ interface NavSection {
 const navItems: NavItem[] = [
   { label: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
   { label: 'Sessions', href: '/sessions', icon: Users },
+  { label: 'Archived', href: '/sessions/archived', icon: Archive },
 ]
 
 const activitiesSection: NavSection = {
@@ -48,8 +49,17 @@ export function SidebarNav() {
   const pathname = usePathname()
 
   const renderNavLink = (item: NavItem) => {
+    // Active if pathname matches AND no other navItem is a more specific prefix match.
+    // This ensures "Sessions" (/sessions) is active for /sessions and /sessions/123
+    // but NOT for /sessions/archived (because "Archived" is a more specific match).
     const isActive =
-      pathname === item.href || pathname.startsWith(item.href + '/')
+      (pathname === item.href || pathname.startsWith(item.href + '/')) &&
+      !navItems.some(
+        (other) =>
+          other.href !== item.href &&
+          other.href.startsWith(item.href) &&
+          (pathname === other.href || pathname.startsWith(other.href + '/'))
+      )
     const Icon = item.icon
 
     return (
