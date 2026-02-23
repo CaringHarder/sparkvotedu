@@ -24,6 +24,7 @@ import {
   canUseEntrantCount,
 } from '@/lib/gates/features'
 import type { SubscriptionTier } from '@/lib/gates/tiers'
+import { broadcastActivityUpdate } from '@/lib/realtime/broadcast'
 import { revalidatePath } from 'next/cache'
 import { z } from 'zod'
 
@@ -147,6 +148,18 @@ export async function updateBracketStatus(input: unknown) {
 
     revalidatePath('/brackets')
     revalidatePath(`/brackets/${parsed.data.bracketId}`)
+
+    // Dual-channel broadcast: notify session activity channel (Phase 21 pattern)
+    // This enables useRealtimeActivities on student dashboard to auto-update
+    if (['active', 'completed'].includes(parsed.data.status)) {
+      const bracket = await prisma.bracket.findUnique({
+        where: { id: parsed.data.bracketId },
+        select: { sessionId: true },
+      })
+      if (bracket?.sessionId) {
+        broadcastActivityUpdate(bracket.sessionId).catch(console.error)
+      }
+    }
 
     return { success: true }
   } catch {
