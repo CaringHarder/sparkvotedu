@@ -4,7 +4,7 @@
 
 - **v1.0 MVP** -- Phases 1-11 (shipped 2026-02-16) | [Archive](milestones/v1.0-ROADMAP.md)
 - **v1.1 Production Readiness & Deploy** -- Phases 14-18 (shipped 2026-02-21) | [Archive](milestones/v1.1-ROADMAP.md)
-- **v1.2 Classroom Hardening** -- Phases 19-23 (in progress)
+- **v1.2 Classroom Hardening** -- Phases 19-23 (completed 2026-02-23)
 
 ## Phases
 
@@ -45,7 +45,7 @@
 - [x] **Phase 20: Name-Based Student Identity** - Students join with first name instead of device fingerprint (completed 2026-02-21)
 - [x] **Phase 21: Poll Realtime Bug Fix** - Teacher poll dashboard updates in real-time when students vote (gap closure in progress) (completed 2026-02-22)
 - [x] **Phase 22: UX Polish** - Presentation contrast, session naming, and terminology unification (completed 2026-02-22)
-- [ ] **Phase 23: Session Archiving** - Teachers can archive, recover, and permanently delete sessions
+- [x] **Phase 23: Session Archiving** - Teachers can archive, recover, and permanently delete sessions (completed 2026-02-23)
 
 ## Phase Details
 
@@ -138,7 +138,7 @@ Phases execute in numeric order: 19 -> 20 -> 21 -> 22 -> 23
 | 20. Name-Based Student Identity | v1.2 | 3/3 | Complete | 2026-02-21 |
 | 21. Poll Realtime Bug Fix | v1.2 | 3/3 | Complete | 2026-02-22 |
 | 22. UX Polish | v1.2 | 3/3 | Complete | 2026-02-22 |
-| 23. Session Archiving | 2/3 | In Progress|  | - |
+| 23. Session Archiving | v1.2 | 3/3 | Complete | 2026-02-23 |
 
 ### Phase 23: Session Archiving
 **Goal**: Teachers can archive, recover, and permanently delete sessions -- includes archivedAt schema migration, archive/unarchive actions, archived sessions tab/filter, permanent delete with cascade, and session list filtering to hide archived by default
