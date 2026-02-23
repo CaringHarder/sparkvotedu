@@ -21,7 +21,7 @@ import {
   overrideMatchupWinnerSchema,
   revealRoundSchema,
 } from '@/lib/utils/validation'
-import { broadcastBracketUpdate } from '@/lib/realtime/broadcast'
+import { broadcastBracketUpdate, broadcastActivityUpdate } from '@/lib/realtime/broadcast'
 import { revalidatePath } from 'next/cache'
 import { z } from 'zod'
 import type { SubscriptionTier } from '@/lib/gates/tiers'
@@ -97,6 +97,19 @@ export async function updatePredictionStatus(input: unknown) {
     }
 
     revalidatePath(`/brackets/${bracketId}`)
+
+    // Dual-channel broadcast: notify session activity channel (Phase 21 pattern)
+    // predictions_open makes the bracket visible to students on their dashboard
+    if (status === 'predictions_open') {
+      const { prisma } = await import('@/lib/prisma')
+      const bracket = await prisma.bracket.findUnique({
+        where: { id: bracketId },
+        select: { sessionId: true },
+      })
+      if (bracket?.sessionId) {
+        broadcastActivityUpdate(bracket.sessionId).catch(console.error)
+      }
+    }
 
     return { success: true }
   } catch {
@@ -313,6 +326,16 @@ export async function releaseResults(input: unknown) {
     broadcastBracketUpdate(bracketId, 'prediction_status_changed', {
       predictionStatus: 'revealing',
     }).catch(console.error)
+
+    // Also broadcast to session activity channel for dashboard visibility
+    const { prisma: prismaClient } = await import('@/lib/prisma')
+    const bracketForSession = await prismaClient.bracket.findUnique({
+      where: { id: bracketId },
+      select: { sessionId: true },
+    })
+    if (bracketForSession?.sessionId) {
+      broadcastActivityUpdate(bracketForSession.sessionId).catch(console.error)
+    }
 
     revalidatePath(`/brackets/${bracketId}`)
 
