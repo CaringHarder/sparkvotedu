@@ -5,16 +5,16 @@
 See: .planning/PROJECT.md (updated 2026-02-21)
 
 **Core value:** Teachers can instantly engage any classroom through voting -- on any topic, in any format -- and see participation happen in real time.
-**Current focus:** Phase 23 -- Session Archiving (v1.2 Classroom Hardening)
+**Current focus:** Phase 24 -- Bracket & Poll UX Consistency
 
 ## Current Position
 
-Phase: 23 of 23 (Session Archiving)
-Plan: 3 of 3 in current phase (23-01, 23-02, 23-03 complete)
-Status: Phase 23 COMPLETE -- v1.2 Classroom Hardening COMPLETE
-Last activity: 2026-02-23 -- Completed 23-03 (archived sessions page + student access control)
+Phase: 24 of 24 (Bracket & Poll UX Consistency)
+Plan: 1 of 3 in current phase (24-01 complete)
+Status: Executing Phase 24
+Last activity: 2026-02-23 -- Completed 24-01 (bracket & prediction broadcast)
 
-Progress: [##############################] 100% (124/124 plans -- 110 v1.0+v1.1, 2 Phase 19, 3 Phase 20, 3 Phase 21, 3 Phase 22, 3 Phase 23)
+Progress: [##############################] 100% (125/127 plans -- 110 v1.0+v1.1, 2 Phase 19, 3 Phase 20, 3 Phase 21, 3 Phase 22, 3 Phase 23, 1 Phase 24)
 
 ## Performance Metrics
 
@@ -82,6 +82,8 @@ Recent decisions for v1.2:
 - Most-specific-prefix-match nav active state -- generic algorithm preventing /sessions from highlighting when on /sessions/archived (Phase 23)
 - Student sees muted "no longer available" for archived sessions -- not destructive red, student-appropriate language (Phase 23)
 - Delete button variant="secondary" not variant="destructive" -- classroom tool uses subtle styling, two-step safety net provides protection (Phase 23)
+- Only broadcast for active/completed bracket statuses -- draft transitions do not affect student dashboard (Phase 24)
+- Dynamic prisma import in prediction.ts following existing file convention (no top-level prisma import) (Phase 24)
 
 ### Pending Todos
 
@@ -94,6 +96,7 @@ Recent decisions for v1.2:
 ### Roadmap Evolution
 
 - Phase 23 added: Session Archiving
+- Phase 24 added: Bracket & Poll UX Consistency
 
 ### Blockers/Concerns
 
@@ -103,6 +106,6 @@ Recent decisions for v1.2:
 ## Session Continuity
 
 Last session: 2026-02-23
-Stopped at: Completed 23-03-PLAN.md (archived sessions page + student access control)
-Resume: Phase 23 and v1.2 Classroom Hardening complete. All 124 plans executed.
-Resume file: .planning/phases/23-session-archiving/23-03-SUMMARY.md
+Stopped at: Completed 24-01-PLAN.md (bracket & prediction broadcast)
+Resume: Continue with 24-02-PLAN.md
+Resume file: .planning/phases/24-bracket-poll-ux-consistency/24-01-SUMMARY.md
