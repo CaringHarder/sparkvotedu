@@ -37,13 +37,15 @@ model ClassSession {
   teacher   Teacher   @relation(fields: [teacherId], references: [id])
   createdAt DateTime  @default(now()) @map("created_at")
   updatedAt DateTime  @updatedAt @map("updated_at")
-  endedAt   DateTime? @map("ended_at")
+  endedAt    DateTime? @map("ended_at")
+  archivedAt DateTime? @map("archived_at")
 
   participants StudentParticipant[]
   brackets     Bracket[]
   polls        Poll[]
 
   @@index([code, status])
+  @@index([teacherId, archivedAt])
   @@map("class_sessions")
 }
 
