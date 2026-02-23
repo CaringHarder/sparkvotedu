@@ -7,7 +7,12 @@ import {
   getTeacherSessions as getTeacherSessionsDAL,
   getSessionWithParticipants as getSessionWithParticipantsDAL,
   updateSessionName as updateSessionNameDAL,
+  archiveSession as archiveSessionDAL,
+  unarchiveSession as unarchiveSessionDAL,
+  deleteSessionPermanently as deleteSessionPermanentlyDAL,
+  getArchivedSessions as getArchivedSessionsDAL,
 } from '@/lib/dal/class-session'
+import { revalidatePath } from 'next/cache'
 import {
   banParticipant as banParticipantDAL,
   removeParticipant as removeParticipantDAL,
@@ -190,5 +195,115 @@ export async function updateSessionName(sessionId: string, name: string) {
       return { error: 'Session not found or unauthorized' }
     }
     return { error: 'Failed to update session name' }
+  }
+}
+
+/**
+ * Archive a session, auto-ending any active activities.
+ * Requires teacher authentication and session ownership.
+ */
+export async function archiveSessionAction(sessionId: string) {
+  const teacher = await getAuthenticatedTeacher()
+  if (!teacher) {
+    return { error: 'Not authenticated' }
+  }
+
+  try {
+    await archiveSessionDAL(sessionId, teacher.id)
+    revalidatePath('/sessions')
+    return { success: true }
+  } catch (error) {
+    if (
+      error instanceof Error &&
+      error.message === 'Session not found or unauthorized'
+    ) {
+      return { error: 'Session not found or unauthorized' }
+    }
+    return { error: 'Failed to archive session' }
+  }
+}
+
+/**
+ * Unarchive (recover) a session back to the main list.
+ * Session returns as "ended" with all activities in their final states.
+ * Requires teacher authentication, session ownership, and archived status.
+ */
+export async function unarchiveSessionAction(sessionId: string) {
+  const teacher = await getAuthenticatedTeacher()
+  if (!teacher) {
+    return { error: 'Not authenticated' }
+  }
+
+  try {
+    await unarchiveSessionDAL(sessionId, teacher.id)
+    revalidatePath('/sessions')
+    revalidatePath('/sessions/archived')
+    return { success: true }
+  } catch (error) {
+    if (
+      error instanceof Error &&
+      error.message === 'Session not found, unauthorized, or not archived'
+    ) {
+      return { error: 'Session not found, unauthorized, or not archived' }
+    }
+    return { error: 'Failed to unarchive session' }
+  }
+}
+
+/**
+ * Permanently delete an archived session with full cascade.
+ * Only archived sessions can be permanently deleted (two-step safety net).
+ * Requires teacher authentication, session ownership, and archived status.
+ */
+export async function deleteSessionPermanentlyAction(sessionId: string) {
+  const teacher = await getAuthenticatedTeacher()
+  if (!teacher) {
+    return { error: 'Not authenticated' }
+  }
+
+  try {
+    await deleteSessionPermanentlyDAL(sessionId, teacher.id)
+    revalidatePath('/sessions/archived')
+    return { success: true }
+  } catch (error) {
+    if (
+      error instanceof Error &&
+      error.message === 'Session not found, unauthorized, or not archived'
+    ) {
+      return { error: 'Session not found, unauthorized, or not archived' }
+    }
+    return { error: 'Failed to delete session' }
+  }
+}
+
+/**
+ * Get all archived sessions for the authenticated teacher.
+ * Supports optional search by session name.
+ * Returns serializable session data with participant, bracket, and poll counts.
+ */
+export async function getArchivedSessionsAction(search?: string) {
+  const teacher = await getAuthenticatedTeacher()
+  if (!teacher) {
+    return { error: 'Not authenticated' }
+  }
+
+  try {
+    const sessions = await getArchivedSessionsDAL(teacher.id, search)
+    return {
+      sessions: sessions.map((s) => ({
+        id: s.id,
+        code: s.code,
+        name: s.name,
+        status: s.status,
+        createdAt: s.createdAt.toISOString(),
+        endedAt: s.endedAt?.toISOString() ?? null,
+        archivedAt: s.archivedAt?.toISOString() ?? null,
+        participantCount: s._count.participants,
+        bracketCount: s._count.brackets,
+        pollCount: s._count.polls,
+      })),
+    }
+  } catch {
+    return { error: 'Failed to fetch archived sessions' }
   }
 }
