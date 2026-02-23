@@ -10,11 +10,11 @@ See: .planning/PROJECT.md (updated 2026-02-21)
 ## Current Position
 
 Phase: 24 of 24 (Bracket & Poll UX Consistency)
-Plan: 2 of 3 in current phase (24-01, 24-02 complete)
-Status: Executing Phase 24
-Last activity: 2026-02-23 -- Completed 24-02 (RR simple mode full-sized card presentation)
+Plan: 3 of 3 in current phase (24-01, 24-02, 24-03 complete)
+Status: Phase 24 Complete
+Last activity: 2026-02-23 -- Completed 24-03 (Unified celebration animations)
 
-Progress: [##############################] 100% (126/127 plans -- 110 v1.0+v1.1, 2 Phase 19, 3 Phase 20, 3 Phase 21, 3 Phase 22, 3 Phase 23, 2 Phase 24)
+Progress: [##############################] 100% (127/127 plans -- 110 v1.0+v1.1, 2 Phase 19, 3 Phase 20, 3 Phase 21, 3 Phase 22, 3 Phase 23, 3 Phase 24)
 
 ## Performance Metrics
 
@@ -83,6 +83,9 @@ Recent decisions for v1.2:
 - Student sees muted "no longer available" for archived sessions -- not destructive red, student-appropriate language (Phase 23)
 - Delete button variant="secondary" not variant="destructive" -- classroom tool uses subtle styling, two-step safety net provides protection (Phase 23)
 - Only broadcast for active/completed bracket statuses -- draft transitions do not affect student dashboard (Phase 24)
+- Canonical celebration chain: WinnerReveal countdown -> pause (amber dots) -> reveal text -> CelebrationScreen/PollReveal for all views (Phase 24)
+- Poll WinnerReveal uses "The votes are in" as contextual reveal text since matchup names don't apply to polls (Phase 24)
+- CountdownOverlay keeps "Round N Results" title but unified visual styling (brand-blue glow, pause stage) with WinnerReveal (Phase 24)
 - Dynamic prisma import in prediction.ts following existing file convention (no top-level prisma import) (Phase 24)
 - MatchupVoteCard handles server vote via useVote; parent tracks state via handleVoteTracked to avoid double-voting (Phase 24)
 - Advanced mode explicitly set when not in simple mode (votingStyle='advanced') for clear separation (Phase 24)
@@ -90,9 +93,6 @@ Recent decisions for v1.2:
 ### Pending Todos
 
 - Fix go live button in polling (area: ui) -- students can see/vote on poll before teacher clicks Go Live
-- Make sessions archiveable with delete and recover (area: ui) -- teachers need to archive, delete, or recover sessions
-- Unify celebration animations across all brackets and polls (area: ui) -- double elimination has the ideal 3-2-1 countdown + stars; polls and other brackets differ
-- Round robin simple vote should match single bracket simple mode (area: ui) -- round robin requires Next button and looks small vs single bracket's full-sized presentation
 - Round robin and predictive brackets dont auto-show on student dashboard (area: ui) -- requires manual refresh to see newly activated brackets
 
 ### Roadmap Evolution
@@ -108,6 +108,6 @@ Recent decisions for v1.2:
 ## Session Continuity
 
 Last session: 2026-02-23
-Stopped at: Completed 24-02-PLAN.md (RR simple mode full-sized card presentation)
-Resume: Continue with 24-03-PLAN.md
-Resume file: .planning/phases/24-bracket-poll-ux-consistency/24-02-SUMMARY.md
+Stopped at: Completed 24-03-PLAN.md (Unified celebration animations -- Phase 24 complete)
+Resume: Phase 24 complete. All 3 plans executed.
+Resume file: .planning/phases/24-bracket-poll-ux-consistency/24-03-SUMMARY.md
