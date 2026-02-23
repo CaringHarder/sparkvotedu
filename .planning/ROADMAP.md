@@ -153,9 +153,10 @@ Plans:
 ### Phase 24: Bracket & Poll UX Consistency
 **Goal**: Fix round robin/predictive brackets not auto-showing on student dashboard (realtime broadcast fix), make round robin simple vote match single bracket simple mode (full-sized matchup presentation instead of cramped Next/Prev), and unify celebration animations across all brackets and polls (use double elimination's 3-2-1 countdown + stars as canonical pattern for all bracket types and polls on both teacher and student views)
 **Depends on**: Phase 23
-**Plans**: 3 plans
+**Plans**: 4 plans
 
 Plans:
-- [ ] 24-01-PLAN.md -- Bracket realtime broadcast fix: add broadcastActivityUpdate to bracket and prediction status actions
-- [ ] 24-02-PLAN.md -- Round robin simple vote UX refactor: full-sized MatchupVoteCard presentation for RR simple mode
-- [ ] 24-03-PLAN.md -- Unified celebration animations: 3-2-1 countdown across all bracket types and polls
+- [x] 24-01-PLAN.md -- Bracket realtime broadcast fix: add broadcastActivityUpdate to bracket and prediction status actions
+- [x] 24-02-PLAN.md -- Round robin simple vote UX refactor: full-sized MatchupVoteCard presentation for RR simple mode
+- [x] 24-03-PLAN.md -- Unified celebration animations: 3-2-1 countdown across all bracket types and polls
+- [ ] 24-04-PLAN.md -- Gap closure: fix celebration flow bugs (RR bracket done, WinnerReveal simplification, poll countdown guard)
