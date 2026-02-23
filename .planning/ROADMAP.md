@@ -4,7 +4,7 @@
 
 - **v1.0 MVP** -- Phases 1-11 (shipped 2026-02-16) | [Archive](milestones/v1.0-ROADMAP.md)
 - **v1.1 Production Readiness & Deploy** -- Phases 14-18 (shipped 2026-02-21) | [Archive](milestones/v1.1-ROADMAP.md)
-- **v1.2 Classroom Hardening** -- Phases 19-22 (in progress)
+- **v1.2 Classroom Hardening** -- Phases 19-23 (in progress)
 
 ## Phases
 
@@ -45,6 +45,7 @@
 - [x] **Phase 20: Name-Based Student Identity** - Students join with first name instead of device fingerprint (completed 2026-02-21)
 - [x] **Phase 21: Poll Realtime Bug Fix** - Teacher poll dashboard updates in real-time when students vote (gap closure in progress) (completed 2026-02-22)
 - [x] **Phase 22: UX Polish** - Presentation contrast, session naming, and terminology unification (completed 2026-02-22)
+- [ ] **Phase 23: Session Archiving** - Teachers can archive, recover, and permanently delete sessions
 
 ## Phase Details
 
@@ -112,7 +113,7 @@ Plans:
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 19 -> 20 -> 21 -> 22
+Phases execute in numeric order: 19 -> 20 -> 21 -> 22 -> 23
 
 | Phase | Milestone | Plans | Status | Completed |
 |-------|-----------|-------|--------|-----------|
@@ -136,4 +137,15 @@ Phases execute in numeric order: 19 -> 20 -> 21 -> 22
 | 19. Security & Schema Foundation | v1.2 | 2/2 | Complete | 2026-02-21 |
 | 20. Name-Based Student Identity | v1.2 | 3/3 | Complete | 2026-02-21 |
 | 21. Poll Realtime Bug Fix | v1.2 | 3/3 | Complete | 2026-02-22 |
-| 22. UX Polish | 3/3 | Complete    | 2026-02-22 | - |
+| 22. UX Polish | v1.2 | 3/3 | Complete | 2026-02-22 |
+| 23. Session Archiving | v1.2 | 0/3 | Planned | - |
+
+### Phase 23: Session Archiving
+**Goal**: Teachers can archive, recover, and permanently delete sessions -- includes archivedAt schema migration, archive/unarchive actions, archived sessions tab/filter, permanent delete with cascade, and session list filtering to hide archived by default
+**Depends on**: Phase 22
+**Plans**: 3 plans
+
+Plans:
+- [ ] 23-01-PLAN.md -- Schema migration (archivedAt), DAL functions (archive/unarchive/delete/list), server actions, session list filtering
+- [ ] 23-02-PLAN.md -- Session card three-dot context menu, archive confirmation dialog, sessions page integration
+- [ ] 23-03-PLAN.md -- Archived sessions page with search/recover/delete, sidebar nav link, student join code block
