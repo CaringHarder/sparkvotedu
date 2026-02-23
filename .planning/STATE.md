@@ -9,12 +9,12 @@ See: .planning/PROJECT.md (updated 2026-02-21)
 
 ## Current Position
 
-Phase: 23 of 23 (Session Archiving) -- NOT PLANNED
-Plan: 0 of 0 in current phase
-Status: Phase 23 added -- needs planning
-Last activity: 2026-02-23 -- Added Phase 23 (Session Archiving)
+Phase: 23 of 23 (Session Archiving)
+Plan: 1 of 3 in current phase (23-01 complete)
+Status: Executing Phase 23 plans
+Last activity: 2026-02-23 -- Completed 23-01 (schema + DAL + server actions)
 
-Progress: [##############################] 100% (121/121 plans -- 110 v1.0+v1.1, 2 Phase 19, 3 Phase 20, 3 Phase 21, 3 Phase 22)
+Progress: [##############################] 100% (122/124 plans -- 110 v1.0+v1.1, 2 Phase 19, 3 Phase 20, 3 Phase 21, 3 Phase 22, 1 Phase 23)
 
 ## Performance Metrics
 
@@ -72,6 +72,10 @@ Recent decisions for v1.2:
 - "Start" replaces "Activate" for action buttons; "View Live" for navigation links to active sessions (Phase 22)
 - "End"/"End Poll" replaces "Close"/"Close Poll" for stopping active activities (Phase 22)
 - "Active" badge replaces "Live" badge on dashboard shell session cards (Phase 22)
+- archivedAt DateTime? instead of status field -- preserves archive timestamp for sorting, null check cleaner for filtering (Phase 23)
+- Recovered sessions return as ended -- archiving auto-ends activities, recovery is for data access not resuming (Phase 23)
+- Only archived sessions can be permanently deleted -- two-step safety net per locked decision (Phase 23)
+- Explicit bracket/poll deletion in transaction -- optional sessionId with no cascade means orphaned without explicit deletion (Phase 23)
 
 ### Pending Todos
 
@@ -93,6 +97,6 @@ Recent decisions for v1.2:
 ## Session Continuity
 
 Last session: 2026-02-23
-Stopped at: Phase 23 context gathered
-Resume: Phase 23 context captured. Run /gsd:plan-phase 23.
-Resume file: .planning/phases/23-session-archiving/23-CONTEXT.md
+Stopped at: Completed 23-01-PLAN.md (schema + DAL + server actions)
+Resume: Execute 23-02-PLAN.md (UI components for session archiving)
+Resume file: .planning/phases/23-session-archiving/23-01-SUMMARY.md
