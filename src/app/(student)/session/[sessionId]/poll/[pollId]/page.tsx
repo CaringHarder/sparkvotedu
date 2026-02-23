@@ -1,12 +1,13 @@
 'use client'
 
-import { useEffect, useState, useRef } from 'react'
+import { useEffect, useState, useRef, useCallback } from 'react'
 import { useParams } from 'next/navigation'
 import Link from 'next/link'
 import { SimplePollVote } from '@/components/student/simple-poll-vote'
 import { RankedPollVote } from '@/components/student/ranked-poll-vote'
 import { useRealtimePoll } from '@/hooks/use-realtime-poll'
 import { PollReveal } from '@/components/poll/poll-reveal'
+import { WinnerReveal } from '@/components/bracket/winner-reveal'
 import type { PollWithOptions, PollOptionData } from '@/lib/poll/types'
 
 /**
@@ -68,15 +69,16 @@ export default function StudentPollVotingPage() {
 
   // Reveal animation state
   const [showReveal, setShowReveal] = useState(false)
+  const [showCountdown, setShowCountdown] = useState(false)
   const [closedDetected, setClosedDetected] = useState(false)
   const prevPollStatusRef = useRef(pollStatus)
 
-  // Detect live active->closed transition for reveal trigger
+  // Detect live active->closed transition: trigger countdown first, then reveal
   useEffect(() => {
     const prev = prevPollStatusRef.current
     prevPollStatusRef.current = pollStatus
 
-    // Only trigger reveal when transitioning FROM a non-closed status TO closed
+    // Only trigger countdown when transitioning FROM a non-closed status TO closed
     // AND the student was actively viewing the poll (state is 'ready')
     if (
       pollStatus === 'closed' &&
@@ -84,10 +86,16 @@ export default function StudentPollVotingPage() {
       prev !== 'draft' && // draft is the hook's initial state before first fetch
       state.type === 'ready'
     ) {
-      setShowReveal(true)
+      setShowCountdown(true)
       setClosedDetected(true)
     }
   }, [pollStatus, state.type])
+
+  // Chain countdown -> reveal
+  const handleCountdownComplete = useCallback(() => {
+    setShowCountdown(false)
+    setShowReveal(true)
+  }, [])
 
   // Compute winner text for reveal animation
   const winnerText = (() => {
@@ -334,6 +342,13 @@ export default function StudentPollVotingPage() {
           />
         )}
       </div>
+      {showCountdown && (
+        <WinnerReveal
+          entrant1Name="The votes are in"
+          entrant2Name=""
+          onComplete={handleCountdownComplete}
+        />
+      )}
       {showReveal && (
         <PollReveal
           winnerText={winnerText}

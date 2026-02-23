@@ -22,7 +22,7 @@ interface CountdownOverlayProps {
  */
 export function CountdownOverlay({ roundNumber, onComplete }: CountdownOverlayProps) {
   const prefersReducedMotion = useReducedMotion()
-  const [stage, setStage] = useState<'countdown' | 'title' | 'done'>(
+  const [stage, setStage] = useState<'countdown' | 'pause' | 'title' | 'done'>(
     prefersReducedMotion ? 'done' : 'countdown'
   )
   const [countdownNumber, setCountdownNumber] = useState(3)
@@ -39,7 +39,7 @@ export function CountdownOverlay({ roundNumber, onComplete }: CountdownOverlayPr
     }
   }, [prefersReducedMotion, stage, onComplete])
 
-  // Countdown sequence: 3, 2, 1, then title
+  // Countdown sequence: 3, 2, 1, then pause, then title
   useEffect(() => {
     if (prefersReducedMotion) return
 
@@ -50,10 +50,18 @@ export function CountdownOverlay({ roundNumber, onComplete }: CountdownOverlayPr
         }, 1100)
         return () => clearTimeout(timer)
       } else {
-        setStage('title')
+        setStage('pause')
       }
     }
   }, [stage, countdownNumber, prefersReducedMotion])
+
+  // Brief pause after countdown (matching WinnerReveal pattern)
+  useEffect(() => {
+    if (stage === 'pause') {
+      const timer = setTimeout(() => setStage('title'), 800)
+      return () => clearTimeout(timer)
+    }
+  }, [stage])
 
   // "Round N Results" -> dismiss after 1.5s
   useEffect(() => {
@@ -80,21 +88,55 @@ export function CountdownOverlay({ roundNumber, onComplete }: CountdownOverlayPr
         aria-label={`Round ${roundNumber} reveal countdown`}
       >
         <AnimatePresence mode="wait">
-          {/* Countdown: 3, 2, 1 */}
+          {/* Countdown: 3, 2, 1 -- brand-blue glow matching WinnerReveal */}
           {stage === 'countdown' && countdownNumber > 0 && (
-            <motion.span
+            <motion.div
               key={`countdown-${countdownNumber}`}
-              className="text-8xl font-bold text-white md:text-9xl"
-              initial={{ scale: 0.5, opacity: 0 }}
-              animate={{ scale: 1.2, opacity: 1 }}
-              exit={{ scale: 1.8, opacity: 0 }}
-              transition={{
-                duration: 0.35,
-                ease: 'easeOut',
-              }}
+              className="relative"
+              initial={{ scale: 0.3, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 2, opacity: 0 }}
+              transition={{ duration: 0.4, ease: 'easeOut' }}
             >
-              {countdownNumber}
-            </motion.span>
+              {/* Glow behind number */}
+              <div
+                className="absolute inset-0 flex items-center justify-center blur-[40px]"
+                style={{ color: 'var(--brand-blue)' }}
+              >
+                <span className="text-[10rem] font-black md:text-[14rem]">
+                  {countdownNumber}
+                </span>
+              </div>
+              <span
+                className="relative text-[10rem] font-black leading-none text-brand-blue md:text-[14rem]"
+                style={{
+                  textShadow: '0 0 40px var(--brand-blue), 0 0 80px color-mix(in oklch, var(--brand-blue) 40%, transparent)',
+                }}
+              >
+                {countdownNumber}
+              </span>
+            </motion.div>
+          )}
+
+          {/* Brief pause -- pulsing dots matching WinnerReveal */}
+          {stage === 'pause' && (
+            <motion.div
+              key="pause"
+              className="flex gap-3"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.3 }}
+            >
+              {[0, 1, 2].map((i) => (
+                <motion.div
+                  key={i}
+                  className="h-3 w-3 rounded-full bg-brand-amber"
+                  animate={{ scale: [1, 1.4, 1], opacity: [0.5, 1, 0.5] }}
+                  transition={{ duration: 0.6, repeat: Infinity, delay: i * 0.15 }}
+                />
+              ))}
+            </motion.div>
           )}
 
           {/* "Round N Results" */}

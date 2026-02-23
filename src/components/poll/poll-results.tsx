@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { BarChart3, PieChart } from 'lucide-react'
 import { useRealtimePoll } from '@/hooks/use-realtime-poll'
 import { AnimatedBarChart } from '@/components/poll/bar-chart'
@@ -9,6 +9,7 @@ import { RankedLeaderboard } from '@/components/poll/ranked-leaderboard'
 import { PresentationResults } from '@/components/poll/presentation-results'
 import { PresentationMode } from '@/components/poll/presentation-mode'
 import { PollReveal } from '@/components/poll/poll-reveal'
+import { WinnerReveal } from '@/components/bracket/winner-reveal'
 import type { PollWithOptions } from '@/lib/poll/types'
 import type { BordaLeaderboardEntry } from '@/lib/poll/borda'
 
@@ -55,6 +56,7 @@ export function PollResults({
 
   const [chartType, setChartType] = useState<ChartType>('bar')
   const [showReveal, setShowReveal] = useState(false)
+  const [showCountdown, setShowCountdown] = useState(false)
 
   // Use real-time data if available, fall back to initial
   const liveVoteCounts = Object.keys(voteCounts).length > 0 ? voteCounts : initialVoteCounts
@@ -62,12 +64,18 @@ export function PollResults({
   const liveStatus = pollStatus !== 'draft' ? pollStatus : poll.status
   const liveParticipantCount = participantCount > 0 ? participantCount : initialParticipantCount
 
-  // Trigger reveal from parent's forceReveal prop (eliminates race condition)
+  // Trigger countdown from parent's forceReveal prop, then chain to reveal
   useEffect(() => {
     if (forceReveal) {
-      setShowReveal(true)
+      setShowCountdown(true)
     }
   }, [forceReveal])
+
+  // Chain countdown -> reveal
+  const handleCountdownComplete = useCallback(() => {
+    setShowCountdown(false)
+    setShowReveal(true)
+  }, [])
 
   // Map options to chart data
   const chartData = poll.options.map((opt, i) => ({
@@ -200,6 +208,15 @@ export function PollResults({
           options={poll.options}
           bordaScores={leaderboardEntries}
           totalVoters={liveTotalVotes}
+        />
+      )}
+
+      {/* Countdown overlay (before reveal) */}
+      {showCountdown && (
+        <WinnerReveal
+          entrant1Name="The votes are in"
+          entrant2Name=""
+          onComplete={handleCountdownComplete}
         />
       )}
 
