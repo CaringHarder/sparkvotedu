@@ -556,6 +556,7 @@ function RRLiveView({
     entrant1Name: string
     entrant2Name: string
   } | null>(null)
+  const hasShownRevealRef = useRef(false)
 
   // Derive simple mode flag
   const isSimpleMode = bracket.roundRobinVotingStyle === 'simple'
@@ -587,7 +588,7 @@ function RRLiveView({
 
   // Show WinnerReveal countdown when bracket completes, then chain to CelebrationScreen
   useEffect(() => {
-    if (bracketCompleted && !revealState && !showCelebration) {
+    if (bracketCompleted && !revealState && !showCelebration && !hasShownRevealRef.current) {
       // Compute top 2 entrants from decided matchup wins for the reveal display
       const decidedMatchups = currentMatchups.filter((m) => m.status === 'decided')
       const wins = new Map<string, { count: number; name: string }>()
@@ -602,6 +603,7 @@ function RRLiveView({
       const top2 = sorted[1]?.[1].name ?? 'Finalist'
 
       const timer = setTimeout(() => {
+        hasShownRevealRef.current = true
         setRevealState({ entrant1Name: top1, entrant2Name: top2 })
       }, 2000)
       return () => clearTimeout(timer)
