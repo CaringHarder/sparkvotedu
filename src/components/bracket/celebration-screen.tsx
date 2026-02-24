@@ -8,6 +8,8 @@ interface CelebrationScreenProps {
   championName: string
   bracketName: string
   onDismiss: () => void
+  isTie?: boolean
+  tiedNames?: string[]
 }
 
 // Brand colors for confetti (oklch approximated to hex for canvas-confetti)
@@ -33,6 +35,8 @@ export function CelebrationScreen({
   championName,
   bracketName,
   onDismiss,
+  isTie = false,
+  tiedNames = [],
 }: CelebrationScreenProps) {
   const prefersReducedMotion = useReducedMotion()
   const dismissTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -135,7 +139,7 @@ export function CelebrationScreen({
     <div
       className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-black"
       role="dialog"
-      aria-label={`Champion: ${championName}`}
+      aria-label={isTie ? `Co-Champions: ${tiedNames.join(', ')}` : `Champion: ${championName}`}
     >
       {/* Ambient glow effect behind content */}
       <motion.div
@@ -204,7 +208,7 @@ export function CelebrationScreen({
             '0 0 30px var(--brand-amber), 0 0 60px color-mix(in oklch, var(--brand-amber) 40%, transparent)',
         }}
       >
-        CHAMPION!
+        {isTie ? 'CO-CHAMPIONS!' : 'CHAMPION!'}
       </motion.h1>
 
       {/* Champion name -- dramatic scale-up spring entrance */}
@@ -219,7 +223,11 @@ export function CelebrationScreen({
           delay: 0.7,
         }}
       >
-        {championName}
+        {isTie && tiedNames.length > 0
+          ? (tiedNames.length <= 3
+              ? tiedNames.join(' & ')
+              : tiedNames.slice(0, -1).join(', ') + ' & ' + tiedNames[tiedNames.length - 1])
+          : championName}
       </motion.p>
 
       {/* Bracket name */}
