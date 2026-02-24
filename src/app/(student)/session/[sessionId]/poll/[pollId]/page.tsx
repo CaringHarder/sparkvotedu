@@ -307,7 +307,7 @@ export default function StudentPollVotingPage() {
   const { poll, participantId, existingVotes } = state
 
   // After reveal dismissed: show clean "poll closed" state (live transition, not initial load)
-  if (closedDetected && !showReveal) {
+  if (closedDetected && !showReveal && !showCountdown) {
     return (
       <div className="container mx-auto px-4 py-6">
         {backLink}
