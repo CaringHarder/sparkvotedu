@@ -103,6 +103,9 @@ Recent decisions for v1.2:
 - Round robin and predictive brackets dont auto-show on student dashboard (area: ui) -- requires manual refresh to see newly activated brackets
 - RR all-at-once bracket completes after first round blocks remaining rounds (area: ui) -- all-at-once mode triggers completion prematurely after first round
 - SE bracket final round realtime updates stop working (area: ui) -- teacher live dashboard stops auto-updating votes after advancing to final round in 4-team bracket
+- Student view should dynamically remove deleted brackets and polls (area: ui) -- deleted activities only disappear on manual refresh
+- Teacher dashboard sign-out button needs click visual indicator (area: ui) -- no feedback when sign-out is clicked
+- Polls should have triple dot context menu like brackets (area: ui) -- brackets have context menu but polls do not
 
 ### Roadmap Evolution
 
