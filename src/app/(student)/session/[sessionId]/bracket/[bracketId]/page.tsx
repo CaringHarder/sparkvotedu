@@ -539,6 +539,48 @@ function DEVotingView({
 }
 
 /**
+ * Compute RR champion info using calculateRoundRobinStandings.
+ * Returns champion name, tie state, tied names, and runner-up name.
+ * Multiple entrants sharing rank === 1 indicates a tie (co-champions).
+ */
+function computeRRChampionInfo(matchups: MatchupData[], entrants: { id: string; name: string }[]) {
+  const decidedMatchups = matchups.filter((m) => m.status === 'decided')
+  if (decidedMatchups.length === 0) return { championName: 'Champion', isTie: false, tiedNames: [] as string[], runnerUpName: '' }
+
+  const results: RoundRobinResult[] = decidedMatchups
+    .filter((m) => m.entrant1Id && m.entrant2Id)
+    .map((m) => ({
+      entrant1Id: m.entrant1Id!,
+      entrant2Id: m.entrant2Id!,
+      winnerId: m.winnerId,
+    }))
+
+  const standings = calculateRoundRobinStandings(results)
+
+  // Enrich with names from entrants array
+  const enriched = standings.map((s) => ({
+    ...s,
+    name: entrants.find((e) => e.id === s.entrantId)?.name ?? s.entrantId,
+  }))
+
+  // Check for tie at rank 1
+  const rank1 = enriched.filter((s) => s.rank === 1)
+  if (rank1.length > 1) {
+    return {
+      championName: rank1.map((s) => s.name).join(' & '),
+      isTie: true,
+      tiedNames: rank1.map((s) => s.name),
+      runnerUpName: '',
+    }
+  }
+
+  // Clear winner
+  const champion = rank1[0]?.name ?? 'Champion'
+  const runnerUp = enriched.find((s) => s.rank === 2)?.name ?? ''
+  return { championName: champion, isTie: false, tiedNames: [], runnerUpName: runnerUp }
+}
+
+/**
  * RRLiveView: Round-robin bracket with real-time subscription, student voting,
  * tabbed Voting/Results UI, client-side standings, and CelebrationScreen on completion.
  */
@@ -589,18 +631,11 @@ function RRLiveView({
   // Show WinnerReveal countdown when bracket completes, then chain to CelebrationScreen
   useEffect(() => {
     if (bracketCompleted && !revealState && !showCelebration && !hasShownRevealRef.current) {
-      // Compute top 2 entrants from decided matchup wins for the reveal display
-      const decidedMatchups = currentMatchups.filter((m) => m.status === 'decided')
-      const wins = new Map<string, { count: number; name: string }>()
-      for (const m of decidedMatchups) {
-        if (m.winner) {
-          const prev = wins.get(m.winner.id) ?? { count: 0, name: m.winner.name }
-          wins.set(m.winner.id, { count: prev.count + 1, name: m.winner.name })
-        }
-      }
-      const sorted = [...wins.entries()].sort((a, b) => b[1].count - a[1].count)
-      const top1 = sorted[0]?.[1].name ?? 'Finalist'
-      const top2 = sorted[1]?.[1].name ?? 'Finalist'
+      // Use calculateRoundRobinStandings for correct tie handling
+      const entrants = bracket.entrants.map((e) => ({ id: e.id, name: e.name }))
+      const info = computeRRChampionInfo(currentMatchups, entrants)
+      const top1 = info.isTie ? (info.tiedNames[0] ?? 'Finalist') : info.championName
+      const top2 = info.isTie ? (info.tiedNames[1] ?? 'Finalist') : (info.runnerUpName || 'Finalist')
 
       const timer = setTimeout(() => {
         hasShownRevealRef.current = true
@@ -608,7 +643,7 @@ function RRLiveView({
       }, 2000)
       return () => clearTimeout(timer)
     }
-  }, [bracketCompleted, revealState, showCelebration, currentMatchups])
+  }, [bracketCompleted, revealState, showCelebration, currentMatchups, bracket.entrants])
 
   // Chain WinnerReveal -> CelebrationScreen
   const handleRevealComplete = useCallback(() => {
@@ -616,27 +651,17 @@ function RRLiveView({
     setShowCelebration(true)
   }, [])
 
-  // Compute champion name from matchup wins for CelebrationScreen
+  // Compute champion name using calculateRoundRobinStandings for CelebrationScreen
   const championName = useMemo(() => {
-    const decidedMatchups = currentMatchups.filter((m) => m.status === 'decided')
-    if (decidedMatchups.length === 0) return bracket.name
-    const wins = new Map<string, { count: number; name: string }>()
-    for (const m of decidedMatchups) {
-      if (m.winner) {
-        const prev = wins.get(m.winner.id) ?? { count: 0, name: m.winner.name }
-        wins.set(m.winner.id, { count: prev.count + 1, name: m.winner.name })
-      }
-    }
-    let maxWins = 0
-    let leader = bracket.name
-    for (const [, val] of wins) {
-      if (val.count > maxWins) {
-        maxWins = val.count
-        leader = val.name
-      }
-    }
-    return leader
-  }, [currentMatchups, bracket.name])
+    const entrants = bracket.entrants.map((e) => ({ id: e.id, name: e.name }))
+    return computeRRChampionInfo(currentMatchups, entrants).championName
+  }, [currentMatchups, bracket.entrants])
+
+  // RR tie info for CelebrationScreen
+  const championTieInfo = useMemo(() => {
+    const entrants = bracket.entrants.map((e) => ({ id: e.id, name: e.name }))
+    return computeRRChampionInfo(currentMatchups, entrants)
+  }, [currentMatchups, bracket.entrants])
 
   // Compute standings client-side from current matchups
   const standings = useMemo(() => {
@@ -694,6 +719,8 @@ function RRLiveView({
           championName={championName}
           bracketName={bracket.name}
           onDismiss={() => setShowCelebration(false)}
+          isTie={championTieInfo.isTie}
+          tiedNames={championTieInfo.tiedNames}
         />
       )}
 

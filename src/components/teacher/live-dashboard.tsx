@@ -18,6 +18,7 @@ import { triggerSportsSync } from '@/actions/sports'
 import { updatePredictionStatus } from '@/actions/prediction'
 import { PredictionLeaderboard } from '@/components/bracket/prediction-leaderboard'
 import { PredictiveBracket } from '@/components/bracket/predictive-bracket'
+import { calculateRoundRobinStandings, type RoundRobinResult } from '@/lib/bracket/round-robin'
 import type { BracketWithDetails, MatchupData, RoundRobinStanding, PredictionScore } from '@/lib/bracket/types'
 import type { VoteCounts } from '@/types/vote'
 
@@ -40,6 +41,48 @@ interface RevealState {
   entrant2Name: string
   entrant1Votes: number
   entrant2Votes: number
+}
+
+/**
+ * Compute RR champion info using calculateRoundRobinStandings.
+ * Returns champion name, tie state, tied names, and runner-up name.
+ * Multiple entrants sharing rank === 1 indicates a tie (co-champions).
+ */
+function computeRRChampionInfo(matchups: MatchupData[], entrants: { id: string; name: string }[]) {
+  const decidedMatchups = matchups.filter((m) => m.status === 'decided')
+  if (decidedMatchups.length === 0) return { championName: 'Champion', isTie: false, tiedNames: [] as string[], runnerUpName: '' }
+
+  const results: RoundRobinResult[] = decidedMatchups
+    .filter((m) => m.entrant1Id && m.entrant2Id)
+    .map((m) => ({
+      entrant1Id: m.entrant1Id!,
+      entrant2Id: m.entrant2Id!,
+      winnerId: m.winnerId,
+    }))
+
+  const standings = calculateRoundRobinStandings(results)
+
+  // Enrich with names from entrants array
+  const enriched = standings.map((s) => ({
+    ...s,
+    name: entrants.find((e) => e.id === s.entrantId)?.name ?? s.entrantId,
+  }))
+
+  // Check for tie at rank 1
+  const rank1 = enriched.filter((s) => s.rank === 1)
+  if (rank1.length > 1) {
+    return {
+      championName: rank1.map((s) => s.name).join(' & '),
+      isTie: true,
+      tiedNames: rank1.map((s) => s.name),
+      runnerUpName: '',
+    }
+  }
+
+  // Clear winner
+  const champion = rank1[0]?.name ?? 'Champion'
+  const runnerUp = enriched.find((s) => s.rank === 2)?.name ?? ''
+  return { championName: champion, isTie: false, tiedNames: [], runnerUpName: runnerUp }
 }
 
 export function LiveDashboard({
@@ -331,17 +374,16 @@ export function LiveDashboard({
         let champ = 'Champion'
         let runnerUp = ''
         if (isRoundRobin) {
-          // Compute wins from decided matchups
-          const wins = new Map<string, { count: number; name: string }>()
+          // Use calculateRoundRobinStandings for correct tie handling
+          const entrantsMap = new Map<string, string>()
           for (const m of currentMatchups) {
-            if (m.status === 'decided' && m.winner) {
-              const prev = wins.get(m.winner.id) ?? { count: 0, name: m.winner.name }
-              wins.set(m.winner.id, { count: prev.count + 1, name: m.winner.name })
-            }
+            if (m.entrant1) entrantsMap.set(m.entrant1.id, m.entrant1.name)
+            if (m.entrant2) entrantsMap.set(m.entrant2.id, m.entrant2.name)
           }
-          const sorted = [...wins.entries()].sort((a, b) => b[1].count - a[1].count)
-          champ = sorted[0]?.[1].name ?? 'Champion'
-          runnerUp = sorted[1]?.[1].name ?? ''
+          const entrants = [...entrantsMap.entries()].map(([id, name]) => ({ id, name }))
+          const info = computeRRChampionInfo(currentMatchups, entrants)
+          champ = info.championName
+          runnerUp = info.runnerUpName
         } else {
           // SE: final matchup
           const finalMatchup = currentMatchups.find(
@@ -394,11 +436,33 @@ export function LiveDashboard({
       const finalGf = gf.find((m) => m.round === maxRound)
       return finalGf?.winner?.name ?? 'Champion'
     }
+    if (isRoundRobin) {
+      const entrantsMap = new Map<string, string>()
+      for (const m of currentMatchups) {
+        if (m.entrant1) entrantsMap.set(m.entrant1.id, m.entrant1.name)
+        if (m.entrant2) entrantsMap.set(m.entrant2.id, m.entrant2.name)
+      }
+      const entrants = [...entrantsMap.entries()].map(([id, name]) => ({ id, name }))
+      return computeRRChampionInfo(currentMatchups, entrants).championName
+    }
+    // SE fallback
     const finalMatchup = currentMatchups.find(
       (m) => m.round === totalRounds && m.position === 1
     )
     return finalMatchup?.winner?.name ?? 'Champion'
-  }, [currentMatchups, totalRounds, isDoubleElim])
+  }, [currentMatchups, totalRounds, isDoubleElim, isRoundRobin])
+
+  // RR tie info for CelebrationScreen
+  const championTieInfo = useMemo(() => {
+    if (!isRoundRobin) return { isTie: false, tiedNames: [] as string[] }
+    const entrantsMap = new Map<string, string>()
+    for (const m of currentMatchups) {
+      if (m.entrant1) entrantsMap.set(m.entrant1.id, m.entrant1.name)
+      if (m.entrant2) entrantsMap.set(m.entrant2.id, m.entrant2.name)
+    }
+    const entrants = [...entrantsMap.entries()].map(([id, name]) => ({ id, name }))
+    return computeRRChampionInfo(currentMatchups, entrants)
+  }, [currentMatchups, isRoundRobin])
 
   // Round-level status counts (SE/Predictive only -- DE uses deRegionRoundStatus)
   const roundStatus = useMemo(() => {
@@ -817,6 +881,8 @@ export function LiveDashboard({
           championName={championName}
           bracketName={bracket.name}
           onDismiss={() => { setShowCelebration(false); setRevealState(null) }}
+          isTie={championTieInfo.isTie}
+          tiedNames={championTieInfo.tiedNames}
         />
       )}
 
