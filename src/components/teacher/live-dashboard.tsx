@@ -324,9 +324,9 @@ export function LiveDashboard({
   // DE brackets excluded -- they use dedicated DE fallback (Path 2) with WinnerReveal -> handleRevealComplete -> CelebrationScreen
   useEffect(() => {
     if (bracketCompleted && !revealState && !hasShownRevealRef.current && !isDoubleElim) {
-      hasShownRevealRef.current = true
       // RR and SE: compute champion + runner-up from matchup results
       const timer = setTimeout(() => {
+        hasShownRevealRef.current = true
         // For RR: derive winner from matchup wins; for SE: use final matchup winner
         let champ = 'Champion'
         let runnerUp = ''
