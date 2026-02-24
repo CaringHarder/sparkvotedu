@@ -10,11 +10,11 @@ See: .planning/PROJECT.md (updated 2026-02-21)
 ## Current Position
 
 Phase: 24 of 24 (Bracket & Poll UX Consistency)
-Plan: 3 of 3 in current phase (24-01, 24-02, 24-03 complete)
+Plan: 4 of 4 in current phase (24-01, 24-02, 24-03, 24-04 complete)
 Status: Phase 24 Complete
-Last activity: 2026-02-23 -- Completed 24-03 (Unified celebration animations)
+Last activity: 2026-02-24 -- Completed 24-04 (Gap closure -- celebration flow bugs)
 
-Progress: [##############################] 100% (127/127 plans -- 110 v1.0+v1.1, 2 Phase 19, 3 Phase 20, 3 Phase 21, 3 Phase 22, 3 Phase 23, 3 Phase 24)
+Progress: [##############################] 100% (128/128 plans -- 110 v1.0+v1.1, 2 Phase 19, 3 Phase 20, 3 Phase 21, 3 Phase 22, 3 Phase 23, 4 Phase 24)
 
 ## Performance Metrics
 
@@ -83,12 +83,16 @@ Recent decisions for v1.2:
 - Student sees muted "no longer available" for archived sessions -- not destructive red, student-appropriate language (Phase 23)
 - Delete button variant="secondary" not variant="destructive" -- classroom tool uses subtle styling, two-step safety net provides protection (Phase 23)
 - Only broadcast for active/completed bracket statuses -- draft transitions do not affect student dashboard (Phase 24)
-- Canonical celebration chain: WinnerReveal countdown -> pause (amber dots) -> reveal text -> CelebrationScreen/PollReveal for all views (Phase 24)
+- Canonical celebration chain: WinnerReveal countdown -> CelebrationScreen/PollReveal for all views (simplified from countdown -> pause -> reveal in 24-04) (Phase 24)
 - Poll WinnerReveal uses "The votes are in" as contextual reveal text since matchup names don't apply to polls (Phase 24)
 - CountdownOverlay keeps "Round N Results" title but unified visual styling (brand-blue glow, pause stage) with WinnerReveal (Phase 24)
 - Dynamic prisma import in prediction.ts following existing file convention (no top-level prisma import) (Phase 24)
 - MatchupVoteCard handles server vote via useVote; parent tracks state via handleVoteTracked to avoid double-voting (Phase 24)
 - Advanced mode explicitly set when not in simple mode (votingStyle='advanced') for clear separation (Phase 24)
+- Simplified WinnerReveal to countdown-only (removed pause dots + "And the winner is..." text) for direct countdown -> celebration transition (Phase 24)
+- CelebrationScreen fully opaque bg-black instead of bg-black/85 to prevent content bleed-through (Phase 24)
+- RR bracketDone uses all-matchups-decided check (not round-based) since RR has no round progression structure (Phase 24)
+- Poll early return guard triple condition (closedDetected && !showReveal && !showCountdown) for correct state machine (Phase 24)
 
 ### Pending Todos
 
@@ -107,7 +111,7 @@ Recent decisions for v1.2:
 
 ## Session Continuity
 
-Last session: 2026-02-23
-Stopped at: Completed 24-03-PLAN.md (Unified celebration animations -- Phase 24 complete)
-Resume: Phase 24 complete. All 3 plans executed.
-Resume file: .planning/phases/24-bracket-poll-ux-consistency/24-03-SUMMARY.md
+Last session: 2026-02-24
+Stopped at: Completed 24-04-PLAN.md (Gap closure -- celebration flow bugs)
+Resume: Phase 24 complete. All 4 plans executed (3 original + 1 gap closure).
+Resume file: .planning/phases/24-bracket-poll-ux-consistency/24-04-SUMMARY.md
