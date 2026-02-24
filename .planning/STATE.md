@@ -99,6 +99,7 @@ Recent decisions for v1.2:
 - Fix go live button in polling (area: ui) -- students can see/vote on poll before teacher clicks Go Live
 - Round robin and predictive brackets dont auto-show on student dashboard (area: ui) -- requires manual refresh to see newly activated brackets
 - RR all-at-once bracket completes after first round blocks remaining rounds (area: ui) -- all-at-once mode triggers completion prematurely after first round
+- SE bracket final round realtime updates stop working (area: ui) -- teacher live dashboard stops auto-updating votes after advancing to final round in 4-team bracket
 
 ### Roadmap Evolution
 
