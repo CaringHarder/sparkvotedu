@@ -789,9 +789,14 @@ export function LiveDashboard({
   const allRoundDecided = rs && rs.decided === rs.total && rs.total > 0
   const hasVoting = rs && rs.voting > 0
   const hasPending = rs && rs.pending > 0
+  const rrAllDecided = isRoundRobin
+    ? currentMatchups.length > 0 && currentMatchups.every((m) => m.status === 'decided')
+    : false
   const bracketDone = isDoubleElim
     ? deBracketDone
-    : (currentRound === totalRounds && allRoundDecided)
+    : isRoundRobin
+      ? rrAllDecided
+      : (currentRound === totalRounds && allRoundDecided)
 
   // isPredictive is now used for PredictionLeaderboard rendering
 

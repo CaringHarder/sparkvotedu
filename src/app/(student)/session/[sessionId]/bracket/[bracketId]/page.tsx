@@ -736,6 +736,7 @@ function RRLiveView({
             bracketId={bracket.id}
             votedMatchups={votedMatchups}
             onVoteTracked={handleVoteTracked}
+            celebrationActive={!!revealState || showCelebration}
           />
         ) : (
           <RoundRobinMatchups
@@ -776,6 +777,7 @@ function RRSimpleVoting({
   bracketId: _bracketId,
   votedMatchups,
   onVoteTracked,
+  celebrationActive,
 }: {
   matchups: MatchupData[]
   allMatchups: MatchupData[]
@@ -783,6 +785,7 @@ function RRSimpleVoting({
   bracketId: string
   votedMatchups: Record<string, string>
   onVoteTracked: (matchupId: string, entrantId: string) => void
+  celebrationActive: boolean
 }) {
   const [currentIndex, setCurrentIndex] = useState(0)
   const [showConfirmation, setShowConfirmation] = useState(false)
@@ -793,6 +796,9 @@ function RRSimpleVoting({
   // Clamp index
   const safeIndex = Math.max(0, Math.min(currentIndex, unvotedMatchups.length - 1))
   const currentMatchup = unvotedMatchups[safeIndex]
+
+  // Hide voting content during celebration overlays
+  if (celebrationActive) return null
 
   // All voted: show waiting state
   if (unvotedMatchups.length === 0) {
