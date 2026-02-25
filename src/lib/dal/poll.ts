@@ -342,6 +342,67 @@ export async function duplicatePollDAL(pollId: string, teacherId: string) {
   })
 }
 
+/**
+ * Get all archived polls for a teacher, ordered by most recently updated.
+ * Used by the /polls/archived page.
+ */
+export async function getArchivedPollsDAL(teacherId: string) {
+  return prisma.poll.findMany({
+    where: { teacherId, status: 'archived' },
+    orderBy: { updatedAt: 'desc' },
+    include: {
+      _count: { select: { votes: true } },
+    },
+  })
+}
+
+/**
+ * Unarchive a poll by transitioning it to 'closed' status.
+ * Bypasses VALID_POLL_TRANSITIONS intentionally (same pattern as sessions).
+ * Ownership enforced via teacherId filter.
+ */
+export async function unarchivePollDAL(
+  pollId: string,
+  teacherId: string
+) {
+  const poll = await prisma.poll.findFirst({
+    where: { id: pollId, teacherId, status: 'archived' },
+  })
+
+  if (!poll) {
+    return { error: 'Poll not found or not archived' }
+  }
+
+  const updated = await prisma.poll.update({
+    where: { id: pollId },
+    data: { status: 'closed' },
+  })
+
+  return updated
+}
+
+/**
+ * Permanently delete an archived poll and all related data (cascade).
+ * Only archived polls can be permanently deleted.
+ * Ownership enforced via teacherId filter.
+ */
+export async function deletePollPermanentlyDAL(
+  pollId: string,
+  teacherId: string
+) {
+  const poll = await prisma.poll.findFirst({
+    where: { id: pollId, teacherId, status: 'archived' },
+  })
+
+  if (!poll) {
+    return { error: 'Poll not found or not archived' }
+  }
+
+  await prisma.poll.delete({ where: { id: pollId } })
+
+  return { success: true }
+}
+
 // ---------------------------------------------------------------------------
 // Vote functions
 // ---------------------------------------------------------------------------

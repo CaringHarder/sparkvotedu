@@ -11,6 +11,8 @@ import {
   renameBracketDAL,
   duplicateBracketDAL,
   archiveBracketDAL,
+  unarchiveBracketDAL,
+  deleteBracketPermanentlyDAL,
 } from '@/lib/dal/bracket'
 import {
   createBracketSchema,
@@ -407,5 +409,76 @@ export async function archiveBracket(input: unknown) {
     return { success: true }
   } catch {
     return { error: 'Failed to archive bracket' }
+  }
+}
+
+// Schema for unarchiving a bracket
+const unarchiveBracketInputSchema = z.object({
+  bracketId: z.string().uuid(),
+})
+
+/**
+ * Unarchive a bracket (recover from archive).
+ * Auth -> validate -> DAL -> revalidate -> return
+ */
+export async function unarchiveBracket(input: unknown) {
+  const teacher = await getAuthenticatedTeacher()
+  if (!teacher) {
+    return { error: 'Not authenticated' }
+  }
+
+  const parsed = unarchiveBracketInputSchema.safeParse(input)
+  if (!parsed.success) {
+    return { error: 'Invalid data', issues: parsed.error.issues }
+  }
+
+  try {
+    const result = await unarchiveBracketDAL(parsed.data.bracketId, teacher.id)
+
+    if ('error' in result) {
+      return { error: result.error }
+    }
+
+    revalidatePath('/brackets')
+    revalidatePath('/brackets/archived')
+
+    return { success: true }
+  } catch {
+    return { error: 'Failed to unarchive bracket' }
+  }
+}
+
+// Schema for permanently deleting a bracket
+const deleteBracketPermanentlyInputSchema = z.object({
+  bracketId: z.string().uuid(),
+})
+
+/**
+ * Permanently delete an archived bracket.
+ * Auth -> validate -> DAL -> revalidate -> return
+ */
+export async function deleteBracketPermanently(input: unknown) {
+  const teacher = await getAuthenticatedTeacher()
+  if (!teacher) {
+    return { error: 'Not authenticated' }
+  }
+
+  const parsed = deleteBracketPermanentlyInputSchema.safeParse(input)
+  if (!parsed.success) {
+    return { error: 'Invalid data', issues: parsed.error.issues }
+  }
+
+  try {
+    const result = await deleteBracketPermanentlyDAL(parsed.data.bracketId, teacher.id)
+
+    if ('error' in result) {
+      return { error: result.error }
+    }
+
+    revalidatePath('/brackets/archived')
+
+    return { success: true }
+  } catch {
+    return { error: 'Failed to permanently delete bracket' }
   }
 }

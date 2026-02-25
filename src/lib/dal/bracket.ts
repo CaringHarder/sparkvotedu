@@ -538,6 +538,68 @@ export async function getTeacherBrackets(teacherId: string) {
   })
 }
 
+/**
+ * Get all archived brackets for a teacher, ordered by most recently updated.
+ * Used by the /brackets/archived page.
+ */
+export async function getArchivedBracketsDAL(teacherId: string) {
+  return prisma.bracket.findMany({
+    where: { teacherId, status: 'archived' },
+    orderBy: { updatedAt: 'desc' },
+    include: {
+      _count: { select: { entrants: true } },
+      session: { select: { id: true, code: true } },
+    },
+  })
+}
+
+/**
+ * Unarchive a bracket by transitioning it to 'completed' status.
+ * Bypasses VALID_TRANSITIONS intentionally (same pattern as sessions).
+ * Ownership enforced via teacherId filter.
+ */
+export async function unarchiveBracketDAL(
+  bracketId: string,
+  teacherId: string
+) {
+  const bracket = await prisma.bracket.findFirst({
+    where: { id: bracketId, teacherId, status: 'archived' },
+  })
+
+  if (!bracket) {
+    return { error: 'Bracket not found or not archived' }
+  }
+
+  const updated = await prisma.bracket.update({
+    where: { id: bracketId },
+    data: { status: 'completed' },
+  })
+
+  return updated
+}
+
+/**
+ * Permanently delete an archived bracket and all related data (cascade).
+ * Only archived brackets can be permanently deleted.
+ * Ownership enforced via teacherId filter.
+ */
+export async function deleteBracketPermanentlyDAL(
+  bracketId: string,
+  teacherId: string
+) {
+  const bracket = await prisma.bracket.findFirst({
+    where: { id: bracketId, teacherId, status: 'archived' },
+  })
+
+  if (!bracket) {
+    return { error: 'Bracket not found or not archived' }
+  }
+
+  await prisma.bracket.delete({ where: { id: bracketId } })
+
+  return { success: true }
+}
+
 // Valid forward-only status transitions
 const VALID_TRANSITIONS: Record<string, string[]> = {
   draft: ['active', 'completed', 'archived'],

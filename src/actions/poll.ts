@@ -15,6 +15,8 @@ import {
   castRankedPollVoteDAL,
   getSimplePollVoteCounts,
   getRankedPollVotes,
+  unarchivePollDAL,
+  deletePollPermanentlyDAL,
 } from '@/lib/dal/poll'
 import {
   createPollSchema,
@@ -533,5 +535,76 @@ export async function archivePoll(input: unknown) {
     return { success: true }
   } catch {
     return { error: 'Failed to archive poll' }
+  }
+}
+
+// Schema for unarchiving a poll
+const unarchivePollInputSchema = z.object({
+  pollId: z.string().uuid(),
+})
+
+/**
+ * Unarchive a poll (recover from archive).
+ * Auth -> validate -> DAL -> revalidate -> return
+ */
+export async function unarchivePoll(input: unknown) {
+  const teacher = await getAuthenticatedTeacher()
+  if (!teacher) {
+    return { error: 'Not authenticated' }
+  }
+
+  const parsed = unarchivePollInputSchema.safeParse(input)
+  if (!parsed.success) {
+    return { error: 'Invalid data', issues: parsed.error.issues }
+  }
+
+  try {
+    const result = await unarchivePollDAL(parsed.data.pollId, teacher.id)
+
+    if ('error' in result) {
+      return { error: result.error }
+    }
+
+    revalidatePath('/polls')
+    revalidatePath('/polls/archived')
+
+    return { success: true }
+  } catch {
+    return { error: 'Failed to unarchive poll' }
+  }
+}
+
+// Schema for permanently deleting a poll
+const deletePollPermanentlyInputSchema = z.object({
+  pollId: z.string().uuid(),
+})
+
+/**
+ * Permanently delete an archived poll.
+ * Auth -> validate -> DAL -> revalidate -> return
+ */
+export async function deletePollPermanently(input: unknown) {
+  const teacher = await getAuthenticatedTeacher()
+  if (!teacher) {
+    return { error: 'Not authenticated' }
+  }
+
+  const parsed = deletePollPermanentlyInputSchema.safeParse(input)
+  if (!parsed.success) {
+    return { error: 'Invalid data', issues: parsed.error.issues }
+  }
+
+  try {
+    const result = await deletePollPermanentlyDAL(parsed.data.pollId, teacher.id)
+
+    if ('error' in result) {
+      return { error: result.error }
+    }
+
+    revalidatePath('/polls/archived')
+
+    return { success: true }
+  } catch {
+    return { error: 'Failed to permanently delete poll' }
   }
 }
