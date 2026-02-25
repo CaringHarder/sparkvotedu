@@ -43,19 +43,27 @@ Teachers can instantly engage any classroom through voting — on any topic, in 
 - ✓ Admin panel with role-based access, teacher management, account actions — v1.1
 - ✓ Production deployment at sparkvotedu.com — v1.1
 
+- ✓ Supabase RLS deny-all on all 12 public tables — v1.2
+- ✓ Name-based student identity (session code + first name, replaces device fingerprinting) — v1.2
+- ✓ Poll realtime bug fix (teacher dashboard reflects student votes in real-time) — v1.2
+- ✓ Presentation mode readability (high-contrast ranked poll cards for projectors) — v1.2
+- ✓ Session name display and inline editing on teacher dashboard — v1.2
+- ✓ Terminology unification ("Start"/"End"/"Active" replaces "Activate"/"Go Live"/"Close"/"Live") — v1.2
+- ✓ Session archiving with recover and permanent delete — v1.2
+- ✓ Bracket & poll UX consistency (realtime broadcast, RR simple mode, unified celebrations, RR tiebreaker) — v1.2
+
 ### Active
 
-## Current Milestone: v1.2 Classroom Hardening
+## Current Milestone: v1.3 Bug Fixes & UX Parity
 
-**Goal:** Fix real-world classroom issues discovered during first deployment — replace failed device fingerprinting with name-based student identity, fix bugs, harden security, and polish UX.
+**Goal:** Fix remaining bugs and UX gaps discovered during classroom testing — realtime update issues, missing UI controls, and interaction feedback.
 
 **Target features:**
-- Student identity overhaul: session code + first name (replaces device fingerprinting)
-- Poll live update bug fix (teacher dashboard not reflecting student votes in real-time)
-- Presentation mode readability fixes (contrast on ranked poll cards)
-- Session name display in teacher dashboard (show name, not number; editable)
-- Activate vs Go Live UX clarification across bracket types and polls
-- Supabase RLS security hardening (all 12 public tables)
+- Poll context menu (triple-dot menu matching brackets)
+- RR all-at-once bracket premature completion fix
+- SE bracket final round realtime update fix
+- Student view dynamic activity removal on delete
+- Sign-out button click visual indicator
 
 ### Out of Scope
 
@@ -115,4 +123,4 @@ Teachers can instantly engage any classroom through voting — on any topic, in 
 | Same Vercel project domain reassignment | Quick swap with minimal downtime vs blue-green deployment | ✓ Good — seamless cutover |
 
 ---
-*Last updated: 2026-02-21 after v1.2 milestone started*
+*Last updated: 2026-02-25 after v1.3 milestone started*

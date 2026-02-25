@@ -2,19 +2,17 @@
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-02-21)
+See: .planning/PROJECT.md (updated 2026-02-25)
 
 **Core value:** Teachers can instantly engage any classroom through voting -- on any topic, in any format -- and see participation happen in real time.
-**Current focus:** Phase 24 -- Bracket & Poll UX Consistency
+**Current focus:** v1.3 Bug Fixes & UX Parity -- Defining requirements
 
 ## Current Position
 
-Phase: 24 of 24 (Bracket & Poll UX Consistency)
-Plan: 6 of 6 in current phase (24-01, 24-02, 24-03, 24-04, 24-05, 24-06 complete)
-Status: Phase Complete
-Last activity: 2026-02-24 -- Completed 24-06 (Gap closure -- RR tiebreaker champion selection)
-
-Progress: [##############################] 100% (130/130 plans -- 110 v1.0+v1.1, 2 Phase 19, 3 Phase 20, 3 Phase 21, 3 Phase 22, 3 Phase 23, 6 Phase 24)
+Phase: Not started (defining requirements)
+Plan: --
+Status: Defining requirements
+Last activity: 2026-02-25 -- Milestone v1.3 started
 
 ## Performance Metrics
 
@@ -33,10 +31,15 @@ Progress: [##############################] 100% (130/130 plans -- 110 v1.0+v1.1,
 - LOC: 45,280 TypeScript (final)
 - Timeline: 6 days (2026-02-16 to 2026-02-21)
 
-**v1.2 Classroom Hardening (in progress):**
-- Phases: 5 (19-23)
-- Plans: TBD (pending phase planning)
-- Requirements: 15
+**v1.2 Classroom Hardening (shipped 2026-02-24):**
+- Phases: 6 (19-24)
+- Plans: 20
+- Commits: 130/130 plans complete
+- Timeline: 4 days (2026-02-21 to 2026-02-24)
+
+**v1.3 Bug Fixes & UX Parity (in progress):**
+- Phases: TBD (defining requirements)
+- Requirements: 5
 
 ## Accumulated Context
 
@@ -117,7 +120,7 @@ Recent decisions for v1.2:
 
 ## Session Continuity
 
-Last session: 2026-02-24
-Stopped at: Completed 24-06-PLAN.md (Gap closure -- RR tiebreaker champion selection). Phase 24 complete.
-Resume: All 24 phases complete (130/130 plans). Review pending todos for remaining bugs.
-Resume file: .planning/phases/24-bracket-poll-ux-consistency/24-06-SUMMARY.md
+Last session: 2026-02-25
+Stopped at: Milestone v1.3 Bug Fixes & UX Parity started. Defining requirements.
+Resume: Continue with requirements definition and roadmap creation.
+Resume file: .planning/REQUIREMENTS.md
