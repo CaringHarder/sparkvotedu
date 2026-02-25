@@ -9,12 +9,12 @@ See: .planning/PROJECT.md (updated 2026-02-25)
 
 ## Current Position
 
-Phase: 25 of 28 (UX Parity) -- COMPLETE
-Plan: 2 of 2 in current phase (all plans complete)
-Status: Phase Complete
-Last activity: 2026-02-25 - Completed 25-02: Card context menu integration and sign-out pending state
+Phase: 25 of 28 (UX Parity)
+Plan: 3 of 4 in current phase (gap closure plans added from UAT)
+Status: Executing
+Last activity: 2026-02-25 - Completed 25-03: Inline rename prop sync (useEffect fix for stale card names)
 
-Progress: [#########################░░░░░░] 84% (milestones v1.0-v1.2 complete, phase 25 done)
+Progress: [#########################░░░░░░] 85% (milestones v1.0-v1.2 complete, phase 25 gap closure in progress)
 
 ## Performance Metrics
 
@@ -58,6 +58,7 @@ Recent decisions for v1.3 roadmap:
 - AnimatePresence with popLayout mode for card list removal animations (delete=fade, archive=slide-left)
 - Archived items filtered at server page level before passing to client list components
 - Poll rename uses 'question' field (matching renamePollInputSchema), not 'name'
+- useEffect prop sync pattern: client components with useState(serverProp) need useEffect([serverProp]) to reflect post-refresh changes
 
 ### Pending Todos
 
@@ -79,6 +80,6 @@ All 5 pending todos from v1.2 have been promoted to v1.3 requirements (UXP-01, U
 ## Session Continuity
 
 Last session: 2026-02-25
-Stopped at: Completed 25-02-PLAN.md (card context menu integration + sign-out pending state). Phase 25 complete.
-Resume: `/gsd:execute-phase 26` to start Phase 26 (student activity removal)
-Resume file: .planning/phases/25-ux-parity/25-02-SUMMARY.md
+Stopped at: Completed 25-03-PLAN.md (inline rename prop sync fix)
+Resume: Execute 25-04-PLAN.md to continue Phase 25 gap closure
+Resume file: .planning/phases/25-ux-parity/25-03-SUMMARY.md
