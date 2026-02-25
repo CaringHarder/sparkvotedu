@@ -54,7 +54,7 @@
 
 **Milestone Goal:** Fix remaining bugs and UX gaps discovered during classroom testing -- realtime update issues, missing UI controls, and interaction feedback.
 
-- [ ] **Phase 25: UX Parity** - Poll context menu and sign-out button feedback to match established patterns
+- [x] **Phase 25: UX Parity** - Poll context menu and sign-out button feedback to match established patterns (completed 2026-02-25)
 - [ ] **Phase 26: Student Activity Removal** - Deleted brackets and polls disappear from student dashboards in real time
 - [ ] **Phase 27: SE Final Round Realtime Fix** - Single elimination final round continues showing live vote updates
 - [ ] **Phase 28: RR All-at-Once Completion Fix** - Round robin all-at-once brackets complete only after all rounds are decided
@@ -69,7 +69,7 @@
   1. Poll cards on the teacher dashboard show a triple-dot menu with archive, duplicate, and delete actions matching the bracket card context menu
   2. Clicking the triple-dot menu on a poll card opens the menu without navigating into the poll
   3. Teacher clicks sign-out and immediately sees a disabled/pending state (spinner or text change) confirming the action is processing -- no ambiguity, no double-click possible
-**Plans:** 1/2 plans executed
+**Plans:** 2/2 plans complete
 
 Plans:
 - [ ] 25-01-PLAN.md -- Backend infrastructure and shared UI components (DAL functions, server actions, CardContextMenu, DeleteConfirmDialog)
@@ -144,7 +144,7 @@ Phases execute in numeric order: 25 -> 26 -> 27 -> 28
 | 22. UX Polish | v1.2 | 3/3 | Complete | 2026-02-22 |
 | 23. Session Archiving | v1.2 | 3/3 | Complete | 2026-02-23 |
 | 24. Bracket & Poll UX Consistency | v1.2 | 6/6 | Complete | 2026-02-24 |
-| 25. UX Parity | 1/2 | In Progress|  | - |
+| 25. UX Parity | 2/2 | Complete   | 2026-02-25 | - |
 | 26. Student Activity Removal | v1.3 | 0/1 | Not started | - |
 | 27. SE Final Round Realtime Fix | v1.3 | 0/1 | Not started | - |
 | 28. RR All-at-Once Completion Fix | v1.3 | 0/1 | Not started | - |

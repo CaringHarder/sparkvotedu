@@ -10,7 +10,7 @@ Requirements for v1.3 Bug Fixes & UX Parity. Each maps to roadmap phases.
 ### UX Parity
 
 - [x] **UXP-01**: Poll cards have a triple-dot context menu with archive, duplicate, and delete actions matching the bracket card pattern
-- [ ] **UXP-02**: Teacher sign-out button shows a visual pending state (spinner/disabled) while sign-out is processing
+- [x] **UXP-02**: Teacher sign-out button shows a visual pending state (spinner/disabled) while sign-out is processing
 
 ### Bug Fixes
 
@@ -90,7 +90,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | Requirement | Phase | Status |
 |-------------|-------|--------|
 | UXP-01 | Phase 25 | Complete |
-| UXP-02 | Phase 25 | Pending |
+| UXP-02 | Phase 25 | Complete |
 | FIX-01 | Phase 28 | Pending |
 | FIX-02 | Phase 27 | Pending |
 | FIX-03 | Phase 26 | Pending |

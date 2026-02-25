@@ -9,12 +9,12 @@ See: .planning/PROJECT.md (updated 2026-02-25)
 
 ## Current Position
 
-Phase: 25 of 28 (UX Parity)
-Plan: 1 of 2 in current phase
-Status: Executing
-Last activity: 2026-02-25 - Completed 25-01: Backend infrastructure and shared UI components for card context menu
+Phase: 25 of 28 (UX Parity) -- COMPLETE
+Plan: 2 of 2 in current phase (all plans complete)
+Status: Phase Complete
+Last activity: 2026-02-25 - Completed 25-02: Card context menu integration and sign-out pending state
 
-Progress: [########################░░░░░░] 82% (milestones v1.0-v1.2 complete, v1.3 plan 01 done)
+Progress: [#########################░░░░░░] 84% (milestones v1.0-v1.2 complete, phase 25 done)
 
 ## Performance Metrics
 
@@ -55,6 +55,9 @@ Recent decisions for v1.3 roadmap:
 - CardContextMenu uses onStartRename callback prop (parent card handles inline edit UI)
 - Archive menu item hidden when item is already archived
 - DeleteConfirmDialog uses amber for live impact warning (distinct from red destructive buttons)
+- AnimatePresence with popLayout mode for card list removal animations (delete=fade, archive=slide-left)
+- Archived items filtered at server page level before passing to client list components
+- Poll rename uses 'question' field (matching renamePollInputSchema), not 'name'
 
 ### Pending Todos
 
@@ -76,6 +79,6 @@ All 5 pending todos from v1.2 have been promoted to v1.3 requirements (UXP-01, U
 ## Session Continuity
 
 Last session: 2026-02-25
-Stopped at: Completed 25-01-PLAN.md (backend infrastructure + shared components for card context menu)
-Resume: `/gsd:execute-phase 25` to continue with 25-02-PLAN.md (integration into card components)
-Resume file: .planning/phases/25-ux-parity/25-01-SUMMARY.md
+Stopped at: Completed 25-02-PLAN.md (card context menu integration + sign-out pending state). Phase 25 complete.
+Resume: `/gsd:execute-phase 26` to start Phase 26 (student activity removal)
+Resume file: .planning/phases/25-ux-parity/25-02-SUMMARY.md
