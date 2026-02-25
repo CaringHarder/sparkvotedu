@@ -146,7 +146,7 @@ Phases execute in numeric order: 25 -> 26 -> 27 -> 28
 | 22. UX Polish | v1.2 | 3/3 | Complete | 2026-02-22 |
 | 23. Session Archiving | v1.2 | 3/3 | Complete | 2026-02-23 |
 | 24. Bracket & Poll UX Consistency | v1.2 | 6/6 | Complete | 2026-02-24 |
-| 25. UX Parity | 4/4 | Complete   | 2026-02-25 | - |
+| 25. UX Parity | 4/4 | Complete    | 2026-02-25 | - |
 | 26. Student Activity Removal | v1.3 | 0/1 | Not started | - |
 | 27. SE Final Round Realtime Fix | v1.3 | 0/1 | Not started | - |
 | 28. RR All-at-Once Completion Fix | v1.3 | 0/1 | Not started | - |
