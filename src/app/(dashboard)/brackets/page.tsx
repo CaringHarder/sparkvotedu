@@ -3,7 +3,7 @@ import Link from 'next/link'
 import { Plus, Trophy } from 'lucide-react'
 import { getAuthenticatedTeacher } from '@/lib/dal/auth'
 import { getTeacherBrackets } from '@/lib/dal/bracket'
-import { BracketCard } from '@/components/bracket/bracket-card'
+import { BracketCardList } from '@/components/bracket/bracket-card-list'
 
 export default async function BracketsPage() {
   const teacher = await getAuthenticatedTeacher()
@@ -14,18 +14,20 @@ export default async function BracketsPage() {
   const brackets = await getTeacherBrackets(teacher.id)
 
   // Serialize dates to ISO strings for client components
-  const serialized = brackets.map((b) => ({
-    id: b.id,
-    name: b.name,
-    description: b.description,
-    size: b.size,
-    status: b.status,
-    bracketType: b.bracketType,
-    createdAt: b.createdAt.toISOString(),
-    _count: b._count,
-    sessionCode: b.session?.code ?? null,
-    sportGender: b.sportGender ?? null,
-  }))
+  const serialized = brackets
+    .map((b) => ({
+      id: b.id,
+      name: b.name,
+      description: b.description,
+      size: b.size,
+      status: b.status,
+      bracketType: b.bracketType,
+      createdAt: b.createdAt.toISOString(),
+      _count: b._count,
+      sessionCode: b.session?.code ?? null,
+      sportGender: b.sportGender ?? null,
+    }))
+    .filter((b) => b.status !== 'archived')
 
   return (
     <div className="space-y-6">
@@ -61,11 +63,7 @@ export default async function BracketsPage() {
           </Link>
         </div>
       ) : (
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {serialized.map((bracket) => (
-            <BracketCard key={bracket.id} bracket={bracket} />
-          ))}
-        </div>
+        <BracketCardList brackets={serialized} />
       )}
     </div>
   )

@@ -1,13 +1,14 @@
 'use client'
 
-import { useState, useTransition } from 'react'
+import { useState, useRef, useEffect, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
-import { BarChart3, ListOrdered, Pencil, Copy, Trash2 } from 'lucide-react'
+import Link from 'next/link'
+import { BarChart3, ListOrdered } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
 import { PollStatusBadge } from '@/components/poll/poll-status'
-import { deletePoll, duplicatePoll } from '@/actions/poll'
-import type { PollStatus, PollType } from '@/lib/poll/types'
+import { CardContextMenu } from '@/components/shared/card-context-menu'
+import { renamePoll } from '@/actions/poll'
+import type { PollStatus } from '@/lib/poll/types'
 
 interface PollCardData {
   id: string
@@ -20,6 +21,7 @@ interface PollCardData {
 
 interface PollCardProps {
   poll: PollCardData
+  onRemoved?: (type: 'delete' | 'archive') => void
 }
 
 const pollTypeConfig: Record<string, { label: string; className: string }> = {
@@ -27,48 +29,99 @@ const pollTypeConfig: Record<string, { label: string; className: string }> = {
   ranked: { label: 'Ranked', className: 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400' },
 }
 
-export function PollCard({ poll }: PollCardProps) {
+export function PollCard({ poll, onRemoved }: PollCardProps) {
   const router = useRouter()
+  const [isRenaming, setIsRenaming] = useState(false)
+  const [renameValue, setRenameValue] = useState(poll.question)
   const [isPending, startTransition] = useTransition()
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+  const inputRef = useRef<HTMLInputElement>(null)
 
   const typeConfig = pollTypeConfig[poll.pollType] ?? pollTypeConfig.simple
   const TypeIcon = poll.pollType === 'ranked' ? ListOrdered : BarChart3
   const voteCount = poll._count?.votes ?? 0
 
-  function handleEdit() {
-    router.push(`/polls/${poll.id}`)
-  }
+  // Auto-focus rename input
+  useEffect(() => {
+    if (isRenaming && inputRef.current) {
+      inputRef.current.focus()
+      inputRef.current.select()
+    }
+  }, [isRenaming])
 
-  function handleDuplicate() {
+  function handleRenameSave() {
+    setIsRenaming(false)
+    const trimmed = renameValue.trim()
+    if (trimmed === poll.question || !trimmed) {
+      setRenameValue(poll.question)
+      return
+    }
     startTransition(async () => {
-      const result = await duplicatePoll({ pollId: poll.id })
-      if (result && 'poll' in result && result.poll) {
-        router.push(`/polls/${result.poll.id}`)
-      }
-    })
-  }
-
-  function handleDelete() {
-    startTransition(async () => {
-      const result = await deletePoll({ pollId: poll.id })
-      if (result && 'success' in result) {
+      const result = await renamePoll({ pollId: poll.id, question: trimmed })
+      if (result && !('error' in result)) {
         router.refresh()
+      } else {
+        setRenameValue(poll.question)
       }
     })
+  }
+
+  function handleRenameKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
+    if (e.key === 'Enter') {
+      e.preventDefault()
+      handleRenameSave()
+    } else if (e.key === 'Escape') {
+      e.preventDefault()
+      setRenameValue(poll.question)
+      setIsRenaming(false)
+    }
   }
 
   return (
-    <>
-      <Card className="transition-colors hover:border-primary/30">
+    <Card className="relative transition-colors hover:border-primary/30">
+      {/* CardContextMenu in top-right corner */}
+      <div className="absolute right-2 top-2 z-10">
+        <CardContextMenu
+          itemId={poll.id}
+          itemName={poll.question}
+          itemType="poll"
+          status={poll.status}
+          editHref={`/polls/${poll.id}`}
+          onStartRename={() => setIsRenaming(true)}
+          onDuplicated={() => router.refresh()}
+          onArchived={() => {
+            onRemoved?.('archive')
+            router.refresh()
+          }}
+          onDeleted={() => {
+            onRemoved?.('delete')
+            router.refresh()
+          }}
+        />
+      </div>
+
+      <Link href={`/polls/${poll.id}`} className="block">
         <CardContent className="p-4">
           <div className="flex items-start gap-3">
             <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-indigo-50 dark:bg-indigo-900/20">
               <TypeIcon className="h-4.5 w-4.5 text-indigo-600 dark:text-indigo-400" />
             </div>
 
-            <div className="min-w-0 flex-1">
-              <h3 className="truncate text-sm font-semibold">{poll.question}</h3>
+            <div className="min-w-0 flex-1 pr-8">
+              {isRenaming ? (
+                <input
+                  ref={inputRef}
+                  type="text"
+                  value={renameValue}
+                  onChange={(e) => setRenameValue(e.target.value)}
+                  onBlur={handleRenameSave}
+                  onKeyDown={handleRenameKeyDown}
+                  disabled={isPending}
+                  onClick={(e) => e.preventDefault()}
+                  className="w-full truncate rounded-md border bg-background px-2 py-0.5 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-ring"
+                />
+              ) : (
+                <h3 className="truncate text-sm font-semibold">{poll.question}</h3>
+              )}
               <div className="mt-1.5 flex flex-wrap items-center gap-2">
                 <PollStatusBadge status={poll.status as PollStatus} />
                 <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${typeConfig.className}`}>
@@ -79,72 +132,9 @@ export function PollCard({ poll }: PollCardProps) {
                 </span>
               </div>
             </div>
-
-            <div className="flex shrink-0 items-center gap-0.5">
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-8 w-8"
-                onClick={handleEdit}
-                title="Edit"
-              >
-                <Pencil className="h-3.5 w-3.5" />
-              </Button>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-8 w-8"
-                onClick={handleDuplicate}
-                disabled={isPending}
-                title="Duplicate"
-              >
-                <Copy className="h-3.5 w-3.5" />
-              </Button>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-8 w-8 text-destructive hover:text-destructive"
-                onClick={() => setShowDeleteConfirm(true)}
-                disabled={isPending}
-                title="Delete"
-              >
-                <Trash2 className="h-3.5 w-3.5" />
-              </Button>
-            </div>
           </div>
         </CardContent>
-      </Card>
-
-      {/* Delete confirmation modal (same pattern as bracket-status.tsx) */}
-      {showDeleteConfirm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-          <div className="mx-4 w-full max-w-sm rounded-lg border bg-card p-6 shadow-lg">
-            <h3 className="text-sm font-semibold text-card-foreground">Delete Poll</h3>
-            <p className="mt-2 text-sm text-muted-foreground">
-              Are you sure you want to delete this poll? This cannot be undone.
-            </p>
-            <div className="mt-4 flex justify-end gap-2">
-              <button
-                onClick={() => setShowDeleteConfirm(false)}
-                disabled={isPending}
-                className="rounded-md border px-3 py-1.5 text-xs font-medium transition-colors hover:bg-accent disabled:opacity-50"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={() => {
-                  setShowDeleteConfirm(false)
-                  handleDelete()
-                }}
-                disabled={isPending}
-                className="rounded-md bg-red-600 px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-red-700 disabled:opacity-50"
-              >
-                {isPending ? 'Deleting...' : 'Delete'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-    </>
+      </Link>
+    </Card>
   )
 }

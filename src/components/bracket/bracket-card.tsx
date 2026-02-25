@@ -3,9 +3,10 @@
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useState, useRef, useEffect, useTransition } from 'react'
-import { Trophy, Calendar, MoreVertical, Radio, CheckCircle2, Trash2, QrCode, LinkIcon } from 'lucide-react'
+import { Trophy, Calendar, Radio, QrCode, LinkIcon } from 'lucide-react'
 import { BracketStatusBadge } from './bracket-status'
-import { updateBracketStatus, deleteBracket } from '@/actions/bracket'
+import { CardContextMenu } from '@/components/shared/card-context-menu'
+import { renameBracket } from '@/actions/bracket'
 
 interface BracketCardProps {
   bracket: {
@@ -20,6 +21,7 @@ interface BracketCardProps {
     sessionCode: string | null
     sportGender?: string | null
   }
+  onRemoved?: (type: 'delete' | 'archive') => void
 }
 
 const BRACKET_TYPE_LABELS: Record<string, string> = {
@@ -38,28 +40,23 @@ function formatDate(dateStr: string): string {
   })
 }
 
-export function BracketCard({ bracket }: BracketCardProps) {
+export function BracketCard({ bracket, onRemoved }: BracketCardProps) {
   const router = useRouter()
-  const [menuOpen, setMenuOpen] = useState(false)
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+  const [isRenaming, setIsRenaming] = useState(false)
+  const [renameValue, setRenameValue] = useState(bracket.name)
   const [showQR, setShowQR] = useState(false)
   const [copied, setCopied] = useState<string | null>(null)
-  const [error, setError] = useState<string | null>(null)
   const [isPending, startTransition] = useTransition()
-  const menuRef = useRef<HTMLDivElement>(null)
   const qrRef = useRef<HTMLDivElement>(null)
+  const inputRef = useRef<HTMLInputElement>(null)
 
-  // Close menu on outside click
+  // Auto-focus rename input
   useEffect(() => {
-    if (!menuOpen) return
-    function handleClick(e: MouseEvent) {
-      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
-        setMenuOpen(false)
-      }
+    if (isRenaming && inputRef.current) {
+      inputRef.current.focus()
+      inputRef.current.select()
     }
-    document.addEventListener('mousedown', handleClick)
-    return () => document.removeEventListener('mousedown', handleClick)
-  }, [menuOpen])
+  }, [isRenaming])
 
   // Close QR on outside click
   useEffect(() => {
@@ -83,41 +80,81 @@ export function BracketCard({ bracket }: BracketCardProps) {
     setTimeout(() => setCopied(null), 2000)
   }
 
-  function handleComplete() {
-    setError(null)
-    setMenuOpen(false)
+  function handleRenameSave() {
+    setIsRenaming(false)
+    const trimmed = renameValue.trim()
+    if (trimmed === bracket.name || !trimmed) {
+      setRenameValue(bracket.name)
+      return
+    }
     startTransition(async () => {
-      const result = await updateBracketStatus({ bracketId: bracket.id, status: 'completed' })
-      if (result && 'error' in result) {
-        setError(result.error as string)
+      const result = await renameBracket({ bracketId: bracket.id, name: trimmed })
+      if (result && !('error' in result)) {
+        router.refresh()
+      } else {
+        setRenameValue(bracket.name)
       }
     })
   }
 
-  function handleDelete() {
-    setError(null)
-    setShowDeleteConfirm(false)
-    startTransition(async () => {
-      const result = await deleteBracket({ bracketId: bracket.id })
-      if (result && 'error' in result) {
-        setError(result.error as string)
-      } else {
-        router.refresh()
-      }
-    })
+  function handleRenameKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
+    if (e.key === 'Enter') {
+      e.preventDefault()
+      handleRenameSave()
+    } else if (e.key === 'Escape') {
+      e.preventDefault()
+      setRenameValue(bracket.name)
+      setIsRenaming(false)
+    }
   }
 
   return (
     <div className="group relative rounded-lg border bg-card transition-shadow hover:shadow-md">
-      {/* Card body — clickable link */}
+      {/* CardContextMenu in top-right corner */}
+      <div className="absolute right-2 top-2 z-10">
+        <CardContextMenu
+          itemId={bracket.id}
+          itemName={bracket.name}
+          itemType="bracket"
+          status={bracket.status}
+          editHref={`/brackets/${bracket.id}`}
+          sessionCode={bracket.sessionCode}
+          onStartRename={() => setIsRenaming(true)}
+          onDuplicated={() => router.refresh()}
+          onArchived={() => {
+            onRemoved?.('archive')
+            router.refresh()
+          }}
+          onDeleted={() => {
+            onRemoved?.('delete')
+            router.refresh()
+          }}
+        />
+      </div>
+
+      {/* Card body -- clickable link */}
       <Link
         href={`/brackets/${bracket.id}`}
         className="block p-4 pb-3"
       >
         <div className="flex items-start justify-between gap-2 pr-8">
-          <h3 className="truncate text-sm font-semibold text-card-foreground group-hover:text-primary">
-            {bracket.name}
-          </h3>
+          {isRenaming ? (
+            <input
+              ref={inputRef}
+              type="text"
+              value={renameValue}
+              onChange={(e) => setRenameValue(e.target.value)}
+              onBlur={handleRenameSave}
+              onKeyDown={handleRenameKeyDown}
+              disabled={isPending}
+              onClick={(e) => e.preventDefault()}
+              className="truncate rounded-md border bg-background px-2 py-0.5 text-sm font-semibold text-card-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+            />
+          ) : (
+            <h3 className="truncate text-sm font-semibold text-card-foreground group-hover:text-primary">
+              {bracket.name}
+            </h3>
+          )}
           <div className="flex items-center gap-1.5">
             {BRACKET_TYPE_LABELS[bracket.bracketType] && (
               <span
@@ -159,7 +196,7 @@ export function BracketCard({ bracket }: BracketCardProps) {
 
       {/* Actions bar */}
       <div className="flex items-center gap-1.5 border-t px-3 py-2">
-        {/* View Live — active brackets */}
+        {/* View Live -- active brackets */}
         {bracket.status === 'active' && (
           <Link
             href={`/brackets/${bracket.id}/live`}
@@ -170,7 +207,7 @@ export function BracketCard({ bracket }: BracketCardProps) {
           </Link>
         )}
 
-        {/* QR Code — active brackets with a session code */}
+        {/* QR Code -- active brackets with a session code */}
         {bracket.status === 'active' && bracket.sessionCode && (
           <button
             type="button"
@@ -182,7 +219,7 @@ export function BracketCard({ bracket }: BracketCardProps) {
           </button>
         )}
 
-        {/* Copy Link — active brackets with a session code */}
+        {/* Copy Link -- active brackets with a session code */}
         {bracket.status === 'active' && joinUrl && (
           <button
             type="button"
@@ -193,70 +230,7 @@ export function BracketCard({ bracket }: BracketCardProps) {
             {copied === 'link' ? 'Copied!' : 'Copy Link'}
           </button>
         )}
-
-        <div className="flex-1" />
-
-        {/* Overflow menu */}
-        <div className="relative" ref={menuRef}>
-          <button
-            type="button"
-            onClick={() => setMenuOpen(!menuOpen)}
-            className="rounded-md p-1 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
-          >
-            <MoreVertical className="h-4 w-4" />
-          </button>
-
-          {menuOpen && (
-            <div className="absolute bottom-full right-0 z-40 mb-1 w-44 rounded-lg border bg-card py-1 shadow-lg">
-              {bracket.status === 'active' && (
-                <button
-                  type="button"
-                  onClick={handleComplete}
-                  disabled={isPending}
-                  className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs transition-colors hover:bg-accent disabled:opacity-50"
-                >
-                  <CheckCircle2 className="h-3.5 w-3.5 text-blue-500" />
-                  Complete Bracket
-                </button>
-              )}
-
-              {bracket.status === 'active' && bracket.sessionCode && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    handleCopy(bracket.sessionCode!, 'code')
-                    setMenuOpen(false)
-                  }}
-                  className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs transition-colors hover:bg-accent"
-                >
-                  <LinkIcon className="h-3.5 w-3.5 text-muted-foreground" />
-                  {copied === 'code' ? 'Copied!' : 'Copy Join Code'}
-                </button>
-              )}
-
-              <button
-                type="button"
-                onClick={() => {
-                  setMenuOpen(false)
-                  setShowDeleteConfirm(true)
-                }}
-                disabled={isPending}
-                className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs text-red-600 transition-colors hover:bg-red-50 dark:hover:bg-red-950/20 disabled:opacity-50"
-              >
-                <Trash2 className="h-3.5 w-3.5" />
-                Delete Bracket
-              </button>
-            </div>
-          )}
-        </div>
       </div>
-
-      {/* Error message */}
-      {error && (
-        <div className="border-t px-3 py-1.5">
-          <p className="text-xs text-red-600">{error}</p>
-        </div>
-      )}
 
       {/* QR Code dropdown */}
       {showQR && bracket.sessionCode && (
@@ -284,37 +258,6 @@ export function BracketCard({ bracket }: BracketCardProps) {
                 {copied === 'qr-link' ? 'Copied!' : 'Copy link'}
               </button>
             )}
-          </div>
-        </div>
-      )}
-
-      {/* Delete confirmation dialog */}
-      {showDeleteConfirm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-          <div className="mx-4 w-full max-w-sm rounded-lg border bg-card p-6 shadow-lg">
-            <h3 className="text-sm font-semibold text-card-foreground">
-              Delete Bracket
-            </h3>
-            <p className="mt-2 text-sm text-muted-foreground">
-              Are you sure you want to delete &quot;{bracket.name}&quot;? This
-              cannot be undone.
-            </p>
-            <div className="mt-4 flex justify-end gap-2">
-              <button
-                onClick={() => setShowDeleteConfirm(false)}
-                disabled={isPending}
-                className="rounded-md border px-3 py-1.5 text-xs font-medium transition-colors hover:bg-accent disabled:opacity-50"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleDelete}
-                disabled={isPending}
-                className="rounded-md bg-red-600 px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-red-700 disabled:opacity-50"
-              >
-                {isPending ? 'Deleting...' : 'Delete'}
-              </button>
-            </div>
           </div>
         </div>
       )}
