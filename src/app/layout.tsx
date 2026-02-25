@@ -22,6 +22,14 @@ export const metadata: Metadata = {
     description:
       "Interactive brackets and polls that spark student engagement in any classroom. Create tournaments, polls, and predictions — students join with a simple code.",
     type: "website",
+    images: [
+      {
+        url: "/logo-horizontal.png",
+        width: 2880,
+        height: 1620,
+        alt: "SparkVotEDU - Ignite Student Voice Through Voting",
+      },
+    ],
   },
 };
 
