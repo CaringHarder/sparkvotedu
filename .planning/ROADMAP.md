@@ -69,11 +69,11 @@
   1. Poll cards on the teacher dashboard show a triple-dot menu with archive, duplicate, and delete actions matching the bracket card context menu
   2. Clicking the triple-dot menu on a poll card opens the menu without navigating into the poll
   3. Teacher clicks sign-out and immediately sees a disabled/pending state (spinner or text change) confirming the action is processing -- no ambiguity, no double-click possible
-**Plans**: TBD
+**Plans:** 2 plans
 
 Plans:
-- [ ] 25-01: Poll card context menu (mirror session-card-menu.tsx pattern with Radix DropdownMenu)
-- [ ] 25-02: Sign-out button pending state (useFormStatus or useTransition for immediate feedback)
+- [ ] 25-01-PLAN.md -- Backend infrastructure and shared UI components (DAL functions, server actions, CardContextMenu, DeleteConfirmDialog)
+- [ ] 25-02-PLAN.md -- Card integration with unified menu, animations, and sign-out pending state
 
 ### Phase 26: Student Activity Removal
 **Goal**: Students see an accurate, live view of available activities -- when a teacher deletes a bracket or poll, it disappears from the student dashboard without requiring a page refresh
