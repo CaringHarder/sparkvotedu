@@ -67,6 +67,6 @@ All 5 pending todos from v1.2 have been promoted to v1.3 requirements (UXP-01, U
 ## Session Continuity
 
 Last session: 2026-02-24
-Stopped at: Roadmap created for v1.3 milestone. Four phases (25-28) defined, 5/5 requirements mapped.
+Stopped at: Phase 25 context gathered. Decisions captured for poll/bracket context menu parity, delete confirmation, sign-out feedback, and menu trigger placement.
 Resume: `/gsd:plan-phase 25` to begin Phase 25 (UX Parity) planning.
-Resume file: .planning/ROADMAP.md
+Resume file: .planning/phases/25-ux-parity/25-CONTEXT.md
