@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'motion/react'
 import { PollCard } from './poll-card'
 
@@ -22,6 +22,11 @@ type RemovalType = 'delete' | 'archive' | null
 export function PollCardList({ polls }: PollCardListProps) {
   const [items, setItems] = useState(polls)
   const [removalTypes, setRemovalTypes] = useState<Record<string, RemovalType>>({})
+
+  // Sync local state when server data changes (e.g., after rename + router.refresh)
+  useEffect(() => {
+    setItems(polls)
+  }, [polls])
 
   function handleRemove(id: string, type: 'delete' | 'archive') {
     setRemovalTypes((prev) => ({ ...prev, [id]: type }))

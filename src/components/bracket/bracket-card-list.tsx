@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'motion/react'
 import { BracketCard } from './bracket-card'
@@ -28,6 +28,11 @@ export function BracketCardList({ brackets }: BracketCardListProps) {
   const router = useRouter()
   const [items, setItems] = useState(brackets)
   const [removalTypes, setRemovalTypes] = useState<Record<string, RemovalType>>({})
+
+  // Sync local state when server data changes (e.g., after rename + router.refresh)
+  useEffect(() => {
+    setItems(brackets)
+  }, [brackets])
 
   function handleRemove(id: string, type: 'delete' | 'archive') {
     setRemovalTypes((prev) => ({ ...prev, [id]: type }))
