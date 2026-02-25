@@ -10,6 +10,7 @@ import {
   updatePollStatusDAL,
   assignPollToSessionDAL,
   duplicatePollDAL,
+  renamePollDAL,
   castSimplePollVoteDAL,
   castRankedPollVoteDAL,
   getSimplePollVoteCounts,
@@ -451,5 +452,86 @@ export async function castPollVote(input: unknown) {
     return { success: true }
   } catch {
     return { error: 'Failed to cast vote' }
+  }
+}
+
+// Schema for renaming a poll
+const renamePollInputSchema = z.object({
+  pollId: z.string().uuid(),
+  question: z.string().min(1).max(500),
+})
+
+/**
+ * Rename a poll (update its question).
+ * Auth -> validate -> DAL -> revalidate -> return
+ */
+export async function renamePoll(input: unknown) {
+  const teacher = await getAuthenticatedTeacher()
+  if (!teacher) {
+    return { error: 'Not authenticated' }
+  }
+
+  const parsed = renamePollInputSchema.safeParse(input)
+  if (!parsed.success) {
+    return { error: 'Invalid rename data', issues: parsed.error.issues }
+  }
+
+  try {
+    const result = await renamePollDAL(
+      parsed.data.pollId,
+      teacher.id,
+      parsed.data.question
+    )
+
+    if ('error' in result) {
+      return { error: result.error }
+    }
+
+    revalidatePath('/polls')
+    revalidatePath('/dashboard')
+
+    return { success: true }
+  } catch {
+    return { error: 'Failed to rename poll' }
+  }
+}
+
+// Schema for archiving a poll
+const archivePollInputSchema = z.object({
+  pollId: z.string().uuid(),
+})
+
+/**
+ * Archive a poll.
+ * Auth -> validate -> DAL (reuses updatePollStatusDAL) -> revalidate -> return
+ */
+export async function archivePoll(input: unknown) {
+  const teacher = await getAuthenticatedTeacher()
+  if (!teacher) {
+    return { error: 'Not authenticated' }
+  }
+
+  const parsed = archivePollInputSchema.safeParse(input)
+  if (!parsed.success) {
+    return { error: 'Invalid data', issues: parsed.error.issues }
+  }
+
+  try {
+    const result = await updatePollStatusDAL(
+      parsed.data.pollId,
+      teacher.id,
+      'archived'
+    )
+
+    if ('error' in result) {
+      return { error: result.error }
+    }
+
+    revalidatePath('/polls')
+    revalidatePath('/dashboard')
+
+    return { success: true }
+  } catch {
+    return { error: 'Failed to archive poll' }
   }
 }

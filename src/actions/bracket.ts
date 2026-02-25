@@ -8,6 +8,9 @@ import {
   updateBracketEntrantsDAL,
   deleteBracketDAL,
   getTeacherBracketCounts,
+  renameBracketDAL,
+  duplicateBracketDAL,
+  archiveBracketDAL,
 } from '@/lib/dal/bracket'
 import {
   createBracketSchema,
@@ -292,5 +295,117 @@ export async function deleteBracket(input: unknown) {
     return { success: true }
   } catch {
     return { error: 'Failed to delete bracket' }
+  }
+}
+
+// Schema for renaming a bracket
+const renameBracketSchema = z.object({
+  bracketId: z.string().uuid(),
+  name: z.string().min(1).max(200),
+})
+
+/**
+ * Rename a bracket.
+ * Auth -> validate -> DAL -> revalidate -> return
+ */
+export async function renameBracket(input: unknown) {
+  const teacher = await getAuthenticatedTeacher()
+  if (!teacher) {
+    return { error: 'Not authenticated' }
+  }
+
+  const parsed = renameBracketSchema.safeParse(input)
+  if (!parsed.success) {
+    return { error: 'Invalid rename data', issues: parsed.error.issues }
+  }
+
+  try {
+    const result = await renameBracketDAL(
+      parsed.data.bracketId,
+      teacher.id,
+      parsed.data.name
+    )
+
+    if ('error' in result) {
+      return { error: result.error }
+    }
+
+    revalidatePath('/brackets')
+    revalidatePath('/dashboard')
+
+    return { success: true }
+  } catch {
+    return { error: 'Failed to rename bracket' }
+  }
+}
+
+// Schema for duplicating a bracket
+const duplicateBracketInputSchema = z.object({
+  bracketId: z.string().uuid(),
+})
+
+/**
+ * Duplicate a bracket with entrants (not matchups/votes).
+ * Auth -> validate -> DAL -> revalidate -> return
+ */
+export async function duplicateBracket(input: unknown) {
+  const teacher = await getAuthenticatedTeacher()
+  if (!teacher) {
+    return { error: 'Not authenticated' }
+  }
+
+  const parsed = duplicateBracketInputSchema.safeParse(input)
+  if (!parsed.success) {
+    return { error: 'Invalid data', issues: parsed.error.issues }
+  }
+
+  try {
+    const result = await duplicateBracketDAL(parsed.data.bracketId, teacher.id)
+
+    if ('error' in result) {
+      return { error: result.error }
+    }
+
+    revalidatePath('/brackets')
+
+    return { bracket: { id: result.id } }
+  } catch {
+    return { error: 'Failed to duplicate bracket' }
+  }
+}
+
+// Schema for archiving a bracket
+const archiveBracketInputSchema = z.object({
+  bracketId: z.string().uuid(),
+})
+
+/**
+ * Archive a bracket.
+ * Auth -> validate -> DAL -> revalidate -> return
+ */
+export async function archiveBracket(input: unknown) {
+  const teacher = await getAuthenticatedTeacher()
+  if (!teacher) {
+    return { error: 'Not authenticated' }
+  }
+
+  const parsed = archiveBracketInputSchema.safeParse(input)
+  if (!parsed.success) {
+    return { error: 'Invalid data', issues: parsed.error.issues }
+  }
+
+  try {
+    const result = await archiveBracketDAL(parsed.data.bracketId, teacher.id)
+
+    if ('error' in result) {
+      return { error: result.error }
+    }
+
+    revalidatePath('/brackets')
+    revalidatePath('/dashboard')
+
+    return { success: true }
+  } catch {
+    return { error: 'Failed to archive bracket' }
   }
 }

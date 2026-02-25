@@ -2,9 +2,10 @@ import { prisma } from '@/lib/prisma'
 
 // Valid forward-only poll status transitions
 const VALID_POLL_TRANSITIONS: Record<string, string[]> = {
-  draft: ['active'],
-  active: ['closed'],
+  draft: ['active', 'archived'],
+  active: ['closed', 'archived'],
   closed: ['archived', 'draft'],
+  archived: [],
 }
 
 /**
@@ -204,6 +205,32 @@ export async function deletePollDAL(
 
   await prisma.poll.delete({ where: { id: pollId } })
   return true
+}
+
+/**
+ * Rename a poll (update the question field).
+ * Ownership enforced via teacherId filter.
+ * Returns updated poll or error.
+ */
+export async function renamePollDAL(
+  pollId: string,
+  teacherId: string,
+  question: string
+) {
+  const poll = await prisma.poll.findFirst({
+    where: { id: pollId, teacherId },
+  })
+
+  if (!poll) {
+    return { error: 'Poll not found' }
+  }
+
+  const updated = await prisma.poll.update({
+    where: { id: pollId },
+    data: { question },
+  })
+
+  return updated
 }
 
 /**

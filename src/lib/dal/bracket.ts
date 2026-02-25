@@ -540,9 +540,10 @@ export async function getTeacherBrackets(teacherId: string) {
 
 // Valid forward-only status transitions
 const VALID_TRANSITIONS: Record<string, string[]> = {
-  draft: ['active', 'completed'],
-  active: ['completed'],
-  completed: [],
+  draft: ['active', 'completed', 'archived'],
+  active: ['completed', 'archived'],
+  completed: ['archived'],
+  archived: [],
 }
 
 /**
@@ -716,4 +717,102 @@ export async function deleteBracketDAL(
   await prisma.bracket.delete({ where: { id: bracketId } })
 
   return { success: true }
+}
+
+/**
+ * Rename a bracket. Ownership enforced via teacherId filter.
+ * Returns updated bracket or error.
+ */
+export async function renameBracketDAL(
+  bracketId: string,
+  teacherId: string,
+  name: string
+) {
+  const bracket = await prisma.bracket.findFirst({
+    where: { id: bracketId, teacherId },
+  })
+
+  if (!bracket) {
+    return { error: 'Bracket not found' }
+  }
+
+  const updated = await prisma.bracket.update({
+    where: { id: bracketId },
+    data: { name },
+  })
+
+  return updated
+}
+
+/**
+ * Duplicate a bracket with its entrants (not matchups, votes, or predictions).
+ * New bracket is always draft status with " (Copy)" appended to name.
+ * Ownership enforced via teacherId filter.
+ */
+export async function duplicateBracketDAL(
+  bracketId: string,
+  teacherId: string
+) {
+  const source = await prisma.bracket.findFirst({
+    where: { id: bracketId, teacherId },
+    include: { entrants: { orderBy: { seedPosition: 'asc' } } },
+  })
+
+  if (!source) {
+    return { error: 'Bracket not found' }
+  }
+
+  return prisma.$transaction(async (tx) => {
+    const newBracket = await tx.bracket.create({
+      data: {
+        name: `${source.name} (Copy)`,
+        description: source.description,
+        bracketType: source.bracketType,
+        size: source.size,
+        maxEntrants: source.maxEntrants,
+        status: 'draft',
+        teacherId,
+        sessionId: null,
+        viewingMode: source.viewingMode,
+        showVoteCounts: source.showVoteCounts,
+        showSeedNumbers: source.showSeedNumbers,
+        votingTimerSeconds: source.votingTimerSeconds,
+        roundRobinPacing: source.roundRobinPacing,
+        roundRobinVotingStyle: source.roundRobinVotingStyle,
+        roundRobinStandingsMode: source.roundRobinStandingsMode,
+        predictiveMode: source.predictiveMode,
+        predictiveResolutionMode: source.predictiveResolutionMode,
+        playInEnabled: source.playInEnabled,
+      },
+    })
+
+    // Clone entrants (without externalTeamId -- fresh copy)
+    for (const entrant of source.entrants) {
+      await tx.bracketEntrant.create({
+        data: {
+          name: entrant.name,
+          seedPosition: entrant.seedPosition,
+          bracketId: newBracket.id,
+          logoUrl: entrant.logoUrl,
+          abbreviation: entrant.abbreviation,
+        },
+      })
+    }
+
+    return tx.bracket.findUniqueOrThrow({
+      where: { id: newBracket.id },
+      include: { entrants: { orderBy: { seedPosition: 'asc' } } },
+    })
+  })
+}
+
+/**
+ * Archive a bracket. Uses VALID_TRANSITIONS to validate the transition.
+ * Ownership enforced via teacherId filter.
+ */
+export async function archiveBracketDAL(
+  bracketId: string,
+  teacherId: string
+) {
+  return updateBracketStatusDAL(bracketId, teacherId, 'archived')
 }
