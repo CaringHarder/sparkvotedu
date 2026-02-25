@@ -1,9 +1,9 @@
 ---
-status: diagnosed
+status: resolved
 phase: 25-ux-parity
 source: 25-01-SUMMARY.md, 25-02-SUMMARY.md
 started: 2026-02-25T04:00:00Z
-updated: 2026-02-25T04:15:00Z
+updated: 2026-02-25T12:00:00Z
 ---
 
 ## Current Test
@@ -65,7 +65,7 @@ skipped: 0
 ## Gaps
 
 - truth: "Bracket card title updates immediately in the UI after inline rename save"
-  status: failed
+  status: resolved
   reason: "User reported: pass, but the old name stayed until manual refresh after hitting enter"
   severity: minor
   test: 3
@@ -85,7 +85,7 @@ skipped: 0
   debug_session: ".planning/debug/inline-rename-stale-ui.md"
 
 - truth: "Poll card title updates immediately in the UI after inline rename save"
-  status: failed
+  status: resolved
   reason: "User reported: pass but same problem. After pressing enter, the old name shows, but a manual refresh shows the new name"
   severity: minor
   test: 4
@@ -100,7 +100,7 @@ skipped: 0
   debug_session: ".planning/debug/inline-rename-stale-ui.md"
 
 - truth: "Archived brackets and polls appear in the archive view for teacher recovery"
-  status: failed
+  status: resolved
   reason: "User reported: The archived brackets and polls do not appear in the archive view"
   severity: major
   test: 9
