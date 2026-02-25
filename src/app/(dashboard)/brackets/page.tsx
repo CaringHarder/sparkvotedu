@@ -1,6 +1,6 @@
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
-import { Plus, Trophy } from 'lucide-react'
+import { Plus, Trophy, Archive } from 'lucide-react'
 import { getAuthenticatedTeacher } from '@/lib/dal/auth'
 import { getTeacherBrackets } from '@/lib/dal/bracket'
 import { BracketCardList } from '@/components/bracket/bracket-card-list'
@@ -34,6 +34,13 @@ export default async function BracketsPage() {
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold tracking-tight">Brackets</h1>
         <div className="flex items-center gap-2">
+          <Link
+            href="/brackets/archived"
+            className="inline-flex items-center gap-1.5 rounded-md border border-input bg-background px-3 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground"
+          >
+            <Archive className="h-4 w-4" />
+            Archived
+          </Link>
           <Link
             href="/brackets/import"
             className="inline-flex items-center gap-1.5 rounded-md border border-input bg-background px-3 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground"
