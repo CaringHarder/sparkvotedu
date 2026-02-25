@@ -1,226 +1,251 @@
-# Stack Research: v1.2 Classroom Hardening
+# Stack Research: v1.3 Bug Fixes & UX Parity
 
-**Domain:** EdTech classroom voting platform -- security hardening, identity overhaul, realtime debugging
-**Researched:** 2026-02-21
-**Confidence:** HIGH (existing stack verified against installed versions; no new packages needed)
+**Domain:** EdTech classroom voting platform -- bug fixes and UI parity for polls and brackets
+**Researched:** 2026-02-24
+**Confidence:** HIGH (all patterns verified against installed versions and existing codebase)
 
 ---
 
 ## Executive Summary
 
-v1.2 requires **zero new npm packages**. Every change is achievable with the existing stack (Next.js 16.1.6, Prisma 7.3.0, Supabase JS 2.93.3, Zod 4.3.6). The work is schema changes, SQL policies, broadcast debugging, and UI updates -- not library additions.
+v1.3 requires **zero new npm packages**. All five features are achievable with the existing stack (Next.js 16.1.6, React 19.2.3, Supabase JS 2.93.3, shadcn/ui DropdownMenu, Framer Motion 12.x). The work is logic fixes and UI assembly from existing primitives, not library additions.
 
-The key insight: Prisma connects to Supabase PostgreSQL via a `bypassrls` database user, so RLS policies protect the Supabase REST API surface (anon key) without affecting server-side Prisma queries. The `@fingerprintjs/fingerprintjs` package should be removed after the name-based identity migration is complete.
+The critical pattern theme across all five items is **React state lifecycle management**: specifically, knowing when to use `useRef` vs `useState`, when cleanup runs, and how to defer "guard" flag setting until after async operations complete. The `hasShownRevealRef` pattern already established in Phase 24 (DEVotingView, teacher live-dashboard) is the canonical solution for all stale-ref issues.
 
 ---
 
 ## Current Stack (Verified from package.json)
 
-| Technology | Installed Version | Role in v1.2 |
+| Technology | Installed Version | Role in v1.3 |
 |------------|-------------------|---------------|
 | Next.js | 16.1.6 | No changes needed |
-| React | 19.2.3 | No changes needed |
-| Prisma | 7.3.0 (client + CLI) | Schema migration for name-based identity |
-| @prisma/adapter-pg | 7.3.0 | No changes needed (direct PostgreSQL connection) |
-| @supabase/supabase-js | ^2.93.3 | RLS policies + Realtime debugging |
-| @supabase/ssr | ^0.8.0 | No changes needed |
-| Zod | ^4.3.6 | Validation schema updates for name-based join |
-| @fingerprintjs/fingerprintjs | ^5.0.1 | **REMOVE** after migration |
-| stripe | ^20.3.0 | No changes needed |
+| React | 19.2.3 | `useRef`, `useTransition`, `useFormStatus` -- existing hooks |
+| @radix-ui/react-dropdown-menu | ^2.1.16 | Already installed; used in `DropdownMenu` via shadcn/ui |
+| @supabase/supabase-js | ^2.93.3 | Broadcast REST API for `activity_deleted` event |
+| Tailwind CSS | ^4 | No changes needed |
 | motion (Framer Motion) | ^12.29.2 | No changes needed |
-| Tailwind CSS | ^4 | CSS contrast fixes only |
+| lucide-react | ^0.563.0 | `MoreVertical` icon already used in bracket-card.tsx |
+| Prisma | ^7.3.0 | No changes needed |
+| Zod | ^4.3.6 | No changes needed |
 
 ---
 
 ## What Changes (No New Packages)
 
-### 1. Name-Based Student Identity
+### 1. Poll Context Menu (Triple-Dot Menu)
 
-**What changes:** The `StudentParticipant` model, join flow, and identity hooks.
+**Goal:** Add a `MoreVertical` triple-dot context menu to poll cards matching the bracket card pattern.
 
-**Schema migration (Prisma):**
+**Pattern source:** `src/components/bracket/bracket-card.tsx` -- already implements the same menu with `MoreVertical` from lucide-react, a custom `menuRef`, `menuOpen` state, `showDeleteConfirm` dialog, and outside-click cleanup via `useEffect`.
 
-```prisma
-model StudentParticipant {
-  id           String    @id @default(uuid())
-  funName      String    @map("fun_name")
-  firstName    String    @map("first_name")        // NEW: student's real first name
-  deviceId     String?   @map("device_id")          // CHANGE: nullable (no longer primary identifier)
-  fingerprint  String?                               // KEEP nullable, will stop populating
-  // ... rest unchanged
+**Implementation:** New `PollCardMenu` component (or inline on the polls list page). Use the existing `shadcn/ui` `DropdownMenu`/`DropdownMenuTrigger`/`DropdownMenuContent`/`DropdownMenuItem` primitives already installed via `@radix-ui/react-dropdown-menu`.
 
-  @@unique([sessionId, deviceId])                    // KEEP for backward compat
-  @@unique([sessionId, funName])                     // KEEP
-  @@index([sessionId, firstName])                    // NEW: for duplicate detection
-  @@map("student_participants")
+The bracket-card uses a custom DOM-managed menu (not shadcn DropdownMenu) whereas `session-card-menu.tsx` uses the shadcn DropdownMenu primitive. Either pattern is valid; the shadcn one is cleaner and already available.
+
+**Key primitives (all already installed):**
+
+```typescript
+import { MoreVertical, Trash2 } from 'lucide-react'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
+```
+
+**Stop-propagation pattern** (critical for cards that are also links):
+
+```typescript
+// Prevent card navigation when clicking the menu trigger
+<DropdownMenuTrigger asChild>
+  <button
+    onClick={(e) => {
+      e.stopPropagation()
+      e.preventDefault()
+    }}
+  >
+    <MoreVertical className="h-4 w-4" />
+  </button>
+</DropdownMenuTrigger>
+```
+
+**No new packages needed.** The DropdownMenu component is already in `src/components/ui/dropdown-menu.tsx`.
+
+---
+
+### 2. RR All-at-Once Bracket Premature Completion Fix
+
+**Goal:** Prevent RR bracket from marking completion before all matchups in an all-at-once pacing round are decided.
+
+**Root cause pattern:** The existing `bracketDone` computation (corrected in Phase 24) and the server-side `isRoundRobinComplete` function already check that all matchups are decided. The issue is whether the server-side action or client-side hook prematurely detects completion when only some matchups in a round are decided.
+
+**Key existing pattern to understand:**
+
+```typescript
+// In use-realtime-bracket.ts (lines 139-152):
+// 'winner_selected' -> fetchBracketState() [bracket may still be 'active']
+// 'bracket_completed' -> fetchBracketState() AND setBracketCompleted(true)
+```
+
+**Investigation target:** `src/actions/round-robin.ts` `isRoundRobinComplete` -- confirm it checks ALL matchups across ALL rounds (not just the current round). The query must be `matchups.every(m => m.status === 'decided')` across all rounds, not scoped to a single round.
+
+**No new packages needed.** Fix is a query condition change in the existing Prisma DAL.
+
+---
+
+### 3. SE Bracket Final Round Realtime Update Fix
+
+**Goal:** Fix single-elimination bracket final round not updating in realtime on the student view.
+
+**Root cause pattern (diagnosed via Phase 24 work):** The race condition between `winner_selected` and `bracket_completed` broadcasts creates two rapid `fetchBracketState()` calls. The second fetch resolves while a setTimeout is pending, cancelling the timer and leaving the ref already set (preventing rescheduling). This is identical to the teacher RR race condition fixed in Phase 24-05.
+
+**Canonical fix (established in Phase 24-05):**
+
+Move `hasShownRevealRef.current = true` INSIDE the `setTimeout` callback, not before it. This ensures that if the cleanup function cancels the timer, the ref is NOT yet set -- allowing the next effect run to reschedule the timer.
+
+```typescript
+// WRONG (pre-Phase-24-05 pattern -- ref set before timer fires):
+hasShownRevealRef.current = true
+const timer = setTimeout(() => {
+  setRevealState({ ... })
+}, 2000)
+return () => clearTimeout(timer)
+
+// CORRECT (Phase-24-05 pattern -- ref set INSIDE callback):
+const timer = setTimeout(() => {
+  hasShownRevealRef.current = true  // set here, not before
+  setRevealState({ ... })
+}, 2000)
+return () => clearTimeout(timer)
+```
+
+**Dependency array volatility:** The `currentMatchups` dependency in celebration-trigger useEffects causes frequent re-runs because `fetchBracketState` calls `setMatchups(data.matchups)` with a new array reference on every fetch. This is the mechanism that cancels timers. Rather than removing `currentMatchups` from the dependency array (which would require a ref-based workaround), the correct fix is to keep the dependency but move the guard flag setting inside the timer callback.
+
+**No new packages needed.** Pure React pattern fix in existing components.
+
+---
+
+### 4. Student View Dynamic Activity Removal on Delete
+
+**Goal:** When a teacher deletes a poll or bracket while students are on the session dashboard, the deleted activity card should disappear without a page refresh.
+
+**Current architecture:** `useRealtimeActivities` subscribes to the `activities:{sessionId}` channel and listens for `activity_update` events. On any such event, it re-fetches the activity list from the server. The hook correctly removes deleted items because the API endpoint naturally excludes deleted records.
+
+**Gap:** The teacher's `deletePoll` and `deleteBracket` server actions currently call `revalidatePath` but do NOT call `broadcastActivityUpdate(sessionId)`. Without a broadcast, the realtime hook never fires on student devices.
+
+**Verified in source code:**
+
+```typescript
+// src/actions/poll.ts deletePoll (line 194-203):
+// EXISTING: revalidatePath('/activities')
+// MISSING:  broadcastActivityUpdate(result.sessionId)
+
+// src/actions/bracket.ts deleteBracket:
+// EXISTING: router.refresh() in the client component
+// MISSING:  broadcastActivityUpdate(sessionId) in the server action
+```
+
+**Fix:** Add `broadcastActivityUpdate(sessionId)` to both `deletePoll` and `deleteBracket` server actions. The `broadcastActivityUpdate` function already exists in `src/lib/realtime/broadcast.ts` and uses the established REST API pattern. The deleted poll/bracket will no longer appear in the API response, so students will see the activity grid update automatically when the broadcast fires.
+
+**Broadcast pattern (already implemented, just needs to be called on delete):**
+
+```typescript
+// In src/lib/realtime/broadcast.ts (already exists):
+export async function broadcastActivityUpdate(sessionId: string): Promise<void> {
+  await broadcastMessage({
+    topic: `activities:${sessionId}`,
+    event: 'activity_update',
+    payload: {},
+  })
 }
 ```
 
-**Migration approach:** Use `prisma migrate dev --create-only` then hand-edit the SQL to:
-1. Add `first_name` column (NOT NULL with default empty string for existing rows)
-2. Make `device_id` nullable (ALTER COLUMN ... DROP NOT NULL)
-3. Add index on `(session_id, first_name)` for name lookup
+The client hook (`useRealtimeActivities`) already handles `activity_update` events by re-fetching. The re-fetch will return the activity list without the deleted item. No new event type needed -- the existing `activity_update` + re-fetch pattern handles removals correctly.
 
-**Case-insensitive duplicate detection:** Use Prisma `mode: 'insensitive'` in application code, not CITEXT. Rationale:
-- Only one comparison point (join flow) needs case-insensitivity
-- CITEXT requires PostgreSQL extension activation in Supabase (extra admin step)
-- Prisma's `mode: 'insensitive'` generates case-insensitive comparison in PostgreSQL natively
-- Sufficient for 30-student classroom sessions
+**SessionId retrieval for delete actions:** The server action must fetch the `sessionId` before deleting (to include in the broadcast). For polls, the DAL can return the sessionId on delete. For brackets, same approach. Neither action currently returns the sessionId from the DAL on delete -- this is the only code change needed beyond calling `broadcastActivityUpdate`.
 
-```typescript
-// In DAL: case-insensitive lookup
-const existing = await prisma.studentParticipant.findFirst({
-  where: {
-    sessionId,
-    firstName: { equals: firstName, mode: 'insensitive' },
-  },
-})
-```
+**No new packages needed.** Extend existing `broadcastActivityUpdate` call pattern.
 
-**What to remove after migration:**
-- `src/lib/student/fingerprint.ts` -- FingerprintJS wrapper
-- `src/lib/student/session-identity.ts` -- localStorage device ID
-- `src/hooks/use-device-identity.ts` -- composite identity hook
-- `@fingerprintjs/fingerprintjs` from package.json
+---
 
-**What to update:**
-- `src/actions/student.ts` -- `joinSession()` takes `{code, firstName}` instead of `{code, deviceId, fingerprint}`
-- `src/components/student/join-form.tsx` -- adds first name input field after class code
-- `src/lib/dal/student-session.ts` -- identity lookup by `(sessionId, firstName)` case-insensitive
-- `src/types/student.ts` -- `DeviceIdentity` type replaced with `StudentIdentity`
+### 5. Sign-Out Button Click Visual Feedback
 
-### 2. Supabase RLS Policies (Pure SQL -- No Packages)
+**Goal:** Show a visual "Signing out..." state on the Sign Out button when clicked, to indicate the action is in progress (the redirect can take 1-2 seconds on slow connections).
 
-**Architecture context:** The app has TWO data access paths:
-
-| Path | Connection | RLS Behavior |
-|------|------------|--------------|
-| Prisma (server actions, API routes) | `DATABASE_URL` with `prisma` user (has `bypassrls`) | **Bypasses RLS** -- Prisma handles auth in application code |
-| Supabase client (anon key in browser) | `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | **Subject to RLS** -- this is the attack surface |
-
-The RLS policies protect against direct Supabase REST API access using the anon key (publicly visible in client JS bundle). An attacker with the anon key and project URL can call `supabase.from('teachers').select('*')` directly.
-
-**Policy strategy:** Since all mutations go through Prisma server actions (which bypass RLS), and the Supabase browser client is only used for Auth and Realtime (not data queries), the simplest correct approach is: **enable RLS with no policies on all tables**. This denies everything via PostgREST while Prisma continues unaffected.
-
-```sql
--- Deny-all pattern: RLS enabled + no policies = no access for anon/authenticated
-ALTER TABLE public.teachers ENABLE ROW LEVEL SECURITY;
--- No policies means anon and authenticated roles get zero access
--- Prisma (bypassrls user) and service_role both bypass RLS
-```
-
-**Per-table RLS plan:**
-
-| Table | Enable RLS | Policies Needed | Rationale |
-|-------|-----------|-----------------|-----------|
-| `teachers` | YES | None (deny all) | Only accessed via Prisma server-side |
-| `class_sessions` | YES | None (deny all) | Only accessed via Prisma server-side |
-| `student_participants` | YES | None (deny all) | Join flow goes through server action |
-| `brackets` | YES | None (deny all) | Created/managed via Prisma |
-| `bracket_entrants` | YES | None (deny all) | Created via Prisma |
-| `matchups` | YES | None (deny all) | All mutations via server actions |
-| `votes` | YES | None (deny all) | Cast via `castVote` server action |
-| `polls` | YES | None (deny all) | Created/managed via Prisma |
-| `poll_options` | YES | None (deny all) | Created via Prisma |
-| `poll_votes` | YES | None (deny all) | Cast via `castPollVote` server action |
-| `subscriptions` | YES | None (deny all) | Managed by Stripe webhook handler |
-| `predictions` | YES | None (deny all) | Created via server action |
-
-**Why "enable RLS + no policies" works:** In PostgreSQL, enabling RLS with no policies means the `anon` and `authenticated` roles get zero access. The Prisma connection user has `bypassrls` privilege, so server-side operations continue unaffected. The `service_role` key (used for admin operations and Realtime broadcast) also bypasses RLS.
-
-**Implementation method:** A single SQL migration file applied via Prisma:
-
-```bash
-npx prisma migrate dev --create-only --name enable-rls-all-tables
-```
-
-Then hand-edit the migration SQL:
-
-```sql
--- Enable RLS on all 12 public tables
-ALTER TABLE public.teachers ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.class_sessions ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.student_participants ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.brackets ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.bracket_entrants ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.matchups ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.votes ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.polls ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.poll_options ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.poll_votes ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.subscriptions ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.predictions ENABLE ROW LEVEL SECURITY;
-```
-
-Then `npx prisma migrate deploy` in production.
-
-**Verification:** After applying, test with the anon key:
-```javascript
-const { data, error } = await supabase.from('teachers').select('*')
-// Should return empty array (RLS blocks access)
-```
-
-### 3. Supabase Realtime Debugging (No Packages)
-
-**Current architecture (already correct):**
-- Server actions broadcast via REST API (`POST /realtime/v1/api/broadcast`) using service_role key
-- Clients subscribe via WebSocket using anon key
-- Both bracket and poll hooks use Broadcast channel (not postgres_changes)
-- Transport fallback to HTTP polling if WebSocket fails within 5 seconds
-
-**Root cause identified via code review: Missing `poll_activated` broadcast**
-
-When a poll status changes to `active`, `broadcastPollUpdate(pollId, 'poll_activated')` is NOT called. In `src/actions/poll.ts` line 235:
+**Current implementation:**
 
 ```typescript
-// Line 235-237: Only broadcasts activity update, NOT poll_activated
-if (status === 'active' && result.sessionId) {
-  broadcastActivityUpdate(result.sessionId).catch(console.error)
-  // MISSING: broadcastPollUpdate(pollId, 'poll_activated')
+// src/components/auth/signout-button.tsx
+export function SignOutButton() {
+  return (
+    <form action={signOut}>
+      <Button type="submit" variant="ghost" size="sm">
+        Sign Out
+      </Button>
+    </form>
+  )
 }
 ```
 
-But `use-realtime-poll.ts` line 107 listens for `poll_activated` to trigger `fetchPollState()`. The client is listening for an event that is never sent. Additionally, because the initial `fetchPollState()` only fires after WebSocket reaches `SUBSCRIBED` status, there is a timing window where early votes are missed if the subscription establishment is slow.
+The `signOut` server action calls `supabase.auth.signOut()` then `redirect('/login')`. The redirect can take 1-2 seconds on slow connections, leaving no feedback.
 
-However, **vote broadcasts do work** -- `broadcastPollVoteUpdate` IS called in `castPollVote`. The issue is more nuanced: the teacher must be on the `/polls/[pollId]/live` page BEFORE a student votes, so the `useRealtimePoll` subscription is established. If the teacher activates the poll and then navigates to the live page, the first votes may arrive before the subscription is ready.
+**Two valid patterns -- choose based on component topology:**
 
-**Fix (one line + one investigation):**
-1. Add `broadcastPollUpdate(pollId, 'poll_activated')` in `updatePollStatus` when `status === 'active'`
-2. Investigate whether the initial `fetchPollState()` on SUBSCRIBED status properly catches votes cast before the subscription was established
+**Pattern A (useFormStatus -- preferred for `<form action={...}>`):**
 
-**Debugging tools (already available in @supabase/supabase-js 2.93.3):**
+`useFormStatus` reads the pending state from the nearest parent `<form>`. It must be called from a CHILD component rendered inside the form, not from the same component that renders the form.
 
 ```typescript
-// Enable Supabase Realtime debug logging (no package needed)
-const supabase = createClient(url, key, {
-  realtime: {
-    logger: console.log,     // Log all realtime events
-    heartbeatIntervalMs: 15000,
-    reconnectAfterMs: (tries) => Math.min(tries * 1000, 10000),
-  },
-})
+'use client'
+import { useFormStatus } from 'react-dom'
+import { signOut } from '@/actions/auth'
+import { Button } from '@/components/ui/button'
+
+function SignOutButtonInner() {
+  const { pending } = useFormStatus()
+  return (
+    <Button type="submit" variant="ghost" size="sm" disabled={pending}>
+      {pending ? 'Signing out...' : 'Sign Out'}
+    </Button>
+  )
+}
+
+export function SignOutButton() {
+  return (
+    <form action={signOut}>
+      <SignOutButtonInner />
+    </form>
+  )
+}
 ```
 
-**Supabase Dashboard tools:**
-- Realtime Inspector (Dashboard > Realtime > Inspector) -- watch live channel traffic
-- Realtime Reports (Project Settings > Product Reports > Realtime) -- connection metrics
+**Pattern B (useTransition -- for event-handler-based calls):**
 
-### 4. Presentation Mode Contrast (CSS Only)
+```typescript
+'use client'
+import { useTransition } from 'react'
+import { signOut } from '@/actions/auth'
+import { Button } from '@/components/ui/button'
 
-No stack changes. This is a Tailwind CSS adjustment to ranked poll card styles in `src/components/poll/ranked-leaderboard.tsx`. The existing `tailwindcss@4` handles all styling needs.
+export function SignOutButton() {
+  const [isPending, startTransition] = useTransition()
+  return (
+    <Button
+      variant="ghost"
+      size="sm"
+      disabled={isPending}
+      onClick={() => startTransition(() => signOut())}
+    >
+      {isPending ? 'Signing out...' : 'Sign Out'}
+    </Button>
+  )
+}
+```
 
-### 5. Session Naming (No Migration Needed)
+**Recommendation:** Use `useFormStatus` (Pattern A). It is the idiomatic React 19 pattern for `<form action={serverAction}>` submissions and has zero risk of the `redirect()` call conflict (redirect works normally inside `startTransition` too, but `useFormStatus` is the canonical match for the form-action pattern).
 
-The `ClassSession` model already has a `name` field (nullable String). The only work is:
-- UI to display session name (or code as fallback) in teacher dashboard dropdowns
-- Inline edit component using existing shadcn/ui `Input` and `Button`
-- Server action to update session name via Prisma
-
-No schema migration needed -- the `name` column already exists in the schema.
-
-### 6. UX Terminology (UI Only)
-
-Pure copy/label changes across bracket and poll components. No stack implications.
+**No new packages needed.** `useFormStatus` is from `react-dom` (already installed as React 19.2.3).
 
 ---
 
@@ -228,114 +253,145 @@ Pure copy/label changes across bracket and poll components. No stack implication
 
 | Avoid | Why | What to Do Instead |
 |-------|-----|---------------------|
-| `prisma-extension-supabase-rls` | Unnecessary complexity -- Prisma user already has `bypassrls`, and we want to DENY client access, not enable row-scoped access | Enable RLS + no policies (deny-all pattern) |
-| `@shoito/prismarls` | CLI tool for auto-generating RLS SQL -- overkill for 12 identical ALTER TABLE statements | Hand-write the 12-line SQL migration |
-| CITEXT PostgreSQL extension | Requires Supabase admin action to enable extension, adds schema complexity | Use Prisma `mode: 'insensitive'` for case-insensitive name comparison |
-| Socket.IO or Pusher | Tempting when debugging realtime -- but the issue is a missing broadcast event, not a transport problem | Fix the missing `broadcastPollUpdate(pollId, 'poll_activated')` call |
-| Any auth library for students | Students should NOT have accounts -- first name + session code is the identity | Application-level identity in Prisma, not Supabase Auth |
-| Supabase CLI / local dev environment | Would be nice for testing RLS policies locally, but adds setup complexity for a 12-line SQL change | Test RLS directly against Supabase project via dashboard or curl |
-| `unique-names-generator` | Already using custom `generateFunName()` -- no need for another name generator package | Keep existing fun name generation logic |
-| React Hook Form | Currently not used for student-facing forms (only teacher forms). The name entry form is simple enough (one input) that raw React state suffices. | Use controlled `<input>` + Zod validation, same as existing `JoinForm` |
-
----
-
-## Package to Remove
-
-| Package | Current Version | Why Remove |
-|---------|----------------|------------|
-| `@fingerprintjs/fingerprintjs` | ^5.0.1 | Device fingerprinting failed in real-world test (24 students, 6 unique fingerprints on identical Chromebooks). Being replaced by name-based identity. Remove after migration to avoid dead code and unnecessary ~50KB client bundle weight. |
-
-**Removal timing:** After the name-based identity migration is deployed and verified in a real classroom session. Do not remove prematurely -- keep as fallback during transition.
-
-**Files to delete alongside:**
-- `src/lib/student/fingerprint.ts`
-- `src/lib/student/session-identity.ts`
-- `src/hooks/use-device-identity.ts`
-
----
-
-## Alternatives Considered
-
-| Recommended | Alternative | When to Use Alternative |
-|-------------|-------------|-------------------------|
-| Deny-all RLS (no policies) | Per-row owner-based RLS policies | If the app used the Supabase client for data queries (it does not -- all data goes through Prisma). Per-row policies add value when `supabase.from()` is the primary data access pattern. |
-| Prisma `mode: 'insensitive'` for name matching | PostgreSQL CITEXT extension | If many columns needed case-insensitive behavior (e.g., email, username, display name). For a single field (firstName) in a single lookup (join flow), Prisma's built-in mode is simpler. |
-| Single SQL migration for all 12 tables | Table-by-table staged rollout | If the app used `supabase.from()` for data queries -- breaking one table at a time would be safer. Since Prisma bypasses RLS, all 12 can be enabled atomically with zero risk. |
-| Fix missing broadcast event | Replace Supabase Realtime with Socket.IO/Pusher | Only if Supabase Realtime itself is unreliable (it is not -- brackets work fine). The poll issue is a missing server-side broadcast call, not infrastructure. |
-| Raw React state for name input | React Hook Form for name input | If the form had many fields or complex validation. The name entry form is one text input -- React Hook Form adds unnecessary weight. |
+| Socket.IO, Pusher, Ably | Activity removal is already handled by the broadcast re-fetch pattern; missing the `broadcastActivityUpdate` call on delete is the gap, not the transport | Add `broadcastActivityUpdate` call to `deletePoll` and `deleteBracket` server actions |
+| `react-hot-toast` or `sonner` | Already have a deletion confirmation dialog pattern from `bracket-card.tsx`; poll delete confirmation should match that | Reuse the existing confirmation dialog pattern (inline div or shadcn `Dialog`) |
+| A new menu library | `@radix-ui/react-dropdown-menu` is already installed and wrapped by shadcn/ui | Use existing `src/components/ui/dropdown-menu.tsx` |
+| `postgres_changes` subscription for delete detection | Adds RLS complexity (currently deny-all RLS blocks postgres_changes for anon role) and is slower than broadcast for this use case | Use existing broadcast pattern with `broadcastActivityUpdate` |
+| `useEffectEvent` (experimental React hook) | While `useEffectEvent` solves stale closure elegantly, it is experimental and not available in stable React 19.2.3 | Use the `hasShownRevealRef` pattern: move guard flag setting inside the timer callback |
+| `useOptimistic` for instant deletion | Adds complexity; the re-fetch after broadcast is fast enough (~100-200ms); optimistic removal risks showing deleted items as removed before confirmation | Keep the broadcast-then-refetch pattern; it is already fast enough for classroom use |
 
 ---
 
 ## Version Compatibility (Verified)
 
-| Package | Version | Compatible With | Notes |
-|---------|---------|-----------------|-------|
-| Prisma 7.3.0 | @prisma/adapter-pg 7.3.0 | Supabase PostgreSQL 15 | Uses PrismaPg adapter for direct connection. `bypassrls` user works correctly. Hand-edited migrations (`--create-only`) supported. |
-| @supabase/supabase-js 2.93.3 | @supabase/ssr 0.8.0 | Next.js 16.1.6 | Realtime Broadcast via REST API confirmed working. `logger` option available on Realtime config for debugging. |
-| Zod 4.3.6 | N/A | Prisma 7.3.0 | Validation schemas need update for `firstName` field -- straightforward `.string().min(1).max(50)` addition. |
-| Next.js 16.1.6 | React 19.2.3 | All dependencies | No version conflicts. Server actions support the async broadcast calls. |
-| Tailwind CSS 4.x | tw-animate-css 1.4.0 | shadcn/ui components | CSS variable-based theming works for presentation mode contrast overrides. |
+| Package | Version | Notes for v1.3 |
+|---------|---------|----------------|
+| react / react-dom | 19.2.3 | `useFormStatus` is stable in React 19 (moved from canary). `useTransition` stable since React 18. `useRef` is core. |
+| @radix-ui/react-dropdown-menu | ^2.1.16 | Already installed. `DropdownMenu` wrapping in `src/components/ui/dropdown-menu.tsx` handles all the animation and accessibility. |
+| @supabase/supabase-js | ^2.93.3 | Broadcast REST API (`POST /realtime/v1/api/broadcast`) confirmed working for all other activity events. Adding `broadcastActivityUpdate` on delete uses the identical pattern. |
+| next | 16.1.6 | Server actions with `redirect()` inside `useFormStatus` form context work correctly. `revalidatePath` calls continue to work for the teacher view. |
+| lucide-react | ^0.563.0 | `MoreVertical`, `Trash2` already imported in `bracket-card.tsx` -- same icons will be used for poll menu. |
 
 ---
 
-## Database Connection Architecture
+## React Pattern Reference for This Milestone
 
-```
-Browser (Student)                    Browser (Teacher)
-    |                                    |
-    v                                    v
-Supabase anon key ---------> Supabase Auth (JWT)
-    |                                    |
-    | WebSocket (Realtime)               | WebSocket (Realtime)
-    | REST (HTTP polling fallback)       |
-    |                                    |
-    +---------> Supabase Broadcast <-----+
-                     ^
-                     | REST API (service_role key)
-                     |
-              Next.js Server Actions
-                     |
-                     | Direct PostgreSQL (bypassrls)
-                     v
-              Prisma 7.3.0 + PrismaPg adapter
-                     |
-                     v
-              Supabase PostgreSQL 15
-              (RLS enabled, no policies = deny all for anon)
+### Pattern 1: Ref Guard Inside Timer (SE bracket final round, RR celebration fixes)
+
+The canonical fix for useEffect timer race conditions where a cleanup function cancels the timer but the guard ref was already set synchronously:
+
+```typescript
+// CANONICAL PATTERN (Phase 24-05 established):
+const hasShownRevealRef = useRef(false)
+
+useEffect(() => {
+  if (condition && !hasShownRevealRef.current) {
+    // Do NOT set the ref here -- it would prevent rescheduling on cleanup
+    const timer = setTimeout(() => {
+      hasShownRevealRef.current = true  // Set INSIDE callback
+      setRevealState({ ... })
+    }, 2000)
+    return () => clearTimeout(timer)  // Cleanup only cancels timer, not ref
+  }
+}, [dependency1, dependency2])
 ```
 
-**Key security boundary after v1.2:** RLS blocks the anon key from direct table access via PostgREST. All legitimate data access flows through Prisma server actions which bypass RLS via the `bypassrls` database role. Realtime Broadcast uses the service_role key which also bypasses RLS.
+Why this works: If the effect cleanup fires (due to dependency change) before the timer fires, `hasShownRevealRef.current` is still `false`. The next effect run will re-schedule the timer. Only when the timer actually fires does the ref get set to `true`, preventing subsequent re-triggers.
+
+### Pattern 2: useFormStatus for Server Action Pending State
+
+```typescript
+// Must be called in a CHILD component inside the <form>, not the form component itself
+import { useFormStatus } from 'react-dom'
+
+function SubmitButton({ label, pendingLabel }: { label: string; pendingLabel: string }) {
+  const { pending } = useFormStatus()
+  return (
+    <Button type="submit" disabled={pending}>
+      {pending ? pendingLabel : label}
+    </Button>
+  )
+}
+```
+
+### Pattern 3: Broadcast on Delete for Realtime List Updates
+
+```typescript
+// In server action -- after deleting, broadcast to update all student views:
+export async function deletePoll(input: unknown) {
+  // ... auth + validation ...
+  const deleted = await deletePollDAL(parsed.data.pollId, teacher.id)
+  if (!deleted) return { error: 'Poll not found' }
+
+  // Existing: revalidatePath for teacher server-side cache
+  revalidatePath('/activities')
+
+  // ADD: broadcast to update student realtime views
+  if (deleted.sessionId) {
+    broadcastActivityUpdate(deleted.sessionId).catch(console.error)
+  }
+
+  return { success: true }
+}
+```
+
+The `.catch(console.error)` pattern follows the existing convention in this codebase -- broadcast failures are best-effort and must not break the delete flow.
 
 ---
 
-## Migration Execution Order
+## Supabase Realtime Architecture (No Changes)
 
-This order matters due to dependencies:
+The dual-channel broadcast pattern is unchanged:
 
-1. **RLS enablement** (SQL migration) -- independent, deploy first for immediate security hardening
-2. **Schema migration** (add `first_name`, make `device_id` nullable) -- independent of RLS, can happen same deploy
-3. **Name-based identity code** (actions, DAL, hooks, join form UI) -- depends on schema migration (#2)
-4. **Realtime bug fix** (add missing `poll_activated` broadcast call) -- independent, one-line fix
-5. **Remove FingerprintJS** (package.json, delete 3 files) -- LAST, only after name-based identity is verified in a real classroom
-6. **UI polish** (presentation mode, session naming, terminology) -- independent of all above
+```
+Teacher Server Action (delete/update)
+    |
+    | POST /realtime/v1/api/broadcast  (service_role key)
+    v
+Supabase Broadcast
+    |
+    | WebSocket
+    v
+Student Browser (useRealtimeActivities)
+    | activity_update event received
+    v
+fetchActivities() -> /api/sessions/{sessionId}/activities
+    | response excludes deleted item
+    v
+setActivities(filtered) -> card removed from DOM
+```
+
+The same `activities:{sessionId}` channel used for activation events (Phase 24-01) handles removal events. No new channel needed.
+
+---
+
+## Migration Execution Order (v1.3)
+
+Ordered by independence and risk:
+
+1. **Sign-out button visual feedback** -- purely additive UI change, zero risk
+2. **Poll context menu** -- new component using existing primitives, no data changes
+3. **Student activity removal broadcast** -- add `broadcastActivityUpdate` to delete server actions; requires DAL to return `sessionId` on delete
+4. **SE bracket final round realtime fix** -- move `hasShownRevealRef.current = true` inside setTimeout in relevant student bracket page effect
+5. **RR all-at-once premature completion fix** -- requires investigation of `isRoundRobinComplete` query scope; should fix before SE bracket fix to understand if same root cause
+
+Items 1-2 have no dependencies. Items 3-5 are independent of each other and of 1-2.
 
 ---
 
 ## Sources
 
-- **Supabase RLS Documentation (HIGH confidence):** https://supabase.com/docs/guides/database/postgres/row-level-security -- Verified enable RLS syntax, deny-all pattern (RLS enabled + no policies = no access), performance tips (wrap auth.uid() in SELECT, add indexes, specify target roles)
-- **Supabase Realtime Broadcast (HIGH confidence):** https://supabase.com/docs/guides/realtime/broadcast -- Verified REST API broadcast format (`POST /realtime/v1/api/broadcast`), client subscription pattern, public vs private channel distinction
-- **Supabase Realtime Troubleshooting (HIGH confidence):** https://supabase.com/docs/guides/realtime/troubleshooting -- Debug logger configuration, heartbeat monitoring, channel management
-- **Supabase + Prisma Integration (HIGH confidence):** https://supabase.com/docs/guides/database/prisma -- Confirmed Prisma user setup with `bypassrls`, connection pooler vs direct connection
-- **Prisma RLS Discussion (MEDIUM confidence):** https://github.com/prisma/prisma/discussions/18642 -- Community confirmation that Prisma as postgres/bypassrls user ignores RLS entirely
-- **Prisma 7.0 Release (HIGH confidence):** https://www.prisma.io/blog/announcing-prisma-orm-7-0-0 -- Verified v7 features (Rust-free client, ESM, SQL Comments). Hand-edited migrations via `--create-only` confirmed supported.
-- **@supabase/supabase-js npm (HIGH confidence):** https://www.npmjs.com/package/@supabase/supabase-js -- Latest version 2.97.0 (installed ^2.93.3 is compatible). Node.js 18 dropped in 2.79.0. Realtime logger option confirmed available.
-- **Supabase Broadcast Issues (MEDIUM confidence):** https://github.com/orgs/supabase/discussions/39091 -- Known issues with broadcast messages not reaching clients due to private/public channel type mismatch. SparkVotEDU uses public channels (no `private: true` flag), so this should not apply.
-- **PostgreSQL CITEXT vs LOWER() (MEDIUM confidence):** https://www.postgresql.org/docs/current/citext.html -- CITEXT internally calls LOWER(). For single-field case-insensitive lookup, Prisma's `mode: 'insensitive'` is equivalent and simpler.
-- **package.json (HIGH confidence):** Direct inspection of installed versions at `/Users/davidreynoldsjr/VibeCoding/SparkVotEDU/package.json` -- all versions verified against actual project state
-- **Source code review (HIGH confidence):** Read all relevant files (realtime hooks, broadcast module, student actions, join form, Supabase clients, Prisma schema, DAL layer, poll actions, live dashboard components) to verify architecture and identify the missing `poll_activated` broadcast
+- **package.json (HIGH confidence):** Direct read of `/Users/davidreynoldsjr/VibeCoding/SparkVotEDU/package.json` -- all installed versions verified
+- **Existing codebase (HIGH confidence):** Read `src/components/teacher/session-card-menu.tsx`, `src/components/bracket/bracket-card.tsx`, `src/components/auth/signout-button.tsx`, `src/hooks/use-realtime-activities.ts`, `src/hooks/use-realtime-bracket.ts`, `src/lib/realtime/broadcast.ts`, `src/actions/poll.ts`, `src/actions/auth.ts` -- architecture fully understood
+- **Phase 24 debug files (HIGH confidence):** Read all `.planning/debug/*.md` files -- root causes confirmed for all five features; celebration-loops-infinitely.md and teacher-rr-celebration-not-triggering.md directly identify the hasShownRevealRef pattern as the fix
+- **Phase 24 verification (HIGH confidence):** Read `24-VERIFICATION.md` -- confirms hasShownRevealRef inside-callback pattern is already validated and working in production (Plans 05-06)
+- **React useFormStatus docs (HIGH confidence, verified via WebSearch):** https://react.dev/reference/react-dom/hooks/useFormStatus -- `useFormStatus` is stable in React 19, must be called from child inside form, returns `pending` boolean
+- **React useTransition docs (HIGH confidence):** https://react.dev/reference/react/useTransition -- alternative to useFormStatus for event-handler pattern
+- **shadcn/ui DropdownMenu (HIGH confidence, verified via WebSearch):** https://ui.shadcn.com/docs/components/dropdown-menu -- already installed via `@radix-ui/react-dropdown-menu@2.1.16`; wraps Radix primitives with correct accessibility and animation
+- **Supabase Broadcast REST API (HIGH confidence):** https://supabase.com/docs/guides/realtime/broadcast -- REST broadcast via `POST /realtime/v1/api/broadcast` confirmed supported; existing pattern in `src/lib/realtime/broadcast.ts` is correct and matches docs
+- **React useRef stale closure pattern (MEDIUM confidence, WebSearch):** Multiple sources confirm: refs avoid stale closures because `ref.current` always evaluates to the actual value; moving ref assignment inside timer callback prevents cancelled-timer false-positive locking
 
 ---
 
-*Stack research for: SparkVotEDU v1.2 Classroom Hardening*
-*Researched: 2026-02-21*
+*Stack research for: SparkVotEDU v1.3 Bug Fixes & UX Parity*
+*Researched: 2026-02-24*

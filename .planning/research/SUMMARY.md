@@ -1,245 +1,195 @@
 # Project Research Summary
 
-**Project:** SparkVotEDU v1.2 Classroom Hardening
-**Domain:** EdTech classroom voting platform — identity overhaul, security hardening, realtime fixes, UX polish
-**Researched:** 2026-02-21
+**Project:** SparkVotEDU v1.3 — Bug Fixes & UX Parity
+**Domain:** EdTech classroom voting platform — targeted bug fixes and UI consistency sprint
+**Researched:** 2026-02-24
 **Confidence:** HIGH
 
 ## Executive Summary
 
-SparkVotEDU v1.2 is a hardening milestone for an already-live classroom voting platform (570+ files). The six features in scope integrate cleanly with the existing Next.js 16.1.6 + Prisma 7.3.0 + Supabase architecture because they are modifications to existing components, not new subsystems. Zero new npm packages are required. The single package to remove is `@fingerprintjs/fingerprintjs` (^5.0.1) — but only after name-based identity is verified in a real classroom, as a deliberate safety step.
+SparkVotEDU v1.3 is a tightly scoped sprint of five targeted fixes to an existing Next.js 16 / React 19 / Supabase Realtime platform. Every fix operates against the established stack and architecture — zero new npm packages are required. The overarching theme across all five items is **React state lifecycle management**: specifically, understanding when `useRef` guards must be set inside vs. outside `setTimeout` callbacks, when React effect cleanup cancels timers, and how to propagate deletions and participant changes through an existing dual-channel Supabase broadcast architecture. The `hasShownRevealRef` pattern established and validated in Phase 24 is the canonical solution for all timer-race issues.
 
-The most important architectural insight from research: Prisma connects to PostgreSQL via the `@prisma/adapter-pg` adapter using a `bypassrls` database user, which means RLS policies apply only to direct PostgREST access (the anon key in the browser), never to Prisma server actions. Since all data mutations in SparkVotEDU flow through Prisma server actions, the correct RLS implementation is deny-all — enable RLS on all 12 tables with zero policies. This completely locks down the publicly-exposed Supabase REST API surface while leaving every existing code path unchanged. Per-row owner-based policies are unnecessary complexity; they would protect a data access path that no legitimate code uses.
+The recommended implementation approach is to proceed in ascending-risk order: sign-out button feedback first (purely additive, no realtime surface), poll context menu second (UI-only, clear reference pattern in `session-card-menu.tsx`), student dynamic activity removal third (adds `broadcastActivityUpdate` call to delete actions), SE bracket final round realtime fourth (investigation-first, likely a `cache: 'no-store'` fix), and RR all-at-once completion last (requires verification of `isRoundRobinComplete` query scope and possible celebration guard additions in `RRLiveView`). Features 1 and 4 compound positively — the new context menu's Delete action will immediately trigger the broadcast removal on student dashboards once both fixes are in place.
 
-The poll realtime bug has a confirmed root cause from code analysis: `updatePollStatus` in `src/actions/poll.ts:235` fires `broadcastActivityUpdate(sessionId)` on activation but never fires `broadcastPollUpdate(pollId, 'poll_activated')`. The `useRealtimePoll` hook listens for `poll_activated` to trigger its initial data fetch. This is a one-line fix. All four research threads agree on the same diagnosis and the same phase ordering: security/schema first, identity second, realtime fix and UX polish in parallel, cleanup last.
+The primary risks in this milestone are the two investigation-required bugs (SE final round, RR all-at-once): both touch the celebration trigger chain established in Phase 24. The key mitigation is to apply the Pitfall 1 pattern everywhere (ref inside timer, not before it), verify `RRLiveView` has a `hasShownRevealRef` guard matching `DEVotingView`, and ensure any new Supabase channel subscriptions added for student removal are paired with `removeChannel` in cleanup. None of these risks are novel — Phase 24 already solved the canonical versions; v1.3 is applying known solutions to remaining locations.
+
+---
 
 ## Key Findings
 
 ### Recommended Stack
 
-All six v1.2 features are achievable with the current installed stack. No dependency resolution, no version pinning, no new packages. The implementation footprint is: SQL migrations (Prisma managed), Prisma schema edits, TypeScript changes to existing server actions and DAL functions, and Tailwind CSS class updates. Zod validation schemas need minor additions for the `firstName` field using the already-installed Zod 4.3.6.
+All five v1.3 features are achievable with the already-installed package set. No new dependencies are needed. React 19.2.3 provides `useFormStatus` (stable, from `react-dom`) and `useTransition` for server action pending states. The `@radix-ui/react-dropdown-menu` package is already installed as a shadcn/ui primitive and provides keyboard navigation, Escape-to-close, and focus management for the poll context menu at no extra cost. Supabase JS 2.93.3's broadcast REST API (used via service_role key in `src/lib/realtime/broadcast.ts`) is the established transport for all realtime events and is simply extended with two new call sites.
 
-**Core technologies and their v1.2 roles:**
-- **Prisma 7.3.0** — schema migration (add `first_name`, make `device_id` nullable), case-insensitive name lookup via `mode: 'insensitive'`, hand-edited SQL migrations via `--create-only`
-- **@supabase/supabase-js 2.93.3** — RLS policy enablement (SQL via Prisma migration), Realtime debug logging (built-in `logger` config option), Broadcast REST API (already used)
-- **Next.js 16.1.6** — no changes needed; server actions continue handling all data mutations
-- **Tailwind CSS 4** — CSS-only contrast fix for ranked poll medal cards
-- **@fingerprintjs/fingerprintjs ^5.0.1** — REMOVE after classroom verification (not before)
+The critical pattern reference across all timer-related fixes is the `hasShownRevealRef` guard: set inside the `setTimeout` callback, not before it. This pattern is already validated in Phase 24-05 (`DEVotingView`, teacher live-dashboard) and must be verified and applied to `RRLiveView` and any other celebration effects that lack it.
 
-**What not to add:** No CITEXT PostgreSQL extension (Prisma `mode: 'insensitive'` handles the single case-insensitive comparison), no Socket.IO or Pusher (the infrastructure works — brackets prove it), no per-row RLS policies (unnecessary when Prisma bypasses RLS entirely), no auth library for students (name-based identity stays application-level).
+**Core technologies (unchanged):**
+- **Next.js 16.1.6:** Server actions, `revalidatePath`, API routes — no changes to the framework layer
+- **React 19.2.3:** `useRef`, `useFormStatus` (stable in React 19), `useTransition` — existing hooks cover all five fixes
+- **@radix-ui/react-dropdown-menu ^2.1.16:** Already installed; wrapped by `src/components/ui/dropdown-menu.tsx`; provides accessible context menu for poll cards
+- **@supabase/supabase-js ^2.93.3:** Broadcast REST API for activity deletion events; existing `broadcastActivityUpdate` needs to be called from two additional sites
+- **Prisma ^7.3.0:** DAL layer; `deletePoll`/`deleteBracket` need to return `sessionId` before delete to enable broadcast
+- **lucide-react ^0.563.0:** `MoreVertical`, `Trash2` already imported in `bracket-card.tsx`; same icons reused for poll menu
 
 ### Expected Features
 
-**Must fix — P0 (product broken without these):**
-- **Name-based student identity** — Device fingerprinting failed in production. 24 students on identical school Chromebooks produced 6 unique fingerprints. localStorage UUIDs wiped by IT policies. Students cannot be identified. Replace with session code + first name. Case-insensitive duplicate detection via Prisma. Duplicate names prompt differentiation ("Another Emma is here — please add your last initial"), never auto-merge.
-- **RLS security hardening** — Supabase anon key is visible in client JavaScript. Without RLS, anyone can read all teacher data, student records, votes, subscriptions, and billing via `curl`. Enable RLS on all 12 public tables with deny-all pattern. Zero application code changes needed.
-- **Poll live update fix** — Real-time is the core product value. If poll results freeze when projected in a classroom, the product appears broken. One-line fix in `src/actions/poll.ts`.
+Research confirmed five features scoped for v1.3, all at LOW-to-MEDIUM implementation complexity. Prioritized by user impact and implementation risk:
 
-**Should have — P2 (improve classroom experience, not broken):**
-- **Session name display and edit** — `ClassSession.name` column already exists in schema. Teachers creating multiple daily sessions need names (not codes) in dropdowns. Add inline edit and display fallback: `s.name || Session ${s.code}`.
-- **Terminology unification** — "Activate" (polls) vs "Go Live" (brackets) confuses teachers. Unify to "Go Live" for activation, "Live Dashboard" for the live view. Database `status: 'active'` stays unchanged — display layer mapping only.
-- **Presentation mode contrast** — Ranked poll medal cards use amber-100/gray-100/orange-100 backgrounds that wash out on classroom projectors. Darken to -200 variants with -900 text. CSS class change in one file.
+**Must have (table stakes — ship in v1.3):**
+- **Poll card triple-dot context menu** — brackets have it; UX inconsistency is immediately noticeable to teachers
+- **Student dashboard removes deleted activities** — activation appears live; deletion should too; without this, deleted activities linger on student screens during live class sessions
+- **Sign-out button pending feedback** — any server action button that takes 200ms-2s with no feedback looks broken; leads to double-click confusion
 
-**Defer to v1.3+:**
-- Full student accounts (COPPA/FERPA burden, passwords)
-- Per-row RLS policies (no code path uses `supabase.from()`)
-- Dark mode theme for presentation
-- Realtime Authorization for broadcast channels (UUIDs in topic names are unguessable; full auth is v1.3)
+**Should have (correctness bugs — ship in v1.3):**
+- **RR all-at-once bracket correct completion** — broken pacing mode is a correctness bug, not cosmetic; teachers who use all-at-once RR cannot complete brackets
+- **SE bracket final round realtime updates** — live vote watching to the last matchup is core teacher UX; final round currently goes dark on student views
+
+**Defer to v1.4:**
+- Poll archiving — requires schema changes; no DB model exists
+- Student notification message on deletion — complexity without proportionate value; EmptyState handles zero-activity gracefully
+- Spinner icon on sign-out — inconsistent with established text-pending pattern ("Deleting...", "Ending...")
 
 ### Architecture Approach
 
-SparkVotEDU has a clean three-layer architecture: client components make calls to Next.js server actions, which use Prisma for all data access and the Supabase service_role key for Realtime broadcasts. The Supabase browser client is used only for teacher Auth (JWT) and Realtime WebSocket subscriptions — never for data queries. This separation is what makes deny-all RLS the obvious choice and makes all six v1.2 features lower-risk than they appear.
+SparkVotEDU uses a dual-channel Supabase Realtime broadcast architecture. Teacher server actions write to Prisma (via Prisma bypassrls) and broadcast via REST API to either activity-specific channels (`bracket:{id}`, `poll:{id}`) or the session-wide channel (`activities:{sessionId}`). All five v1.3 fixes are either (a) pure UI changes with no realtime impact, (b) additions of `broadcastActivityUpdate` call sites to existing delete server actions, or (c) verification and correction of React effect guard patterns in existing hooks and page components. One new broadcast event type (`participant_removed`) is added to the `activities:{sessionId}` channel for the student dynamic removal fix. One new file is created (`src/components/poll/poll-card-menu.tsx`); seven to eight existing files are modified.
 
-**Major components and their v1.2 responsibilities:**
-
-1. **Student Identity Layer** — `src/actions/student.ts`, `src/lib/dal/student-session.ts`, `src/components/student/join-form.tsx`, `src/types/student.ts` — Replace device fingerprint flow with name-based flow. Add `findParticipantByFirstName()` with case-insensitive matching. Remove `useDeviceIdentity` hook dependency.
-
-2. **RLS Security Layer** — Single SQL migration file (12 `ALTER TABLE ... ENABLE ROW LEVEL SECURITY` statements). No policies. Applied via `npx prisma migrate dev --create-only --name enable-rls-all-tables`. Zero application code changes.
-
-3. **Realtime Broadcast Layer** — `src/actions/poll.ts` (add one `broadcastPollUpdate(pollId, 'poll_activated')` call). Secondary investigation: clear `pendingVoteCounts.current` in `fetchPollState` to prevent stale batch data overwriting fresh fetch results on poll close.
-
-4. **Presentation/UX Layer** — `src/components/poll/ranked-leaderboard.tsx` (darken `MEDAL_STYLES`), session dropdown components (display name fallback), ~6 component files (button label copy changes).
-
-5. **Cleanup Layer** — `npm uninstall @fingerprintjs/fingerprintjs`, delete `src/lib/student/fingerprint.ts`, `src/lib/student/session-identity.ts`, `src/hooks/use-device-identity.ts`. Runs last, only after classroom verification.
-
-**Key patterns to follow:**
-- Deny-all RLS with Prisma bypass (enable + no policies)
-- Additive schema migration (add `first_name` non-null with default, make `device_id` nullable, keep constraint)
-- Server-side broadcast with client subscription (already implemented; poll fix adds a missing call)
-- Case-insensitive identity with soft duplicate detection (prompt, never auto-merge)
-
-**Anti-patterns to avoid:**
-- Per-row RLS policies when Prisma handles authorization
-- `postgres_changes` subscriptions (O(n) DB load per vote; Broadcast is O(1))
-- Keeping FingerprintJS as a fallback (two code paths, proven broken on school hardware)
-- Changing database enum value `'active'` to `'live'` (map in display layer only)
+**Major components touched:**
+1. `src/components/poll/poll-card-menu.tsx` — NEW; mirrors `session-card-menu.tsx` Radix DropdownMenu pattern
+2. `src/actions/poll.ts` and `src/actions/bracket.ts` — MODIFY; add `broadcastActivityUpdate(sessionId)` on delete
+3. `src/actions/class-session.ts` — MODIFY; add `participant_removed` broadcast to `removeStudent`/`banStudent`
+4. `src/hooks/use-realtime-activities.ts` — MODIFY; add `participant_removed` listener, return `removed` state
+5. `src/components/student/activity-grid.tsx` — MODIFY; render `RemovedState` when `removed === true`
+6. `src/app/api/brackets/[bracketId]/state/route.ts` — INVESTIGATE; likely add `cache: 'no-store'`
+7. `src/components/auth/signout-button.tsx` — MODIFY; add `useFormStatus` inner component
 
 ### Critical Pitfalls
 
-1. **RLS breaks postgres_changes subscriptions** — After enabling RLS, `postgres_changes` realtime subscriptions stop receiving events because RLS denies the subscriber SELECT access. SparkVotEDU does NOT use `postgres_changes` (verified via code review: all hooks use Broadcast or Presence), so this is not a risk here. Verify post-deploy by checking all four realtime patterns (vote, bracket advance, activity, presence).
+1. **hasShownRevealRef set before setTimeout (Pitfall 1)** — when two rapid broadcasts (`winner_selected` + `bracket_completed`) fire in succession, the second triggers a dependency re-run that cancels the timer, but the ref is already `true`, permanently blocking rescheduling. Fix: move `hasShownRevealRef.current = true` inside the `setTimeout` callback. This pattern is confirmed as the root cause in Phase 24 debug files and the fix is validated in `DEVotingView`. Apply to all remaining celebration effects.
 
-2. **Prisma migration breaks on device_id constraint change** — Making `device_id` nullable is safe only if the `@@unique([sessionId, deviceId])` constraint is preserved as-is. PostgreSQL allows multiple NULLs in unique constraints (NULLs are not equal for uniqueness), so new participants with `NULL deviceId` do not violate the constraint. Use `--create-only` to inspect generated SQL before applying.
+2. **Missing hasShownRevealRef guard causing infinite loop (Pitfall 2)** — `RRLiveView` in `bracket/[bracketId]/page.tsx` has no `hasShownRevealRef` guard. After `CelebrationScreen` auto-dismisses (12 seconds), `bracketCompleted` is still `true` and all other conditions reset to `false`, causing the effect to re-fire and loop infinitely. Fix: add `const hasShownRevealRef = useRef(false)` and `!hasShownRevealRef.current` to the effect condition in `RRLiveView`, mirroring `DEVotingView`.
 
-3. **Silent identity merge on duplicate names** — Case-insensitive matching means "Emma" and "emma" are the same. If a different person joins with a matching name, they inherit the original student's participant record (and votes). Prevention: always prompt on collision — "Another Emma is already here. Is this you coming back? [Yes, that's me] [No, I'm different]". Never auto-merge, never auto-reject.
+3. **Dual-channel deletion broadcast missing (Pitfall 5)** — broadcasting only to `activities:{sessionId}` updates the activity grid but leaves students already inside a deleted bracket/poll page on a stale view. Fix: after confirming the activity-grid broadcast works, also send a deletion event to the activity's own channel so students on the activity page are redirected back to `/session/{sessionId}`.
 
-4. **Batch flush overwrites fresh fetch data on poll close** — `useRealtimePoll` batches vote updates every 2 seconds. When `poll_closed` fires, `fetchPollState()` sets fresh data from the server, but the pending batch flush interval may subsequently overwrite it with stale counts. Fix: clear `pendingVoteCounts.current = {}` inside `fetchPollState()` before setting state.
+4. **Supabase channel not in cleanup causing subscription leak (Pitfall 6)** — any new channel subscription added without a paired `supabase.removeChannel()` in the cleanup causes channel count growth. In React StrictMode the effect runs twice, surfacing the leak immediately. Fix: count `.channel(...).subscribe()` calls and match them with `removeChannel` calls in every `useEffect` cleanup.
 
-5. **Testing RLS in SQL Editor bypasses RLS** — The Supabase SQL Editor runs as superuser, which bypasses RLS. Test RLS correctness with `curl -H "apikey: ANON_KEY" "$SUPABASE_URL/rest/v1/teachers?select=*"` — should return empty `[]`. Never use the SQL Editor to verify deny-all behavior.
+5. **e.stopPropagation missing on context menu trigger (Pitfall 8)** — the DropdownMenuTrigger button sits inside a `<Link>` wrapper. Without `e.stopPropagation()` + `e.preventDefault()` on the trigger button's `onClick`, clicking the menu also navigates the card. Fix: copy the pattern from `session-card-menu.tsx` lines 33-35 exactly.
+
+---
 
 ## Implications for Roadmap
 
-Based on research, recommended phase structure:
+Research points to a clear 5-phase structure matching the five scoped features, ordered by ascending risk and dependency. No feature requires another to ship first, but grouping the two realtime-investigation bugs after the simpler additive work reduces noise during root-cause tracing.
 
-### Phase 1: Security and Schema Foundation
+### Phase 1: Sign-Out Button Pending Feedback
 
-**Rationale:** RLS hardening is a zero-risk immediate win — Prisma bypasses it entirely, so no code path can break. Schema migration must land before identity code ships because the code depends on the `first_name` column. Combining them in one phase means one migration, one deploy, one verification pass.
+**Rationale:** Purely additive; zero realtime surface area; no risk of regression; builds confidence before touching shared code. Single-file change. Pattern already established in `useTransition` throughout the codebase.
+**Delivers:** Teachers see "Signing out..." label + disabled state immediately on click; no double-submit possible.
+**Addresses:** Feature 5 (FEATURES.md); table stakes UX polish.
+**Avoids:** Sign-out double-submit (security/UX).
 
-**Delivers:** All 12 tables RLS-protected, `first_name` column available in `student_participants`, `device_id` made nullable.
+### Phase 2: Poll Context Menu
 
-**Addresses:** RLS security hardening (table stakes), schema prerequisite for name-based identity.
+**Rationale:** UI-only change; no data mutations change; no realtime events; clear reference implementation in `session-card-menu.tsx`. Establishing the context menu now means the student deletion broadcast (Feature 4) immediately surfaces in the menu UX without a second pass.
+**Delivers:** Poll list shows triple-dot menu with Edit, Duplicate, Delete matching bracket card UX; keyboard-accessible via Radix.
+**Addresses:** Feature 1 (FEATURES.md); table stakes UX consistency.
+**Avoids:** Event bubbling from context menu trigger (Pitfall 8); must include `e.stopPropagation()`.
 
-**Avoids:** Leaving tables exposed while working on other features; shipping identity code against schema that doesn't support it yet.
+### Phase 3: Student Dynamic Activity Removal
 
-**Implementation specifics:**
-- `npx prisma migrate dev --create-only --name enable-rls-and-name-schema`
-- Hand-edit migration SQL: 12 `ALTER TABLE ... ENABLE ROW LEVEL SECURITY` statements, ADD COLUMN `first_name` NOT NULL DEFAULT '', ALTER COLUMN `device_id` DROP NOT NULL, ADD INDEX `(session_id, first_name)`
-- Verify: Prisma operations unchanged, Realtime unchanged, Storage unchanged, `curl` with anon key returns `[]`
+**Rationale:** Extends the existing broadcast architecture with two new call sites and one new event type. Should be done before the investigation-required bugs so the broadcast infrastructure is well-exercised and any issues are isolated. Feature 1 (poll context menu) enhances this — the new Delete action in the menu will immediately trigger the student broadcast once this phase is in place.
+**Delivers:** Deleted brackets and polls disappear from student session dashboards within ~2 seconds; removed students see a "You've been removed" state rather than stale UI.
+**Addresses:** Feature 4 (FEATURES.md); table stakes live-session UX.
+**Avoids:** Single-channel broadcast omission (Pitfall 5); channel subscription leak (Pitfall 6); missing sessionId lookup before delete.
 
-**Research flag:** Standard SQL patterns. No additional research needed. Implementation fully specified in STACK.md.
+### Phase 4: SE Bracket Final Round Realtime Fix
 
-### Phase 2: Name-Based Student Identity
+**Rationale:** Investigation-first bug; likely a trivial `cache: 'no-store'` addition to the bracket state API route. By doing this before the RR all-at-once fix, if the SE and RR bugs share a root cause (premature `status: 'completed'` in API response), that is discovered here first and informs Phase 5.
+**Delivers:** SE bracket final round vote counts update in real time on student views without manual refresh.
+**Addresses:** Feature 3 (FEATURES.md); differentiator: live vote dashboard to the last vote.
+**Avoids:** Premature `bracketCompleted` signal; ref-outside-timer race (Pitfall 1); reconnect fallback gap (Pitfall 7).
 
-**Rationale:** The largest and most complex change. Depends on Phase 1 schema. This is the P0 fix that makes the product work in real classrooms.
+### Phase 5: RR All-at-Once Bracket Completion Fix
 
-**Delivers:** Students join with first name instead of device fingerprint. Duplicate names handled gracefully with explicit disambiguation prompt. Teacher sees real student names on participant roster.
-
-**Addresses:** Name-based student identity (P0 table stakes).
-
-**Avoids:** Breaking existing data (additive migration, `device_id` kept, FK references unchanged). Silent identity merges (always prompt on duplicate).
-
-**Implementation specifics:**
-- Modify `src/lib/dal/student-session.ts`: add `findParticipantByFirstName(sessionId, firstName)` with `mode: 'insensitive'`
-- Modify `src/actions/student.ts`: accept `{ code, firstName }`, duplicate detection, return `{ duplicate: true }` case
-- Modify `src/components/student/join-form.tsx`: add first name input, remove `useDeviceIdentity` hook
-- Modify `src/types/student.ts`: add `firstName` to types, add `duplicate` flag to `JoinResult`
-- Update localStorage contract: add `firstName` field alongside existing fields
-
-**Research flag:** Technical approach fully specified. Name disambiguation UX wording should be validated with teachers before shipping ("Another Emma is already here" prompt). No deep research needed — judgment call.
-
-### Phase 3: Realtime Bug Fix
-
-**Rationale:** Independent of identity changes. One-line fix + investigation of secondary edge cases. Can proceed in parallel with Phase 2 work.
-
-**Delivers:** Teacher poll live dashboard updates in real-time when students vote. Poll activation event properly signals the realtime hook.
-
-**Addresses:** Poll live update bug (P0 table stakes).
-
-**Avoids:** Shipping the name-based identity overhaul on top of broken realtime infrastructure; stale batch data overwriting fresh server state on poll close.
-
-**Implementation specifics:**
-- `src/actions/poll.ts:235`: add `broadcastPollUpdate(pollId, 'poll_activated').catch(console.error)` in the `status === 'active'` branch
-- `useRealtimePoll` hook: clear `pendingVoteCounts.current` inside `fetchPollState()` before setting state
-- Enable Supabase Realtime debug logging during investigation
-- End-to-end test: student votes, teacher live dashboard updates within 2 seconds
-
-**Research flag:** Root cause identified in source code. No research needed. Post-fix investigation may surface a subscription timing race condition (teacher navigates to live page after activation); `fetchPollState()` on SUBSCRIBED status should handle this, but verify.
-
-### Phase 4: UX Polish
-
-**Rationale:** All three polish items are pure UI changes with no schema or architectural dependencies. Bundle them in one phase for efficiency. Can proceed in parallel with Phases 2 and 3.
-
-**Delivers:** Readable poll results on classroom projectors. Meaningful session names in dropdowns. Consistent "Go Live"/"Live Dashboard" terminology across brackets and polls.
-
-**Addresses:** Presentation mode contrast, session name display + edit, status terminology unification.
-
-**Avoids:** Scope creep into architectural changes; adding full dark mode theme (v1.3 scope).
-
-**Implementation specifics:**
-- `src/components/poll/ranked-leaderboard.tsx`: darken `MEDAL_STYLES` to -200 backgrounds, -900 text, -400 borders
-- Session dropdowns: `s.name || 'Session ' + s.code` fallback display
-- New server action `updateSessionName(sessionId, name)` + DAL method
-- Inline edit component on session detail page with `useOptimistic` for race condition prevention
-- ~6 component files: "Activate" -> "Go Live", "Go Live" button -> "Live Dashboard", status badge "Active" -> "Live"
-- Grep for all instances before closing: `grep -r "Activate\|Go Live\|Active" src/components/`
-
-**Research flag:** Standard UI patterns. No research needed. Terminology: create a single display-layer constant to prevent future drift.
-
-### Phase 5: Cleanup
-
-**Rationale:** Destructive step — removing working (if broken) fallback code. Must happen after Phase 2 is verified in a real classroom with school hardware (Chromebooks). Removing prematurely eliminates the ability to roll back.
-
-**Delivers:** Smaller client bundle (~50KB removed), single identity code path, no dead code.
-
-**Addresses:** FingerprintJS removal (final step of identity migration).
-
-**Avoids:** Removing the safety net before the replacement is proven.
-
-**Implementation specifics:**
-- `npm uninstall @fingerprintjs/fingerprintjs`
-- Delete `src/lib/student/fingerprint.ts`
-- Delete `src/lib/student/session-identity.ts`
-- Delete `src/hooks/use-device-identity.ts`
-- Remove all imports referencing deleted files
-
-**Research flag:** No research needed. Straightforward deletion after verification gate.
+**Rationale:** Most investigation-heavy fix; touches the most code paths (celebration chain, bracket activation, `isRoundRobinComplete` query). Doing this last means lessons from Phase 4's investigation are available, and the broadcast infrastructure from Phase 3 is proven. Phase 24-06 (`calculateRoundRobinStandings`) must be preserved as a non-regression throughout.
+**Delivers:** RR all-at-once brackets complete correctly when all matchups are decided; celebration fires on teacher and student views; `RRLiveView` celebration guard added to prevent infinite loop.
+**Addresses:** Feature 2 (FEATURES.md); differentiator: flexible classroom pacing with auto-completion.
+**Avoids:** Ref-outside-timer blocking celebration (Pitfall 1); missing ref guard causing infinite loop (Pitfall 2); `bracketDone` broken for RR type (Pitfall 4); content bleed-through behind celebration overlay (UX Pitfalls).
 
 ### Phase Ordering Rationale
 
-- Security and schema are delivered first because they have zero risk and unblock everything else
-- Schema must precede identity code because `first_name` column must exist before the DAL function references it
-- Identity is the primary focus of the milestone and should receive the most implementation attention
-- Realtime fix and UX polish are independent of identity and can run in parallel, keeping the team unblocked
-- Cleanup is deliberately last — it is irreversible and should be gated on real classroom verification, not developer testing
-- The "parallel after Phase 1" model (Phases 2, 3, 4 concurrent; Phase 5 after Phase 2 verified) matches how all four research files describe the dependency graph
+- Phases 1-2 are zero-risk additive work: doing them first builds confidence and surfaces any environment issues before touching shared realtime infrastructure.
+- Phase 3 introduces the only net-new broadcast event type (`participant_removed`); isolating it on its own makes any subscription or cleanup issues immediately attributable.
+- Phases 4-5 require investigation before implementation; ordering them last keeps investigation windows clean and avoids conflating root causes.
+- Features 1 and 4 compound: poll context menu Delete action triggers the student broadcast from Phase 3. This is a natural sequencing bonus, not a hard dependency.
+- Phase 24's `hasShownRevealRef` and `calculateRoundRobinStandings` work must be treated as non-regressions throughout Phase 5.
 
 ### Research Flags
 
-**Phases needing deeper research during planning:**
-- **Phase 2 (Identity):** No technical research needed; UX wording for the duplicate name disambiguation prompt may benefit from a quick teacher-feedback loop before implementation locks in. The "Is this you coming back?" flow is specified but untested with real users.
-- **Phase 3 (Realtime):** Post-fix investigation may reveal a subscription timing edge case (teacher navigates to live page after poll activation). If the one-line fix does not fully resolve the issue, enable Supabase Realtime debug logging and check Dashboard Realtime Inspector. Resolution path is clear; depth is uncertain.
+Needs investigation during planning/execution:
+- **Phase 4:** Read `src/app/api/brackets/[bracketId]/state/route.ts` before writing code — root cause is unconfirmed but highly likely to be Next.js route caching. Approximately 15 minutes of investigation.
+- **Phase 5:** Read `src/actions/bracket.ts` + `src/lib/dal/bracket.ts` activation path and `bracket/[bracketId]/page.tsx` `RRLiveView` celebration effect before writing code. Approximately 30 minutes of investigation.
+- **Phase 3 (minor):** Confirm `deletePoll` and `deleteBracket` DAL return values and whether `sessionId` is available pre-delete without an extra query. Approximately 5 minutes of reading.
 
-**Phases with standard patterns (skip research-phase):**
-- **Phase 1 (Security/Schema):** Implementation is fully specified in STACK.md. 12-line SQL migration + 3-line schema edit.
-- **Phase 4 (UX):** Pure CSS and copy changes. WCAG contrast targets are defined (WCAG AAA, 7:1+).
-- **Phase 5 (Cleanup):** File deletion. No ambiguity.
+Phases with standard patterns (skip research-phase):
+- **Phase 1:** `useFormStatus` is stable React 19; pattern is already in `session-detail.tsx` and `bracket-card.tsx`.
+- **Phase 2:** Context menu pattern is fully specified in `session-card-menu.tsx`; no unknowns.
+
+---
 
 ## Confidence Assessment
 
 | Area | Confidence | Notes |
 |------|------------|-------|
-| Stack | HIGH | All versions verified against package.json. No new packages needed. bypassrls behavior confirmed via Supabase official docs and Prisma GitHub discussion. |
-| Features | HIGH | All 6 features mapped to specific files, line numbers, and code paths via direct codebase analysis. Feature boundaries are clear. Deny-all RLS simplifies security feature significantly vs what developers often expect. |
-| Architecture | HIGH | Prisma+RLS coexistence model verified via Supabase official docs and code review. Missing broadcast call located at exact line (`poll.ts:235`). All four realtime hook types confirmed as Broadcast/Presence (not postgres_changes). |
-| Pitfalls | HIGH | Migration safety (additive schema), RLS Prisma bypass, missing broadcast, batch flush race condition — all identified via source code analysis and documented patterns. Key risk (deploying identity during active sessions) is mitigated by the fact all v1.1 sessions are already ended. |
+| Stack | HIGH | All packages verified from `package.json`; all referenced source files read directly; zero new dependencies needed |
+| Features | HIGH | All five features traced to existing codebase, debug files, and Phase 24 UAT results; scope is well-defined |
+| Architecture | HIGH | All modified files identified by name; dual-channel broadcast pattern fully understood; one fix (SE final round) has an unconfirmed but highly probable root cause |
+| Pitfalls | HIGH | All critical pitfalls confirmed by direct debug file reads and codebase analysis, not inference; Phase 24 already encountered and solved the canonical versions |
 
 **Overall confidence:** HIGH
 
 ### Gaps to Address
 
-- **Realtime secondary edge cases:** The missing `poll_activated` broadcast is the confirmed root cause, but there may be a subscription timing issue when a teacher navigates to the live poll page after activation. `fetchPollState()` fires on SUBSCRIBED status and should catch this, but it needs end-to-end verification with real devices (not just unit testing).
+- **SE final round root cause (Phase 4):** The most likely cause is `cache: 'no-store'` missing from the bracket state API route, but this is not confirmed. Must read `src/app/api/brackets/[bracketId]/state/route.ts` before writing code. If the route is already `no-store`, investigation expands to the `useRealtimeBracket` hook's `fetchBracketState` call timing or the student bracket page's initial fetch on navigation.
 
-- **Name disambiguation UX wording:** The duplicate detection flow is architecturally specified, but the exact prompt copy ("Another Emma is already here. Is this you coming back?") has not been tested with students. The system correctly detects collisions; whether students understand the prompt is a UX validation question for Phase 2.
+- **RR all-at-once activation path (Phase 5):** Whether the bug is in `isRoundRobinComplete`'s query scope or in the round-opening logic at activation time is not fully determined. ARCHITECTURE.md notes both possibilities. Must trace the activation code path from `updateBracketStatus` through the DAL to the round-opening step before writing fixes.
 
-- **Projector contrast validation:** The WCAG AAA (7:1+) contrast target is computed for monitors. Real classroom projectors wash out colors by an estimated 30-50%. Phase 4 implementation should be tested on an actual projector before shipping, not just a monitor or browser dev tools color picker.
+- **Student removal navigation (Phase 3, lower priority):** ARCHITECTURE.md Fix 4 specifies that students already on a deleted bracket/poll page need to be redirected via a second broadcast to the activity's own channel. FEATURES.md marks this as acceptable to defer (404/notFound is acceptable for MVP), but PITFALLS.md Pitfall 5 flags it as a UX gap. Decision point: ship the session-grid removal (single-channel) first, then evaluate whether the per-activity-page redirect is needed in the same phase or can go to v1.4.
+
+- **Mobile nav sign-out (Phase 1):** FEATURES.md notes that `src/components/dashboard/mobile-nav.tsx` may also contain a sign-out trigger that needs the same pending state treatment. Must verify during Phase 1 implementation.
+
+---
 
 ## Sources
 
 ### Primary (HIGH confidence)
-- [Supabase Row Level Security](https://supabase.com/docs/guides/database/postgres/row-level-security) — deny-all pattern, bypassrls behavior, policy syntax
-- [Supabase Realtime Broadcast](https://supabase.com/docs/guides/realtime/broadcast) — REST broadcast API, channel subscription patterns
-- [Supabase Realtime Troubleshooting](https://supabase.com/docs/guides/realtime/troubleshooting) — debug logger config, heartbeat monitoring
-- [Supabase + Prisma Integration](https://supabase.com/docs/guides/database/prisma) — bypassrls user setup, connection architecture
-- [Prisma 7.0 Release Notes](https://www.prisma.io/blog/announcing-prisma-orm-7-0-0) — hand-edited migrations via --create-only confirmed
-- [@supabase/supabase-js npm](https://www.npmjs.com/package/@supabase/supabase-js) — v2.97.0 latest, ^2.93.3 installed and compatible
-- [W3C WCAG 2.2 Contrast Minimum](https://www.w3.org/WAI/WCAG22/Understanding/contrast-minimum.html) — contrast ratio targets for presentation mode
-- [PostgreSQL NULL Uniqueness](https://www.postgresql.org/docs/current/ddl-constraints.html) — NULLs not equal in unique constraints
-- SparkVotEDU codebase direct analysis — all referenced files, line numbers, and code paths verified
+- `package.json` — all installed versions verified directly
+- `src/components/bracket/bracket-card.tsx` — reference context menu implementation
+- `src/components/teacher/session-card-menu.tsx` — reference Radix DropdownMenu pattern
+- `src/hooks/use-realtime-activities.ts`, `use-realtime-bracket.ts`, `use-realtime-poll.ts` — realtime hook patterns and cleanup
+- `src/lib/realtime/broadcast.ts` — REST API broadcast pattern and dual-channel coordination
+- `src/actions/round-robin.ts`, `src/actions/bracket-advance.ts`, `src/actions/class-session.ts` — server action broadcast patterns
+- `src/lib/dal/round-robin.ts` — `isRoundRobinComplete`, `advanceRoundRobinRound`
+- `src/components/teacher/live-dashboard.tsx` — `bracketDone`, `rrAllDecided`, celebration trigger effects
+- `src/components/auth/signout-button.tsx` — current sign-out implementation
+- `.planning/debug/rr-bracket-completion-celebration.md` — confirmed celebration chain root causes
+- `.planning/debug/celebration-loops-infinitely.md` — confirmed missing `hasShownRevealRef` on `RRLiveView`
+- `.planning/debug/teacher-rr-celebration-not-triggering.md` — confirmed ref-outside-timer race condition
+- `.planning/debug/poll-student-no-celebration.md` — confirmed early-return blocking poll student celebration
+- `.planning/debug/rr-tiebreaker-declares-winner-in-tie.md` — confirmed `calculateRoundRobinStandings` is the correct function
+- `.planning/phases/24-bracket-poll-ux-consistency/24-VERIFICATION.md` — Phase 24 Plan 05/06 patterns validated in production
+- `.planning/phases/24-bracket-poll-ux-consistency/24-UAT.md` — Phase 24 passed UAT
 
 ### Secondary (MEDIUM confidence)
-- [Prisma + Supabase RLS Discussion #18642](https://github.com/prisma/prisma/discussions/18642) — community confirmation Prisma ignores RLS via bypassrls
-- [Supabase Broadcast Issues #39091](https://github.com/orgs/supabase/discussions/39091) — known private/public channel mismatch issue (does not apply here; SparkVotEDU uses public channels)
-- [Kahoot Player Identifier Help](https://support.kahoot.com/hc/en-us/articles/360036178314-Player-identifier) — competitive pattern for name-based identity and duplicate handling
+- React useFormStatus docs (https://react.dev/reference/react-dom/hooks/useFormStatus) — stable in React 19, must be child of form
+- React useTransition docs (https://react.dev/reference/react/useTransition) — alternative for event-handler patterns
+- shadcn/ui DropdownMenu docs (https://ui.shadcn.com/docs/components/dropdown-menu) — already installed via Radix
+- Supabase Broadcast docs (https://supabase.com/docs/guides/realtime/broadcast) — REST API pattern confirmed
+- Supabase TooManyChannels troubleshooting — cleanup requirements confirmed against codebase patterns
+
+### Tertiary (LOW confidence — needs validation during implementation)
+- SE bracket final round root cause: `cache: 'no-store'` hypothesis — inferred from architecture, not yet confirmed by reading the route file
+- RR all-at-once activation path: specific line in DAL where rounds are opened for all-at-once pacing — inferred from function names, requires code trace
 
 ---
-*Research completed: 2026-02-21*
+*Research completed: 2026-02-24*
 *Ready for roadmap: yes*

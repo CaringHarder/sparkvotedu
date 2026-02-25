@@ -1,494 +1,732 @@
-# Architecture Research: v1.2 Classroom Hardening
+# Architecture Research: v1.3 Bug Fixes & UX Parity
 
-**Domain:** Integration architecture for name-based identity, RLS policies, realtime fixes, and UX improvements
-**Researched:** 2026-02-21
-**Confidence:** HIGH (based on thorough codebase analysis of 570+ files and verified Supabase documentation)
+**Domain:** Integration architecture for 5 targeted fixes to existing classroom voting app
+**Researched:** 2026-02-24
+**Confidence:** HIGH (direct codebase analysis of all relevant source files)
 
 ---
 
 ## Current Architecture Snapshot
 
-The existing system has a clean three-layer architecture that the v1.2 features integrate into:
+SparkVotEDU v1.2 established this dual-channel broadcast architecture, which all 5 fixes integrate into:
 
 ```
-CLIENT LAYER
- Teacher UI (Supabase Auth)     Student UI (Anonymous)
-       |                              |
-       v                              v
- Server Components             Client Components
- + Server Actions              + localStorage identity
-       |                              |
-       +----------+-------------------+
-                  |
-           SERVER LAYER
-                  |
-     +------------+------------+
-     |            |            |
-  Prisma v7   Broadcast    Supabase
-  (bypassrls  REST API     Realtime
-   db user)   (service     (anon key
-              role key)    WebSocket)
-     |            |            |
-     +-----+------+-----+-----+
-           |             |
-      PostgreSQL    Supabase
-      (via Supabase) Realtime
-                     Server
+TEACHER BROWSER                        STUDENT BROWSER
+  LiveDashboard / PollLive               ActivityGrid / StudentBracketPage
+         |                                         |
+  useRealtimeBracket()               useRealtimeActivities()
+  useRealtimePoll()                  useRealtimeBracket()
+         |                                         |
+         +------ Supabase Realtime WebSocket ------+
+                          |
+              +===========+===========+
+              |                       |
+      bracket:{id}             activities:{sessionId}
+      poll:{id}                (session-wide channel)
+      (activity-specific       Event: activity_update
+       channels)               Event: participant_joined
+      Event: vote_update
+      Event: bracket_update
+      Event: poll_update
+              |                       |
+              +===========+===========+
+                          |
+         Server Actions (src/actions/*.ts)
+                          |
+              broadcastMessage() via REST API
+              POST /realtime/v1/api/broadcast
+              (service_role key, no WebSocket)
+                          |
+                        Prisma
+                     (bypassrls)
+                          |
+                     PostgreSQL
 ```
 
-### Key Architectural Facts (from codebase analysis)
+### Key Facts for v1.3 Fixes
 
-1. **Prisma connects via `DATABASE_URL` using `@prisma/adapter-pg`** -- direct PostgreSQL connection. The Prisma database user has `bypassrls` privilege, which **always bypasses RLS** regardless of policies.
+1. **`broadcastActivityUpdate(sessionId)`** sends `{ topic: 'activities:{sessionId}', event: 'activity_update', payload: {} }`. The `useRealtimeActivities` hook listens for this and **refetches from `/api/sessions/{sessionId}/activities`**. The hook does NOT listen for a `participant_removed` event -- it only responds to `activity_update`.
 
-2. **Supabase browser client uses `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`** (anon key) -- this IS subject to RLS. Used only for Realtime subscriptions and teacher auth, never for direct data queries.
+2. **`broadcastBracketUpdate(bracketId, type, payload)`** sends to `bracket:{bracketId}`. The `useRealtimeBracket` hook triggers `fetchBracketState()` on these types: `winner_selected`, `round_advanced`, `voting_opened`, `bracket_completed`, `prediction_status_changed`, `reveal_round`, `reveal_complete`. The final round of SE uses this exact path -- `advanceMatchup` broadcasts `winner_selected` then checks `isBracketComplete` and conditionally broadcasts `bracket_completed`.
 
-3. **Server-side Supabase client uses `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`** -- used only for `supabase.auth` in the auth DAL. Not used for data queries.
+3. **`rrAllDecided` in `LiveDashboard`** (line 856-858) checks `currentMatchups.every((m) => m.status === 'decided')`. For an RR bracket with `pacing: 'all_at_once'`, all matchups start as `pending` (not `voting`), so `rrAllDecided` is `false` until every single matchup transitions to `decided`. The bug is in `isRoundRobinComplete()` in the DAL -- it only fires the `bracket_completed` broadcast when the function is called, which only happens inside `recordResult()` in `round-robin.ts`. When all matchups are decided individually, this works, but `rrAllDecided` in `LiveDashboard` relies on `currentMatchups` from real-time data, which requires a preceding `winner_selected` broadcast to trigger `fetchBracketState()`.
 
-4. **Admin Supabase client uses `SUPABASE_SERVICE_ROLE_KEY`** -- used for broadcast REST API and admin operations. Bypasses RLS.
+4. **`removeStudent` / `banStudent` in `class-session.ts`** calls the DAL but does NOT broadcast anything. The student dashboard's `useRealtimeActivities` never receives a signal that the participant list changed.
 
-5. **All data queries go through Prisma** (DAL layer). No direct Supabase client data access exists in the codebase. Zero uses of `supabase.from('table').select()` for application data.
+5. **`SignOutButton` in `signout-button.tsx`** uses `<form action={signOut}>` -- a form submission. It provides no pending state feedback to the user during the server-side sign-out redirect.
 
-6. **Broadcast uses REST API, not WebSocket** -- server actions call `fetch()` to `POST /realtime/v1/api/broadcast`. This is a one-way push; the server never subscribes to channels.
-
-7. **Student identity is stored in localStorage** as `sparkvotedu_session_{sessionId}` containing `{ participantId, funName, sessionId, rerollUsed }`.
+6. **Poll context menu**: `src/app/(dashboard)/polls/page.tsx` renders poll cards as `<Link>` wrapping a `<Card>`. No `SessionCardMenu`-pattern component exists for polls. `SessionCardMenu` lives in `src/components/teacher/session-card-menu.tsx` and is the reference pattern for a three-dot dropdown overlaid on a card.
 
 ---
 
-## Component 1: Name-Based Student Identity
+## Fix 1: Poll Context Menu
 
-### Current Identity Flow (BEING REPLACED)
+### Current State
 
-```
-Student opens /join ->
-  JoinForm loads ->
-    useDeviceIdentity() hook fires ->
-      getOrCreateDeviceId() returns localStorage UUID
-      getBrowserFingerprint() returns FingerprintJS hash
-    ->
-  Student enters 6-digit code, submits ->
-    joinSession({ code, deviceId, fingerprint }) server action ->
-      findActiveSessionByCode(code) via Prisma
-      findParticipantByDevice(sessionId, deviceId)     -- primary lookup
-      findParticipantByFingerprint(sessionId, fp)      -- fallback
-      createParticipant(sessionId, deviceId, fp)       -- new student
-    ->
-  Result stored in localStorage ->
-  Redirect to /session/{sessionId}/welcome
-```
+`src/app/(dashboard)/polls/page.tsx` renders each poll card as a plain `<Link>` wrapping a `<Card>`. There is no three-dot context menu. The existing poll actions (delete, duplicate, assign to session) exist only in `PollDetailView` (`src/components/poll/poll-detail-view.tsx`) -- the full detail page.
 
-### New Identity Flow (NAME-BASED)
+The reference pattern is `SessionCardMenu` at `src/components/teacher/session-card-menu.tsx`:
 
 ```
-Student opens /join ->
-  JoinForm loads (NO fingerprint/deviceId computation) ->
-  Student enters 6-digit code + first name, submits ->
-    joinSession({ code, firstName }) server action ->
-      findActiveSessionByCode(code) via Prisma
-      Case-insensitive lookup: firstName in session participants
-        (Prisma mode: 'insensitive')
-      IF no match -> create new participant (firstName + random fun name)
-      IF exact match + not banned -> return existing (returning student)
-      IF match + duplicate detected -> return { duplicate: true }
-    ->
-  IF duplicate: client prompts student to differentiate ->
-    Student adds last initial ("Emma" -> "Emma S") ->
-    Re-submits with differentiated name ->
-  Result stored in localStorage (same key format, adds firstName) ->
-  Redirect to /session/{sessionId}/welcome
+sessions/page.tsx
+  <div className="relative">               <- position anchor
+    <Link href={...}>
+      <Card>...</Card>
+    </Link>
+    <div className="absolute right-3 top-3 z-10">
+      <SessionCardMenu sessionId=... />    <- overlaid menu
+    </div>
+  </div>
 ```
 
-### Schema Changes
+`SessionCardMenu` uses Radix `DropdownMenu` with `e.stopPropagation()` on trigger click to prevent the Link navigation from firing when the menu opens.
 
-```prisma
-model StudentParticipant {
-  id           String    @id @default(uuid())
-  firstName    String    @map("first_name")         // NEW: student's real first name
-  funName      String    @map("fun_name")            // KEEP: random alliterative name for display
-  deviceId     String?   @map("device_id")           // CHANGE: nullable (no longer required)
-  fingerprint  String?                               // KEEP: nullable (deprecation path)
-  recoveryCode String?   @map("recovery_code")       // KEEP
-  rerollUsed   Boolean   @default(false) @map("reroll_used")
-  banned       Boolean   @default(false)
-  lastSeenAt   DateTime  @default(now()) @map("last_seen_at")
-  createdAt    DateTime  @default(now()) @map("created_at")
-  sessionId    String    @map("session_id")
-  session      ClassSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+### What to Build
 
-  votes       Vote[]
-  pollVotes   PollVote[]
-  predictions Prediction[]
+**NEW component:** `src/components/poll/poll-card-menu.tsx`
 
-  @@unique([sessionId, deviceId])       // KEEP: backward compat (deviceId now nullable)
-  @@unique([sessionId, funName])        // KEEP: fun names still unique per session
-  @@index([sessionId, firstName])       // NEW: for name-based lookup
-  @@index([sessionId, fingerprint])     // KEEP
-  @@index([recoveryCode])              // KEEP
-  @@map("student_participants")
-}
-```
-
-### Components to Create/Modify
-
-| Component | Action | Purpose |
-|-----------|--------|---------|
-| `src/components/student/join-form.tsx` | **MODIFY** | Add first name input field, remove `useDeviceIdentity` dependency |
-| `src/actions/student.ts` | **MODIFY** | Accept `firstName` instead of `deviceId/fingerprint`, add duplicate detection |
-| `src/lib/dal/student-session.ts` | **MODIFY** | Add `findParticipantByFirstName()` with Prisma `mode: 'insensitive'` |
-| `src/types/student.ts` | **MODIFY** | Add `firstName` to types, update `JoinResult` with `duplicate` flag |
-| `src/hooks/use-device-identity.ts` | **DEPRECATE then DELETE** | No longer needed for join flow |
-| `src/lib/student/fingerprint.ts` | **DEPRECATE then DELETE** | No longer needed |
-| `src/lib/student/session-identity.ts` | **DEPRECATE then DELETE** | No longer needed |
-
-### Data Flow: New Join Sequence
-
-```
-1. Student enters class code "123456" + first name "Emma" at /join
-   -> Server action: joinSession({ code: "123456", firstName: "Emma" })
-   -> Prisma: findActiveSessionByCode("123456")
-   -> Prisma: findMany where sessionId + firstName (mode: 'insensitive') + not banned
-
-2a. Zero matches -> Create new participant
-    -> generateFunName() for display
-    -> INSERT INTO student_participants (session_id, first_name, fun_name, ...)
-    -> Return { participant, returning: false }
-
-2b. Exactly one match -> Return existing participant (returning student)
-    -> UPDATE last_seen_at
-    -> Return { participant, returning: true }
-
-2c. Name exists but this is a NEW student (duplicate name)
-    -> Return { duplicate: true, existingName: "Emma" }
-    -> Client shows: "Another Emma is already here. Please add your last initial."
-    -> Student re-enters as "Emma S"
-    -> Re-submits -> creates new participant
-
-3. Store in localStorage (backward-compatible format):
-   localStorage.setItem(`sparkvotedu_session_${sessionId}`, JSON.stringify({
-     participantId: result.participant.id,
-     funName: result.participant.funName,
-     firstName: result.participant.firstName,    // NEW field
-     sessionId: sessionId,
-     rerollUsed: result.participant.rerollUsed,
-   }))
-
-4. Redirect to /session/{sessionId}/welcome
-```
-
-### Migration Strategy
-
-The migration is additive, not destructive. All v1.1 sessions are already ended, making this effectively a clean break:
-
-1. **Add `first_name` column** -- NOT NULL with default '' for existing rows (via hand-edited Prisma migration SQL)
-2. **Make `device_id` nullable** -- existing rows keep their values
-3. **Deploy new join flow** -- new students use name-based identity
-4. **Existing data preserved** -- old participant records with deviceId remain intact, all FK references (votes, predictions) unchanged
-5. **After classroom verification** -- remove FingerprintJS from package.json, delete 3 files
-
-**PostgreSQL NULL uniqueness:** The `@@unique([sessionId, deviceId])` constraint remains. PostgreSQL allows multiple NULLs in unique constraints (NULLs are not considered equal for uniqueness), so new participants with NULL deviceId do not violate the constraint.
-
----
-
-## Component 2: Supabase Row Level Security (RLS)
-
-### The Deny-All Architecture
-
-This is the most important architectural decision in v1.2. The key insight:
-
-**Since ALL data access goes through Prisma (which bypasses RLS), and the Supabase client is only used for Auth and Realtime (never data queries), RLS should be deny-all with no policies.**
-
-```
-BEFORE v1.2:
-  curl with anon key -> GET /rest/v1/teachers?select=* -> ALL teacher data (EXPOSED)
-  curl with anon key -> GET /rest/v1/subscriptions?select=* -> ALL billing data (EXPOSED)
-  Prisma server action -> prisma.teacher.findMany() -> ALL data (working)
-
-AFTER v1.2:
-  curl with anon key -> GET /rest/v1/teachers?select=* -> [] (BLOCKED by RLS)
-  curl with anon key -> GET /rest/v1/subscriptions?select=* -> [] (BLOCKED by RLS)
-  Prisma server action -> prisma.teacher.findMany() -> ALL data (still working, bypassrls)
-  service_role key -> ALL data (still working, service_role bypasses RLS)
-```
-
-### Why Deny-All Instead of Per-Row Policies
-
-| Approach | Deny-All (Recommended) | Per-Row Owner-Based |
-|----------|----------------------|---------------------|
-| **SQL complexity** | 12 ALTER TABLE statements | 12 ALTER TABLEs + 24+ CREATE POLICY statements with FK-chain subqueries |
-| **Maintenance** | None -- no policies to update when schema changes | Must update policies when table relationships change |
-| **Risk of breaking Prisma** | Zero -- Prisma bypasses RLS entirely | Zero (same), but more SQL to get wrong |
-| **Risk of breaking Realtime** | Zero -- Broadcast does not use data table RLS | Zero (same) |
-| **Protection level** | Complete -- no access via PostgREST | Partial -- authenticated teachers can read their own data via PostgREST |
-| **When to prefer** | When the ORM handles all data access | When the Supabase client is the primary data access path |
-
-SparkVotEDU uses Prisma for ALL data access. The Supabase client is only used for Auth, Realtime, and Storage. Per-row policies would add complexity without adding security value because no legitimate code path uses `supabase.from()` for data.
-
-### Implementation
-
-Single SQL migration (12 lines):
-
-```sql
-ALTER TABLE public.teachers ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.class_sessions ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.student_participants ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.brackets ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.bracket_entrants ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.matchups ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.votes ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.polls ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.poll_options ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.poll_votes ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.subscriptions ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.predictions ENABLE ROW LEVEL SECURITY;
-```
-
-Applied via `npx prisma migrate dev --create-only --name enable-rls` then `npx prisma migrate deploy`.
-
-### Verification Matrix
-
-| Test | Expected | Why |
-|------|----------|-----|
-| Prisma `findMany` on any table | Works unchanged | bypassrls user |
-| Server action vote submission | Works unchanged | Goes through Prisma |
-| Supabase Realtime broadcast (server) | Works unchanged | service_role key bypasses RLS |
-| Supabase Realtime subscription (client) | Works unchanged | Broadcast channels do NOT check data table RLS |
-| Supabase Presence (student session) | Works unchanged | Presence uses realtime infrastructure, not data tables |
-| `supabase.from('teachers').select('*')` from browser | Returns empty `[]` | RLS denies access for anon/authenticated role |
-| `curl` with anon key to PostgREST | Returns empty `[]` | Same as above |
-| Supabase Storage upload URLs | Works unchanged | Storage uses `storage.objects` table, not public schema |
-| Supabase Auth sign-in/sign-out | Works unchanged | Auth uses `auth` schema, not public schema |
-
----
-
-## Component 3: Realtime Subscription Fixes
-
-### Current Realtime Architecture (Four Channel Patterns)
-
-| Pattern | Channel Topic | Direction | Used By |
-|---------|--------------|-----------|---------|
-| **Broadcast** (vote updates) | `poll:{pollId}`, `bracket:{bracketId}` | Server -> Client | Teacher dashboard, student views |
-| **Broadcast** (lifecycle) | Same channels | Server -> Client | Status changes (poll closed, bracket advanced) |
-| **Broadcast** (activities) | `activities:{sessionId}` | Server -> Client | Student activity list |
-| **Presence** | `session:{sessionId}` | Bidirectional | Student roster, connected count |
-
-### Confirmed Bug: Missing `poll_activated` Broadcast
-
-In `src/actions/poll.ts`, the `updatePollStatus` function:
+Mirror the `SessionCardMenu` pattern exactly:
 
 ```typescript
-// Lines 235-246:
-if (status === 'active' && result.sessionId) {
-  broadcastActivityUpdate(result.sessionId).catch(console.error)
-  // BUG: Missing broadcastPollUpdate(pollId, 'poll_activated')
-}
-
-if (status === 'closed') {
-  broadcastPollUpdate(pollId, 'poll_closed').catch(console.error)  // This exists
-}
-
-if (status === 'archived') {
-  broadcastPollUpdate(pollId, 'poll_archived').catch(console.error)  // This exists
-}
-```
-
-The `useRealtimePoll` hook (line 107) listens for `poll_activated` to trigger `fetchPollState()`. This event is never sent, so the hook never gets the activation signal.
-
-**Vote broadcasts DO work** -- `broadcastPollVoteUpdate` is called in `castPollVote` and uses the exact same `broadcastMessage` function that works for brackets. The issue is specific to the activation lifecycle event.
-
-### Fix
-
-Add one line to `src/actions/poll.ts`:
-
-```typescript
-if (status === 'active' && result.sessionId) {
-  broadcastActivityUpdate(result.sessionId).catch(console.error)
-  broadcastPollUpdate(pollId, 'poll_activated').catch(console.error)  // ADD THIS
+// Component structure
+'use client'
+export function PollCardMenu({ pollId, pollQuestion, onAction }: {
+  pollId: string
+  pollQuestion: string
+  onAction?: () => void
+}) {
+  // DropdownMenu with items:
+  //   - Duplicate (calls duplicatePoll server action)
+  //   - Delete (opens ConfirmDialog, calls deletePoll server action)
+  // On success: router.refresh() or onAction() for live list update
 }
 ```
 
-### Additional Investigation Points
+**MODIFY:** `src/app/(dashboard)/polls/page.tsx`
 
-After applying the fix, verify these edge cases:
+Wrap each poll card in a relative container, add `PollCardMenu` as absolute overlay (identical structure to sessions/page.tsx).
 
-1. **Subscription timing:** Teacher navigates to `/polls/[pollId]/live` AFTER activating the poll. The `useRealtimePoll` hook subscribes to `poll:{pollId}` and calls `fetchPollState()` when WebSocket reaches SUBSCRIBED. This should catch up on any votes cast between activation and page load.
+### Integration Points
 
-2. **Batch flush on poll close:** When `poll_closed` event fires, `fetchPollState()` is called immediately. But `pendingVoteCounts.current` might still contain unflushed data from the 2-second batch interval. The fetch overwrites `setVoteCounts()`, but the flush interval might subsequently overwrite with stale data. Clear `pendingVoteCounts.current = {}` inside `fetchPollState`.
+| File | Change Type | What Changes |
+|------|-------------|--------------|
+| `src/components/poll/poll-card-menu.tsx` | **NEW** | Radix DropdownMenu with duplicate + delete |
+| `src/app/(dashboard)/polls/page.tsx` | **MODIFY** | Add relative wrapper + PollCardMenu overlay per card |
+| `src/actions/poll.ts` | **No change** | `deletePoll` and `duplicatePoll` already exist |
 
-3. **Transport fallback consistency:** If WebSocket fails and the hook switches to HTTP polling (3-second interval), vote updates come from `/api/polls/[pollId]/state`. This endpoint returns all current data, so the fallback path works independently of broadcast. Verify the endpoint returns correct data.
+**No broadcast changes needed.** Deleting or duplicating a poll does not emit a realtime event (only the teacher's page needs to update, and `router.refresh()` handles that).
+
+### Build Notes
+
+- The `e.stopPropagation()` + `e.preventDefault()` on the DropdownMenuTrigger's `onClick` is critical -- without it, clicking the menu trigger navigates to `/polls/{id}`.
+- `duplicatePoll` returns `{ poll: { id, question } }` -- no session assignment, so no broadcast needed.
+- `deletePoll` calls `revalidatePath('/activities')` internally -- `router.refresh()` after calling it updates the page.
 
 ---
 
-## Component 4: Presentation Mode Contrast
+## Fix 2: RR All-at-Once Completion
 
-### Current Implementation
+### Current Bug
 
-`PresentationMode` component uses CSS class overrides:
+For round-robin brackets with `roundRobinPacing: 'all_at_once'`, the teacher opens all matchups for voting at once. Results are recorded via `recordResult()` in `src/actions/round-robin.ts`.
 
+After each `recordResult` call, `isRoundRobinComplete()` is called to check if all matchups are decided. When the final matchup is decided, `isRoundRobinComplete()` returns a winnerId and the action:
+
+1. Updates `bracket.status = 'completed'` in Prisma
+2. Calls `broadcastBracketUpdate(bracketId, 'bracket_completed', { winnerId })`
+
+The `useRealtimeBracket` hook receives `bracket_completed`, calls `fetchBracketState()`, and sets `setBracketCompleted(true)`.
+
+**The bug is in `LiveDashboard.tsx` `bracketDone` computation** (lines 856-863):
+
+```typescript
+const rrAllDecided = isRoundRobin
+  ? currentMatchups.length > 0 && currentMatchups.every((m) => m.status === 'decided')
+  : false
+const bracketDone = isDoubleElim
+  ? deBracketDone
+  : isRoundRobin
+    ? rrAllDecided           // <-- relies on currentMatchups from real-time
+    : (currentRound === totalRounds && allRoundDecided)
+```
+
+`currentMatchups` is populated from `realtimeMatchups` (from `useRealtimeBracket`). The hook only fetches when a `bracket_update` broadcast arrives. When all matchups ARE decided and `bracket_completed` fires, `fetchBracketState()` runs and `realtimeMatchups` is updated. However, `rrAllDecided` is computed from `currentMatchups` BEFORE `fetchBracketState` completes because it runs asynchronously inside the hook.
+
+The additional bug is in `LiveDashboard`'s celebration fallback logic (lines 368-411): for RR brackets, the fallback only fires when `bracketCompleted && !revealState && !hasShownRevealRef.current && !isDoubleElim`. `bracketCompleted` comes from `useRealtimeBracket`'s `bracketCompleted` state (set to `true` on `bracket_completed` event). The `rrAllDecided`-based `bracketDone` and the `bracketCompleted` signal are separate -- `bracketCompleted` is the reliable one.
+
+### What the Fix Actually Is
+
+The teacher-side `LiveDashboard` needs to trigger celebration when `bracketCompleted === true`, regardless of whether `rrAllDecided` has resolved. The `bracketCompleted` flag from `useRealtimeBracket` is already correctly set when `bracket_completed` is received.
+
+The `CelebrationScreen` rendering in `LiveDashboard` is gated on `showCelebration` state, which is set by the fallback `useEffect` at lines 368-411. That effect fires when `bracketCompleted` is true -- this is the correct path for RR.
+
+The real issue: `isRoundRobinComplete()` in the DAL (line 249-266 of `src/lib/dal/round-robin.ts`) checks `allDecided` across all matchups. However, for RR `all_at_once`, because all matchups start as `pending` (not `voting`), the `recordResult()` action's `isRoundRobinComplete` query sees `pending` status matchups and returns null -- `pending !== decided`.
+
+**Root cause:** `recordResult` in the round-robin DAL (`src/lib/dal/round-robin.ts` line 137) sets `status: 'decided'` when recording a result regardless of whether the matchup was `pending` or `voting`. So `isRoundRobinComplete` checks all matchups for `status === 'decided'` -- this is correct and should work.
+
+Verify with logs: the `isRoundRobinComplete` query at line 250 fetches `status` and `winnerId`. If all matchups have `status: 'decided'`, it proceeds to `getRoundRobinStandings`. The `getRoundRobinStandings` function only queries `status: 'decided'` matchups -- so if some have `status: 'pending'` (not yet decided), `isRoundRobinComplete` returns null correctly.
+
+**The actual multi-round RR bug:** For `all_at_once` pacing with multiple rounds, the `advanceRoundRobinRound` DAL function opens matchups round-by-round (it sets `roundRobinRound === roundNumber` matchups from `pending` to `voting`). But `all_at_once` never calls `advanceRoundRobinRound` -- it opens all matchups globally. After investigation: the `LiveDashboard` RR controls show a "Next Round" button that calls `advanceRound`. For `all_at_once`, all rounds' matchups need to be opened simultaneously. The bug is that `bracketDone` uses `rrAllDecided` which requires a `fetchBracketState()` call to update `currentMatchups`, but the `winner_selected` broadcast triggers that fetch. The timing issue is that after the final `recordResult`, the `bracket_completed` event fires, the hook fetches state, sets `bracketCompleted = true`, and the `useEffect` fallback fires with a 2-second timeout -- this DOES eventually show the celebration, but there may be a race.
+
+### What to Build
+
+**MODIFY:** `src/actions/round-robin.ts` -- `recordResult` action
+
+Add a `broadcastActivityUpdate` to the session channel when the bracket completes, matching the pattern in `bracket-advance.ts`:
+
+```typescript
+if (rrWinnerId) {
+  await prisma.bracket.update({ ... })
+  broadcastBracketUpdate(bracketId, 'bracket_completed', { winnerId: rrWinnerId }).catch(console.error)
+
+  // Also notify session activity channel (mirrors bracket-advance.ts pattern)
+  const bracket = await prisma.bracket.findUnique({
+    where: { id: parsed.data.bracketId },
+    select: { sessionId: true },
+  })
+  if (bracket?.sessionId) {
+    broadcastActivityUpdate(bracket.sessionId).catch(console.error)
+  }
+}
+```
+
+**VERIFY:** That `isRoundRobinComplete` correctly detects all-at-once completion. Add a debug log path in Phase to confirm the final `recordResult` actually reaches `if (rrWinnerId)`.
+
+### Integration Points
+
+| File | Change Type | What Changes |
+|------|-------------|--------------|
+| `src/actions/round-robin.ts` | **MODIFY** | Add `broadcastActivityUpdate` after `bracket_completed` on RR complete |
+| `src/lib/dal/round-robin.ts` | **VERIFY** | Confirm `isRoundRobinComplete` fires for all-at-once RR |
+| `src/lib/realtime/broadcast.ts` | **No change** | Existing functions are sufficient |
+
+**No new broadcast events.** The existing `bracket_completed` event is correct. The student side already handles it via `useRealtimeBracket` → `bracketCompleted` → `CelebrationScreen`.
+
+---
+
+## Fix 3: SE Final Round Realtime
+
+### Current State
+
+The `useRealtimeBracket` hook subscribes to `bracket:{bracketId}` and on `bracket_update` events with type `winner_selected`, calls `fetchBracketState()`. The `fetchBracketState` function hits `/api/brackets/{bracketId}/state` and updates `matchups` state.
+
+When a teacher advances the final round matchup:
+1. `advanceMatchup()` in `bracket-advance.ts` calls `advanceMatchupWinner()`
+2. Broadcasts `winner_selected` event to `bracket:{bracketId}`
+3. Checks `isBracketComplete()` -- if true, broadcasts `bracket_completed`
+4. Both broadcasts go to the same channel
+
+The student's `useRealtimeBracket` receives `winner_selected` → `fetchBracketState()` → updates `matchups`. It also receives `bracket_completed` → `setBracketCompleted(true)`.
+
+**The reported bug** is that the final round does not update in real-time for students on SE brackets. This is counterintuitive because the broadcast path is identical for all rounds.
+
+### Likely Root Cause
+
+The `/api/brackets/{bracketId}/state` endpoint is the source of truth for `fetchBracketState`. If that endpoint has a caching issue or returns stale data after the final winner is set, the student view does not update.
+
+Check `src/app/api/brackets/[bracketId]/state/route.ts` for:
+1. Whether Next.js route caching is applied (missing `{ cache: 'no-store' }` in the Prisma query or response)
+2. Whether the matchup status fields are correctly included in the response shape
+
+### What to Build
+
+**INVESTIGATE FIRST:** Read `src/app/api/brackets/[bracketId]/state/route.ts`. Look for:
+- `revalidatePath` or `next: { revalidate }` settings that could be returning cached data
+- Whether `status: 'decided'` and `winnerId` are included in the matchup select
+
+If the route is missing `cache: 'no-store'`, add it:
+
+```typescript
+// In the route handler fetch or Prisma query:
+export async function GET(request: NextRequest, { params }) {
+  // Add this header to prevent Next.js route caching:
+  const response = NextResponse.json(data)
+  response.headers.set('Cache-Control', 'no-store')
+  return response
+}
+```
+
+**ALTERNATIVELY:** The bug may be that `fetchBracketState` is called from the hook but the fetch inside is not awaited/race-conditioned. The hook's callback is memoized with `useCallback([bracketId])` -- this is stable.
+
+**FALLBACK investigation path:** Check if the student is hitting the transport fallback (HTTP polling). The `useRealtimeBracket` hook switches to polling every 3 seconds if WebSocket doesn't connect within 5 seconds. If polling is active, the final round WILL update but with up to 3-second delay. Check `transport` state returned by the hook.
+
+### Integration Points
+
+| File | Change Type | What Changes |
+|------|-------------|--------------|
+| `src/app/api/brackets/[bracketId]/state/route.ts` | **INVESTIGATE/MODIFY** | Add `cache: 'no-store'` if Next.js caching is the culprit |
+| `src/hooks/use-realtime-bracket.ts` | **No change likely** | Hook logic is correct; issue is upstream |
+| `src/actions/bracket-advance.ts` | **No change** | Already broadcasts `winner_selected` + `bracket_completed` |
+
+**No new broadcast events needed.** The existing `winner_selected` broadcast on `advanceMatchup` is the correct trigger.
+
+---
+
+## Fix 4: Student Dynamic Removal
+
+### Current Bug
+
+When a teacher removes a student via `removeStudent(participantId)` in `src/actions/class-session.ts`:
+
+1. `removeParticipantDAL(participantId)` is called (deletes or marks the record)
+2. `return { success: true }` -- no broadcast
+
+The student's browser remains at their current page. The `useRealtimeActivities` hook never gets a signal. The student's activity view continues working. Only when they try to vote again does the server return an error (participant not found / banned).
+
+**The UX gap:** Students who are removed should see a message ("You've been removed from this session") rather than getting cryptic errors on vote submission. The teacher's roster needs to refresh automatically too (currently uses `onRefresh` callback which calls `router.refresh()` -- this updates the server component, which is correct for the teacher side).
+
+### What to Build
+
+**New broadcast event:** `participant_removed` on the `activities:{sessionId}` channel.
+
+This channel is already subscribed to by `useRealtimeActivities` in the student browser. Adding a new event type to listen for there is the minimal-impact approach.
+
+**MODIFY:** `src/actions/class-session.ts` -- `removeStudent` and `banStudent`
+
+```typescript
+export async function removeStudent(participantId: string) {
+  const teacher = await getAuthenticatedTeacher()
+  if (!teacher) return { error: 'Not authenticated' }
+
+  try {
+    // Look up sessionId before deletion (DAL currently deletes without returning sessionId)
+    const participant = await prisma.studentParticipant.findUnique({
+      where: { id: participantId },
+      select: { sessionId: true },
+    })
+
+    await removeParticipantDAL(participantId)
+
+    // NEW: broadcast removal event to session channel
+    if (participant?.sessionId) {
+      broadcastMessage({
+        topic: `activities:${participant.sessionId}`,
+        event: 'participant_removed',
+        payload: { participantId },
+      }).catch(console.error)
+    }
+
+    return { success: true }
+  } catch {
+    return { error: 'Failed to remove student' }
+  }
+}
+```
+
+Apply the same pattern to `banStudent`.
+
+**MODIFY:** `src/hooks/use-realtime-activities.ts`
+
+Add a listener for the `participant_removed` event. When received and `participantId` matches the current student, show a "removed" state rather than refetching:
+
+```typescript
+// In useRealtimeActivities, add second event listener:
+.on('broadcast', { event: 'participant_removed' }, (message) => {
+  const { participantId: removedId } = message.payload as { participantId: string }
+  if (removedId === participantId) {
+    // Signal to consumer that this student has been removed
+    setRemoved(true)
+  } else {
+    // Another student was removed -- refetch to update participant counts
+    fetchActivities()
+  }
+})
+```
+
+This requires `useRealtimeActivities` to accept the student's `participantId` (already passed in: `useRealtimeActivities(sessionId, participantId)`) and return a `removed` boolean.
+
+**MODIFY:** `src/components/student/activity-grid.tsx`
+
+```typescript
+const { activities, loading, removed } = useRealtimeActivities(sessionId, participantId)
+
+if (removed) {
+  return <RemovedState />  // "You've been removed from this session"
+}
+```
+
+### Integration Points
+
+| File | Change Type | What Changes |
+|------|-------------|--------------|
+| `src/actions/class-session.ts` | **MODIFY** | `removeStudent` + `banStudent`: look up `sessionId`, broadcast `participant_removed` |
+| `src/lib/realtime/broadcast.ts` | **MODIFY** | Add `broadcastParticipantRemoved(sessionId, participantId)` helper OR use `broadcastMessage` directly |
+| `src/hooks/use-realtime-activities.ts` | **MODIFY** | Listen for `participant_removed`, return `removed` boolean |
+| `src/components/student/activity-grid.tsx` | **MODIFY** | Consume `removed` flag, render `RemovedState` |
+
+**New broadcast event:** `participant_removed` on `activities:{sessionId}` channel with payload `{ participantId }`.
+
+**Channel choice rationale:** Using `activities:{sessionId}` (the session-wide channel) rather than a new channel avoids WebSocket connection overhead. The student is already subscribed to this channel. The teacher's session page does not subscribe to this channel (it uses `useSessionPresence` for the roster), so the teacher side is not affected.
+
+---
+
+## Fix 5: Sign-Out Button Feedback
+
+### Current State
+
+`src/components/auth/signout-button.tsx`:
+
+```typescript
+export function SignOutButton() {
+  return (
+    <form action={signOut}>
+      <Button type="submit" variant="ghost" size="sm">
+        Sign Out
+      </Button>
+    </form>
+  )
+}
+```
+
+The `signOut` server action calls `supabase.auth.signOut()` then `redirect('/login')`. The redirect involves a full page navigation. During the ~500ms between form submission and the redirect completing, the button gives no visual feedback -- it could appear frozen.
+
+The `form action={signOut}` pattern uses Next.js progressive enhancement (form submission, no JavaScript needed). To add pending state, the component must opt into client-side rendering via `useFormStatus` or `useTransition`.
+
+### What to Build
+
+**Option A (recommended): `useFormStatus`**
+
+```typescript
+'use client'
+import { useFormStatus } from 'react-dom'
+
+function SignOutButtonInner() {
+  const { pending } = useFormStatus()
+  return (
+    <Button type="submit" variant="ghost" size="sm" disabled={pending}>
+      {pending ? 'Signing out...' : 'Sign Out'}
+    </Button>
+  )
+}
+
+export function SignOutButton() {
+  return (
+    <form action={signOut}>
+      <SignOutButtonInner />
+    </form>
+  )
+}
+```
+
+`useFormStatus` must be called in a component that is a child of the `<form>`. The outer `SignOutButton` remains a server-compatible shell; only the inner button component is a client component.
+
+**Option B: `useTransition`**
+
+Convert the form to a button with `startTransition(() => signOut())`. This loses the progressive enhancement but gives `isPending` state.
+
+Option A is better because it preserves the `<form action>` pattern and the separation of concerns.
+
+### Integration Points
+
+| File | Change Type | What Changes |
+|------|-------------|--------------|
+| `src/components/auth/signout-button.tsx` | **MODIFY** | Add `useFormStatus` inner component for pending state |
+
+**No broadcast changes. No server action changes.** The `signOut` action is unchanged.
+
+---
+
+## System Overview: How the 5 Fixes Integrate
+
+```
+TEACHER BROWSER                                STUDENT BROWSER
+  /polls page                                    /session/{id} page
+  PollCardMenu (NEW)                             ActivityGrid
+      |                                               |
+  duplicatePoll()                            useRealtimeActivities()
+  deletePoll()                                        |
+  router.refresh()                           activities:{sessionId}
+  (no broadcast)                             event: activity_update    (existing)
+                                             event: participant_removed (NEW Fix 4)
+                                                       |
+  /brackets/{id}/live                          /session/{id}/bracket/{id}
+  LiveDashboard                                StudentBracketPage
+      |                                               |
+  useRealtimeBracket()                       useRealtimeBracket()
+      |                                               |
+  bracket:{id}                               bracket:{id}
+  event: bracket_completed (Fix 2, Fix 3)    event: bracket_completed
+                                             event: winner_selected (Fix 3 verify)
+
+  /sessions/{id}                            Sign-out button (Fix 5)
+  StudentRoster                             useFormStatus() pending state
+  removeStudent() -> broadcasts (Fix 4)
+  banStudent() -> broadcasts (Fix 4)
+```
+
+---
+
+## Data Flows
+
+### Fix 1: Poll Context Menu (No Real-Time)
+
+```
+Teacher clicks "..." on poll card
+  -> DropdownMenu opens (stopPropagation prevents Link nav)
+  -> "Duplicate" item clicked
+      -> duplicatePoll({ pollId }) server action
+      -> Creates new poll in Prisma
+      -> revalidatePath('/activities')
+      -> router.refresh() from PollCardMenu
+      -> Page re-renders with new poll in list
+```
+
+### Fix 2: RR All-at-Once Completion
+
+```
+Teacher clicks a matchup result (win/tie/loss) -- FINAL matchup
+  -> recordResult({ matchupId, bracketId, winnerId }) server action
+  -> recordRoundRobinResult(matchupId, winnerId, teacherId) DAL
+      -> UPDATE matchup SET status='decided', winnerId=...
+      -> broadcastBracketUpdate(bracketId, 'winner_selected', ...) [existing]
+  -> isRoundRobinComplete(bracketId) DAL
+      -> SELECT all matchups -- all now 'decided'
+      -> Returns top-ranked entrantId
+  -> UPDATE bracket SET status='completed'
+  -> broadcastBracketUpdate(bracketId, 'bracket_completed', ...) [existing]
+  -> broadcastActivityUpdate(sessionId) [NEW: add this]
+
+Student browser receives 'bracket_completed' on bracket:{id}:
+  -> useRealtimeBracket: setBracketCompleted(true)
+  -> fetchBracketState() -> updates currentMatchups
+  -> LiveDashboard useEffect fires (bracketCompleted && isRoundRobin)
+  -> setTimeout 2000ms -> setRevealState -> WinnerReveal -> CelebrationScreen
+```
+
+### Fix 3: SE Final Round Real-Time (Verify Path)
+
+```
+Teacher advances final matchup winner
+  -> advanceMatchup({ bracketId, matchupId, winnerId }) server action
+  -> advanceMatchupWinner() DAL
+  -> broadcastBracketUpdate(bracketId, 'winner_selected', ...) [existing]
+  -> isBracketComplete(bracketId) -> true (final round)
+  -> broadcastBracketUpdate(bracketId, 'bracket_completed', ...) [existing]
+
+Student browser receives 'winner_selected':
+  -> useRealtimeBracket: fetchBracketState()
+  -> GET /api/brackets/{id}/state
+      [VERIFY: no Next.js caching on this route]
+  -> setMatchups(data.matchups) -- final matchup now 'decided'
+  -> currentMatchups updated -> UI re-renders
+```
+
+### Fix 4: Student Dynamic Removal
+
+```
+Teacher clicks "Remove" on student row
+  -> StudentManagement component -> removeStudent(participantId)
+  -> class-session.ts: removeStudent server action
+      -> Prisma: find participant -> get sessionId [NEW lookup]
+      -> removeParticipantDAL(participantId)
+      -> broadcastMessage({
+           topic: 'activities:{sessionId}',
+           event: 'participant_removed',
+           payload: { participantId }
+         }) [NEW]
+  -> onAction() callback -> router.refresh() [existing -- updates teacher roster]
+
+Student browser receives 'participant_removed':
+  -> useRealtimeActivities: payload.participantId === myParticipantId
+  -> setRemoved(true)
+  -> ActivityGrid renders <RemovedState /> [NEW component/branch]
+  -> Student sees: "You've been removed from this session"
+```
+
+### Fix 5: Sign-Out Button Feedback
+
+```
+Teacher clicks "Sign Out"
+  -> <form action={signOut}> submits
+  -> useFormStatus() in inner component: pending = true
+  -> Button renders "Signing out..." + disabled
+  -> signOut() server action: supabase.auth.signOut()
+  -> redirect('/login') -- page navigation clears pending state
+```
+
+---
+
+## Component Map: Modified vs New
+
+| Component | Status | Fix | Change Summary |
+|-----------|--------|-----|----------------|
+| `src/components/poll/poll-card-menu.tsx` | **NEW** | Fix 1 | Three-dot dropdown with duplicate + delete |
+| `src/app/(dashboard)/polls/page.tsx` | **MODIFY** | Fix 1 | Add relative wrapper + PollCardMenu overlay |
+| `src/actions/round-robin.ts` | **MODIFY** | Fix 2 | Add `broadcastActivityUpdate` after RR completion |
+| `src/app/api/brackets/[bracketId]/state/route.ts` | **INVESTIGATE** | Fix 3 | Add `cache: 'no-store'` if needed |
+| `src/actions/class-session.ts` | **MODIFY** | Fix 4 | `removeStudent` + `banStudent` broadcast `participant_removed` |
+| `src/lib/realtime/broadcast.ts` | **MODIFY** | Fix 4 | Add `broadcastParticipantRemoved()` helper |
+| `src/hooks/use-realtime-activities.ts` | **MODIFY** | Fix 4 | Listen for `participant_removed`, return `removed` state |
+| `src/components/student/activity-grid.tsx` | **MODIFY** | Fix 4 | Render removed state when `removed === true` |
+| `src/components/auth/signout-button.tsx` | **MODIFY** | Fix 5 | Add `useFormStatus` inner component for pending state |
+
+**Total new files:** 1 (`poll-card-menu.tsx`)
+**Total modified files:** 7-8 depending on Fix 3 investigation
+
+---
+
+## New Broadcast Events
+
+| Event Name | Channel | Direction | Payload | When Sent |
+|------------|---------|-----------|---------|-----------|
+| `participant_removed` | `activities:{sessionId}` | Server -> Client | `{ participantId: string }` | Teacher removes or bans a student |
+
+All other existing events (`bracket_completed`, `winner_selected`, `activity_update`) are reused without change.
+
+---
+
+## Architectural Patterns to Follow
+
+### Pattern 1: Context Menu Overlay on Card
+
+**What:** Absolute-positioned three-dot button overlaid on a linked card. `e.stopPropagation()` on trigger click prevents card navigation.
+
+**When:** Any list page where cards navigate on click but also need secondary actions.
+
+**Example:**
 ```tsx
-<div className="fixed inset-0 z-50 flex flex-col bg-gray-950 text-white">
-  <div className="[&_*]:text-white [&_.text-muted-foreground]:text-white/60
-                  [&_.bg-muted]:bg-white/10 [&_.border]:border-white/20
-                  [&_.bg-card]:bg-white/5 [&_.text-foreground]:text-white">
-    {children}
+<div className="relative">
+  <Link href={href}>
+    <Card>...</Card>
+  </Link>
+  <div className="absolute right-3 top-3 z-10">
+    <PollCardMenu pollId={...} />
   </div>
 </div>
 ```
 
-### Issue
+### Pattern 2: Session-Wide Channel for Non-Activity Events
 
-Ranked poll leaderboard cards use specific Tailwind classes (`bg-amber-100 text-amber-800`, etc.) that are NOT caught by the generic `[&_*]:text-white` override. The amber/gray/orange background colors have insufficient contrast on projectors with washed-out output.
+**What:** Use `activities:{sessionId}` for student-affecting events beyond activity list changes. The student is already subscribed; no new connection needed.
 
-### Fix Approach
+**When:** An action by the teacher should immediately change the student's view (removal, session end, etc.).
 
-Option A (recommended): Darken the medal card backgrounds in `ranked-leaderboard.tsx`:
+**Example:**
 ```typescript
-const MEDAL_STYLES: Record<number, string> = {
-  0: 'bg-amber-200 text-amber-900 border-amber-400',   // Gold - darker
-  1: 'bg-gray-200 text-gray-900 border-gray-400',       // Silver - darker
-  2: 'bg-orange-200 text-orange-900 border-orange-400',  // Bronze - darker
+// Server action:
+broadcastMessage({
+  topic: `activities:${sessionId}`,
+  event: 'participant_removed',
+  payload: { participantId },
+})
+
+// Client hook (use-realtime-activities.ts):
+.on('broadcast', { event: 'participant_removed' }, (msg) => {
+  if (msg.payload.participantId === myParticipantId) setRemoved(true)
+})
+```
+
+### Pattern 3: useFormStatus for Server Action Pending State
+
+**What:** Use `useFormStatus` from `react-dom` in a child component of `<form action={serverAction}>` to get the `pending` boolean without converting to client-only imperative code.
+
+**When:** Any form that uses `<form action={serverAction}>` but needs loading/disabled state.
+
+**Example:**
+```tsx
+function InnerButton() {
+  const { pending } = useFormStatus()
+  return <Button disabled={pending}>{pending ? 'Loading...' : 'Submit'}</Button>
+}
+export function MyForm() {
+  return <form action={myAction}><InnerButton /></form>
 }
 ```
 
-This achieves WCAG AAA (7:1+) contrast while preserving medal color identity. No component architecture change needed.
-
 ---
 
-## Component 5: Session Management
+## Build Order
 
-### Current State
-
-- `ClassSession` model has `name: String?` (already exists, nullable)
-- `createClassSession(teacherId, name?)` DAL supports optional name
-- Dashboard shows `session.name || 'Unnamed Session'` but no edit UI
-- Session dropdowns show `Session {code}` instead of name
-
-### Changes
-
-| Location | Change |
-|----------|--------|
-| Session select dropdowns (poll detail, bracket detail) | Show `s.name \|\| Session ${s.code}` |
-| Session detail page | Add inline edit (pencil icon, input field, save) |
-| New server action: `updateSessionName(sessionId, name)` | Prisma update with teacher ownership check |
-| New DAL: `updateSessionName(sessionId, teacherId, name)` | Prisma query |
-
-No schema migration needed.
-
----
-
-## Component 6: Status Terminology
-
-**UI-only change.** Database `status: 'active'` stays unchanged. Map in display layer:
-
-| Database Value | Display Label | Button Label |
-|---------------|--------------|-------------|
-| `draft` | Draft | "Start" or "Go Live" |
-| `active` | Live | "Close" / "End Voting" |
-| `closed` | Closed | "Reopen" |
-| `completed` | Completed | N/A |
-
-Affected components: `bracket-status.tsx`, `bracket-detail.tsx`, `bracket-card.tsx`, `poll-detail-view.tsx`, `predictive-bracket.tsx`, and associated status badges.
-
----
-
-## Recommended Build Order
+Dependencies between fixes are minimal. The recommended order:
 
 ```
-Phase 1: Security + Schema Foundation
-  |  - RLS on all 12 tables (12-line SQL migration)
-  |  - Schema: add first_name, make device_id nullable
-  |  - Verify: Prisma operations unchanged, Realtime unchanged, Storage unchanged
-  |
-  +--> Phase 2: Name-Based Identity (depends on schema)
-  |     - Modify join-form.tsx (add first name input)
-  |     - Modify actions/student.ts (accept firstName, duplicate detection)
-  |     - Modify dal/student-session.ts (case-insensitive name lookup)
-  |     - Update types/student.ts
-  |     - Update localStorage contract (add firstName field)
-  |
-  +--> Phase 3: Realtime Fix (independent)
-  |     - Add broadcastPollUpdate('poll_activated') in updatePollStatus
-  |     - Clear pending batch on fetchPollState
-  |     - Add Realtime debug logging for investigation
-  |
-  +--> Phase 4: UX Polish (independent)
-  |     - Presentation mode contrast fix (CSS)
-  |     - Session name display + inline edit
-  |     - "Go Live" terminology across components
-  |
-  +--> Phase 5: Cleanup (after classroom verification)
-        - npm uninstall @fingerprintjs/fingerprintjs
-        - Delete: fingerprint.ts, session-identity.ts, use-device-identity.ts
+Step 1: Fix 5 (Sign-out feedback) -- 15 min, zero risk, no dependencies
+  Files: signout-button.tsx only
 
-Phases 2, 3, and 4 can run in parallel after Phase 1.
-Phase 5 runs after Phase 2 is verified in a real classroom.
+Step 2: Fix 1 (Poll context menu) -- 45 min, zero realtime impact
+  Files: poll-card-menu.tsx (new), polls/page.tsx
+
+Step 3: Fix 4 (Student dynamic removal) -- 60 min, new broadcast event
+  Files: class-session.ts, broadcast.ts, use-realtime-activities.ts, activity-grid.tsx
+  Note: Do Fix 4 before Fix 2/3 so the broadcast infrastructure is well-exercised
+
+Step 4: Fix 3 (SE final round realtime) -- 30 min investigation + fix
+  Files: api/brackets/[bracketId]/state/route.ts (if needed)
+  Note: Read the route file first; fix may be trivially adding cache: 'no-store'
+
+Step 5: Fix 2 (RR all-at-once completion) -- 30 min
+  Files: actions/round-robin.ts
+  Note: Add broadcastActivityUpdate after bracket_completed; then manually test
+        with an RR bracket in all_at_once mode to confirm celebration fires
 ```
 
+**Rationale:**
+- Fix 5 is lowest risk, builds confidence.
+- Fix 1 has no realtime surface area.
+- Fix 4 introduces the only new broadcast event -- do it in isolation so any issues are attributable to it alone.
+- Fix 3 requires investigation before code change -- read the route first.
+- Fix 2 adds a one-liner to an existing broadcast pattern -- lowest risk final step.
+
 ---
-
-## Patterns to Follow
-
-### Pattern 1: Deny-All RLS with Prisma Bypass
-
-**What:** Enable RLS on all tables but create no policies. Prisma (bypassrls) handles all legitimate data access. PostgREST is completely locked down.
-
-**When:** When the ORM is the sole data access path and the Supabase client is only used for Auth/Realtime/Storage.
-
-**Why this works:** Zero risk of breaking existing code. Zero maintenance burden. Complete protection against direct API abuse.
-
-### Pattern 2: Case-Insensitive Identity with Soft Duplicate Detection
-
-**What:** Match student identity by `(sessionId, firstName)` case-insensitively using Prisma `mode: 'insensitive'`. Report duplicates to the client for user-driven resolution rather than blocking.
-
-**When:** When uniqueness is desired but hard enforcement creates worse UX than soft guidance. In a classroom of 30, name collisions (multiple Emmas) are statistically likely.
-
-### Pattern 3: Additive Schema Migration
-
-**What:** Add new columns as non-null with defaults. Make old columns nullable but do not drop them. Keep old constraints intact.
-
-**When:** Production schema changes where rollback must be possible. The `device_id` column becomes nullable but is not removed.
-
-### Pattern 4: Server-Side Broadcast with Client Subscription
-
-**What:** Server actions broadcast via Supabase REST API. Clients subscribe via WebSocket with HTTP polling fallback.
-
-**When:** Server is the source of truth. Already implemented correctly in SparkVotEDU. The poll fix is adding a missing broadcast call, not changing the pattern.
 
 ## Anti-Patterns to Avoid
 
-### Anti-Pattern 1: Per-Row RLS Policies with Prisma
+### Anti-Pattern 1: New Channel for Student Removal
 
-**What:** Writing `USING (auth.uid() = teacher_id)` policies when Prisma handles authorization.
+**What:** Creating a new `session:{sessionId}` or `participant:{participantId}` channel for removal events.
 
-**Why bad:** Prisma bypasses RLS. You would maintain two authorization systems that never interact. When they drift, you get confusing bugs. Deny-all is simpler and more secure.
+**Why bad:** Requires students to subscribe to an additional channel (more WebSocket overhead). The `activities:{sessionId}` channel is already open; adding an event type is O(0) overhead.
 
-### Anti-Pattern 2: Using postgres_changes for Classroom Realtime
+### Anti-Pattern 2: Polling for Removal Detection
 
-**What:** Subscribing to database change events instead of Broadcast.
+**What:** Student page polls `/api/participant/status` every few seconds to check if still active.
 
-**Why bad:** O(n) database load per vote (one notification per subscriber). With 30 students, each vote triggers 30 database notifications. Broadcast is O(1).
+**Why bad:** O(n*t) server load (n students, t poll frequency). The broadcast pattern is O(1) regardless of class size.
 
-### Anti-Pattern 3: Keeping FingerprintJS as Fallback
+### Anti-Pattern 3: `router.refresh()` Instead of Broadcast for Student Removal
 
-**What:** Maintaining two identity systems with cascading fallback logic.
+**What:** After `removeStudent`, calling `broadcastActivityUpdate` with the existing `activity_update` event.
 
-**Why bad:** Creates branching code paths. The fingerprint path is proven broken on school hardware. One code path, one mental model is better.
+**Why bad:** `activity_update` triggers `fetchActivities()` which re-fetches the activity list. It does NOT tell the student they were removed -- they just see the same activity list (the removed participant is no longer tracked server-side, but the UI doesn't know it's the current student). The targeted `participant_removed` event with `participantId` in the payload is necessary for the student-self-detection logic.
 
-### Anti-Pattern 4: Changing Database Enum Values for UI Labels
+### Anti-Pattern 4: Modifying `useRealtimeBracket` for SE Final Round Fix
 
-**What:** Changing `status: 'active'` to `status: 'live'` in the database.
+**What:** Adding special-case logic to the hook for the final round of SE brackets.
 
-**Why bad:** Requires migrating all existing rows, updating every query. Map to "Live" in the UI display layer only.
+**Why bad:** The broadcast path is already correct for all rounds. The bug is likely in the API route (caching) or in the student bracket page's initial fetch (stale data on navigation). The hook should not need modification.
+
+---
+
+## Verification Checklist
+
+For each fix, what to verify manually:
+
+| Fix | Verification |
+|-----|-------------|
+| Fix 1 (Poll menu) | Click "..." on a poll card -- menu opens without navigating. Duplicate creates a copy. Delete with confirm removes the poll. Card click still navigates to poll detail. |
+| Fix 2 (RR all-at-once) | Create an RR bracket with `all_at_once` pacing. Start it. Record all results. Verify `CelebrationScreen` appears on teacher view. Verify student view also shows celebration. |
+| Fix 3 (SE final round) | Create SE bracket. Open student view in a second browser. Teacher advances all rounds. Verify final matchup status update appears in student view without manual refresh. |
+| Fix 4 (Student removal) | Open student session in one browser. Teacher removes student from roster. Verify student browser shows removal message without manual refresh. Verify other students are unaffected. |
+| Fix 5 (Sign-out) | Click sign out. Verify button shows "Signing out..." and is disabled during server action. Verify redirect to /login completes normally. |
 
 ---
 
 ## Sources
 
-- **Supabase RLS Documentation:** [Row Level Security | Supabase Docs](https://supabase.com/docs/guides/database/postgres/row-level-security) -- HIGH confidence
-- **Supabase Broadcast:** [Broadcast | Supabase Docs](https://supabase.com/docs/guides/realtime/broadcast) -- HIGH confidence
-- **Supabase + Prisma:** [Prisma | Supabase Docs](https://supabase.com/docs/guides/database/prisma) -- HIGH confidence
-- **Supabase Broadcast Issues:** [Discussion #39091](https://github.com/orgs/supabase/discussions/39091) -- MEDIUM confidence
-- **Prisma Case-Insensitive Filtering:** Prisma documentation for `mode: 'insensitive'` -- HIGH confidence
-- **Codebase Analysis:** Direct examination of all referenced source files -- HIGH confidence
+- **Codebase analysis:** Direct examination of all referenced source files -- HIGH confidence
+  - `src/actions/class-session.ts`, `src/actions/round-robin.ts`, `src/actions/bracket-advance.ts`
+  - `src/lib/realtime/broadcast.ts`
+  - `src/hooks/use-realtime-activities.ts`, `src/hooks/use-realtime-bracket.ts`, `src/hooks/use-realtime-poll.ts`
+  - `src/components/teacher/live-dashboard.tsx` (lines 97-870)
+  - `src/components/teacher/session-card-menu.tsx`
+  - `src/components/teacher/student-management.tsx`
+  - `src/components/auth/signout-button.tsx`
+  - `src/app/(dashboard)/polls/page.tsx`
+  - `src/app/(student)/session/[sessionId]/bracket/[bracketId]/page.tsx`
+  - `src/lib/dal/round-robin.ts`
+- **React docs:** `useFormStatus` for form pending state -- HIGH confidence
+- **Pattern reference:** `SessionCardMenu` component -- HIGH confidence (direct codebase)
 
 ---
-*Architecture research for: SparkVotEDU v1.2 Classroom Hardening*
-*Researched: 2026-02-21*
+*Architecture research for: SparkVotEDU v1.3 Bug Fixes & UX Parity*
+*Researched: 2026-02-24*
