@@ -12,7 +12,7 @@ See: .planning/PROJECT.md (updated 2026-02-25)
 Phase: 25 of 28 (UX Parity)
 Plan: 0 of 2 in current phase
 Status: Ready to plan
-Last activity: 2026-02-24 -- Roadmap created for v1.3 milestone (Phases 25-28)
+Last activity: 2026-02-25 - Completed quick task 1: Change favicon and logo from Vercel to SparkVote throughout the site
 
 Progress: [########################░░░░░░] 80% (milestones v1.0-v1.2 complete, v1.3 starting)
 
@@ -63,6 +63,12 @@ All 5 pending todos from v1.2 have been promoted to v1.3 requirements (UXP-01, U
 - FingerprintJS cleanup deferred to post-classroom-verification (CLEAN-01, CLEAN-02 in future requirements)
 - FIX-02 (SE final round) root cause unconfirmed -- likely route caching but needs investigation
 - FIX-01 (RR all-at-once) most complex fix -- needs activation path trace before implementation
+
+### Quick Tasks Completed
+
+| # | Description | Date | Commit | Directory |
+|---|-------------|------|--------|-----------|
+| 1 | Change favicon and logo from Vercel to SparkVote throughout the site | 2026-02-25 | 4352d86 | [1-change-favicon-and-logo-from-vercel-to-s](./quick/1-change-favicon-and-logo-from-vercel-to-s/) |
 
 ## Session Continuity
 
