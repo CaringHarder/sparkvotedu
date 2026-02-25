@@ -4,7 +4,8 @@
 
 - **v1.0 MVP** -- Phases 1-11 (shipped 2026-02-16) | [Archive](milestones/v1.0-ROADMAP.md)
 - **v1.1 Production Readiness & Deploy** -- Phases 14-18 (shipped 2026-02-21) | [Archive](milestones/v1.1-ROADMAP.md)
-- **v1.2 Classroom Hardening** -- Phases 19-23 (completed 2026-02-23)
+- **v1.2 Classroom Hardening** -- Phases 19-24 (shipped 2026-02-24)
+- **v1.3 Bug Fixes & UX Parity** -- Phases 25-28 (in progress)
 
 ## Phases
 
@@ -37,83 +38,86 @@
 
 </details>
 
-### v1.2 Classroom Hardening (In Progress)
+<details>
+<summary>v1.2 Classroom Hardening (Phases 19-24) -- SHIPPED 2026-02-24</summary>
 
-**Milestone Goal:** Fix real-world classroom issues discovered during first deployment -- replace failed device fingerprinting with name-based student identity, fix bugs, harden security, and polish UX.
+- [x] Phase 19: Security & Schema Foundation (2/2 plans) -- completed 2026-02-21
+- [x] Phase 20: Name-Based Student Identity (3/3 plans) -- completed 2026-02-21
+- [x] Phase 21: Poll Realtime Bug Fix (3/3 plans) -- completed 2026-02-22
+- [x] Phase 22: UX Polish (3/3 plans) -- completed 2026-02-22
+- [x] Phase 23: Session Archiving (3/3 plans) -- completed 2026-02-23
+- [x] Phase 24: Bracket & Poll UX Consistency (6/6 plans) -- completed 2026-02-24
 
-- [x] **Phase 19: Security & Schema Foundation** - RLS on all 12 tables + additive schema migration for name-based identity (completed 2026-02-21)
-- [x] **Phase 20: Name-Based Student Identity** - Students join with first name instead of device fingerprint (completed 2026-02-21)
-- [x] **Phase 21: Poll Realtime Bug Fix** - Teacher poll dashboard updates in real-time when students vote (gap closure in progress) (completed 2026-02-22)
-- [x] **Phase 22: UX Polish** - Presentation contrast, session naming, and terminology unification (completed 2026-02-22)
-- [x] **Phase 23: Session Archiving** - Teachers can archive, recover, and permanently delete sessions (completed 2026-02-23)
+</details>
+
+### v1.3 Bug Fixes & UX Parity (In Progress)
+
+**Milestone Goal:** Fix remaining bugs and UX gaps discovered during classroom testing -- realtime update issues, missing UI controls, and interaction feedback.
+
+- [ ] **Phase 25: UX Parity** - Poll context menu and sign-out button feedback to match established patterns
+- [ ] **Phase 26: Student Activity Removal** - Deleted brackets and polls disappear from student dashboards in real time
+- [ ] **Phase 27: SE Final Round Realtime Fix** - Single elimination final round continues showing live vote updates
+- [ ] **Phase 28: RR All-at-Once Completion Fix** - Round robin all-at-once brackets complete only after all rounds are decided
 
 ## Phase Details
 
-### Phase 19: Security & Schema Foundation
-**Goal**: Supabase tables are locked down from direct client access, and the database schema is ready for the name-based identity overhaul
-**Depends on**: Phase 18 (production deploy)
-**Requirements**: SEC-01, SEC-02, SEC-03
+### Phase 25: UX Parity
+**Goal**: Teachers see consistent UI controls and feedback across all interaction points -- poll cards have the same context menu as bracket cards, and sign-out gives immediate visual feedback
+**Depends on**: Phase 24
+**Requirements**: UXP-01, UXP-02
 **Success Criteria** (what must be TRUE):
-  1. A curl request using the Supabase anon key against any of the 12 public tables returns an empty array (no data leaked)
-  2. All existing application features (teacher dashboard, student voting, bracket advancement, polls) continue to function identically after RLS enablement
-  3. The `student_participants` table has a `first_name` column and `device_id` is nullable, verified by Prisma schema and a successful migration
-**Plans**: 2 plans
+  1. Poll cards on the teacher dashboard show a triple-dot menu with archive, duplicate, and delete actions matching the bracket card context menu
+  2. Clicking the triple-dot menu on a poll card opens the menu without navigating into the poll
+  3. Teacher clicks sign-out and immediately sees a disabled/pending state (spinner or text change) confirming the action is processing -- no ambiguity, no double-click possible
+**Plans**: TBD
 
 Plans:
-- [ ] 19-01-PLAN.md -- Database migration: deny-all RLS on 12 tables, schema changes (first_name, device_id nullable), content data wipe
-- [ ] 19-02-PLAN.md -- Name validation utility (profanity filter, emoji rejection, Unicode support) and upgrade banner for teacher dashboard
+- [ ] 25-01: Poll card context menu (mirror session-card-menu.tsx pattern with Radix DropdownMenu)
+- [ ] 25-02: Sign-out button pending state (useFormStatus or useTransition for immediate feedback)
 
-### Phase 20: Name-Based Student Identity
-**Goal**: Students can join and rejoin any session using their first name, with graceful handling of duplicate names and preserved fun-name anonymity
-**Depends on**: Phase 19 (schema must have `first_name` column)
-**Requirements**: IDENT-01, IDENT-02, IDENT-03, IDENT-04, IDENT-05, IDENT-06
+### Phase 26: Student Activity Removal
+**Goal**: Students see an accurate, live view of available activities -- when a teacher deletes a bracket or poll, it disappears from the student dashboard without requiring a page refresh
+**Depends on**: Phase 25 (poll context menu Delete action will immediately trigger this broadcast)
+**Requirements**: FIX-03
 **Success Criteria** (what must be TRUE):
-  1. A student can join a session by entering the session code and their first name (no device fingerprint prompt, no device-dependent behavior)
-  2. A student who types their name in different casing (e.g., "jake" vs "Jake") is recognized as the same student, not created as a duplicate
-  3. When a second student enters an already-taken first name, they see a disambiguation prompt and can differentiate themselves (e.g., add last initial)
-  4. After joining, the student is assigned a random fun name for display (Kahoot-style anonymity preserved in polls and brackets)
-  5. A student can rejoin from any device using their first name and can edit their name after joining
-**Plans**: 3 plans
+  1. When a teacher deletes a bracket from the dashboard, it disappears from all connected students' activity grids within approximately 2 seconds
+  2. When a teacher deletes a poll from the dashboard (via the new context menu), it disappears from all connected students' activity grids within approximately 2 seconds
+  3. No Supabase channel subscription leaks are introduced -- every new channel subscription has a paired removeChannel in cleanup
+**Plans**: TBD
 
 Plans:
-- [ ] 20-01-PLAN.md -- Server-side foundation: types, DAL functions (findParticipantsByFirstName, findSessionByCode), and server actions (joinSessionByName, claimIdentity, updateParticipantName)
-- [ ] 20-02-PLAN.md -- Student join flow UI: two-step code+name entry, name disambiguation ("Is this you?"), updated welcome screen
-- [ ] 20-03-PLAN.md -- Teacher dashboard name mappings ("Fun Name (Real Name)"), student name-edit dialog, session layout updates
+- [ ] 26-01: Broadcast activity deletion and student-side realtime removal (add broadcastActivityUpdate calls to delete actions, subscribe in use-realtime-activities hook)
 
-### Phase 21: Poll Realtime Bug Fix
-**Goal**: Teacher poll live dashboard reflects student votes in real-time without stale data
-**Depends on**: Phase 19 (RLS must be verified so realtime subscriptions are confirmed working)
-**Requirements**: FIX-01, FIX-02
+### Phase 27: SE Final Round Realtime Fix
+**Goal**: Single elimination brackets maintain live vote updates through the final round -- teachers and students see votes update in real time on the last matchup, just like every other round
+**Depends on**: Phase 25 (no hard dependency, but sequential execution avoids conflating investigation)
+**Requirements**: FIX-02
 **Success Criteria** (what must be TRUE):
-  1. When a student submits a poll vote, the teacher's live dashboard updates within 2 seconds without manual refresh
-  2. When a teacher activates a poll, the poll channel receives the activation broadcast (not just the activity channel), and any student or teacher client subscribed to that poll sees the status change
-**Plans**: 3 plans
+  1. In a single elimination bracket, after advancing to the final round (e.g., championship matchup in a 4-team bracket), student vote counts update in real time on the teacher live dashboard without manual refresh
+  2. The student bracket view for the final round also reflects live vote count changes as they happen
+**Plans**: TBD
 
 Plans:
-- [x] 21-01-PLAN.md -- Server-side bug fixes: dual-channel broadcast on poll activation/close/archive (FIX-02), dynamic participantCount in poll state API and useRealtimePoll hook (FIX-01 foundation)
-- [x] 21-02-PLAN.md -- Teacher dashboard UI: dynamic participation indicator, leading-option bar chart styling, smooth vote count transitions, enhanced connection status indicator
-- [ ] 21-03-PLAN.md -- Gap closure: broadcast participant-join events and subscribe useRealtimePoll to update participation denominator dynamically
+- [ ] 27-01: Investigate and fix SE final round realtime (likely route caching or bracket state API issue; research flagged ~15 min investigation)
 
-### Phase 22: UX Polish
-**Goal**: Classroom presentation is readable on projectors, sessions are identifiable by name, and activation terminology is consistent across the product
-**Depends on**: Phase 19 (no schema dependency, but phases execute sequentially)
-**Requirements**: UX-01, UX-02, UX-03, UX-04
+### Phase 28: RR All-at-Once Completion Fix
+**Goal**: Round robin all-at-once brackets complete correctly -- the bracket only transitions to completed status after every matchup across all rounds has been decided, and celebration fires properly on both teacher and student views
+**Depends on**: Phase 27 (SE investigation may reveal shared root causes in celebration chain)
+**Requirements**: FIX-01
 **Success Criteria** (what must be TRUE):
-  1. Ranked poll presentation mode shows all medal cards (gold, silver, bronze, and remaining items) with clearly readable text contrast, verifiable on a projector or low-brightness display
-  2. Session selection dropdowns throughout the teacher dashboard display the session name (e.g., "Period 3 History") instead of session number or code, with a sensible fallback for unnamed sessions
-  3. A teacher can edit the session name directly from the dashboard without navigating away
-  4. All activation buttons and status badges across brackets and polls use a single consistent term ("Start" / "Active") instead of mixed "Activate" / "Go Live" terminology
-**Plans**: 3 plans
+  1. An RR all-at-once bracket with multiple rounds does not show completion or celebration after only the first round is decided -- it remains active until all matchups across all rounds are decided
+  2. When the final matchup of the final round is decided, the bracket transitions to completed and the celebration fires on both teacher and student views
+  3. The celebration does not loop infinitely -- it fires once and dismisses cleanly (hasShownRevealRef guard present in RRLiveView)
+  4. The calculateRoundRobinStandings function from Phase 24 continues to work correctly for champion determination (non-regression)
+**Plans**: TBD
 
 Plans:
-- [ ] 22-01-PLAN.md -- Projector-optimized presentation results: PresentationResults component with high-contrast medal cards, large text, dark background
-- [ ] 22-02-PLAN.md -- Session name editing: updateSessionName DAL/action, EditableSessionName component, click-to-edit on session detail, fallback format with date
-- [ ] 22-03-PLAN.md -- Terminology unification + session name dropdowns: "Start"/"End" replaces "Activate"/"Go Live", session dropdowns show names, dashboard badge update
+- [ ] 28-01: Investigate and fix RR all-at-once completion (trace activation path, verify isRoundRobinComplete query scope, add RRLiveView celebration guard; research flagged ~30 min investigation)
 
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 19 -> 20 -> 21 -> 22 -> 23
+Phases execute in numeric order: 25 -> 26 -> 27 -> 28
 
 | Phase | Milestone | Plans | Status | Completed |
 |-------|-----------|-------|--------|-----------|
@@ -138,27 +142,9 @@ Phases execute in numeric order: 19 -> 20 -> 21 -> 22 -> 23
 | 20. Name-Based Student Identity | v1.2 | 3/3 | Complete | 2026-02-21 |
 | 21. Poll Realtime Bug Fix | v1.2 | 3/3 | Complete | 2026-02-22 |
 | 22. UX Polish | v1.2 | 3/3 | Complete | 2026-02-22 |
-| 23. Session Archiving | v1.2 | Complete    | 2026-02-23 | 2026-02-23 |
-
-### Phase 23: Session Archiving
-**Goal**: Teachers can archive, recover, and permanently delete sessions -- includes archivedAt schema migration, archive/unarchive actions, archived sessions tab/filter, permanent delete with cascade, and session list filtering to hide archived by default
-**Depends on**: Phase 22
-**Plans**: 3 plans
-
-Plans:
-- [ ] 23-01-PLAN.md -- Schema migration (archivedAt), DAL functions (archive/unarchive/delete/list), server actions, session list filtering
-- [ ] 23-02-PLAN.md -- Session card three-dot context menu, archive confirmation dialog, sessions page integration
-- [ ] 23-03-PLAN.md -- Archived sessions page with search/recover/delete, sidebar nav link, student join code block
-
-### Phase 24: Bracket & Poll UX Consistency
-**Goal**: Fix round robin/predictive brackets not auto-showing on student dashboard (realtime broadcast fix), make round robin simple vote match single bracket simple mode (full-sized matchup presentation instead of cramped Next/Prev), and unify celebration animations across all brackets and polls (use double elimination's 3-2-1 countdown + stars as canonical pattern for all bracket types and polls on both teacher and student views)
-**Depends on**: Phase 23
-**Plans**: 6 plans
-
-Plans:
-- [x] 24-01-PLAN.md -- Bracket realtime broadcast fix: add broadcastActivityUpdate to bracket and prediction status actions
-- [x] 24-02-PLAN.md -- Round robin simple vote UX refactor: full-sized MatchupVoteCard presentation for RR simple mode
-- [x] 24-03-PLAN.md -- Unified celebration animations: 3-2-1 countdown across all bracket types and polls
-- [x] 24-04-PLAN.md -- Gap closure: fix celebration flow bugs (RR bracket done, WinnerReveal simplification, poll countdown guard)
-- [ ] 24-05-PLAN.md -- Gap closure: fix celebration ref race condition (teacher) and infinite loop guard (student RR)
-- [ ] 24-06-PLAN.md -- Gap closure: replace naive RR champion selection with calculateRoundRobinStandings and add tie/co-champion display
+| 23. Session Archiving | v1.2 | 3/3 | Complete | 2026-02-23 |
+| 24. Bracket & Poll UX Consistency | v1.2 | 6/6 | Complete | 2026-02-24 |
+| 25. UX Parity | v1.3 | 0/2 | Not started | - |
+| 26. Student Activity Removal | v1.3 | 0/1 | Not started | - |
+| 27. SE Final Round Realtime Fix | v1.3 | 0/1 | Not started | - |
+| 28. RR All-at-Once Completion Fix | v1.3 | 0/1 | Not started | - |

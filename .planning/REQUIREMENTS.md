@@ -89,17 +89,17 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| UXP-01 | TBD | Pending |
-| UXP-02 | TBD | Pending |
-| FIX-01 | TBD | Pending |
-| FIX-02 | TBD | Pending |
-| FIX-03 | TBD | Pending |
+| UXP-01 | Phase 25 | Pending |
+| UXP-02 | Phase 25 | Pending |
+| FIX-01 | Phase 28 | Pending |
+| FIX-02 | Phase 27 | Pending |
+| FIX-03 | Phase 26 | Pending |
 
 **Coverage:**
 - v1.3 requirements: 5 total
-- Mapped to phases: 0
-- Unmapped: 5 (pending roadmap creation)
+- Mapped to phases: 5
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-02-21*
-*Last updated: 2026-02-25 after v1.3 milestone requirements*
+*Last updated: 2026-02-24 after v1.3 roadmap creation*
