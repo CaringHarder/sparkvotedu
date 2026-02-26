@@ -652,16 +652,29 @@ export async function updateBracketStatusDAL(
     data: { status },
   })
 
-  // Auto-open round 1 for round-robin brackets on activation
+  // Auto-open matchups for round-robin brackets on activation (pacing-aware)
   if (bracket.status === 'draft' && status === 'active' && updated.bracketType === 'round_robin') {
-    await prisma.matchup.updateMany({
-      where: {
-        bracketId: bracket.id,
-        roundRobinRound: 1,
-        status: 'pending',
-      },
-      data: { status: 'voting' },
-    })
+    const pacing = (updated.roundRobinPacing ?? 'round_by_round') as string
+    if (pacing === 'all_at_once') {
+      // All-at-once: open ALL matchups across ALL rounds simultaneously
+      await prisma.matchup.updateMany({
+        where: {
+          bracketId: bracket.id,
+          status: 'pending',
+        },
+        data: { status: 'voting' },
+      })
+    } else {
+      // Round-by-round: only open round 1
+      await prisma.matchup.updateMany({
+        where: {
+          bracketId: bracket.id,
+          roundRobinRound: 1,
+          status: 'pending',
+        },
+        data: { status: 'voting' },
+      })
+    }
 
     // Broadcast round_advanced event so students get the update
     broadcastBracketUpdate(bracketId, 'round_advanced', { round: 1 }).catch(console.error)
