@@ -10,11 +10,11 @@ See: .planning/PROJECT.md (updated 2026-02-25)
 ## Current Position
 
 Phase: 28 of 28 (RR All-at-Once Completion)
-Plan: 1 of 2 in current phase (28-01 complete)
-Status: Executing Phase 28, Plan 01 complete, ready for Plan 02
-Last activity: 2026-02-26 - Completed 28-01: pacing-aware RR activation + celebration manual dismiss
+Plan: 2 of 2 in current phase (28-01, 28-02 complete)
+Status: Phase 28 complete -- all plans executed
+Last activity: 2026-02-26 - Completed 28-02: round progress badge, post-celebration standings, pacing-aware fallback
 
-Progress: [##############################░] 97% (milestones v1.0-v1.2 complete, phases 25-27 done, phase 28 plan 1/2)
+Progress: [################################] 100% (milestones v1.0-v1.3 complete, all 28 phases done)
 
 ## Performance Metrics
 
@@ -69,6 +69,9 @@ Recent decisions for v1.3 roadmap:
 - useEffect redirect for not-found state avoids render-phase side-effect violation
 - Default roundRobinPacing to 'round_by_round' when null -- existing brackets without pacing set behave as before
 - Removed dismissTimerRef entirely from CelebrationScreen rather than leaving dead code
+- Reuse existing standings useMemo in student RRLiveView for post-celebration overlay (no duplicate computation)
+- needsRoundsOpen checks all matchups pending (not just round 1) for broader all-at-once fallback coverage
+- All-at-once fallback loops advanceRound sequentially per round (acceptable overhead for recovery path)
 
 ### Pending Todos
 
@@ -79,7 +82,7 @@ All 5 pending todos from v1.2 have been promoted to v1.3 requirements (UXP-01, U
 - Microsoft and Apple OAuth held -- code complete, needs console config (not blocking v1.3)
 - FingerprintJS cleanup deferred to post-classroom-verification (CLEAN-01, CLEAN-02 in future requirements)
 - FIX-02 (SE final round) root cause unconfirmed -- likely route caching but needs investigation
-- FIX-01 (RR all-at-once) activation fix complete (28-01), advancement/completion fix pending (28-02)
+- FIX-01 (RR all-at-once) fully resolved: activation (28-01) + progress/standings/fallback (28-02)
 
 ### Quick Tasks Completed
 
@@ -93,6 +96,5 @@ All 5 pending todos from v1.2 have been promoted to v1.3 requirements (UXP-01, U
 ## Session Continuity
 
 Last session: 2026-02-26
-Stopped at: Completed 28-01-PLAN.md (pacing-aware activation + celebration manual dismiss)
-Resume: `/gsd:execute-phase` to execute Plan 02 of Phase 28 (round advancement and completion for all-at-once)
-Resume file: .planning/phases/28-rr-all-at-once-completion/28-02-PLAN.md
+Stopped at: Completed 28-02-PLAN.md (round progress badge, post-celebration standings, pacing-aware fallback)
+Resume: Phase 28 complete. v1.3 milestone complete. All planned phases executed.
