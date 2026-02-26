@@ -152,7 +152,7 @@ export function BracketCard({ bracket, onRemoved }: BracketCardProps) {
             />
           ) : (
             <h3 className="truncate text-sm font-semibold text-card-foreground group-hover:text-primary">
-              {bracket.name}
+              {renameValue}
             </h3>
           )}
           <div className="flex items-center gap-1.5">

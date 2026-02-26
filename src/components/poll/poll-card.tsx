@@ -120,7 +120,7 @@ export function PollCard({ poll, onRemoved }: PollCardProps) {
                   className="w-full truncate rounded-md border bg-background px-2 py-0.5 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-ring"
                 />
               ) : (
-                <h3 className="truncate text-sm font-semibold">{poll.question}</h3>
+                <h3 className="truncate text-sm font-semibold">{renameValue}</h3>
               )}
               <div className="mt-1.5 flex flex-wrap items-center gap-2">
                 <PollStatusBadge status={poll.status as PollStatus} />
