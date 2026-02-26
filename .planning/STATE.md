@@ -10,9 +10,9 @@ See: .planning/PROJECT.md (updated 2026-02-25)
 ## Current Position
 
 Phase: 28 of 28 (RR All-at-Once Completion)
-Plan: 2 of 2 in current phase (28-01, 28-02 complete)
-Status: Phase 28 complete -- all plans executed
-Last activity: 2026-02-26 - Completed 27-01: SE final round realtime vote fix (cache-bust + stale response guard)
+Plan: 3 of 3 in current phase (28-01, 28-02, 28-03 complete)
+Status: Phase 28 complete -- all plans executed (including gap closure 28-03)
+Last activity: 2026-02-26 - Completed 28-03: Batch decide round filter fix for all-at-once RR brackets
 
 Progress: [################################] 100% (milestones v1.0-v1.3 complete, all 28 phases done)
 
@@ -69,12 +69,14 @@ Recent decisions for v1.3 roadmap:
 - useEffect redirect for not-found state avoids render-phase side-effect violation
 - Default roundRobinPacing to 'round_by_round' when null -- existing brackets without pacing set behave as before
 - Removed dismissTimerRef entirely from CelebrationScreen rather than leaving dead code
+- Removed currentRoundRobinRound from handleBatchDecideByVotes useCallback deps -- roundNumber is now a function parameter, not a closure variable
 - Reuse existing standings useMemo in student RRLiveView for post-celebration overlay (no duplicate computation)
 - needsRoundsOpen checks all matchups pending (not just round 1) for broader all-at-once fallback coverage
 - All-at-once fallback loops advanceRound sequentially per round (acceptable overhead for recovery path)
 - Belt-and-suspenders cache busting: timestamp query param + cache no-store for realtime-critical bracket state fetches
 - useRef sequence counter pattern to guard against out-of-order fetch responses in useRealtimeBracket
 - force-dynamic export on bracket state API route to prevent Next.js framework-level GET caching
+- [Phase 28]: Removed currentRoundRobinRound from handleBatchDecideByVotes useCallback deps -- roundNumber is now a function parameter
 
 ### Pending Todos
 
@@ -85,7 +87,7 @@ All 5 pending todos from v1.2 have been promoted to v1.3 requirements (UXP-01, U
 - Microsoft and Apple OAuth held -- code complete, needs console config (not blocking v1.3)
 - FingerprintJS cleanup deferred to post-classroom-verification (CLEAN-01, CLEAN-02 in future requirements)
 - FIX-02 (SE final round) fully resolved: cache-bust fetch + stale response guard + force-dynamic API route (27-01)
-- FIX-01 (RR all-at-once) fully resolved: activation (28-01) + progress/standings/fallback (28-02)
+- FIX-01 (RR all-at-once) fully resolved: activation (28-01) + progress/standings/fallback (28-02) + batch decide round filter (28-03)
 
 ### Quick Tasks Completed
 
@@ -95,9 +97,10 @@ All 5 pending todos from v1.2 have been promoted to v1.3 requirements (UXP-01, U
 | 2 | Make prediction bracket simple mode show one matchup at a time | 2026-02-26 | 5f06d27 | [2-make-prediction-bracket-simple-mode-show](./quick/2-make-prediction-bracket-simple-mode-show/) |
 | 3 | Enhance voted-entrant highlight in advanced bracket mode | 2026-02-26 | 85d9bac | [3-student-bracket-advanced-mode-show-match](./quick/3-student-bracket-advanced-mode-show-match/) |
 | 4 | Add vote progress indicator (X of Y voted) to bracket live dashboard | 2026-02-26 | 281bce7 | [4-add-vote-progress-indicator-x-of-y-voted](./quick/4-add-vote-progress-indicator-x-of-y-voted/) |
+| Phase 28 P03 | 1min | 1 tasks | 2 files |
 
 ## Session Continuity
 
 Last session: 2026-02-26
-Stopped at: Completed 27-01-PLAN.md (SE final round realtime vote fix -- all bracket types verified)
-Resume: Phase 27 complete. v1.3 milestone complete. All planned phases (25-28) executed.
+Stopped at: Completed 28-03-PLAN.md (batch decide round filter fix for all-at-once RR brackets)
+Resume: Phase 28 complete with gap closure. v1.3 milestone complete. All planned phases (25-28) executed.
