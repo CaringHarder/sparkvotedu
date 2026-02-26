@@ -101,10 +101,10 @@ Plans:
   2. The student bracket view for the final round also reflects live vote count changes as they happen
   3. Predictive bracket vote counts display correctly on all rounds (not just some)
   4. Double elimination brackets verified to not have the same issue (fix if affected)
-**Plans**: TBD
+**Plans:** 1 plan
 
 Plans:
-- [ ] 27-01: Investigate and fix SE final round realtime (likely route caching or bracket state API issue; research flagged ~15 min investigation)
+- [ ] 27-01-PLAN.md -- Cache-busting fetch + stale response guard + force-dynamic API route fix
 
 ### Phase 28: RR All-at-Once Completion Fix
 **Goal**: Round robin all-at-once brackets complete correctly -- the bracket only transitions to completed status after every matchup across all rounds has been decided, and celebration fires properly on both teacher and student views
@@ -151,6 +151,6 @@ Phases execute in numeric order: 25 -> 26 -> 27 -> 28
 | 23. Session Archiving | v1.2 | 3/3 | Complete | 2026-02-23 |
 | 24. Bracket & Poll UX Consistency | v1.2 | 6/6 | Complete | 2026-02-24 |
 | 25. UX Parity | v1.3 | 5/5 | Complete | 2026-02-26 |
-| 26. Student Activity Removal | 2/2 | Complete    | 2026-02-26 | - |
+| 26. Student Activity Removal | v1.3 | 2/2 | Complete | 2026-02-26 |
 | 27. SE Final Round Realtime Fix | v1.3 | 0/1 | Not started | - |
 | 28. RR All-at-Once Completion Fix | v1.3 | 0/1 | Not started | - |
