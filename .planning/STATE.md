@@ -12,7 +12,7 @@ See: .planning/PROJECT.md (updated 2026-02-25)
 Phase: 28 of 28 (RR All-at-Once Completion)
 Plan: 2 of 2 in current phase (28-01, 28-02 complete)
 Status: Phase 28 complete -- all plans executed
-Last activity: 2026-02-26 - Completed 28-02: round progress badge, post-celebration standings, pacing-aware fallback
+Last activity: 2026-02-26 - Completed 27-01: SE final round realtime vote fix (cache-bust + stale response guard)
 
 Progress: [################################] 100% (milestones v1.0-v1.3 complete, all 28 phases done)
 
@@ -72,6 +72,9 @@ Recent decisions for v1.3 roadmap:
 - Reuse existing standings useMemo in student RRLiveView for post-celebration overlay (no duplicate computation)
 - needsRoundsOpen checks all matchups pending (not just round 1) for broader all-at-once fallback coverage
 - All-at-once fallback loops advanceRound sequentially per round (acceptable overhead for recovery path)
+- Belt-and-suspenders cache busting: timestamp query param + cache no-store for realtime-critical bracket state fetches
+- useRef sequence counter pattern to guard against out-of-order fetch responses in useRealtimeBracket
+- force-dynamic export on bracket state API route to prevent Next.js framework-level GET caching
 
 ### Pending Todos
 
@@ -81,7 +84,7 @@ All 5 pending todos from v1.2 have been promoted to v1.3 requirements (UXP-01, U
 
 - Microsoft and Apple OAuth held -- code complete, needs console config (not blocking v1.3)
 - FingerprintJS cleanup deferred to post-classroom-verification (CLEAN-01, CLEAN-02 in future requirements)
-- FIX-02 (SE final round) root cause unconfirmed -- likely route caching but needs investigation
+- FIX-02 (SE final round) fully resolved: cache-bust fetch + stale response guard + force-dynamic API route (27-01)
 - FIX-01 (RR all-at-once) fully resolved: activation (28-01) + progress/standings/fallback (28-02)
 
 ### Quick Tasks Completed
@@ -96,5 +99,5 @@ All 5 pending todos from v1.2 have been promoted to v1.3 requirements (UXP-01, U
 ## Session Continuity
 
 Last session: 2026-02-26
-Stopped at: Completed 28-02-PLAN.md (round progress badge, post-celebration standings, pacing-aware fallback)
-Resume: Phase 28 complete. v1.3 milestone complete. All planned phases executed.
+Stopped at: Completed 27-01-PLAN.md (SE final round realtime vote fix -- all bracket types verified)
+Resume: Phase 27 complete. v1.3 milestone complete. All planned phases (25-28) executed.

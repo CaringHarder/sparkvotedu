@@ -15,7 +15,7 @@ Requirements for v1.3 Bug Fixes & UX Parity. Each maps to roadmap phases.
 ### Bug Fixes
 
 - [ ] **FIX-01**: Round robin all-at-once brackets complete only after all rounds' matchups are decided, not after the first round
-- [ ] **FIX-02**: Single elimination bracket final round continues to show realtime vote updates on the teacher live dashboard
+- [x] **FIX-02**: Single elimination bracket final round continues to show realtime vote updates on the teacher live dashboard
 - [ ] **FIX-03**: Student dashboard dynamically removes deleted brackets and polls without requiring a page refresh
 
 ## v1.2 Requirements (Complete)
@@ -92,7 +92,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | UXP-01 | Phase 25 | Complete |
 | UXP-02 | Phase 25 | Complete |
 | FIX-01 | Phase 28 | Pending |
-| FIX-02 | Phase 27 | Pending |
+| FIX-02 | Phase 27 | Complete |
 | FIX-03 | Phase 26 | Pending |
 
 **Coverage:**

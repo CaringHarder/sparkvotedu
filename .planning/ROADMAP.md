@@ -5,7 +5,7 @@
 - **v1.0 MVP** -- Phases 1-11 (shipped 2026-02-16) | [Archive](milestones/v1.0-ROADMAP.md)
 - **v1.1 Production Readiness & Deploy** -- Phases 14-18 (shipped 2026-02-21) | [Archive](milestones/v1.1-ROADMAP.md)
 - **v1.2 Classroom Hardening** -- Phases 19-24 (shipped 2026-02-24)
-- **v1.3 Bug Fixes & UX Parity** -- Phases 25-28 (in progress)
+- **v1.3 Bug Fixes & UX Parity** -- Phases 25-28 (shipped 2026-02-26)
 
 ## Phases
 
@@ -50,13 +50,13 @@
 
 </details>
 
-### v1.3 Bug Fixes & UX Parity (In Progress)
+### v1.3 Bug Fixes & UX Parity (Shipped 2026-02-26)
 
 **Milestone Goal:** Fix remaining bugs and UX gaps discovered during classroom testing -- realtime update issues, missing UI controls, and interaction feedback.
 
 - [x] **Phase 25: UX Parity** - Poll context menu and sign-out button feedback to match established patterns -- completed 2026-02-26
 - [x] **Phase 26: Student Activity Removal** - Deleted brackets and polls disappear from student dashboards in real time (completed 2026-02-26)
-- [ ] **Phase 27: SE Final Round Realtime Fix** - Single elimination final round continues showing live vote updates
+- [x] **Phase 27: SE Final Round Realtime Fix** - Single elimination final round continues showing live vote updates -- completed 2026-02-26
 - [x] **Phase 28: RR All-at-Once Completion Fix** - Round robin all-at-once brackets complete only after all rounds are decided (completed 2026-02-26)
 
 ## Phase Details
@@ -104,7 +104,7 @@ Plans:
 **Plans:** 1 plan
 
 Plans:
-- [ ] 27-01-PLAN.md -- Cache-busting fetch + stale response guard + force-dynamic API route fix
+- [x] 27-01-PLAN.md -- Cache-busting fetch + stale response guard + force-dynamic API route fix
 
 ### Phase 28: RR All-at-Once Completion Fix
 **Goal**: Round robin all-at-once brackets complete correctly -- the bracket only transitions to completed status after every matchup across all rounds has been decided, and celebration fires properly on both teacher and student views
@@ -153,5 +153,5 @@ Phases execute in numeric order: 25 -> 26 -> 27 -> 28
 | 24. Bracket & Poll UX Consistency | v1.2 | 6/6 | Complete | 2026-02-24 |
 | 25. UX Parity | v1.3 | 5/5 | Complete | 2026-02-26 |
 | 26. Student Activity Removal | v1.3 | 2/2 | Complete | 2026-02-26 |
-| 27. SE Final Round Realtime Fix | v1.3 | 0/1 | Not started | - |
-| 28. RR All-at-Once Completion Fix | 2/2 | Complete   | 2026-02-26 | - |
+| 27. SE Final Round Realtime Fix | v1.3 | 1/1 | Complete | 2026-02-26 |
+| 28. RR All-at-Once Completion Fix | v1.3 | 2/2 | Complete | 2026-02-26 |
