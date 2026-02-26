@@ -54,7 +54,7 @@
 
 **Milestone Goal:** Fix remaining bugs and UX gaps discovered during classroom testing -- realtime update issues, missing UI controls, and interaction feedback.
 
-- [ ] **Phase 25: UX Parity** - Poll context menu and sign-out button feedback to match established patterns (UAT v2 gap closure in progress)
+- [x] **Phase 25: UX Parity** - Poll context menu and sign-out button feedback to match established patterns -- completed 2026-02-26
 - [ ] **Phase 26: Student Activity Removal** - Deleted brackets and polls disappear from student dashboards in real time
 - [ ] **Phase 27: SE Final Round Realtime Fix** - Single elimination final round continues showing live vote updates
 - [ ] **Phase 28: RR All-at-Once Completion Fix** - Round robin all-at-once brackets complete only after all rounds are decided
@@ -76,7 +76,7 @@ Plans:
 - [x] 25-02-PLAN.md -- Card integration with unified menu, animations, and sign-out pending state
 - [x] 25-03-PLAN.md -- [gap closure] Fix stale UI after inline rename (useEffect prop sync)
 - [x] 25-04-PLAN.md -- [gap closure] Archive views for brackets and polls with recover and permanent delete
-- [ ] 25-05-PLAN.md -- [gap closure] Optimistic rename display in bracket and poll card h3 elements
+- [x] 25-05-PLAN.md -- [gap closure] Optimistic rename display in bracket and poll card h3 elements
 
 ### Phase 26: Student Activity Removal
 **Goal**: Students see an accurate, live view of available activities -- when a teacher deletes a bracket or poll, it disappears from the student dashboard without requiring a page refresh
@@ -86,10 +86,11 @@ Plans:
   1. When a teacher deletes a bracket from the dashboard, it disappears from all connected students' activity grids within approximately 2 seconds
   2. When a teacher deletes a poll from the dashboard (via the new context menu), it disappears from all connected students' activity grids within approximately 2 seconds
   3. No Supabase channel subscription leaks are introduced -- every new channel subscription has a paired removeChannel in cleanup
-**Plans**: TBD
+**Plans:** 2 plans
 
 Plans:
-- [ ] 26-01: Broadcast activity deletion and student-side realtime removal (add broadcastActivityUpdate calls to delete actions, subscribe in use-realtime-activities hook)
+- [ ] 26-01-PLAN.md -- Broadcast wiring + animated card removal + reconnection resilience
+- [ ] 26-02-PLAN.md -- Mid-activity deletion detection + toast redirect on bracket/poll pages
 
 ### Phase 27: SE Final Round Realtime Fix
 **Goal**: Single elimination brackets maintain live vote updates through the final round -- teachers and students see votes update in real time on the last matchup, just like every other round
@@ -147,7 +148,7 @@ Phases execute in numeric order: 25 -> 26 -> 27 -> 28
 | 22. UX Polish | v1.2 | 3/3 | Complete | 2026-02-22 |
 | 23. Session Archiving | v1.2 | 3/3 | Complete | 2026-02-23 |
 | 24. Bracket & Poll UX Consistency | v1.2 | 6/6 | Complete | 2026-02-24 |
-| 25. UX Parity | v1.3 | 4/5 | In Progress | - |
+| 25. UX Parity | v1.3 | 5/5 | Complete | 2026-02-26 |
 | 26. Student Activity Removal | v1.3 | 0/1 | Not started | - |
 | 27. SE Final Round Realtime Fix | v1.3 | 0/1 | Not started | - |
 | 28. RR All-at-Once Completion Fix | v1.3 | 0/1 | Not started | - |
