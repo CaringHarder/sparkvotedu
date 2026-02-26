@@ -100,6 +100,7 @@ export function LiveDashboard({
   const [sidebarOpen, setSidebarOpen] = useState(true)
   const [revealState, setRevealState] = useState<RevealState | null>(null)
   const [showCelebration, setShowCelebration] = useState(false)
+  const [showFinalStandings, setShowFinalStandings] = useState(false)
   const [isPending, startTransition] = useTransition()
   const [error, setError] = useState<string | null>(null)
 
@@ -465,6 +466,31 @@ export function LiveDashboard({
     return computeRRChampionInfo(currentMatchups, entrants)
   }, [currentMatchups, isRoundRobin])
 
+  // Client-side standings from current matchups (for post-celebration overlay)
+  // Wired to <RoundRobinStandings standings={rrClientStandings} /> in the overlay below
+  const rrClientStandings = useMemo(() => {
+    if (!isRoundRobin) return []
+    const decidedMatchups = currentMatchups.filter((m) => m.status === 'decided')
+    if (decidedMatchups.length === 0) return []
+    const results: RoundRobinResult[] = decidedMatchups
+      .filter((m) => m.entrant1Id && m.entrant2Id)
+      .map((m) => ({
+        entrant1Id: m.entrant1Id!,
+        entrant2Id: m.entrant2Id!,
+        winnerId: m.winnerId,
+      }))
+    const rawStandings = calculateRoundRobinStandings(results)
+    const entrantsMap = new Map<string, string>()
+    for (const m of currentMatchups) {
+      if (m.entrant1) entrantsMap.set(m.entrant1.id, m.entrant1.name)
+      if (m.entrant2) entrantsMap.set(m.entrant2.id, m.entrant2.name)
+    }
+    return rawStandings.map((s) => ({
+      ...s,
+      entrantName: entrantsMap.get(s.entrantId) ?? s.entrantId,
+    }))
+  }, [isRoundRobin, currentMatchups])
+
   // Round-level status counts (SE/Predictive only -- DE uses deRegionRoundStatus)
   const roundStatus = useMemo(() => {
     if (isDoubleElim) return {} as Record<number, { pending: number; voting: number; decided: number; total: number }>
@@ -627,11 +653,30 @@ export function LiveDashboard({
     return Math.max(...activeRounds)
   }, [isRoundRobin, currentMatchups])
 
-  // Check if round 1 needs opening (fallback for brackets activated before auto-open fix)
-  const needsRound1Open = useMemo(() => {
+  // Round-robin round progress: how many rounds are fully decided out of total
+  const rrRoundProgress = useMemo(() => {
+    if (!isRoundRobin) return { completed: 0, total: 0 }
+    const roundsMap = new Map<number, MatchupData[]>()
+    for (const m of currentMatchups) {
+      const rr = m.roundRobinRound ?? m.round
+      if (!roundsMap.has(rr)) roundsMap.set(rr, [])
+      roundsMap.get(rr)!.push(m)
+    }
+    let completed = 0
+    const total = roundsMap.size
+    for (const [, matchups] of roundsMap) {
+      if (matchups.length > 0 && matchups.every((m) => m.status === 'decided')) {
+        completed++
+      }
+    }
+    return { completed, total }
+  }, [isRoundRobin, currentMatchups])
+
+  // Check if all rounds need opening (fallback for brackets activated before auto-open fix)
+  const needsRoundsOpen = useMemo(() => {
     if (!isRoundRobin) return false
-    const round1Matchups = currentMatchups.filter((m) => m.roundRobinRound === 1)
-    return round1Matchups.length > 0 && round1Matchups.every((m) => m.status === 'pending')
+    // All matchups across all rounds are pending -- need manual open
+    return currentMatchups.length > 0 && currentMatchups.every((m) => m.status === 'pending')
   }, [isRoundRobin, currentMatchups])
 
   const canAdvanceRoundRobin = useMemo(() => {
@@ -951,10 +996,31 @@ export function LiveDashboard({
         <CelebrationScreen
           championName={championName}
           bracketName={bracket.name}
-          onDismiss={() => { setShowCelebration(false); setRevealState(null) }}
+          onDismiss={() => {
+            setShowCelebration(false)
+            setRevealState(null)
+            if (isRoundRobin) setShowFinalStandings(true)
+          }}
           isTie={championTieInfo.isTie}
           tiedNames={championTieInfo.tiedNames}
         />
+      )}
+
+      {/* Post-celebration final standings overlay */}
+      {showFinalStandings && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/95 backdrop-blur-sm">
+          <div className="mx-4 w-full max-w-lg space-y-4 rounded-xl border bg-card p-6 shadow-xl">
+            <h2 className="text-center text-2xl font-bold">Final Standings</h2>
+            <RoundRobinStandings standings={rrClientStandings} isLive={true} />
+            <button
+              type="button"
+              onClick={() => setShowFinalStandings(false)}
+              className="w-full rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+            >
+              Continue
+            </button>
+          </div>
+        </div>
       )}
 
       {/* Top bar with actions */}
@@ -1051,10 +1117,10 @@ export function LiveDashboard({
           </div>
         )}
 
-        {/* Round-robin: current round indicator */}
+        {/* Round-robin: round progress indicator */}
         {isRoundRobin && (
           <span className="rounded px-2 py-0.5 text-xs font-medium bg-primary text-primary-foreground">
-            Round {currentRoundRobinRound}
+            Rounds: {rrRoundProgress.completed}/{rrRoundProgress.total} complete
           </span>
         )}
 
@@ -1143,20 +1209,33 @@ export function LiveDashboard({
           </button>
         )}
 
-        {/* Round-robin: Open Round 1 fallback button */}
-        {isRoundRobin && needsRound1Open && (
+        {/* Round-robin: Open rounds fallback button (pacing-aware) */}
+        {isRoundRobin && needsRoundsOpen && (
           <button
             onClick={() => {
               setError(null)
-              startTransition(async () => {
-                const result = await advanceRound({ bracketId: bracket.id, roundNumber: 1 })
-                if (result && 'error' in result) setError(result.error as string)
-              })
+              const pacing = (bracket.roundRobinPacing ?? 'round_by_round') as string
+              if (pacing === 'all_at_once') {
+                // Open ALL rounds: loop advanceRound for each round sequentially (1..maxRound).
+                // Each advanceRound call opens that round's pending matchups to voting status.
+                const maxRound = Math.max(...currentMatchups.map((m) => m.roundRobinRound ?? 1))
+                startTransition(async () => {
+                  for (let r = 1; r <= maxRound; r++) {
+                    const result = await advanceRound({ bracketId: bracket.id, roundNumber: r })
+                    if (result && 'error' in result) { setError(result.error as string); return }
+                  }
+                })
+              } else {
+                startTransition(async () => {
+                  const result = await advanceRound({ bracketId: bracket.id, roundNumber: 1 })
+                  if (result && 'error' in result) setError(result.error as string)
+                })
+              }
             }}
             disabled={isPending}
             className="rounded-md bg-blue-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-blue-700 disabled:opacity-50"
           >
-            {isPending ? 'Opening...' : 'Open Round 1'}
+            {isPending ? 'Opening...' : ((bracket.roundRobinPacing ?? 'round_by_round') === 'all_at_once' ? 'Open All Rounds' : 'Open Round 1')}
           </button>
         )}
 
