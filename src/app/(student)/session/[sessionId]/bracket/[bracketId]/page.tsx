@@ -656,6 +656,7 @@ function RRLiveView({
   const [votedMatchups, setVotedMatchups] = useState<Record<string, string>>({})
   const [activeTab, setActiveTab] = useState<'voting' | 'results'>('voting')
   const [showCelebration, setShowCelebration] = useState(false)
+  const [showFinalStandings, setShowFinalStandings] = useState(false)
   const [revealState, setRevealState] = useState<{
     entrant1Name: string
     entrant2Name: string
@@ -780,10 +781,30 @@ function RRLiveView({
         <CelebrationScreen
           championName={championName}
           bracketName={bracket.name}
-          onDismiss={() => setShowCelebration(false)}
+          onDismiss={() => {
+            setShowCelebration(false)
+            setShowFinalStandings(true)
+          }}
           isTie={championTieInfo.isTie}
           tiedNames={championTieInfo.tiedNames}
         />
+      )}
+
+      {/* Post-celebration final standings overlay */}
+      {showFinalStandings && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/95 backdrop-blur-sm">
+          <div className="mx-4 w-full max-w-lg space-y-4 rounded-xl border bg-card p-6 shadow-xl">
+            <h2 className="text-center text-2xl font-bold">Final Standings</h2>
+            <RoundRobinStandings standings={standings} isLive={true} />
+            <button
+              type="button"
+              onClick={() => setShowFinalStandings(false)}
+              className="w-full rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+            >
+              Continue
+            </button>
+          </div>
+        </div>
       )}
 
       <div className="mb-4 flex flex-wrap items-center gap-3">
