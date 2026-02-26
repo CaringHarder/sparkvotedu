@@ -1,5 +1,5 @@
 ---
-status: complete
+status: diagnosed
 phase: 28-rr-all-at-once-completion
 source: [28-01-SUMMARY.md, 28-02-SUMMARY.md]
 started: 2026-02-26T15:00:00Z
@@ -58,7 +58,14 @@ skipped: 1
   reason: "User reported: no celebration, because after pressing 'close all and decide by votes' the first two rounds were not detected/calculated, and pressing 'close all and decide by votes' for rounds 1 and 2 doesn't do anything. Round 3 shows 2/2 decided but rounds 1 and 2 show 0/2 decided."
   severity: blocker
   test: 2
-  root_cause: ""
-  artifacts: []
-  missing: []
-  debug_session: ""
+  root_cause: "handleBatchDecideByVotes in live-dashboard.tsx hardcodes its matchup filter to currentRoundRobinRound, which in all-at-once mode always equals the highest active round number (e.g., 3). The onBatchDecideByVotes prop takes no arguments, so the handler has no way to know which round the button belongs to. Only round 3 matchups pass the filter; rounds 1 and 2 produce empty arrays causing the early return."
+  artifacts:
+    - path: "src/components/teacher/live-dashboard.tsx"
+      issue: "handleBatchDecideByVotes (lines 717-749) filters by currentRoundRobinRound instead of accepting a round parameter"
+    - path: "src/components/bracket/round-robin-matchups.tsx"
+      issue: "onBatchDecideByVotes prop type is () => void (line 17), call site passes no round number (line 176)"
+  missing:
+    - "Change onBatchDecideByVotes prop type from () => void to (roundNumber: number) => void"
+    - "Pass roundNumber from call site in round-robin-matchups.tsx"
+    - "Accept roundNumber param in handleBatchDecideByVotes and use it in filter instead of currentRoundRobinRound"
+  debug_session: ".planning/debug/rr-batch-decide-wrong-round.md"
