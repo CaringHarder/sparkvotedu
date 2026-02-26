@@ -34,3 +34,37 @@
 
 ---
 
+
+## v1.2 Classroom Hardening (Shipped: 2026-02-24)
+
+**Phases completed:** 6 phases, 20 plans
+
+**Key accomplishments:**
+- Security foundation: RLS deny-all policies on all 12 public Supabase tables with Prisma bypass verified
+- Name-based student identity: session code + first name replaces broken device fingerprinting (case-insensitive, duplicate prompting, cross-device rejoin)
+- Poll realtime fix: teacher dashboard reflects student votes in real-time via correct channel broadcasting
+- UX polish: presentation mode readability, session name editing, unified Start/End terminology
+- Session archiving: archive, recover, and permanently delete sessions
+- Bracket & poll UX consistency: realtime broadcast on activation, RR simple mode cards, unified celebrations, co-champion tiebreaker
+
+**Stats:** 20 plans, 80,750 LOC TypeScript, 4 days (2026-02-21 to 2026-02-24)
+
+---
+
+
+## v1.3 Bug Fixes & UX Parity (Shipped: 2026-02-26)
+
+**Phases completed:** 4 phases, 11 plans
+
+**Key accomplishments:**
+- Poll context menu: triple-dot menu with rename, duplicate, archive, delete matching bracket card pattern
+- Student activity removal: deleted brackets and polls disappear from student dashboards in real time with animated card removal
+- SE final round realtime fix: cache-busting fetch + stale response guard + force-dynamic API route for live vote updates
+- RR all-at-once completion fix: pacing-aware activation opens all matchups, bracket completes only after all rounds decided
+- Archive views: browse, recover, and permanently delete archived brackets and polls
+- Sign-out pending state: visual feedback (spinner/disabled) while sign-out processes
+
+**Stats:** 68 commits (16 feat/fix), 29 files changed, +1,602/-287 lines, 80,750 LOC TypeScript, 2 days (2026-02-24 to 2026-02-26)
+
+---
+
