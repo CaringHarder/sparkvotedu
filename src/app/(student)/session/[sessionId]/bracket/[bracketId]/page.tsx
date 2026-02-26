@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState, useCallback, useTransition, useRef, useMemo } from 'react'
-import { useParams } from 'next/navigation'
+import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { motion, AnimatePresence } from 'motion/react'
 import { SimpleVotingView } from '@/components/student/simple-voting-view'
@@ -13,6 +13,7 @@ import { RoundRobinMatchups } from '@/components/bracket/round-robin-matchups'
 import { PredictiveBracket } from '@/components/bracket/predictive-bracket'
 import { PredictionLeaderboard } from '@/components/bracket/prediction-leaderboard'
 import { PredictionReveal } from '@/components/bracket/prediction-reveal'
+import { createClient } from '@/lib/supabase/client'
 import { getMyPredictions, getLeaderboard } from '@/actions/prediction'
 import { WinnerReveal } from '@/components/bracket/winner-reveal'
 import { CelebrationScreen } from '@/components/bracket/celebration-screen'
@@ -99,6 +100,42 @@ export default function StudentBracketVotingPage() {
   const bracketId = params.bracketId
 
   const [state, setState] = useState<PageState>({ type: 'loading' })
+  const [showDeletionToast, setShowDeletionToast] = useState(false)
+  const router = useRouter()
+
+  // Redirect to session dashboard when bracket is not found or wrong session
+  useEffect(() => {
+    if (state.type === 'not-found' || state.type === 'wrong-session') {
+      router.push(`/session/${sessionId}`)
+    }
+  }, [state.type, sessionId, router])
+
+  // Deletion detection: listen for activity_update broadcasts and check if bracket still exists
+  useEffect(() => {
+    if (state.type === 'loading' || state.type === 'no-identity') return
+
+    const supabase = createClient()
+    const channel = supabase
+      .channel(`activities:${sessionId}`)
+      .on('broadcast', { event: 'activity_update' }, async () => {
+        try {
+          const res = await fetch(`/api/brackets/${bracketId}/state`)
+          if (!res.ok) {
+            setShowDeletionToast(true)
+            setTimeout(() => {
+              router.push(`/session/${sessionId}`)
+            }, 2000)
+          }
+        } catch {
+          // Network error -- ignore, don't redirect on connectivity issues
+        }
+      })
+      .subscribe()
+
+    return () => {
+      supabase.removeChannel(channel)
+    }
+  }, [sessionId, bracketId, state.type, router])
 
   useEffect(() => {
     async function loadBracket() {
@@ -212,61 +249,68 @@ export default function StudentBracketVotingPage() {
     </Link>
   )
 
+  // Deletion toast overlay (renders on top of any page state)
+  const deletionToast = showDeletionToast ? (
+    <div className="fixed bottom-6 left-1/2 z-50 -translate-x-1/2 rounded-lg bg-foreground px-4 py-3 text-sm font-medium text-background shadow-lg animate-in fade-in slide-in-from-bottom-4">
+      Your teacher ended this activity &mdash; heading back!
+    </div>
+  ) : null
+
   // Loading state
   if (state.type === 'loading') {
     return (
-      <div className="flex items-center justify-center py-16">
-        <div className="space-y-3 text-center">
-          <div className="mx-auto h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
-          <p className="text-sm text-muted-foreground">Loading bracket...</p>
+      <>
+        {deletionToast}
+        <div className="flex items-center justify-center py-16">
+          <div className="space-y-3 text-center">
+            <div className="mx-auto h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+            <p className="text-sm text-muted-foreground">Loading bracket...</p>
+          </div>
         </div>
-      </div>
+      </>
     )
   }
 
   // No participant identity
   if (state.type === 'no-identity') {
     return (
-      <div className="flex items-center justify-center py-16">
-        <div className="max-w-sm text-center">
-          <p className="text-lg font-semibold">Session not found</p>
-          <p className="mt-2 text-sm text-muted-foreground">
-            It looks like you haven&apos;t joined this session yet.
-            Ask your teacher for the class code.
-          </p>
+      <>
+        {deletionToast}
+        <div className="flex items-center justify-center py-16">
+          <div className="max-w-sm text-center">
+            <p className="text-lg font-semibold">Session not found</p>
+            <p className="mt-2 text-sm text-muted-foreground">
+              It looks like you haven&apos;t joined this session yet.
+              Ask your teacher for the class code.
+            </p>
+          </div>
         </div>
-      </div>
+      </>
     )
   }
 
-  // Bracket not found
+  // Bracket not found or wrong session -- redirect to session dashboard (Phase 26 decision)
   if (state.type === 'not-found' || state.type === 'wrong-session') {
-    return (
-      <div className="flex items-center justify-center py-16">
-        <div className="max-w-sm text-center">
-          <p className="text-lg font-semibold">Bracket not found</p>
-          <p className="mt-2 text-sm text-muted-foreground">
-            This bracket may have been removed or is not available.
-          </p>
-        </div>
-      </div>
-    )
+    return null // Redirecting via useEffect
   }
 
   // Draft bracket
   if (state.type === 'draft') {
     return (
-      <div>
-        {backLink}
-        <div className="flex items-center justify-center py-16">
-          <div className="max-w-sm text-center">
-            <p className="text-lg font-semibold">Not ready yet!</p>
-            <p className="mt-2 text-sm text-muted-foreground">
-              This bracket isn&apos;t active yet. Your teacher is still setting it up.
-            </p>
+      <>
+        {deletionToast}
+        <div>
+          {backLink}
+          <div className="flex items-center justify-center py-16">
+            <div className="max-w-sm text-center">
+              <p className="text-lg font-semibold">Not ready yet!</p>
+              <p className="mt-2 text-sm text-muted-foreground">
+                This bracket isn&apos;t active yet. Your teacher is still setting it up.
+              </p>
+            </div>
           </div>
         </div>
-      </div>
+      </>
     )
   }
 
@@ -274,9 +318,11 @@ export default function StudentBracketVotingPage() {
   if (state.type === 'completed') {
     const { bracket } = state
     return (
-      <div>
-        {backLink}
-        <div className="px-4 py-6 text-center">
+      <>
+        {deletionToast}
+        <div>
+          {backLink}
+          <div className="px-4 py-6 text-center">
           <h1 className="mb-2 text-2xl font-bold">{bracket.name}</h1>
           <p className="mb-6 text-sm text-muted-foreground">This bracket has been completed!</p>
           {bracket.bracketType === 'double_elimination' ? (
@@ -313,8 +359,9 @@ export default function StudentBracketVotingPage() {
               initialVotes={{}}
             />
           )}
+          </div>
         </div>
-      </div>
+      </>
     )
   }
 
@@ -324,70 +371,85 @@ export default function StudentBracketVotingPage() {
   // Predictive brackets: unified component handles prediction → live transition in real-time
   if (bracket.bracketType === 'predictive') {
     return (
-      <div>
-        {backLink}
-        <PredictiveStudentView
-          bracket={bracket}
-          participantId={participantId}
-          initialVotes={initialVotes}
-        />
-      </div>
+      <>
+        {deletionToast}
+        <div>
+          {backLink}
+          <PredictiveStudentView
+            bracket={bracket}
+            participantId={participantId}
+            initialVotes={initialVotes}
+          />
+        </div>
+      </>
     )
   }
 
   // Round-robin brackets: standings table + matchup grid with real-time + voting
   if (bracket.bracketType === 'round_robin') {
     return (
-      <div>
-        {backLink}
-        <RRLiveView
-          bracket={bracket}
-          participantId={participantId}
-        />
-      </div>
+      <>
+        {deletionToast}
+        <div>
+          {backLink}
+          <RRLiveView
+            bracket={bracket}
+            participantId={participantId}
+          />
+        </div>
+      </>
     )
   }
 
   // Double-elimination brackets: tabbed Winners/Losers/Grand Finals diagram with voting
   if (bracket.bracketType === 'double_elimination') {
     return (
-      <div>
-        {backLink}
-        <DEVotingView
-          bracket={bracket}
-          participantId={participantId}
-          initialVotes={initialVotes}
-        />
-      </div>
+      <>
+        {deletionToast}
+        <div>
+          {backLink}
+          <DEVotingView
+            bracket={bracket}
+            participantId={participantId}
+            initialVotes={initialVotes}
+          />
+        </div>
+      </>
     )
   }
 
   // Single-elimination (default): viewingMode routing
   if (bracket.viewingMode === 'simple') {
     return (
-      <div>
-        {backLink}
-        <SimpleVotingView
-          matchups={bracket.matchups}
-          participantId={participantId}
-          bracketId={bracket.id}
-          bracketName={bracket.name}
-          initialVotes={initialVotes}
-        />
-      </div>
+      <>
+        {deletionToast}
+        <div>
+          {backLink}
+          <SimpleVotingView
+            matchups={bracket.matchups}
+            participantId={participantId}
+            bracketId={bracket.id}
+            bracketName={bracket.name}
+            initialVotes={initialVotes}
+          />
+        </div>
+      </>
     )
   }
 
   // Default to advanced view
   return (
-    <div>
-      {backLink}
-      <AdvancedVotingView
-        bracket={bracket}
-        participantId={participantId}
-        initialVotes={initialVotes}
-      />
-    </div>
+    <>
+      {deletionToast}
+      <div>
+        {backLink}
+        <AdvancedVotingView
+          bracket={bracket}
+          participantId={participantId}
+          initialVotes={initialVotes}
+        />
+      </div>
+    </>
   )
 }
 
