@@ -1,11 +1,12 @@
 'use client'
 
 import { useEffect, useState, useRef, useCallback } from 'react'
-import { useParams } from 'next/navigation'
+import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { SimplePollVote } from '@/components/student/simple-poll-vote'
 import { RankedPollVote } from '@/components/student/ranked-poll-vote'
 import { useRealtimePoll } from '@/hooks/use-realtime-poll'
+import { createClient } from '@/lib/supabase/client'
 import { PollReveal } from '@/components/poll/poll-reveal'
 import { WinnerReveal } from '@/components/bracket/winner-reveal'
 import type { PollWithOptions, PollOptionData } from '@/lib/poll/types'
@@ -63,6 +64,42 @@ export default function StudentPollVotingPage() {
   const pollId = params.pollId
 
   const [state, setState] = useState<PageState>({ type: 'loading' })
+  const [showDeletionToast, setShowDeletionToast] = useState(false)
+  const router = useRouter()
+
+  // Redirect to session dashboard when poll is not found
+  useEffect(() => {
+    if (state.type === 'not-found') {
+      router.push(`/session/${sessionId}`)
+    }
+  }, [state.type, sessionId, router])
+
+  // Deletion detection: listen for activity_update broadcasts and check if poll still exists
+  useEffect(() => {
+    if (state.type === 'loading' || state.type === 'no-identity') return
+
+    const supabase = createClient()
+    const channel = supabase
+      .channel(`activities:${sessionId}`)
+      .on('broadcast', { event: 'activity_update' }, async () => {
+        try {
+          const res = await fetch(`/api/polls/${pollId}/state`)
+          if (!res.ok) {
+            setShowDeletionToast(true)
+            setTimeout(() => {
+              router.push(`/session/${sessionId}`)
+            }, 2000)
+          }
+        } catch {
+          // Network error -- ignore, don't redirect on connectivity issues
+        }
+      })
+      .subscribe()
+
+    return () => {
+      supabase.removeChannel(channel)
+    }
+  }, [sessionId, pollId, state.type, router])
 
   // Real-time subscription -- called unconditionally (React rules of hooks)
   const { pollStatus, voteCounts, bordaScores } = useRealtimePoll(pollId)
@@ -216,51 +253,49 @@ export default function StudentPollVotingPage() {
     </Link>
   )
 
+  // Deletion toast overlay (renders on top of any page state)
+  const deletionToast = showDeletionToast ? (
+    <div className="fixed bottom-6 left-1/2 z-50 -translate-x-1/2 rounded-lg bg-foreground px-4 py-3 text-sm font-medium text-background shadow-lg animate-in fade-in slide-in-from-bottom-4">
+      Your teacher ended this activity &mdash; heading back!
+    </div>
+  ) : null
+
   // Loading state
   if (state.type === 'loading') {
     return (
-      <div className="flex items-center justify-center py-16">
-        <div className="space-y-3 text-center">
-          <div className="mx-auto h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
-          <p className="text-sm text-muted-foreground">Loading poll...</p>
+      <>
+        {deletionToast}
+        <div className="flex items-center justify-center py-16">
+          <div className="space-y-3 text-center">
+            <div className="mx-auto h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+            <p className="text-sm text-muted-foreground">Loading poll...</p>
+          </div>
         </div>
-      </div>
+      </>
     )
   }
 
   // No participant identity
   if (state.type === 'no-identity') {
     return (
-      <div className="flex items-center justify-center py-16">
-        <div className="max-w-sm text-center">
-          <p className="text-lg font-semibold">Session not found</p>
-          <p className="mt-2 text-sm text-muted-foreground">
-            It looks like you haven&apos;t joined this session yet. Ask your
-            teacher for the class code.
-          </p>
+      <>
+        {deletionToast}
+        <div className="flex items-center justify-center py-16">
+          <div className="max-w-sm text-center">
+            <p className="text-lg font-semibold">Session not found</p>
+            <p className="mt-2 text-sm text-muted-foreground">
+              It looks like you haven&apos;t joined this session yet. Ask your
+              teacher for the class code.
+            </p>
+          </div>
         </div>
-      </div>
+      </>
     )
   }
 
-  // Poll not found
+  // Poll not found -- redirect to session dashboard (Phase 26 decision)
   if (state.type === 'not-found') {
-    return (
-      <div className="flex items-center justify-center py-16">
-        <div className="max-w-sm text-center">
-          <p className="text-lg font-semibold">Poll not found</p>
-          <p className="mt-2 text-sm text-muted-foreground">
-            This poll may have been removed or is not available.
-          </p>
-          <Link
-            href={`/session/${sessionId}`}
-            className="mt-4 inline-block text-sm text-primary hover:underline"
-          >
-            Return to session
-          </Link>
-        </div>
-      </div>
-    )
+    return null // Redirecting via useEffect
   }
 
   // Poll not active (draft, closed, or archived) -- loaded in this state on mount
@@ -269,37 +304,43 @@ export default function StudentPollVotingPage() {
 
     if (status === 'closed') {
       return (
-        <div className="container mx-auto px-4 py-6">
-          {backLink}
-          <div className="flex flex-col items-center py-8">
-            <h2 className="text-xl font-bold">{poll.question}</h2>
-            <div className="mt-4 rounded-lg bg-muted/50 px-6 py-4 text-center">
-              <p className="text-sm font-medium">This poll has been closed</p>
-              {poll.showLiveResults && (
-                <p className="mt-1 text-xs text-muted-foreground">
-                  Results are being reviewed by your teacher
-                </p>
-              )}
+        <>
+          {deletionToast}
+          <div className="container mx-auto px-4 py-6">
+            {backLink}
+            <div className="flex flex-col items-center py-8">
+              <h2 className="text-xl font-bold">{poll.question}</h2>
+              <div className="mt-4 rounded-lg bg-muted/50 px-6 py-4 text-center">
+                <p className="text-sm font-medium">This poll has been closed</p>
+                {poll.showLiveResults && (
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    Results are being reviewed by your teacher
+                  </p>
+                )}
+              </div>
             </div>
           </div>
-        </div>
+        </>
       )
     }
 
     return (
-      <div className="container mx-auto px-4 py-6">
-        {backLink}
-        <div className="flex items-center justify-center py-16">
-          <div className="max-w-sm text-center">
-            <p className="text-lg font-semibold">This poll is not currently active</p>
-            <p className="mt-2 text-sm text-muted-foreground">
-              {status === 'draft'
-                ? 'Your teacher is still setting up this poll.'
-                : 'This poll is no longer accepting responses.'}
-            </p>
+      <>
+        {deletionToast}
+        <div className="container mx-auto px-4 py-6">
+          {backLink}
+          <div className="flex items-center justify-center py-16">
+            <div className="max-w-sm text-center">
+              <p className="text-lg font-semibold">This poll is not currently active</p>
+              <p className="mt-2 text-sm text-muted-foreground">
+                {status === 'draft'
+                  ? 'Your teacher is still setting up this poll.'
+                  : 'This poll is no longer accepting responses.'}
+              </p>
+            </div>
           </div>
         </div>
-      </div>
+      </>
     )
   }
 
@@ -309,53 +350,59 @@ export default function StudentPollVotingPage() {
   // After reveal dismissed: show clean "poll closed" state (live transition, not initial load)
   if (closedDetected && !showReveal && !showCountdown) {
     return (
-      <div className="container mx-auto px-4 py-6">
-        {backLink}
-        <div className="flex flex-col items-center py-8">
-          <h2 className="text-xl font-bold">{poll.question}</h2>
-          <div className="mt-4 rounded-lg bg-muted/50 px-6 py-4 text-center">
-            <p className="text-sm font-medium">This poll has been closed</p>
-            <p className="mt-3 text-lg font-semibold text-primary">
-              {winnerText}
-            </p>
+      <>
+        {deletionToast}
+        <div className="container mx-auto px-4 py-6">
+          {backLink}
+          <div className="flex flex-col items-center py-8">
+            <h2 className="text-xl font-bold">{poll.question}</h2>
+            <div className="mt-4 rounded-lg bg-muted/50 px-6 py-4 text-center">
+              <p className="text-sm font-medium">This poll has been closed</p>
+              <p className="mt-3 text-lg font-semibold text-primary">
+                {winnerText}
+              </p>
+            </div>
           </div>
         </div>
-      </div>
+      </>
     )
   }
 
   return (
-    <div className="container mx-auto px-4 py-6">
-      {backLink}
-      <div className="mx-auto max-w-xl">
-        {poll.pollType === 'ranked' ? (
-          <RankedPollVote
-            poll={poll}
-            participantId={participantId}
-            existingVotes={existingVotes}
+    <>
+      {deletionToast}
+      <div className="container mx-auto px-4 py-6">
+        {backLink}
+        <div className="mx-auto max-w-xl">
+          {poll.pollType === 'ranked' ? (
+            <RankedPollVote
+              poll={poll}
+              participantId={participantId}
+              existingVotes={existingVotes}
+            />
+          ) : (
+            <SimplePollVote
+              poll={poll}
+              participantId={participantId}
+              existingVotes={existingVotes}
+            />
+          )}
+        </div>
+        {showCountdown && (
+          <WinnerReveal
+            entrant1Name="The votes are in"
+            entrant2Name=""
+            onComplete={handleCountdownComplete}
           />
-        ) : (
-          <SimplePollVote
-            poll={poll}
-            participantId={participantId}
-            existingVotes={existingVotes}
+        )}
+        {showReveal && (
+          <PollReveal
+            winnerText={winnerText}
+            onDismiss={() => setShowReveal(false)}
           />
         )}
       </div>
-      {showCountdown && (
-        <WinnerReveal
-          entrant1Name="The votes are in"
-          entrant2Name=""
-          onComplete={handleCountdownComplete}
-        />
-      )}
-      {showReveal && (
-        <PollReveal
-          winnerText={winnerText}
-          onDismiss={() => setShowReveal(false)}
-        />
-      )}
-    </div>
+    </>
   )
 }
 
