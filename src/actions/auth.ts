@@ -32,6 +32,7 @@ export async function signUp(
       data: {
         name: parsed.data.name,
       },
+      emailRedirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/auth/callback`,
     },
   })
 
