@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useTransition, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
+import { motion, AnimatePresence } from 'motion/react'
 import { Trophy, Check, Edit3, Lock, ChevronRight, Loader2, Maximize2, Minimize2 } from 'lucide-react'
 import type { BracketWithDetails, MatchupData, PredictionData, PredictionScore, TabulationResult } from '@/lib/bracket/types'
 import {
@@ -716,6 +717,8 @@ function SimplePredictionMode({
   const hasSubmitted = myPredictions.length > 0
   const [isEditing, setIsEditing] = useState(myPredictions.length === 0)
   const [isPending, startTransition] = useTransition()
+  const [currentIndex, setCurrentIndex] = useState(0)
+  const [showConfirmation, setShowConfirmation] = useState(false)
 
   const initialSelections = useMemo(() => {
     const map: Record<string, string> = {}
@@ -821,44 +824,133 @@ function SimplePredictionMode({
     )
   }
 
-  // Prediction form
+  // -- One-at-a-time prediction form (matches SimpleVotingView pattern) --
+  const safeIndex = Math.max(0, Math.min(currentIndex, selectableMatchups.length - 1))
+  const currentMatchup = selectableMatchups[safeIndex]
+
+  // All predictions made: only true when index has advanced past end AND cascade is complete
+  const allPicked = currentIndex >= selectableMatchups.length && allSelected
+
   return (
-    <div className="space-y-4">
-      {/* Progress */}
-      <div className="flex items-center justify-between text-xs text-muted-foreground">
-        <span>
-          {selectedCount} of {totalSelectableCount} predictions made
-        </span>
-        <div className="h-1.5 w-32 overflow-hidden rounded-full bg-muted">
-          <div
-            className="h-full rounded-full bg-primary transition-all"
-            style={{ width: `${totalSelectableCount > 0 ? (selectedCount / totalSelectableCount) * 100 : 0}%` }}
-          />
-        </div>
-      </div>
+    <div className="mx-auto max-w-md px-2 py-4 sm:px-4 sm:py-6">
+      <h2 className="mb-4 text-center text-xl font-bold sm:text-2xl">{bracket.name}</h2>
 
-      {/* Matchup list */}
-      <div className="space-y-2">
-        {selectableMatchups.map((matchup) => (
-          <MatchupPredictionCard
-            key={matchup.id}
-            matchup={matchup}
-            selectedWinnerId={selections[matchup.id] ?? null}
-            onSelect={(entrantId) => handleSelect(matchup.id, entrantId)}
-            isSpeculative={matchup.round > 1}
-          />
-        ))}
-      </div>
+      {/* Progress indicator (hidden when showing confirmation or all picked) */}
+      {!allPicked && !showConfirmation && (
+        <p className="mb-4 text-center text-sm text-muted-foreground">
+          Prediction {safeIndex + 1} of {totalSelectableCount}
+        </p>
+      )}
 
-      {/* Submit button */}
-      <button
-        type="button"
-        onClick={handleSubmit}
-        disabled={!allSelected || isPending}
-        className="w-full rounded-md bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground shadow-sm transition-colors hover:bg-primary/90 disabled:opacity-50"
-      >
-        {isPending ? 'Submitting...' : hasSubmitted ? 'Update Predictions' : 'Submit All Predictions'}
-      </button>
+      {/* Back button (hidden when at first or showing confirmation or all picked) */}
+      {!allPicked && !showConfirmation && currentIndex > 0 && (
+        <button
+          type="button"
+          onClick={() => setCurrentIndex((i) => Math.max(0, i - 1))}
+          className="mb-3 flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
+        >
+          <ChevronRight className="h-3 w-3 rotate-180" />
+          Previous
+        </button>
+      )}
+
+      {/* Animated card area */}
+      <div className="flex justify-center overflow-hidden">
+        <AnimatePresence mode="wait">
+          {allPicked ? (
+            /* All predictions made: show submit card */
+            <motion.div
+              key="all-done"
+              initial={{ x: 300, opacity: 0 }}
+              animate={{ x: 0, opacity: 1 }}
+              transition={{ duration: 0.3, ease: 'easeOut' }}
+              className="w-full max-w-md"
+            >
+              <div className="flex flex-col items-center justify-center py-8 text-center">
+                <div className="mb-3 flex h-16 w-16 items-center justify-center rounded-full bg-green-100 dark:bg-green-900/30">
+                  <svg viewBox="0 0 20 20" fill="currentColor" className="h-8 w-8 text-green-600 dark:text-green-400">
+                    <path
+                      fillRule="evenodd"
+                      d="M16.704 4.153a.75.75 0 01.143 1.052l-8 10.5a.75.75 0 01-1.127.075l-4.5-4.5a.75.75 0 011.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 011.05-.143z"
+                      clipRule="evenodd"
+                    />
+                  </svg>
+                </div>
+                <p className="text-lg font-semibold text-foreground">All predictions made!</p>
+                <div className="mt-2 flex items-center gap-2 text-xs text-muted-foreground">
+                  <span>{selectedCount} of {totalSelectableCount} predictions</span>
+                  <div className="h-1.5 w-24 overflow-hidden rounded-full bg-muted">
+                    <div
+                      className="h-full rounded-full bg-primary transition-all"
+                      style={{ width: '100%' }}
+                    />
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleSubmit}
+                  disabled={!allSelected || isPending}
+                  className="mt-6 w-full rounded-md bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground shadow-sm transition-colors hover:bg-primary/90 disabled:opacity-50"
+                >
+                  {isPending ? 'Submitting...' : hasSubmitted ? 'Update Predictions' : 'Submit All Predictions'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setCurrentIndex((i) => Math.max(0, i - 1))}
+                  className="mt-3 text-xs text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  Review predictions
+                </button>
+              </div>
+            </motion.div>
+          ) : showConfirmation ? (
+            <motion.div
+              key={`confirm-${safeIndex}`}
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ x: -300, opacity: 0 }}
+              transition={{ duration: 0.3, ease: 'easeOut' }}
+              className="w-full max-w-md"
+            >
+              <div className="flex min-h-[140px] flex-col items-center justify-center rounded-xl border bg-card p-8 shadow-sm">
+                <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
+                  <svg viewBox="0 0 20 20" fill="currentColor" className="h-6 w-6 text-primary">
+                    <path
+                      fillRule="evenodd"
+                      d="M16.704 4.153a.75.75 0 01.143 1.052l-8 10.5a.75.75 0 01-1.127.075l-4.5-4.5a.75.75 0 011.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 011.05-.143z"
+                      clipRule="evenodd"
+                    />
+                  </svg>
+                </div>
+                <p className="text-lg font-semibold text-foreground">Vote Submitted!</p>
+              </div>
+            </motion.div>
+          ) : currentMatchup ? (
+            <motion.div
+              key={`matchup-${currentMatchup.id}`}
+              initial={{ x: 300, opacity: 0 }}
+              animate={{ x: 0, opacity: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              transition={{ duration: 0.3, ease: 'easeOut' }}
+              className="w-full"
+            >
+              <MatchupPredictionCard
+                matchup={currentMatchup}
+                selectedWinnerId={selections[currentMatchup.id] ?? null}
+                onSelect={(entrantId) => {
+                  handleSelect(currentMatchup.id, entrantId)
+                  setShowConfirmation(true)
+                  setTimeout(() => {
+                    setShowConfirmation(false)
+                    setCurrentIndex((i) => i + 1)
+                  }, 1200)
+                }}
+                isSpeculative={currentMatchup.round > 1}
+              />
+            </motion.div>
+          ) : null}
+        </AnimatePresence>
+      </div>
     </div>
   )
 }
