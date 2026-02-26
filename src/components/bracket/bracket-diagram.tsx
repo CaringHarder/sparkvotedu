@@ -237,7 +237,7 @@ function MatchupBox({
           height={MATCH_HEIGHT / 2 - 1}
           rx={6}
           ry={6}
-          style={{ fill: 'color-mix(in oklch, var(--primary) 15%, transparent)' }}
+          style={{ fill: 'color-mix(in oklch, var(--primary) 25%, transparent)' }}
         />
       )}
       {/* Voted highlight for bottom half */}
@@ -249,7 +249,32 @@ function MatchupBox({
           height={MATCH_HEIGHT / 2 - 1}
           rx={6}
           ry={6}
-          style={{ fill: 'color-mix(in oklch, var(--primary) 15%, transparent)' }}
+          style={{ fill: 'color-mix(in oklch, var(--primary) 25%, transparent)' }}
+        />
+      )}
+
+      {/* Dim non-voted top half (when bottom entrant was voted) */}
+      {voted2 && !voted1 && matchup.entrant1Id && !isBye1 && (
+        <rect
+          x={x + 1}
+          y={y + 1}
+          width={MATCH_WIDTH - 2}
+          height={MATCH_HEIGHT / 2 - 1}
+          rx={6}
+          ry={6}
+          style={{ fill: 'var(--muted)', opacity: 0.5 }}
+        />
+      )}
+      {/* Dim non-voted bottom half (when top entrant was voted) */}
+      {voted1 && !voted2 && matchup.entrant2Id && !isBye2 && (
+        <rect
+          x={x + 1}
+          y={y + MATCH_HEIGHT / 2}
+          width={MATCH_WIDTH - 2}
+          height={MATCH_HEIGHT / 2 - 1}
+          rx={6}
+          ry={6}
+          style={{ fill: 'var(--muted)', opacity: 0.5 }}
         />
       )}
 
@@ -347,7 +372,9 @@ function MatchupBox({
               ? 'var(--muted-foreground)'
               : voted1
                 ? 'var(--primary)'
-                : 'var(--foreground)',
+                : voted2
+                  ? 'var(--muted-foreground)'
+                  : 'var(--foreground)',
           fontSize: 11,
           fontFamily: 'inherit',
           fontWeight: isEntrant1Winner || voted1 ? 700 : isBye1 ? 400 : 400,
@@ -428,7 +455,9 @@ function MatchupBox({
               ? 'var(--muted-foreground)'
               : voted2
                 ? 'var(--primary)'
-                : 'var(--foreground)',
+                : voted1
+                  ? 'var(--muted-foreground)'
+                  : 'var(--foreground)',
           fontSize: 11,
           fontFamily: 'inherit',
           fontWeight: isEntrant2Winner || voted2 ? 700 : isBye2 ? 400 : 400,
