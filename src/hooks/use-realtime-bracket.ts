@@ -65,12 +65,25 @@ export function useRealtimeBracket(bracketId: string, batchIntervalMs = 2000) {
   // Ref for batching vote updates -- accumulates between flushes
   const pendingUpdates = useRef<VoteCounts>({})
 
+  // Sequence counter to discard stale out-of-order fetch responses.
+  // When multiple bracket_update events fire rapidly (e.g. winner_selected +
+  // voting_opened in quick succession), overlapping fetches may resolve out of
+  // order. The guard ensures only the most recent response is applied.
+  const fetchSeqRef = useRef(0)
+
   // Fetch full bracket state from polling API
   const fetchBracketState = useCallback(async () => {
+    const seq = ++fetchSeqRef.current
     try {
-      const res = await fetch(`/api/brackets/${bracketId}/state`)
+      const res = await fetch(`/api/brackets/${bracketId}/state?t=${Date.now()}`, {
+        cache: 'no-store',
+      })
       if (!res.ok) return
+      // Discard stale response if a newer fetch has already been initiated
+      if (seq !== fetchSeqRef.current) return
       const data: BracketStateResponse = await res.json()
+      // Double-check after async json parse -- another fetch may have started
+      if (seq !== fetchSeqRef.current) return
       setMatchups(data.matchups)
 
       // Also update vote counts from the fetched state

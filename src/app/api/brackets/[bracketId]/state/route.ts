@@ -2,6 +2,11 @@ import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getVoteCountsForMatchup } from '@/lib/dal/vote'
 
+// Prevent Next.js from caching GET responses on this route.
+// Without this, the framework may serve stale bracket state after round advancement,
+// causing vote counts to not update in realtime on the final round.
+export const dynamic = 'force-dynamic'
+
 /**
  * GET /api/brackets/[bracketId]/state
  *
