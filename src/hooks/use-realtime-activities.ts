@@ -62,10 +62,24 @@ export function useRealtimeActivities(
       .on('broadcast', { event: 'activity_update' }, () => {
         fetchActivities()
       })
-      .subscribe()
+      .subscribe((status) => {
+        // Refetch on reconnect to catch missed events during outage
+        if (status === 'SUBSCRIBED') {
+          fetchActivities()
+        }
+      })
+
+    // Refetch when tab regains focus to catch missed deletions while backgrounded
+    const handleVisibility = () => {
+      if (document.visibilityState === 'visible') {
+        fetchActivities()
+      }
+    }
+    document.addEventListener('visibilitychange', handleVisibility)
 
     return () => {
       supabase.removeChannel(channel)
+      document.removeEventListener('visibilitychange', handleVisibility)
     }
   }, [sessionId, supabase, fetchActivities])
 
