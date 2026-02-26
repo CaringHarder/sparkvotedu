@@ -11,6 +11,7 @@ import { RoundRobinMatchups } from '@/components/bracket/round-robin-matchups'
 import { WinnerReveal } from '@/components/bracket/winner-reveal'
 import { CelebrationScreen } from '@/components/bracket/celebration-screen'
 import { ParticipationSidebar } from '@/components/teacher/participation-sidebar'
+import { VoteProgressBar } from '@/components/teacher/vote-progress-bar'
 import { QRCodeDisplay } from '@/components/teacher/qr-code-display'
 import { openMatchupsForVoting, advanceMatchup, batchAdvanceRound } from '@/actions/bracket-advance'
 import { recordResult, advanceRound } from '@/actions/round-robin'
@@ -772,6 +773,76 @@ export function LiveDashboard({
   }, [isSports])
 
   // ---------------------------------------------------------------------------
+  // Aggregate vote progress across all currently-voting matchups
+  // ---------------------------------------------------------------------------
+
+  const votingProgressData = useMemo(() => {
+    // Predictive auto / Sports have no student voting -- skip
+    if (isPredictiveAuto || isSports) {
+      return { votedCount: 0, totalCount: 0, isVotingActive: false, roundLabel: undefined as string | undefined }
+    }
+
+    let votingMatchups: MatchupData[]
+    let roundLabel: string | undefined
+
+    if (isDoubleElim && deActiveRegionInfo) {
+      votingMatchups = deActiveRegionMatchups.filter(
+        (m) => m.round === deCurrentDbRound && m.status === 'voting'
+      )
+      roundLabel = `${getRegionDisplayName(deRegion)} ${getDeRoundLabel(deActiveRegionInfo.currentDisplayRound, deActiveRegionInfo.displayRounds, deRegion)}`
+    } else if (isRoundRobin) {
+      votingMatchups = currentMatchups.filter(
+        (m) => m.roundRobinRound === currentRoundRobinRound && m.status === 'voting'
+      )
+      roundLabel = `Round ${currentRoundRobinRound}`
+    } else {
+      // SE, Predictive (vote-based)
+      votingMatchups = currentMatchups.filter(
+        (m) => m.round === currentRound && m.status === 'voting'
+      )
+      if (totalRounds > 1) roundLabel = getRoundLabel(currentRound)
+    }
+
+    if (votingMatchups.length === 0) {
+      return { votedCount: 0, totalCount: participants.length, isVotingActive: false, roundLabel }
+    }
+
+    // Union unique voter IDs across all voting matchups from initialVoterIds
+    const allVoterIds = new Set<string>()
+    for (const m of votingMatchups) {
+      for (const id of (initialVoterIds[m.id] ?? [])) {
+        allVoterIds.add(id)
+      }
+    }
+
+    // Check realtime vote counts for any matchup -- if sum of entrant votes
+    // exceeds initialVoterIds length, real-time data has newer info
+    let realtimeExcess = 0
+    for (const m of votingMatchups) {
+      const counts = mergedVoteCounts[m.id] ?? {}
+      const matchupVoterCount = Object.values(counts).reduce((sum: number, v) => sum + v, 0)
+      const initialCount = (initialVoterIds[m.id] ?? []).length
+      if (matchupVoterCount > initialCount) {
+        realtimeExcess = Math.max(realtimeExcess, matchupVoterCount - initialCount)
+      }
+    }
+
+    const votedCount = allVoterIds.size + realtimeExcess
+
+    return {
+      votedCount: Math.min(votedCount, participants.length),
+      totalCount: participants.length,
+      isVotingActive: true,
+      roundLabel,
+    }
+  }, [
+    isPredictiveAuto, isSports, isDoubleElim, isRoundRobin,
+    deActiveRegionInfo, deActiveRegionMatchups, deCurrentDbRound, deRegion,
+    currentMatchups, currentRoundRobinRound, currentRound, totalRounds,
+    participants.length, initialVoterIds, mergedVoteCounts,
+  ])
+
+  // ---------------------------------------------------------------------------
   // Per-matchup actions
   // ---------------------------------------------------------------------------
 
@@ -1176,6 +1247,16 @@ export function LiveDashboard({
           {error}
           <button onClick={() => setError(null)} className="ml-2 underline">dismiss</button>
         </div>
+      )}
+
+      {/* Vote progress indicator */}
+      {votingProgressData.isVotingActive && (
+        <VoteProgressBar
+          votedCount={votingProgressData.votedCount}
+          totalCount={votingProgressData.totalCount}
+          isActive={votingProgressData.isVotingActive}
+          label={votingProgressData.roundLabel}
+        />
       )}
 
       {/* Pick winner modal — shown for voting matchups, pending matchups in manual mode, or any sports matchup with both entrants */}
