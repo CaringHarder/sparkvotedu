@@ -9,12 +9,12 @@ See: .planning/PROJECT.md (updated 2026-02-25)
 
 ## Current Position
 
-Phase: 26 of 28 (Student Activity Removal) -- IN PROGRESS
-Plan: 1 of 2 in current phase
-Status: Executing plan 26-01 complete, plan 26-02 remaining
-Last activity: 2026-02-26 - Completed quick task 2: Make prediction bracket simple mode show one matchup at a time
+Phase: 26 of 28 (Student Activity Removal) -- COMPLETE
+Plan: 2 of 2 in current phase (all plans complete)
+Status: Phase 26 complete, ready for Phase 27
+Last activity: 2026-02-26 - Completed 26-02-PLAN.md (mid-activity deletion detection)
 
-Progress: [############################░░░] 92% (milestones v1.0-v1.2 complete, phases 25-26.01 done)
+Progress: [#############################░░] 94% (milestones v1.0-v1.2 complete, phases 25-26 done)
 
 ## Performance Metrics
 
@@ -64,6 +64,9 @@ Recent decisions for v1.3 roadmap:
 - Pre-read sessionId before DAL cascade deletes (row disappears, sessionId unreadable after)
 - AnimatePresence popLayout mode for student dashboard card removal (200ms fade, layout reflow)
 - hadActivities state tracking differentiates initial empty vs post-removal empty state variant
+- Subscribe to activities:{sessionId} directly on bracket/poll pages (no collision since dashboard unmounted on different route)
+- Verify bracket/poll existence via state API fetch on each activity_update broadcast event
+- useEffect redirect for not-found state avoids render-phase side-effect violation
 
 ### Pending Todos
 
@@ -86,6 +89,6 @@ All 5 pending todos from v1.2 have been promoted to v1.3 requirements (UXP-01, U
 ## Session Continuity
 
 Last session: 2026-02-26
-Stopped at: Completed 26-01-PLAN.md (broadcast wiring + animated removal)
-Resume: `/gsd:execute-phase 26` to execute plan 26-02
-Resume file: .planning/phases/26-student-activity-removal/26-01-SUMMARY.md
+Stopped at: Completed 26-02-PLAN.md (mid-activity deletion detection)
+Resume: `/gsd:execute-phase 27` to start Phase 27 (SE final round realtime)
+Resume file: .planning/phases/26-student-activity-removal/26-02-SUMMARY.md
