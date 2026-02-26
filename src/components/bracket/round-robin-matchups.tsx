@@ -14,7 +14,7 @@ interface RoundRobinMatchupsProps {
   onStudentVote?: (matchupId: string, entrantId: string) => void
   votedMatchups?: Record<string, string> // matchupId -> voted entrantId
   voteCounts?: Record<string, Record<string, number>> // matchupId -> { entrantId: voteCount }
-  onBatchDecideByVotes?: () => void
+  onBatchDecideByVotes?: (roundNumber: number) => void
   votingStyle?: 'simple' | 'advanced' // simple = compact cards, advanced = expanded with vote counts
   isBatchDeciding?: boolean
 }
@@ -173,7 +173,7 @@ export function RoundRobinMatchups({
               {isTeacher && !isComplete && voteCounts && onBatchDecideByVotes && roundMatchups.some((m) => m.status === 'voting') && (
                 <button
                   type="button"
-                  onClick={() => onBatchDecideByVotes()}
+                  onClick={() => onBatchDecideByVotes(roundNumber)}
                   disabled={isBatchDeciding}
                   className="rounded bg-violet-600 px-2 py-0.5 text-xs font-medium text-white transition-colors hover:bg-violet-700 disabled:cursor-not-allowed disabled:opacity-50"
                 >

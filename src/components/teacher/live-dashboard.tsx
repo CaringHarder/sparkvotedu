@@ -713,11 +713,11 @@ export function LiveDashboard({
     })
   }, [bracket.id, currentRoundRobinRound])
 
-  // Round-robin: batch decide all voting matchups in current round by vote majority
-  const handleBatchDecideByVotes = useCallback(() => {
+  // Round-robin: batch decide all voting matchups in a given round by vote majority
+  const handleBatchDecideByVotes = useCallback((roundNumber: number) => {
     setError(null)
     const votingMatchups = currentMatchups.filter(
-      (m) => m.roundRobinRound === currentRoundRobinRound && m.status === 'voting'
+      (m) => m.roundRobinRound === roundNumber && m.status === 'voting'
     )
     if (votingMatchups.length === 0) return
 
@@ -746,7 +746,7 @@ export function LiveDashboard({
         }
       }
     })
-  }, [currentMatchups, currentRoundRobinRound, mergedVoteCounts, bracket.id])
+  }, [currentMatchups, mergedVoteCounts, bracket.id])
 
   // ---------------------------------------------------------------------------
   // Sports bracket: sync, prediction controls, and live game detection
