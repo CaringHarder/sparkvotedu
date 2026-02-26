@@ -57,7 +57,7 @@
 - [x] **Phase 25: UX Parity** - Poll context menu and sign-out button feedback to match established patterns -- completed 2026-02-26
 - [x] **Phase 26: Student Activity Removal** - Deleted brackets and polls disappear from student dashboards in real time (completed 2026-02-26)
 - [x] **Phase 27: SE Final Round Realtime Fix** - Single elimination final round continues showing live vote updates -- completed 2026-02-26
-- [x] **Phase 28: RR All-at-Once Completion Fix** - Round robin all-at-once brackets complete only after all rounds are decided (completed 2026-02-26)
+- [ ] **Phase 28: RR All-at-Once Completion Fix** - Round robin all-at-once brackets complete only after all rounds are decided (gap closure in progress)
 
 ## Phase Details
 
@@ -115,11 +115,12 @@ Plans:
   2. When the final matchup of the final round is decided, the bracket transitions to completed and the celebration fires on both teacher and student views
   3. The celebration does not loop infinitely -- it fires once and dismisses cleanly (hasShownRevealRef guard present in RRLiveView)
   4. The calculateRoundRobinStandings function from Phase 24 continues to work correctly for champion determination (non-regression)
-**Plans:** 2/2 plans complete
+**Plans:** 3 plans
 
 Plans:
-- [ ] 28-01-PLAN.md -- Core bug fix: pacing-aware activation in DAL + celebration manual-dismiss-only
-- [ ] 28-02-PLAN.md -- UI enhancements: round progress badge, post-celebration final standings, needsRoundsOpen fallback
+- [x] 28-01-PLAN.md -- Core bug fix: pacing-aware activation in DAL + celebration manual-dismiss-only
+- [x] 28-02-PLAN.md -- UI enhancements: round progress badge, post-celebration final standings, needsRoundsOpen fallback
+- [ ] 28-03-PLAN.md -- [gap closure] Fix batch decide button filtering by wrong round in all-at-once mode
 
 ## Progress
 
@@ -154,4 +155,4 @@ Phases execute in numeric order: 25 -> 26 -> 27 -> 28
 | 25. UX Parity | v1.3 | 5/5 | Complete | 2026-02-26 |
 | 26. Student Activity Removal | v1.3 | 2/2 | Complete | 2026-02-26 |
 | 27. SE Final Round Realtime Fix | v1.3 | 1/1 | Complete | 2026-02-26 |
-| 28. RR All-at-Once Completion Fix | v1.3 | 2/2 | Complete | 2026-02-26 |
+| 28. RR All-at-Once Completion Fix | v1.3 | 3/3 | In Progress | - |
