@@ -81,7 +81,7 @@ All 5 pending todos from v1.2 have been promoted to v1.3 requirements (UXP-01, U
 
 ## Session Continuity
 
-Last session: 2026-02-25
-Stopped at: Completed 25-04-PLAN.md (archive views for brackets and polls). Phase 25 complete.
-Resume: `/gsd:execute-phase 26` to start Phase 26 (student activity removal)
-Resume file: .planning/phases/25-ux-parity/25-04-SUMMARY.md
+Last session: 2026-02-26
+Stopped at: Phase 26 context gathered
+Resume: `/gsd:plan-phase 26` to plan Phase 26 (student activity removal)
+Resume file: .planning/phases/26-student-activity-removal/26-CONTEXT.md
