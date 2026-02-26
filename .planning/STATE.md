@@ -5,16 +5,16 @@
 See: .planning/PROJECT.md (updated 2026-02-25)
 
 **Core value:** Teachers can instantly engage any classroom through voting -- on any topic, in any format -- and see participation happen in real time.
-**Current focus:** Phase 25 -- UX Parity (v1.3 Bug Fixes & UX Parity)
+**Current focus:** Phase 26 -- Student Activity Removal (v1.3 Bug Fixes & UX Parity)
 
 ## Current Position
 
-Phase: 25 of 28 (UX Parity) -- COMPLETE
-Plan: 4 of 4 in current phase (all plans complete)
-Status: Phase Complete
-Last activity: 2026-02-25 - Completed 25-04: Archive views for brackets and polls
+Phase: 26 of 28 (Student Activity Removal) -- IN PROGRESS
+Plan: 1 of 2 in current phase
+Status: Executing plan 26-01 complete, plan 26-02 remaining
+Last activity: 2026-02-26 - Plan 26-01 (broadcast wiring + animated removal) completed
 
-Progress: [##########################░░░░░] 86% (milestones v1.0-v1.2 complete, phase 25 done)
+Progress: [############################░░░] 92% (milestones v1.0-v1.2 complete, phases 25-26.01 done)
 
 ## Performance Metrics
 
@@ -61,6 +61,9 @@ Recent decisions for v1.3 roadmap:
 - useEffect prop sync pattern: client components with useState(serverProp) need useEffect([serverProp]) to reflect post-refresh changes
 - Unarchived brackets -> 'completed', unarchived polls -> 'closed' (safe terminal states)
 - Archive view pattern: server page + client card list with recover/delete, consistent across sessions/brackets/polls
+- Pre-read sessionId before DAL cascade deletes (row disappears, sessionId unreadable after)
+- AnimatePresence popLayout mode for student dashboard card removal (200ms fade, layout reflow)
+- hadActivities state tracking differentiates initial empty vs post-removal empty state variant
 
 ### Pending Todos
 
@@ -82,6 +85,6 @@ All 5 pending todos from v1.2 have been promoted to v1.3 requirements (UXP-01, U
 ## Session Continuity
 
 Last session: 2026-02-26
-Stopped at: Phase 26 context gathered
-Resume: `/gsd:plan-phase 26` to plan Phase 26 (student activity removal)
-Resume file: .planning/phases/26-student-activity-removal/26-CONTEXT.md
+Stopped at: Completed 26-01-PLAN.md (broadcast wiring + animated removal)
+Resume: `/gsd:execute-phase 26` to execute plan 26-02
+Resume file: .planning/phases/26-student-activity-removal/26-01-SUMMARY.md

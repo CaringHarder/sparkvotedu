@@ -86,7 +86,7 @@ Plans:
   1. When a teacher deletes a bracket from the dashboard, it disappears from all connected students' activity grids within approximately 2 seconds
   2. When a teacher deletes a poll from the dashboard (via the new context menu), it disappears from all connected students' activity grids within approximately 2 seconds
   3. No Supabase channel subscription leaks are introduced -- every new channel subscription has a paired removeChannel in cleanup
-**Plans:** 2 plans
+**Plans:** 1/2 plans executed
 
 Plans:
 - [ ] 26-01-PLAN.md -- Broadcast wiring + animated card removal + reconnection resilience
@@ -149,6 +149,6 @@ Phases execute in numeric order: 25 -> 26 -> 27 -> 28
 | 23. Session Archiving | v1.2 | 3/3 | Complete | 2026-02-23 |
 | 24. Bracket & Poll UX Consistency | v1.2 | 6/6 | Complete | 2026-02-24 |
 | 25. UX Parity | v1.3 | 5/5 | Complete | 2026-02-26 |
-| 26. Student Activity Removal | v1.3 | 0/1 | Not started | - |
+| 26. Student Activity Removal | 1/2 | In Progress|  | - |
 | 27. SE Final Round Realtime Fix | v1.3 | 0/1 | Not started | - |
 | 28. RR All-at-Once Completion Fix | v1.3 | 0/1 | Not started | - |
