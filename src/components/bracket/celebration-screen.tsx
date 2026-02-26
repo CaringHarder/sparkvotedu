@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useCallback, useRef } from 'react'
+import { useEffect, useCallback } from 'react'
 import { motion, useReducedMotion } from 'motion/react'
 import confetti from 'canvas-confetti'
 
@@ -28,7 +28,7 @@ const BRAND_CONFETTI_COLORS = [
  * brand-colored confetti bursts. Enhanced winner name display with
  * scale-up spring animation and ambient glow effect.
  *
- * Auto-dismisses after 12 seconds or on "Continue" button click.
+ * Dismisses on Continue button click only.
  * Respects prefers-reduced-motion.
  */
 export function CelebrationScreen({
@@ -39,12 +39,8 @@ export function CelebrationScreen({
   tiedNames = [],
 }: CelebrationScreenProps) {
   const prefersReducedMotion = useReducedMotion()
-  const dismissTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const handleDismiss = useCallback(() => {
-    if (dismissTimerRef.current) {
-      clearTimeout(dismissTimerRef.current)
-    }
     onDismiss()
   }, [onDismiss])
 
@@ -120,18 +116,12 @@ export function CelebrationScreen({
       })
     }, 2500)
 
-    // Auto-dismiss after 12 seconds (extended for longer celebration)
-    dismissTimerRef.current = setTimeout(handleDismiss, 12000)
-
     return () => {
       clearTimeout(leftTimer1)
       clearTimeout(rightTimer1)
       clearTimeout(centerTimer2)
       clearTimeout(leftTimer2)
       clearTimeout(rightTimer2)
-      if (dismissTimerRef.current) {
-        clearTimeout(dismissTimerRef.current)
-      }
     }
   }, [handleDismiss])
 
