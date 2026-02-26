@@ -5,16 +5,16 @@
 See: .planning/PROJECT.md (updated 2026-02-25)
 
 **Core value:** Teachers can instantly engage any classroom through voting -- on any topic, in any format -- and see participation happen in real time.
-**Current focus:** Phase 26 -- Student Activity Removal (v1.3 Bug Fixes & UX Parity)
+**Current focus:** Phase 28 -- RR All-at-Once Completion (v1.3 Bug Fixes & UX Parity)
 
 ## Current Position
 
-Phase: 26 of 28 (Student Activity Removal) -- COMPLETE
-Plan: 2 of 2 in current phase (all plans complete)
-Status: Phase 26 complete, ready for Phase 27
-Last activity: 2026-02-26 - Completed quick task 4: Add vote progress indicator (X of Y voted) to bracket live dashboard
+Phase: 28 of 28 (RR All-at-Once Completion)
+Plan: 1 of 2 in current phase (28-01 complete)
+Status: Executing Phase 28, Plan 01 complete, ready for Plan 02
+Last activity: 2026-02-26 - Completed 28-01: pacing-aware RR activation + celebration manual dismiss
 
-Progress: [#############################░░] 94% (milestones v1.0-v1.2 complete, phases 25-26 done)
+Progress: [##############################░] 97% (milestones v1.0-v1.2 complete, phases 25-27 done, phase 28 plan 1/2)
 
 ## Performance Metrics
 
@@ -67,6 +67,8 @@ Recent decisions for v1.3 roadmap:
 - Subscribe to activities:{sessionId} directly on bracket/poll pages (no collision since dashboard unmounted on different route)
 - Verify bracket/poll existence via state API fetch on each activity_update broadcast event
 - useEffect redirect for not-found state avoids render-phase side-effect violation
+- Default roundRobinPacing to 'round_by_round' when null -- existing brackets without pacing set behave as before
+- Removed dismissTimerRef entirely from CelebrationScreen rather than leaving dead code
 
 ### Pending Todos
 
@@ -77,7 +79,7 @@ All 5 pending todos from v1.2 have been promoted to v1.3 requirements (UXP-01, U
 - Microsoft and Apple OAuth held -- code complete, needs console config (not blocking v1.3)
 - FingerprintJS cleanup deferred to post-classroom-verification (CLEAN-01, CLEAN-02 in future requirements)
 - FIX-02 (SE final round) root cause unconfirmed -- likely route caching but needs investigation
-- FIX-01 (RR all-at-once) most complex fix -- needs activation path trace before implementation
+- FIX-01 (RR all-at-once) activation fix complete (28-01), advancement/completion fix pending (28-02)
 
 ### Quick Tasks Completed
 
@@ -91,6 +93,6 @@ All 5 pending todos from v1.2 have been promoted to v1.3 requirements (UXP-01, U
 ## Session Continuity
 
 Last session: 2026-02-26
-Stopped at: Completed quick task 4 (vote progress indicator)
-Resume: `/gsd:plan-phase 28` to plan Phase 28 (RR all-at-once completion fix)
-Resume file: .planning/phases/28-rr-all-at-once-completion/28-CONTEXT.md
+Stopped at: Completed 28-01-PLAN.md (pacing-aware activation + celebration manual dismiss)
+Resume: `/gsd:execute-phase` to execute Plan 02 of Phase 28 (round advancement and completion for all-at-once)
+Resume file: .planning/phases/28-rr-all-at-once-completion/28-02-PLAN.md
