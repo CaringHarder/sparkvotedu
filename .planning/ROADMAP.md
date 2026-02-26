@@ -115,10 +115,11 @@ Plans:
   2. When the final matchup of the final round is decided, the bracket transitions to completed and the celebration fires on both teacher and student views
   3. The celebration does not loop infinitely -- it fires once and dismisses cleanly (hasShownRevealRef guard present in RRLiveView)
   4. The calculateRoundRobinStandings function from Phase 24 continues to work correctly for champion determination (non-regression)
-**Plans**: TBD
+**Plans:** 2 plans
 
 Plans:
-- [ ] 28-01: Investigate and fix RR all-at-once completion (trace activation path, verify isRoundRobinComplete query scope, add RRLiveView celebration guard; research flagged ~30 min investigation)
+- [ ] 28-01-PLAN.md -- Core bug fix: pacing-aware activation in DAL + celebration manual-dismiss-only
+- [ ] 28-02-PLAN.md -- UI enhancements: round progress badge, post-celebration final standings, needsRoundsOpen fallback
 
 ## Progress
 
