@@ -285,6 +285,13 @@ export async function deleteBracket(input: unknown) {
     }
   }
 
+  // Read sessionId BEFORE delete (cascade removes the row)
+  const bracket = await prisma.bracket.findFirst({
+    where: { id: parsed.data.bracketId, teacherId: teacher.id },
+    select: { sessionId: true },
+  })
+  const preDeleteSessionId = bracket?.sessionId
+
   try {
     const result = await deleteBracketDAL(parsed.data.bracketId, teacher.id)
 
@@ -293,6 +300,11 @@ export async function deleteBracket(input: unknown) {
     }
 
     revalidatePath('/brackets')
+
+    // Broadcast removal to students
+    if (preDeleteSessionId) {
+      broadcastActivityUpdate(preDeleteSessionId).catch(console.error)
+    }
 
     return { success: true }
   } catch {
@@ -405,6 +417,15 @@ export async function archiveBracket(input: unknown) {
 
     revalidatePath('/brackets')
     revalidatePath('/dashboard')
+
+    // Read sessionId from the archived bracket for student broadcast
+    const archivedBracket = await prisma.bracket.findUnique({
+      where: { id: parsed.data.bracketId },
+      select: { sessionId: true },
+    })
+    if (archivedBracket?.sessionId) {
+      broadcastActivityUpdate(archivedBracket.sessionId).catch(console.error)
+    }
 
     return { success: true }
   } catch {

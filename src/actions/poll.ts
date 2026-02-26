@@ -193,6 +193,13 @@ export async function deletePoll(input: unknown) {
     return { error: 'Invalid delete data', issues: parsed.error.issues }
   }
 
+  // Read sessionId BEFORE delete (DAL removes the row)
+  const poll = await prisma.poll.findFirst({
+    where: { id: parsed.data.pollId, teacherId: teacher.id },
+    select: { sessionId: true },
+  })
+  const preDeleteSessionId = poll?.sessionId
+
   try {
     const deleted = await deletePollDAL(parsed.data.pollId, teacher.id)
     if (!deleted) {
@@ -200,6 +207,12 @@ export async function deletePoll(input: unknown) {
     }
 
     revalidatePath('/activities')
+
+    // Broadcast removal to students
+    if (preDeleteSessionId) {
+      broadcastActivityUpdate(preDeleteSessionId).catch(console.error)
+    }
+
     return { success: true }
   } catch {
     return { error: 'Failed to delete poll' }
@@ -531,6 +544,11 @@ export async function archivePoll(input: unknown) {
 
     revalidatePath('/polls')
     revalidatePath('/dashboard')
+
+    // Broadcast removal to students (archiving hides from student view)
+    if (result.sessionId) {
+      broadcastActivityUpdate(result.sessionId).catch(console.error)
+    }
 
     return { success: true }
   } catch {
