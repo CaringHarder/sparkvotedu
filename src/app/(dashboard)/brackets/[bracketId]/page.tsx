@@ -5,7 +5,7 @@ import { getRoundRobinStandings } from '@/lib/dal/round-robin'
 import { scoreBracketPredictions } from '@/lib/dal/prediction'
 import { prisma } from '@/lib/prisma'
 import { BracketDetail } from '@/components/bracket/bracket-detail'
-import type { BracketStatus } from '@/lib/bracket/types'
+import type { BracketStatus, PredictionScore } from '@/lib/bracket/types'
 
 export default async function BracketDetailPage({
   params,
@@ -37,10 +37,16 @@ export default async function BracketDetailPage({
 
   // Fetch prediction leaderboard for predictive brackets (active or completed)
   const isPredictive = bracket.bracketType === 'predictive'
-  const predictionScores =
-    isPredictive && (bracket.status === 'active' || bracket.status === 'completed')
-      ? await scoreBracketPredictions(bracket.id)
-      : []
+  let predictionScores: PredictionScore[] = []
+  try {
+    predictionScores =
+      isPredictive && (bracket.status === 'active' || bracket.status === 'completed')
+        ? await scoreBracketPredictions(bracket.id)
+        : []
+  } catch (error) {
+    console.error('[BracketDetailPage] Failed to load prediction scores:', error)
+    predictionScores = []
+  }
 
   // Fetch teacher's active sessions for session assignment
   const sessions = await prisma.classSession.findMany({
