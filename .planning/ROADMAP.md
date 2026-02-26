@@ -92,13 +92,15 @@ Plans:
 - [ ] 26-01-PLAN.md -- Broadcast wiring + animated card removal + reconnection resilience
 - [ ] 26-02-PLAN.md -- Mid-activity deletion detection + toast redirect on bracket/poll pages
 
-### Phase 27: SE Final Round Realtime Fix
-**Goal**: Single elimination brackets maintain live vote updates through the final round -- teachers and students see votes update in real time on the last matchup, just like every other round
-**Depends on**: Phase 25 (no hard dependency, but sequential execution avoids conflating investigation)
+### Phase 27: SE & Predictive Realtime Vote Display Fix
+**Goal**: Single elimination and predictive brackets maintain live vote count updates through all rounds -- teachers and students see votes update in real time, including the final round
+**Depends on**: Phase 26
 **Requirements**: FIX-02
 **Success Criteria** (what must be TRUE):
-  1. In a single elimination bracket, after advancing to the final round (e.g., championship matchup in a 4-team bracket), student vote counts update in real time on the teacher live dashboard without manual refresh
+  1. In a single elimination bracket, after advancing to the final round (e.g., championship matchup in an 8-team bracket), vote counts update in real time on the teacher live dashboard without manual refresh
   2. The student bracket view for the final round also reflects live vote count changes as they happen
+  3. Predictive bracket vote counts display correctly on all rounds (not just some)
+  4. Double elimination brackets verified to not have the same issue (fix if affected)
 **Plans**: TBD
 
 Plans:
