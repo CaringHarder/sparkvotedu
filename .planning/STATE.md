@@ -67,9 +67,10 @@ None -- all v1.3 requirements shipped.
 | 2 | Make prediction bracket simple mode show one matchup at a time | 2026-02-26 | 5f06d27 | [2-make-prediction-bracket-simple-mode-show](./quick/2-make-prediction-bracket-simple-mode-show/) |
 | 3 | Enhance voted-entrant highlight in advanced bracket mode | 2026-02-26 | 85d9bac | [3-student-bracket-advanced-mode-show-match](./quick/3-student-bracket-advanced-mode-show-match/) |
 | 4 | Add vote progress indicator (X of Y voted) to bracket live dashboard | 2026-02-26 | 281bce7 | [4-add-vote-progress-indicator-x-of-y-voted](./quick/4-add-vote-progress-indicator-x-of-y-voted/) |
+| 5 | Fix predictive bracket crash with try-catch, $transaction, and error boundary | 2026-02-26 | ae36962 | [5-fix-predictive-bracket-crash-add-error-b](./quick/5-fix-predictive-bracket-crash-add-error-b/) |
 
 ## Session Continuity
 
 Last session: 2026-02-26
-Stopped at: v1.3 milestone archived
+Stopped at: Completed quick task 5 - fix predictive bracket crash
 Resume: Start next milestone with `/gsd:new-milestone`
