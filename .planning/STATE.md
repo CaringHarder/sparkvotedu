@@ -85,6 +85,7 @@ All 5 pending todos from v1.2 have been promoted to v1.3 requirements (UXP-01, U
 |---|-------------|------|--------|-----------|
 | 1 | Change favicon and logo from Vercel to SparkVote throughout the site | 2026-02-25 | 4352d86 | [1-change-favicon-and-logo-from-vercel-to-s](./quick/1-change-favicon-and-logo-from-vercel-to-s/) |
 | 2 | Make prediction bracket simple mode show one matchup at a time | 2026-02-26 | 5f06d27 | [2-make-prediction-bracket-simple-mode-show](./quick/2-make-prediction-bracket-simple-mode-show/) |
+| 3 | Enhance voted-entrant highlight in advanced bracket mode | 2026-02-26 | 85d9bac | [3-student-bracket-advanced-mode-show-match](./quick/3-student-bracket-advanced-mode-show-match/) |
 
 ## Session Continuity
 
