@@ -125,68 +125,73 @@ export async function getParticipantPredictions(
 export async function scoreBracketPredictions(
   bracketId: string
 ): Promise<PredictionScore[]> {
-  // Fetch all predictions for this bracket
-  const predictions = await prisma.prediction.findMany({
-    where: { bracketId },
-    select: {
-      participantId: true,
-      matchupId: true,
-      predictedWinnerId: true,
-    },
-  })
-
-  // Fetch all resolved matchups (decided with a winner)
-  const resolvedMatchups = await prisma.matchup.findMany({
-    where: {
-      bracketId,
-      status: 'decided',
-      winnerId: { not: null },
-      isBye: false, // Exclude bye matchups from scoring
-    },
-    select: { id: true, round: true, winnerId: true },
-  })
-
-  // Calculate totalRounds from bracket size
-  const bracket = await prisma.bracket.findUnique({
-    where: { id: bracketId },
-    select: { size: true, maxEntrants: true },
-  })
-
-  if (!bracket) return []
-
-  const effectiveSize = bracket.maxEntrants ?? bracket.size
-  const totalRounds = Math.ceil(Math.log2(effectiveSize))
-
-  // Call the pure scoring engine
-  const scores = scorePredictions(
-    predictions.map((p) => ({
-      participantId: p.participantId,
-      matchupId: p.matchupId,
-      predictedWinnerId: p.predictedWinnerId,
-    })),
-    resolvedMatchups.map((m) => ({
-      id: m.id,
-      round: m.round,
-      winnerId: m.winnerId!,
-    })),
-    totalRounds
-  )
-
-  // Enrich with participant names
-  if (scores.length > 0) {
-    const participantIds = scores.map((s) => s.participantId)
-    const participants = await prisma.studentParticipant.findMany({
-      where: { id: { in: participantIds } },
-      select: { id: true, funName: true },
+  try {
+    // Fetch all predictions for this bracket
+    const predictions = await prisma.prediction.findMany({
+      where: { bracketId },
+      select: {
+        participantId: true,
+        matchupId: true,
+        predictedWinnerId: true,
+      },
     })
-    const nameMap = new Map(participants.map((p) => [p.id, p.funName]))
 
-    for (const score of scores) {
-      score.participantName = nameMap.get(score.participantId) ?? ''
+    // Fetch all resolved matchups (decided with a winner)
+    const resolvedMatchups = await prisma.matchup.findMany({
+      where: {
+        bracketId,
+        status: 'decided',
+        winnerId: { not: null },
+        isBye: false, // Exclude bye matchups from scoring
+      },
+      select: { id: true, round: true, winnerId: true },
+    })
+
+    // Calculate totalRounds from bracket size
+    const bracket = await prisma.bracket.findUnique({
+      where: { id: bracketId },
+      select: { size: true, maxEntrants: true },
+    })
+
+    if (!bracket) return []
+
+    const effectiveSize = bracket.maxEntrants ?? bracket.size
+    const totalRounds = Math.ceil(Math.log2(effectiveSize))
+
+    // Call the pure scoring engine
+    const scores = scorePredictions(
+      predictions.map((p) => ({
+        participantId: p.participantId,
+        matchupId: p.matchupId,
+        predictedWinnerId: p.predictedWinnerId,
+      })),
+      resolvedMatchups.map((m) => ({
+        id: m.id,
+        round: m.round,
+        winnerId: m.winnerId!,
+      })),
+      totalRounds
+    )
+
+    // Enrich with participant names
+    if (scores.length > 0) {
+      const participantIds = scores.map((s) => s.participantId)
+      const participants = await prisma.studentParticipant.findMany({
+        where: { id: { in: participantIds } },
+        select: { id: true, funName: true },
+      })
+      const nameMap = new Map(participants.map((p) => [p.id, p.funName]))
+
+      for (const score of scores) {
+        score.participantName = nameMap.get(score.participantId) ?? ''
+      }
     }
-  }
 
-  return scores
+    return scores
+  } catch (error) {
+    console.error('[scoreBracketPredictions] Error scoring predictions for bracket', bracketId, error)
+    return []
+  }
 }
 
 /**
@@ -571,36 +576,38 @@ export async function tabulateBracketPredictions(
   // Call pure tabulation engine
   const results = tabulatePredictions(predictions, tabulationInputs, totalRounds)
 
-  // Write results: for each resolved matchup, update winnerId and propagate
-  for (const result of results) {
-    if (result.winnerId) {
-      // Set winnerId on matchup (keep status 'pending' for preview)
-      await prisma.matchup.update({
-        where: { id: result.matchupId },
-        data: { winnerId: result.winnerId },
-      })
-
-      // Propagate winner to next matchup entrant slot
-      const matchup = matchups.find((m) => m.id === result.matchupId)
-      if (matchup?.nextMatchupId) {
-        const slot = getSlotForPosition(matchup.position)
-        await prisma.matchup.update({
-          where: { id: matchup.nextMatchupId },
-          data: { [slot]: result.winnerId },
-        })
-      }
-    }
-  }
-
   // Count unresolved matchups (ties + no_predictions)
   const unresolvedCount = results.filter(
     (r) => r.status === 'tie' || r.status === 'no_predictions'
   ).length
 
-  // Transition to previewing
-  await prisma.bracket.update({
-    where: { id: bracketId },
-    data: { predictionStatus: 'previewing' },
+  // Write results atomically: matchup winners, next-matchup propagation, and status transition
+  await prisma.$transaction(async (tx) => {
+    for (const result of results) {
+      if (result.winnerId) {
+        // Set winnerId on matchup (keep status 'pending' for preview)
+        await tx.matchup.update({
+          where: { id: result.matchupId },
+          data: { winnerId: result.winnerId },
+        })
+
+        // Propagate winner to next matchup entrant slot
+        const matchup = matchups.find((m) => m.id === result.matchupId)
+        if (matchup?.nextMatchupId) {
+          const slot = getSlotForPosition(matchup.position)
+          await tx.matchup.update({
+            where: { id: matchup.nextMatchupId },
+            data: { [slot]: result.winnerId },
+          })
+        }
+      }
+    }
+
+    // Transition to previewing
+    await tx.bracket.update({
+      where: { id: bracketId },
+      data: { predictionStatus: 'previewing' },
+    })
   })
 
   return { results, unresolvedCount }
