@@ -1,9 +1,9 @@
 ---
-status: diagnosed
+status: resolved
 phase: 28-rr-all-at-once-completion
 source: [28-01-SUMMARY.md, 28-02-SUMMARY.md]
 started: 2026-02-26T15:00:00Z
-updated: 2026-02-26T15:50:00Z
+updated: 2026-02-26T17:30:00Z
 ---
 
 ## Current Test
@@ -54,7 +54,7 @@ skipped: 1
 ## Gaps
 
 - truth: "Close All & Decide by Votes button resolves all matchups in a round for all-at-once RR brackets"
-  status: failed
+  status: resolved
   reason: "User reported: no celebration, because after pressing 'close all and decide by votes' the first two rounds were not detected/calculated, and pressing 'close all and decide by votes' for rounds 1 and 2 doesn't do anything. Round 3 shows 2/2 decided but rounds 1 and 2 show 0/2 decided."
   severity: blocker
   test: 2
