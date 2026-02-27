@@ -715,14 +715,10 @@ export function LiveDashboard({
 
   // Round-robin: batch decide all voting matchups in a given round by vote majority
   const handleBatchDecideByVotes = useCallback((roundNumber: number) => {
-    console.log('[BATCH_DECIDE] Called with roundNumber:', roundNumber)
-    console.log('[BATCH_DECIDE] currentMatchups count:', currentMatchups.length)
-    console.log('[BATCH_DECIDE] matchup roundRobinRound values:', currentMatchups.map(m => ({ id: m.id.slice(0,8), rrRound: m.roundRobinRound, round: m.round, status: m.status })))
     setError(null)
     const votingMatchups = currentMatchups.filter(
       (m) => m.roundRobinRound === roundNumber && m.status === 'voting'
     )
-    console.log('[BATCH_DECIDE] Filtered votingMatchups:', votingMatchups.length, votingMatchups.map(m => ({ id: m.id.slice(0,8), rrRound: m.roundRobinRound })))
     if (votingMatchups.length === 0) return
 
     startTransition(async () => {

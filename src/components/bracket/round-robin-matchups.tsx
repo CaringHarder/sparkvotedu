@@ -173,7 +173,7 @@ export function RoundRobinMatchups({
               {isTeacher && !isComplete && voteCounts && onBatchDecideByVotes && roundMatchups.some((m) => m.status === 'voting') && (
                 <button
                   type="button"
-                  onClick={() => { console.log('[BATCH_BUTTON] Clicked for roundNumber:', roundNumber); onBatchDecideByVotes(roundNumber) }}
+                  onClick={() => onBatchDecideByVotes(roundNumber)}
                   disabled={isBatchDeciding}
                   className="rounded bg-violet-600 px-2 py-0.5 text-xs font-medium text-white transition-colors hover:bg-violet-700 disabled:cursor-not-allowed disabled:opacity-50"
                 >
