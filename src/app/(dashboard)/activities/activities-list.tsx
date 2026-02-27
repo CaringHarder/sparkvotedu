@@ -1,8 +1,12 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useRef, useEffect, useTransition } from 'react'
+import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Trophy, BarChart3, ListOrdered, Calendar } from 'lucide-react'
+import { CardContextMenu } from '@/components/shared/card-context-menu'
+import { renameBracket } from '@/actions/bracket'
+import { renamePoll } from '@/actions/poll'
 
 interface ActivityItem {
   id: string
@@ -122,8 +126,59 @@ export function ActivitiesList({ items }: ActivitiesListProps) {
 }
 
 function ActivityItemCard({ item }: { item: ActivityItem }) {
+  const router = useRouter()
+  const [isRenaming, setIsRenaming] = useState(false)
+  const [renameValue, setRenameValue] = useState(item.name)
+  const [isPending, startTransition] = useTransition()
+  const inputRef = useRef<HTMLInputElement>(null)
+
   const href =
     item.type === 'bracket' ? `/brackets/${item.id}` : `/polls/${item.id}`
+
+  // Auto-focus rename input
+  useEffect(() => {
+    if (isRenaming && inputRef.current) {
+      inputRef.current.focus()
+      inputRef.current.select()
+    }
+  }, [isRenaming])
+
+  function handleRenameSave() {
+    setIsRenaming(false)
+    const trimmed = renameValue.trim()
+    if (trimmed === item.name || !trimmed) {
+      setRenameValue(item.name)
+      return
+    }
+    startTransition(async () => {
+      if (item.type === 'bracket') {
+        const result = await renameBracket({ bracketId: item.id, name: trimmed })
+        if (result && !('error' in result)) {
+          router.refresh()
+        } else {
+          setRenameValue(item.name)
+        }
+      } else {
+        const result = await renamePoll({ pollId: item.id, question: trimmed })
+        if (result && !('error' in result)) {
+          router.refresh()
+        } else {
+          setRenameValue(item.name)
+        }
+      }
+    })
+  }
+
+  function handleRenameKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
+    if (e.key === 'Enter') {
+      e.preventDefault()
+      handleRenameSave()
+    } else if (e.key === 'Escape') {
+      e.preventDefault()
+      setRenameValue(item.name)
+      setIsRenaming(false)
+    }
+  }
 
   const isBracket = item.type === 'bracket'
   const Icon = isBracket ? Trophy : item.meta.pollType === 'ranked' ? ListOrdered : BarChart3
@@ -146,11 +201,25 @@ function ActivityItemCard({ item }: { item: ActivityItem }) {
   }
 
   return (
-    <Link
-      href={href}
-      className="group rounded-lg border bg-card transition-shadow hover:shadow-md"
-    >
-      <div className="p-4">
+    <div className="group relative rounded-lg border bg-card transition-shadow hover:shadow-md">
+      {/* CardContextMenu in top-right corner */}
+      <div className="absolute right-2 top-2 z-10">
+        <CardContextMenu
+          itemId={item.id}
+          itemName={item.name}
+          itemType={item.type}
+          status={item.status}
+          editHref={href}
+          sessionCode={isBracket ? item.meta.sessionCode : undefined}
+          onStartRename={() => setIsRenaming(true)}
+          onDuplicated={() => router.refresh()}
+          onArchived={() => router.refresh()}
+          onDeleted={() => router.refresh()}
+        />
+      </div>
+
+      {/* Card body -- clickable link */}
+      <Link href={href} className="block p-4">
         <div className="flex items-start gap-3">
           <div
             className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ${iconBgClass}`}
@@ -158,10 +227,24 @@ function ActivityItemCard({ item }: { item: ActivityItem }) {
             <Icon className={`h-4.5 w-4.5 ${iconClass}`} />
           </div>
 
-          <div className="min-w-0 flex-1">
-            <h3 className="truncate text-sm font-semibold group-hover:text-primary">
-              {item.name}
-            </h3>
+          <div className="min-w-0 flex-1 pr-8">
+            {isRenaming ? (
+              <input
+                ref={inputRef}
+                type="text"
+                value={renameValue}
+                onChange={(e) => setRenameValue(e.target.value)}
+                onBlur={handleRenameSave}
+                onKeyDown={handleRenameKeyDown}
+                disabled={isPending}
+                onClick={(e) => e.preventDefault()}
+                className="w-full truncate rounded-md border bg-background px-2 py-0.5 text-sm font-semibold text-card-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+              />
+            ) : (
+              <h3 className="truncate text-sm font-semibold group-hover:text-primary">
+                {renameValue}
+              </h3>
+            )}
             <div className="mt-1.5 flex flex-wrap items-center gap-2">
               {/* Status badge */}
               <span
@@ -203,7 +286,7 @@ function ActivityItemCard({ item }: { item: ActivityItem }) {
           <Calendar className="h-3.5 w-3.5" />
           {formatDate(item.updatedAt)}
         </div>
-      </div>
-    </Link>
+      </Link>
+    </div>
   )
 }
