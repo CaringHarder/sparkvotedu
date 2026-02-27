@@ -33,6 +33,7 @@ export default async function BracketEditPage({
       name: e.name,
       seedPosition: e.seedPosition,
       bracketId: e.bracketId,
+      logoUrl: e.logoUrl ?? null,
     })),
   }
 
