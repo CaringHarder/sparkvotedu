@@ -1248,7 +1248,7 @@ function MatchupPredictionCard({
         >
           {entrant1?.logoUrl && (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={entrant1.logoUrl} alt="" className="h-5 w-5 shrink-0 rounded-full object-cover" />
+            <img src={entrant1.logoUrl} alt="" className="h-5 w-5 shrink-0 rounded-md object-cover" />
           )}
           <span className="truncate">{entrant1?.name ?? 'TBD'}</span>
           {selectedWinnerId === entrant1?.id && (
@@ -1273,7 +1273,7 @@ function MatchupPredictionCard({
           )}
           {entrant2?.logoUrl && (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={entrant2.logoUrl} alt="" className="h-5 w-5 shrink-0 rounded-full object-cover" />
+            <img src={entrant2.logoUrl} alt="" className="h-5 w-5 shrink-0 rounded-md object-cover" />
           )}
           <span className="truncate">{entrant2?.name ?? 'TBD'}</span>
         </button>
@@ -1311,7 +1311,7 @@ function ReadOnlyPredictions({
             <ChevronRight className="h-3 w-3 text-muted-foreground" />
             {selectedEntrant?.logoUrl && (
               // eslint-disable-next-line @next/next/no-img-element
-              <img src={selectedEntrant.logoUrl} alt="" className="h-4 w-4 shrink-0 rounded-full object-cover" />
+              <img src={selectedEntrant.logoUrl} alt="" className="h-4 w-4 shrink-0 rounded-md object-cover" />
             )}
             <span className={selectedEntrant ? 'font-medium' : 'italic text-muted-foreground'}>
               {selectedEntrant?.name ?? 'No prediction'}
