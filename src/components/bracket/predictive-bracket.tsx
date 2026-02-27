@@ -1225,9 +1225,70 @@ function MatchupPredictionCard({
   const entrant2 = matchup.entrant2
   const hasVoted = selectedWinnerId !== null
 
+  function renderEntrantButton(
+    entrant: MatchupData['entrant1'],
+    entrantId: string | null
+  ) {
+    if (!entrant || !entrantId) {
+      return (
+        <div className="flex min-h-20 flex-1 flex-col items-center justify-center rounded-xl border-2 border-dashed border-muted-foreground/30 bg-muted/50 px-6 py-6">
+          <span className="text-2xl font-medium text-muted-foreground italic sm:text-3xl">TBD</span>
+        </div>
+      )
+    }
+
+    const isSelected = selectedWinnerId === entrantId
+    const isNotChosen = hasVoted && !isSelected
+    const isInteractive = !hasVoted
+
+    return (
+      <button
+        type="button"
+        onClick={() => onSelect(entrantId)}
+        disabled={!isInteractive}
+        className={`
+          relative flex min-h-20 flex-1 flex-col items-center justify-center rounded-xl border-2 px-6 py-6
+          transition-all duration-200
+          ${isInteractive ? 'cursor-pointer hover:scale-105 active:scale-95' : 'cursor-default'}
+          ${isSelected
+            ? 'border-primary bg-primary/10 shadow-md'
+            : isNotChosen
+              ? 'border-border bg-muted/50 opacity-50'
+              : 'border-border bg-card hover:border-primary/50'
+          }
+          disabled:opacity-70
+        `}
+      >
+        {entrant.logoUrl && (
+          // eslint-disable-next-line @next/next/no-img-element
+          <div className="mb-2 h-28 w-28 overflow-hidden rounded-lg sm:h-36 sm:w-36">
+            <img src={entrant.logoUrl} alt={entrant.name} className="h-full w-full object-cover" />
+          </div>
+        )}
+        <span className={`text-center text-2xl font-semibold sm:text-3xl ${isNotChosen ? 'text-muted-foreground' : ''}`}>
+          {entrant.name}
+        </span>
+
+        {/* Checkmark for selected entrant */}
+        {isSelected && (
+          <span className="absolute right-2 top-2 flex h-6 w-6 items-center justify-center rounded-full bg-primary text-white text-xs">
+            <svg viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4">
+              <path
+                fillRule="evenodd"
+                d="M16.704 4.153a.75.75 0 01.143 1.052l-8 10.5a.75.75 0 01-1.127.075l-4.5-4.5a.75.75 0 011.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 011.05-.143z"
+                clipRule="evenodd"
+              />
+            </svg>
+          </span>
+        )}
+      </button>
+    )
+  }
+
   return (
-    <div className={`rounded-lg border border-gray-300 dark:border-border p-3 ${hasVoted ? 'bg-green-50 dark:bg-green-950/30' : ''} ${isSpeculative ? 'border-dashed border-blue-300 dark:border-blue-700' : ''}`}>
-      <div className="mb-1.5 flex items-center gap-2 text-xs text-muted-foreground">
+    <div className={`w-full max-w-2xl rounded-xl border border-gray-300 dark:border-border bg-card p-6 shadow-sm ${hasVoted ? 'bg-green-50 dark:bg-green-950/30' : ''} ${isSpeculative ? 'border-dashed !border-blue-300 dark:!border-blue-700' : ''}`}>
+      {/* Round/match label */}
+      <div className="mb-3 flex items-center justify-center gap-2 text-sm text-muted-foreground">
         <span>Round {matchup.round}, Match {matchup.position}</span>
         {isSpeculative && (
           <span className="rounded bg-blue-100 px-1.5 py-0.5 text-[10px] font-medium text-blue-700 dark:bg-blue-900 dark:text-blue-300">
@@ -1235,48 +1296,16 @@ function MatchupPredictionCard({
           </span>
         )}
       </div>
-      <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2">
-        {/* Entrant 1 */}
-        <button
-          type="button"
-          onClick={() => entrant1 && onSelect(entrant1.id)}
-          className={`flex items-center gap-1.5 rounded-md border px-3 py-2 text-left text-sm transition-colors ${
-            selectedWinnerId === entrant1?.id
-              ? 'border-primary bg-primary/10 font-semibold text-primary'
-              : 'hover:border-primary/50 hover:bg-accent'
-          }`}
-        >
-          {entrant1?.logoUrl && (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={entrant1.logoUrl} alt="" className="h-5 w-5 shrink-0 rounded-md object-cover" />
-          )}
-          <span className="truncate">{entrant1?.name ?? 'TBD'}</span>
-          {selectedWinnerId === entrant1?.id && (
-            <Check className="ml-auto h-3.5 w-3.5 shrink-0" />
-          )}
-        </button>
 
-        <span className="text-xs font-medium text-muted-foreground">vs</span>
+      {/* Entrant buttons with VS divider */}
+      <div className="flex flex-col items-stretch gap-3 sm:flex-row sm:items-center">
+        {renderEntrantButton(entrant1, entrant1?.id ?? null)}
 
-        {/* Entrant 2 */}
-        <button
-          type="button"
-          onClick={() => entrant2 && onSelect(entrant2.id)}
-          className={`flex items-center gap-1.5 rounded-md border px-3 py-2 text-right text-sm transition-colors ${
-            selectedWinnerId === entrant2?.id
-              ? 'border-primary bg-primary/10 font-semibold text-primary'
-              : 'hover:border-primary/50 hover:bg-accent'
-          }`}
-        >
-          {selectedWinnerId === entrant2?.id && (
-            <Check className="mr-auto h-3.5 w-3.5 shrink-0" />
-          )}
-          {entrant2?.logoUrl && (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={entrant2.logoUrl} alt="" className="h-5 w-5 shrink-0 rounded-md object-cover" />
-          )}
-          <span className="truncate">{entrant2?.name ?? 'TBD'}</span>
-        </button>
+        <span className="flex-shrink-0 text-center text-sm font-bold uppercase tracking-wider text-muted-foreground">
+          VS
+        </span>
+
+        {renderEntrantButton(entrant2, entrant2?.id ?? null)}
       </div>
     </div>
   )
