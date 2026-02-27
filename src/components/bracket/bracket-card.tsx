@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useState, useRef, useEffect, useTransition } from 'react'
-import { Trophy, Calendar, Radio, QrCode, LinkIcon } from 'lucide-react'
+import { Trophy, Calendar, Radio, QrCode, LinkIcon, Eye, BookOpen } from 'lucide-react'
 import { BracketStatusBadge } from './bracket-status'
 import { CardContextMenu } from '@/components/shared/card-context-menu'
 import { renameBracket } from '@/actions/bracket'
@@ -19,6 +19,11 @@ interface BracketCardProps {
     createdAt: string
     _count?: { entrants: number }
     sessionCode: string | null
+    sessionId?: string | null
+    sessionName?: string | null
+    viewingMode?: string
+    roundRobinPacing?: string | null
+    predictiveMode?: string | null
     sportGender?: string | null
   }
   onRemoved?: (type: 'delete' | 'archive') => void
@@ -173,6 +178,31 @@ export function BracketCard({ bracket, onRemoved }: BracketCardProps) {
               </span>
             )}
             <BracketStatusBadge status={bracket.status} />
+            {/* Viewing mode badge */}
+            {bracket.viewingMode && (
+              <span
+                className={`whitespace-nowrap rounded-full px-2 py-0.5 text-[10px] font-medium ${
+                  bracket.viewingMode === 'simple'
+                    ? 'bg-teal-100 text-teal-700 dark:bg-teal-900/40 dark:text-teal-300'
+                    : 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300'
+                }`}
+              >
+                <Eye className="mr-0.5 inline h-2.5 w-2.5" />
+                {bracket.viewingMode === 'simple' ? 'Simple' : 'Advanced'}
+              </span>
+            )}
+            {/* Pacing badge (round robin only) */}
+            {bracket.bracketType === 'round_robin' && (
+              <span className="whitespace-nowrap rounded-full bg-orange-100 px-2 py-0.5 text-[10px] font-medium text-orange-700 dark:bg-orange-900/40 dark:text-orange-300">
+                {bracket.roundRobinPacing === 'all_at_once' ? 'All At Once' : 'Round by Round'}
+              </span>
+            )}
+            {/* Prediction mode badge (predictive only) */}
+            {bracket.bracketType === 'predictive' && (
+              <span className="whitespace-nowrap rounded-full bg-rose-100 px-2 py-0.5 text-[10px] font-medium text-rose-700 dark:bg-rose-900/40 dark:text-rose-300">
+                {bracket.predictiveMode === 'predict_then_vote' ? 'Predict Then Vote' : 'Vote Only'}
+              </span>
+            )}
           </div>
         </div>
 
@@ -191,6 +221,14 @@ export function BracketCard({ bracket, onRemoved }: BracketCardProps) {
             <Calendar className="h-3.5 w-3.5" />
             {formatDate(bracket.createdAt)}
           </span>
+          {bracket.sessionName && (
+            <span className="inline-flex items-center gap-1 rounded-full bg-blue-100 px-2 py-0.5 text-[10px] font-medium text-blue-700 dark:bg-blue-900/40 dark:text-blue-300">
+              <BookOpen className="h-2.5 w-2.5" />
+              {bracket.sessionName.length > 15
+                ? bracket.sessionName.slice(0, 15) + '...'
+                : bracket.sessionName}
+            </span>
+          )}
         </div>
       </Link>
 

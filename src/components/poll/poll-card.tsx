@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { BarChart3, ListOrdered } from 'lucide-react'
+import { BarChart3, ListOrdered, BookOpen } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { PollStatusBadge } from '@/components/poll/poll-status'
 import { CardContextMenu } from '@/components/shared/card-context-menu'
@@ -17,6 +17,9 @@ interface PollCardData {
   status: string
   updatedAt: string
   _count?: { votes: number }
+  sessionId?: string | null
+  sessionCode?: string | null
+  sessionName?: string | null
 }
 
 interface PollCardProps {
@@ -130,6 +133,14 @@ export function PollCard({ poll, onRemoved }: PollCardProps) {
                 <span className="text-xs text-muted-foreground">
                   {voteCount} {voteCount === 1 ? 'vote' : 'votes'}
                 </span>
+                {poll.sessionName && (
+                  <span className="inline-flex items-center gap-1 rounded-full bg-blue-100 px-2 py-0.5 text-[10px] font-medium text-blue-700 dark:bg-blue-900/40 dark:text-blue-300">
+                    <BookOpen className="h-2.5 w-2.5" />
+                    {poll.sessionName.length > 15
+                      ? poll.sessionName.slice(0, 15) + '...'
+                      : poll.sessionName}
+                  </span>
+                )}
               </div>
             </div>
           </div>

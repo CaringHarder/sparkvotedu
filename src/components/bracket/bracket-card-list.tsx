@@ -15,6 +15,11 @@ interface BracketData {
   createdAt: string
   _count?: { entrants: number }
   sessionCode: string | null
+  sessionId?: string | null
+  sessionName?: string | null
+  viewingMode?: string
+  roundRobinPacing?: string | null
+  predictiveMode?: string | null
   sportGender?: string | null
 }
 

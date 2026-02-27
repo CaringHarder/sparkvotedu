@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { Trophy, BarChart3, ListOrdered, Calendar } from 'lucide-react'
+import { Trophy, BarChart3, ListOrdered, Calendar, Eye, BookOpen } from 'lucide-react'
 import { CardContextMenu } from '@/components/shared/card-context-menu'
 import { renameBracket } from '@/actions/bracket'
 import { renamePoll } from '@/actions/poll'
@@ -14,11 +14,18 @@ interface ActivityItem {
   type: 'bracket' | 'poll'
   status: string
   updatedAt: string
+  sessionId?: string | null
+  sessionName?: string | null
   meta: {
     // Bracket meta
     size?: number
     entrants?: number
     sessionCode?: string | null
+    bracketType?: string
+    viewingMode?: string
+    roundRobinPacing?: string | null
+    predictiveMode?: string | null
+    sessionName?: string | null
     // Poll meta
     pollType?: string
     votes?: number
@@ -278,6 +285,41 @@ function ActivityItemCard({ item }: { item: ActivityItem }) {
                   ? `${item.meta.entrants ?? item.meta.size ?? 0} entrants`
                   : `${item.meta.votes ?? 0} votes`}
               </span>
+
+              {/* Viewing mode badge (brackets only) */}
+              {isBracket && item.meta.viewingMode && (
+                <span
+                  className={`inline-flex items-center whitespace-nowrap rounded-full px-2 py-0.5 text-[10px] font-medium ${
+                    item.meta.viewingMode === 'simple'
+                      ? 'bg-teal-100 text-teal-700 dark:bg-teal-900/40 dark:text-teal-300'
+                      : 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300'
+                  }`}
+                >
+                  <Eye className="mr-0.5 h-2.5 w-2.5" />
+                  {item.meta.viewingMode === 'simple' ? 'Simple' : 'Advanced'}
+                </span>
+              )}
+              {/* Pacing badge (round robin brackets only) */}
+              {isBracket && item.meta.bracketType === 'round_robin' && (
+                <span className="inline-flex items-center whitespace-nowrap rounded-full bg-orange-100 px-2 py-0.5 text-[10px] font-medium text-orange-700 dark:bg-orange-900/40 dark:text-orange-300">
+                  {item.meta.roundRobinPacing === 'all_at_once' ? 'All At Once' : 'Round by Round'}
+                </span>
+              )}
+              {/* Prediction mode badge (predictive brackets only) */}
+              {isBracket && item.meta.bracketType === 'predictive' && (
+                <span className="inline-flex items-center whitespace-nowrap rounded-full bg-rose-100 px-2 py-0.5 text-[10px] font-medium text-rose-700 dark:bg-rose-900/40 dark:text-rose-300">
+                  {item.meta.predictiveMode === 'predict_then_vote' ? 'Predict Then Vote' : 'Vote Only'}
+                </span>
+              )}
+              {/* Session badge */}
+              {item.meta.sessionName && (
+                <span className="inline-flex items-center gap-1 rounded-full bg-blue-100 px-2 py-0.5 text-[10px] font-medium text-blue-700 dark:bg-blue-900/40 dark:text-blue-300">
+                  <BookOpen className="h-2.5 w-2.5" />
+                  {item.meta.sessionName.length > 15
+                    ? item.meta.sessionName.slice(0, 15) + '...'
+                    : item.meta.sessionName}
+                </span>
+              )}
             </div>
           </div>
         </div>

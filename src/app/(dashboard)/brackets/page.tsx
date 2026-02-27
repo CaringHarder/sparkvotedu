@@ -25,6 +25,11 @@ export default async function BracketsPage() {
       createdAt: b.createdAt.toISOString(),
       _count: b._count,
       sessionCode: b.session?.code ?? null,
+      sessionId: b.sessionId ?? null,
+      sessionName: b.session?.name ?? null,
+      viewingMode: b.viewingMode,
+      roundRobinPacing: b.roundRobinPacing ?? null,
+      predictiveMode: b.predictiveMode ?? null,
       sportGender: b.sportGender ?? null,
     }))
     .filter((b) => b.status !== 'archived')

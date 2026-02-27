@@ -11,6 +11,9 @@ interface PollData {
   status: string
   updatedAt: string
   _count?: { votes: number }
+  sessionId?: string | null
+  sessionCode?: string | null
+  sessionName?: string | null
 }
 
 interface PollCardListProps {

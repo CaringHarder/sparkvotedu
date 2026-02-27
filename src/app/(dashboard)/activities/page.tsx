@@ -24,10 +24,17 @@ export default async function ActivitiesPage() {
     type: 'bracket' as const,
     status: b.status,
     updatedAt: b.createdAt.toISOString(),
+    sessionId: b.sessionId ?? null,
+    sessionName: b.session?.name ?? null,
     meta: {
       size: b.size,
       entrants: b._count?.entrants ?? 0,
       sessionCode: b.session?.code ?? null,
+      bracketType: b.bracketType,
+      viewingMode: b.viewingMode,
+      roundRobinPacing: b.roundRobinPacing ?? null,
+      predictiveMode: b.predictiveMode ?? null,
+      sessionName: b.session?.name ?? null,
     },
   }))
 
@@ -38,9 +45,12 @@ export default async function ActivitiesPage() {
     type: 'poll' as const,
     status: p.status,
     updatedAt: p.updatedAt.toISOString(),
+    sessionId: p.sessionId ?? null,
+    sessionName: p.session?.name ?? null,
     meta: {
       pollType: p.pollType,
       votes: p._count?.votes ?? 0,
+      sessionName: p.session?.name ?? null,
     },
   }))
 

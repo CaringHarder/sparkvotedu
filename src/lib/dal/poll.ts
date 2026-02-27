@@ -95,6 +95,7 @@ export async function getPollsByTeacherDAL(
     include: {
       options: { orderBy: { position: 'asc' } },
       _count: { select: { votes: true } },
+      session: { select: { id: true, code: true, name: true } },
     },
   })
 }

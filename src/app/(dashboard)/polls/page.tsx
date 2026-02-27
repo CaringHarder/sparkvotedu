@@ -22,6 +22,9 @@ export default async function PollsPage() {
       status: p.status,
       updatedAt: p.updatedAt.toISOString(),
       _count: p._count,
+      sessionId: p.sessionId ?? null,
+      sessionCode: p.session?.code ?? null,
+      sessionName: p.session?.name ?? null,
     }))
     .filter((p) => p.status !== 'archived')
 
