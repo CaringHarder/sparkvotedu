@@ -11,7 +11,7 @@ See: .planning/PROJECT.md (updated 2026-02-26)
 
 Phase: All 28 phases complete
 Status: v1.3 milestone archived
-Last activity: 2026-02-27 - Completed quick task 10: Add complete info and session filtering to bracket/poll cards
+Last activity: 2026-02-27 - Completed quick task 11: Fix bracket edit page entrant images
 
 Progress: [################################] 100% (milestones v1.0-v1.3 complete, all 28 phases done)
 
@@ -73,9 +73,10 @@ None -- all v1.3 requirements shipped.
 | 8 | Enable RLS on _prisma_migrations table (Supabase security alert) | 2026-02-27 | 0307de5 | [8-enable-rls-on-public-prisma-migrations-t](./quick/8-enable-rls-on-public-prisma-migrations-t/) |
 | 9 | Add triple-dot context menu to activity cards on Activities page | 2026-02-27 | 83bd165 | [9-cards-on-activities-page-don-t-have-trip](./quick/9-cards-on-activities-page-don-t-have-trip/) |
 | 10 | Add complete info and session filtering to bracket/poll cards | 2026-02-27 | 721a43f | [10-add-complete-info-to-bracket-poll-cards-](./quick/10-add-complete-info-to-bracket-poll-cards-/) |
+| 11 | Fix bracket edit page entrant images (logoUrl serialization) | 2026-02-27 | d5e54de | [11-when-uploading-images-and-creating-the-b](./quick/11-when-uploading-images-and-creating-the-b/) |
 
 ## Session Continuity
 
 Last session: 2026-02-27
-Stopped at: Completed quick task 10 - add complete info and session filtering to bracket/poll cards
+Stopped at: Completed quick task 11 - fix bracket edit page entrant images
 Resume: Start next milestone with `/gsd:new-milestone`
