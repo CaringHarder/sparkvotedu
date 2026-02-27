@@ -60,7 +60,7 @@ Each task was committed atomically:
 
 1. **Task 1: Restyle MatchupPredictionCard to match SE MatchupVoteCard sizing** - `8a248d5` (feat)
 
-**Plan metadata:** [pending] (docs: complete plan)
+**Plan metadata:** `bef0c3e` (docs: complete plan)
 
 ## Files Created/Modified
 - `src/components/bracket/predictive-bracket.tsx` - Restyled MatchupPredictionCard component (lines 1213-1312) with large card layout matching SE vote card sizing
