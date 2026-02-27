@@ -5,8 +5,6 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import {
   ArrowLeft,
-  BarChart3,
-  ListOrdered,
   Pencil,
   Copy,
   Trash2,
@@ -24,6 +22,7 @@ import {
   duplicatePoll,
   assignPollToSession,
 } from '@/actions/poll'
+import { PollMetadataBar } from '@/components/shared/activity-metadata-bar'
 import type { PollStatus } from '@/lib/poll/types'
 
 interface PollDetailData {
@@ -58,6 +57,7 @@ interface SessionInfo {
 interface PollDetailViewProps {
   poll: PollDetailData
   sessions: SessionInfo[]
+  sessionName?: string | null
 }
 
 // Status transition buttons configuration
@@ -98,7 +98,7 @@ const STATUS_ACTIONS: Record<
   archived: [],
 }
 
-export function PollDetailView({ poll, sessions }: PollDetailViewProps) {
+export function PollDetailView({ poll, sessions, sessionName }: PollDetailViewProps) {
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
   const [error, setError] = useState<string | null>(null)
@@ -159,7 +159,6 @@ export function PollDetailView({ poll, sessions }: PollDetailViewProps) {
 
   const isDraft = poll.status === 'draft'
   const statusActions = STATUS_ACTIONS[poll.status] ?? []
-  const TypeIcon = poll.pollType === 'ranked' ? ListOrdered : BarChart3
 
   return (
     <div className="space-y-6">
@@ -174,13 +173,6 @@ export function PollDetailView({ poll, sessions }: PollDetailViewProps) {
 
         <h1 className="text-lg font-bold tracking-tight">{poll.question}</h1>
         <PollStatusBadge status={poll.status} />
-        <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
-          <TypeIcon className="h-3.5 w-3.5" />
-          <span className="capitalize">{poll.pollType}</span>
-        </span>
-        <span className="text-xs text-muted-foreground">
-          {poll.options.length} options
-        </span>
 
         <div className="flex-1" />
 
@@ -233,6 +225,13 @@ export function PollDetailView({ poll, sessions }: PollDetailViewProps) {
           </Button>
         </div>
       </div>
+
+      <PollMetadataBar
+        pollType={poll.pollType}
+        sessionName={sessionName}
+        optionCount={poll.options.length}
+        createdAt={poll.createdAt}
+      />
 
       {/* Session assignment */}
       <div className="rounded-lg border p-3">

@@ -20,6 +20,7 @@ import { updatePredictionStatus } from '@/actions/prediction'
 import { PredictionLeaderboard } from '@/components/bracket/prediction-leaderboard'
 import { PredictiveBracket } from '@/components/bracket/predictive-bracket'
 import { calculateRoundRobinStandings, type RoundRobinResult } from '@/lib/bracket/round-robin'
+import { BracketMetadataBar } from '@/components/shared/activity-metadata-bar'
 import type { BracketWithDetails, MatchupData, RoundRobinStanding, PredictionScore } from '@/lib/bracket/types'
 import type { VoteCounts } from '@/types/vote'
 
@@ -34,6 +35,7 @@ interface LiveDashboardProps {
   sessionCode?: string | null
   standings?: RoundRobinStanding[]
   predictionScores?: PredictionScore[]
+  sessionName?: string | null
 }
 
 interface RevealState {
@@ -95,6 +97,7 @@ export function LiveDashboard({
   sessionCode,
   standings = [],
   predictionScores = [],
+  sessionName,
 }: LiveDashboardProps) {
   const [selectedMatchupId, setSelectedMatchupId] = useState<string | null>(null)
   const [sidebarOpen, setSidebarOpen] = useState(true)
@@ -1024,7 +1027,8 @@ export function LiveDashboard({
       )}
 
       {/* Top bar with actions */}
-      <div className="flex flex-wrap items-center gap-3 rounded-lg border bg-card px-4 py-3">
+      <div className="space-y-2 rounded-lg border bg-card px-4 py-3">
+        <div className="flex flex-wrap items-center gap-3">
         <h1 className="text-lg font-bold">{bracket.name}</h1>
         <span className="rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-medium text-green-700">
           LIVE
@@ -1277,6 +1281,18 @@ export function LiveDashboard({
         )}
 
         {sessionCode && <QRCodeDisplay code={sessionCode} />}
+        </div>
+        <BracketMetadataBar
+          bracketType={bracket.bracketType}
+          status={bracket.status}
+          viewingMode={bracket.viewingMode}
+          roundRobinPacing={bracket.roundRobinPacing}
+          predictiveMode={bracket.predictiveMode}
+          sportGender={bracket.sportGender}
+          entrantCount={bracket.entrants.length}
+          sessionName={sessionName}
+          createdAt={bracket.createdAt}
+        />
       </div>
 
       {/* Sports bracket sync status bar */}

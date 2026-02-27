@@ -12,6 +12,7 @@ import { PredictiveBracket } from '@/components/bracket/predictive-bracket'
 import { PredictionLeaderboard } from '@/components/bracket/prediction-leaderboard'
 import { DoubleElimDiagram } from '@/components/bracket/double-elim-diagram'
 import { BracketStatusBadge, BracketLifecycleControls } from '@/components/bracket/bracket-status'
+import { BracketMetadataBar } from '@/components/shared/activity-metadata-bar'
 import { assignBracketToSession } from '@/actions/bracket'
 import { recordResult, advanceRound } from '@/actions/round-robin'
 import { triggerSportsSync } from '@/actions/sports'
@@ -29,9 +30,10 @@ interface BracketDetailProps {
   sessions: SessionInfo[]
   standings?: RoundRobinStanding[]
   predictionScores?: PredictionScore[]
+  sessionName?: string | null
 }
 
-export function BracketDetail({ bracket, totalRounds, sessions, standings = [], predictionScores = [] }: BracketDetailProps) {
+export function BracketDetail({ bracket, totalRounds, sessions, standings = [], predictionScores = [], sessionName }: BracketDetailProps) {
   const [isPending, startTransition] = useTransition()
   const [currentSessionId, setCurrentSessionId] = useState<string | null>(bracket.sessionId)
   const [sessionError, setSessionError] = useState<string | null>(null)
@@ -131,7 +133,7 @@ export function BracketDetail({ bracket, totalRounds, sessions, standings = [], 
         </h1>
         <BracketStatusBadge status={bracket.status} />
         <span className="text-xs text-muted-foreground">
-          {bracket.size} entrants &middot; {totalRounds} rounds
+          {totalRounds} rounds
         </span>
 
         <div className="flex-1" />
@@ -164,6 +166,18 @@ export function BracketDetail({ bracket, totalRounds, sessions, standings = [], 
           />
         </div>
       </div>
+
+      <BracketMetadataBar
+        bracketType={bracket.bracketType}
+        status={bracket.status}
+        viewingMode={bracket.viewingMode}
+        roundRobinPacing={bracket.roundRobinPacing}
+        predictiveMode={bracket.predictiveMode}
+        sportGender={bracket.sportGender}
+        entrantCount={bracket.entrants.length}
+        sessionName={sessionName}
+        createdAt={bracket.createdAt}
+      />
 
       {bracket.description && (
         <p className="text-sm text-muted-foreground">{bracket.description}</p>

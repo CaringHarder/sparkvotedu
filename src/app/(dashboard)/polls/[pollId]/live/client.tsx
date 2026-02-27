@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button'
 import { PollResults } from '@/components/poll/poll-results'
 import { QRCodeDisplay } from '@/components/teacher/qr-code-display'
 import { updatePollStatus } from '@/actions/poll'
+import { PollMetadataBar } from '@/components/shared/activity-metadata-bar'
 import type { PollWithOptions, PollStatus } from '@/lib/poll/types'
 
 interface PollLiveClientProps {
@@ -16,6 +17,7 @@ interface PollLiveClientProps {
   initialTotalVotes: number
   sessionCode: string | null
   initialParticipantCount: number
+  sessionName?: string | null
 }
 
 /**
@@ -33,6 +35,7 @@ export function PollLiveClient({
   initialTotalVotes,
   sessionCode,
   initialParticipantCount,
+  sessionName,
 }: PollLiveClientProps) {
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
@@ -110,6 +113,13 @@ export function PollLiveClient({
         {/* QR Code chip */}
         {sessionCode && <QRCodeDisplay code={sessionCode} />}
       </div>
+
+      <PollMetadataBar
+        pollType={poll.pollType}
+        sessionName={sessionName}
+        optionCount={poll.options.length}
+        createdAt={typeof poll.createdAt === 'string' ? poll.createdAt : new Date(poll.createdAt).toISOString()}
+      />
 
       {/* Error */}
       {error && (
