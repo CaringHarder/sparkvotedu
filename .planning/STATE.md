@@ -11,7 +11,7 @@ See: .planning/PROJECT.md (updated 2026-02-26)
 
 Phase: All 28 phases complete
 Status: v1.3 milestone archived
-Last activity: 2026-02-27 - Completed quick task 12: Resize predictive bracket simple mode vote cards
+Last activity: 2026-02-27 - Completed quick task 13: Show bracket/poll card metadata near top of detail and live pages
 
 Progress: [################################] 100% (milestones v1.0-v1.3 complete, all 28 phases done)
 
@@ -75,9 +75,10 @@ None -- all v1.3 requirements shipped.
 | 10 | Add complete info and session filtering to bracket/poll cards | 2026-02-27 | 721a43f | [10-add-complete-info-to-bracket-poll-cards-](./quick/10-add-complete-info-to-bracket-poll-cards-/) |
 | 11 | Fix bracket edit page entrant images (logoUrl serialization) | 2026-02-27 | d5e54de | [11-when-uploading-images-and-creating-the-b](./quick/11-when-uploading-images-and-creating-the-b/) |
 | 12 | Resize predictive bracket simple mode vote cards to match SE sizing | 2026-02-27 | 8a248d5 | [12-predictive-bracket-simple-mode-vote-card](./quick/12-predictive-bracket-simple-mode-vote-card/) |
+| 13 | Show bracket/poll card metadata near top of detail and live pages | 2026-02-27 | 84f5d8e | [13-show-bracket-poll-card-metadata-near-top](./quick/13-show-bracket-poll-card-metadata-near-top/) |
 
 ## Session Continuity
 
 Last session: 2026-02-27
-Stopped at: Completed quick task 12 - resize predictive bracket simple mode vote cards
+Stopped at: Completed quick task 13 - show bracket/poll card metadata near top of detail and live pages
 Resume: Start next milestone with `/gsd:new-milestone`
