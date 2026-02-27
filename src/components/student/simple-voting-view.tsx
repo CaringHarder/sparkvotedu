@@ -136,7 +136,7 @@ export function SimpleVotingView({
     const allDecided = allMatchups.every((m) => m.status === 'decided')
 
     return (
-      <div className="mx-auto max-w-md px-4 py-12 text-center">
+      <div className="mx-auto max-w-2xl px-4 py-12 text-center">
         {winnerRevealOverlay}
         {celebrationOverlay}
         <h1 className="mb-6 text-2xl font-bold">{bracketName}</h1>
@@ -178,10 +178,10 @@ export function SimpleVotingView({
   const allVoted = currentIndex >= votableMatchups.length
 
   return (
-    <div className="mx-auto max-w-md px-2 py-4 sm:px-4 sm:py-6">
+    <div className="mx-auto max-w-2xl px-4 py-4 sm:px-6 sm:py-6">
       {winnerRevealOverlay}
       {celebrationOverlay}
-      <h1 className="mb-4 text-center text-xl font-bold sm:mb-6 sm:text-2xl">{bracketName}</h1>
+      <h1 className="mb-4 text-center text-2xl font-bold sm:mb-6 sm:text-3xl">{bracketName}</h1>
 
       {/* Progress indicator (hidden once all voted) */}
       {!allVoted && !showConfirmation && (
@@ -200,7 +200,7 @@ export function SimpleVotingView({
               initial={{ x: 300, opacity: 0 }}
               animate={{ x: 0, opacity: 1 }}
               transition={{ duration: 0.3, ease: 'easeOut' }}
-              className="w-full max-w-md"
+              className="w-full"
             >
               <div className="flex flex-col items-center justify-center py-8 text-center">
                 <div className="mb-3 flex h-16 w-16 items-center justify-center rounded-full bg-green-100 dark:bg-green-900/30">
@@ -228,7 +228,7 @@ export function SimpleVotingView({
               animate={{ opacity: 1, scale: 1 }}
               exit={{ x: -300, opacity: 0 }}
               transition={{ duration: 0.3, ease: 'easeOut' }}
-              className="w-full max-w-md"
+              className="w-full"
             >
               <div className="flex min-h-[140px] flex-col items-center justify-center rounded-xl border bg-card p-8 shadow-sm">
                 <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">

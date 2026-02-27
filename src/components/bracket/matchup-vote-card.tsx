@@ -77,8 +77,8 @@ const MatchupVoteCardInner = React.memo(function MatchupVoteCardInner({
   ) {
     if (!entrant || !entrantId) {
       return (
-        <div className="flex min-h-16 flex-1 items-center justify-center rounded-xl border-2 border-dashed border-muted-foreground/30 bg-muted/50 px-4 py-3">
-          <span className="text-lg font-medium text-muted-foreground italic">TBD</span>
+        <div className="flex min-h-20 flex-1 flex-col items-center justify-center rounded-xl border-2 border-dashed border-muted-foreground/30 bg-muted/50 px-6 py-6">
+          <span className="text-2xl font-medium text-muted-foreground italic sm:text-3xl">TBD</span>
         </div>
       )
     }
@@ -94,7 +94,7 @@ const MatchupVoteCardInner = React.memo(function MatchupVoteCardInner({
         onClick={() => handleVote(entrantId)}
         disabled={!isInteractive}
         className={`
-          relative flex min-h-16 flex-1 items-center justify-center rounded-xl border-2 px-4 py-3
+          relative flex min-h-20 flex-1 flex-col items-center justify-center rounded-xl border-2 px-6 py-6
           transition-all duration-200
           ${isInteractive ? 'cursor-pointer hover:scale-105 active:scale-95' : 'cursor-default'}
           ${isVoted
@@ -107,7 +107,13 @@ const MatchupVoteCardInner = React.memo(function MatchupVoteCardInner({
           disabled:opacity-70
         `}
       >
-        <span className={`text-center text-lg font-semibold ${isNotChosen ? 'text-muted-foreground' : ''}`}>
+        {entrant.logoUrl && (
+          // eslint-disable-next-line @next/next/no-img-element
+          <div className="mb-2 h-28 w-28 overflow-hidden rounded-lg sm:h-36 sm:w-36">
+            <img src={entrant.logoUrl} alt={entrant.name} className="h-full w-full object-cover" />
+          </div>
+        )}
+        <span className={`text-center text-2xl font-semibold sm:text-3xl ${isNotChosen ? 'text-muted-foreground' : ''}`}>
           {entrant.name}
         </span>
 
@@ -145,7 +151,7 @@ const MatchupVoteCardInner = React.memo(function MatchupVoteCardInner({
   }
 
   return (
-    <div className="w-full max-w-md rounded-xl border border-gray-300 dark:border-border bg-card p-4 shadow-sm">
+    <div className="w-full max-w-2xl rounded-xl border border-gray-300 dark:border-border bg-card p-6 shadow-sm">
       {/* Status badge */}
       <div className="mb-3 flex items-center justify-center">
         <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${statusBadge.className}`}>

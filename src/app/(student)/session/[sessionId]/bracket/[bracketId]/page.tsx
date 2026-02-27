@@ -933,7 +933,7 @@ function RRSimpleVoting({
   }
 
   return (
-    <div className="mx-auto max-w-md">
+    <div className="mx-auto max-w-2xl">
       {/* Progress indicator */}
       {!showConfirmation && (
         <p className="mb-4 text-center text-sm text-muted-foreground">
@@ -951,7 +951,7 @@ function RRSimpleVoting({
               animate={{ opacity: 1, scale: 1 }}
               exit={{ x: -300, opacity: 0 }}
               transition={{ duration: 0.3, ease: 'easeOut' }}
-              className="w-full max-w-md"
+              className="w-full"
             >
               <div className="flex min-h-[140px] flex-col items-center justify-center rounded-xl border bg-card p-8 shadow-sm">
                 <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
