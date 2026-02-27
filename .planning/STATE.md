@@ -11,7 +11,7 @@ See: .planning/PROJECT.md (updated 2026-02-26)
 
 Phase: All 28 phases complete
 Status: v1.3 milestone archived
-Last activity: 2026-02-26 - Completed quick task 5: Fix predictive bracket crash
+Last activity: 2026-02-26 - Completed quick task 6: Fix predictive bracket light mode visibility
 
 Progress: [################################] 100% (milestones v1.0-v1.3 complete, all 28 phases done)
 
@@ -68,9 +68,10 @@ None -- all v1.3 requirements shipped.
 | 3 | Enhance voted-entrant highlight in advanced bracket mode | 2026-02-26 | 85d9bac | [3-student-bracket-advanced-mode-show-match](./quick/3-student-bracket-advanced-mode-show-match/) |
 | 4 | Add vote progress indicator (X of Y voted) to bracket live dashboard | 2026-02-26 | 281bce7 | [4-add-vote-progress-indicator-x-of-y-voted](./quick/4-add-vote-progress-indicator-x-of-y-voted/) |
 | 5 | Fix predictive bracket crash with try-catch, $transaction, and error boundary | 2026-02-26 | ae36962 | [5-fix-predictive-bracket-crash-add-error-b](./quick/5-fix-predictive-bracket-crash-add-error-b/) |
+| 6 | Fix predictive bracket light mode borders and green voted backgrounds | 2026-02-26 | 4c85325 | [6-predictive-bracket-light-mode-add-matchu](./quick/6-predictive-bracket-light-mode-add-matchu/) |
 
 ## Session Continuity
 
 Last session: 2026-02-26
-Stopped at: Completed quick task 5 - fix predictive bracket crash
+Stopped at: Completed quick task 6 - fix predictive bracket light mode borders and green voted backgrounds
 Resume: Start next milestone with `/gsd:new-milestone`
