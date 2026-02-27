@@ -49,6 +49,7 @@ export default async function LiveDashboardPage({ params }: PageProps) {
   // Fetch session participants and code if bracket has a session
   let participants: Array<{ id: string; funName: string; firstName: string; lastSeenAt: Date }> = []
   let sessionCode: string | null = null
+  let sessionName: string | null = null
 
   if (bracket.sessionId) {
     const [sessionParticipants, session] = await Promise.all([
@@ -58,11 +59,12 @@ export default async function LiveDashboardPage({ params }: PageProps) {
       }),
       prisma.classSession.findUnique({
         where: { id: bracket.sessionId },
-        select: { code: true },
+        select: { code: true, name: true },
       }),
     ])
     participants = sessionParticipants
     sessionCode = session?.code ?? null
+    sessionName = session?.name ?? null
   }
 
   // Fetch initial vote data for all matchups
@@ -203,6 +205,7 @@ export default async function LiveDashboardPage({ params }: PageProps) {
       sessionCode={sessionCode}
       standings={standings}
       predictionScores={predictionScores}
+      sessionName={sessionName}
     />
   )
 }

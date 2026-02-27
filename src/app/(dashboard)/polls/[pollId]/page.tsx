@@ -61,5 +61,21 @@ export default async function PollDetailPage({
     })),
   }
 
-  return <PollDetailView poll={serialized} sessions={serializedSessions} />
+  // Look up session name for metadata bar
+  let sessionName: string | null = null
+  if (poll.sessionId) {
+    const matchedSession = serializedSessions.find((s) => s.id === poll.sessionId)
+    if (matchedSession) {
+      sessionName = matchedSession.name
+    } else {
+      // Session may be ended (not in active list) -- query directly
+      const endedSession = await prisma.classSession.findUnique({
+        where: { id: poll.sessionId },
+        select: { name: true },
+      })
+      sessionName = endedSession?.name ?? null
+    }
+  }
+
+  return <PollDetailView poll={serialized} sessions={serializedSessions} sessionName={sessionName} />
 }

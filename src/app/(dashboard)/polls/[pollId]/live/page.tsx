@@ -38,13 +38,15 @@ export default async function PollLivePage({
 
   // Get session code for QR chip (if poll is assigned to a session)
   let sessionCode: string | null = null
+  let sessionName: string | null = null
   let participantCount = 0
   if (poll.sessionId) {
     const session = await prisma.classSession.findUnique({
       where: { id: poll.sessionId },
-      select: { code: true, _count: { select: { participants: true } } },
+      select: { code: true, name: true, _count: { select: { participants: true } } },
     })
     sessionCode = session?.code ?? null
+    sessionName = session?.name ?? null
     participantCount = session?._count.participants ?? 0
   }
 
@@ -78,6 +80,7 @@ export default async function PollLivePage({
       initialTotalVotes={initialTotalVotes}
       sessionCode={sessionCode}
       initialParticipantCount={participantCount}
+      sessionName={sessionName}
     />
   )
 }

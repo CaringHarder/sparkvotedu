@@ -130,6 +130,22 @@ export default async function BracketDetailPage({
     })),
   }
 
+  // Look up session name for metadata bar
+  let sessionName: string | null = null
+  if (bracket.sessionId) {
+    const matchedSession = serializedSessions.find((s) => s.id === bracket.sessionId)
+    if (matchedSession) {
+      sessionName = matchedSession.name
+    } else {
+      // Session may be ended (not in active list) -- query directly
+      const endedSession = await prisma.classSession.findUnique({
+        where: { id: bracket.sessionId },
+        select: { name: true },
+      })
+      sessionName = endedSession?.name ?? null
+    }
+  }
+
   return (
     <BracketDetail
       bracket={serialized}
@@ -137,6 +153,7 @@ export default async function BracketDetailPage({
       sessions={serializedSessions}
       standings={standings}
       predictionScores={predictionScores}
+      sessionName={sessionName}
     />
   )
 }
