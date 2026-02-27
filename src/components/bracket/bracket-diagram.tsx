@@ -237,7 +237,7 @@ function MatchupBox({
           height={MATCH_HEIGHT / 2 - 1}
           rx={6}
           ry={6}
-          style={{ fill: 'color-mix(in oklch, var(--primary) 25%, transparent)' }}
+          style={{ fill: 'color-mix(in oklch, oklch(0.72 0.19 142) 25%, transparent)' }}
         />
       )}
       {/* Voted highlight for bottom half */}
@@ -249,7 +249,7 @@ function MatchupBox({
           height={MATCH_HEIGHT / 2 - 1}
           rx={6}
           ry={6}
-          style={{ fill: 'color-mix(in oklch, var(--primary) 25%, transparent)' }}
+          style={{ fill: 'color-mix(in oklch, oklch(0.72 0.19 142) 25%, transparent)' }}
         />
       )}
 
@@ -306,7 +306,7 @@ function MatchupBox({
         ry={6}
         style={{
           fill: 'var(--card)',
-          stroke: isSelected ? 'var(--primary)' : isVoting ? 'var(--primary)' : 'var(--border)',
+          stroke: isSelected ? 'var(--primary)' : isVoting ? 'var(--primary)' : 'oklch(0.75 0 0)',
           strokeWidth: isSelected ? 2 : isVoting ? 2 : 1.5,
           cursor: onMatchupClick ? 'pointer' : undefined,
         }}
@@ -371,7 +371,7 @@ function MatchupBox({
             : isTBD1
               ? 'var(--muted-foreground)'
               : voted1
-                ? 'var(--primary)'
+                ? 'oklch(0.45 0.18 142)'
                 : voted2
                   ? 'var(--muted-foreground)'
                   : 'var(--foreground)',
@@ -410,7 +410,7 @@ function MatchupBox({
         x2={x + MATCH_WIDTH}
         y2={y + MATCH_HEIGHT / 2}
         style={{
-          stroke: isVoting ? 'var(--primary)' : 'var(--border)',
+          stroke: isVoting ? 'var(--primary)' : 'oklch(0.75 0 0)',
           strokeWidth: 1,
           opacity: isVoting ? 0.3 : 1,
         }}
@@ -454,7 +454,7 @@ function MatchupBox({
             : isTBD2
               ? 'var(--muted-foreground)'
               : voted2
-                ? 'var(--primary)'
+                ? 'oklch(0.45 0.18 142)'
                 : voted1
                   ? 'var(--muted-foreground)'
                   : 'var(--foreground)',
