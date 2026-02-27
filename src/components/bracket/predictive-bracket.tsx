@@ -890,7 +890,7 @@ function SimplePredictionMode({
                   type="button"
                   onClick={handleSubmit}
                   disabled={!allSelected || isPending}
-                  className="mt-6 w-full rounded-md bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground shadow-sm transition-colors hover:bg-primary/90 disabled:opacity-50"
+                  className="mt-6 w-full rounded-md bg-green-600 px-4 py-3 text-base font-semibold text-white shadow-sm transition-colors hover:bg-green-700 disabled:bg-gray-300 disabled:text-gray-500 dark:disabled:bg-gray-700 dark:disabled:text-gray-400"
                 >
                   {isPending ? 'Submitting...' : hasSubmitted ? 'Update Predictions' : 'Submit All Predictions'}
                 </button>
@@ -1120,17 +1120,32 @@ function AdvancedPredictionMode({
 
   return (
     <div className="space-y-4">
-      {/* Progress */}
-      <div className="flex items-center justify-between text-xs text-muted-foreground">
-        <span>
-          Click an entrant to predict the winner. {selectedCount} of {totalSelectableCount} picks made.
-        </span>
-        <div className="h-1.5 w-32 overflow-hidden rounded-full bg-muted">
-          <div
-            className="h-full rounded-full bg-primary transition-all"
-            style={{ width: `${totalSelectableCount > 0 ? (selectedCount / totalSelectableCount) * 100 : 0}%` }}
-          />
+      {/* Progress + Submit button */}
+      <div className="space-y-3">
+        <div className="flex items-center justify-between text-xs text-muted-foreground">
+          <span>
+            Click an entrant to predict the winner. {selectedCount} of {totalSelectableCount} picks made.
+          </span>
+          <div className="h-1.5 w-32 overflow-hidden rounded-full bg-muted">
+            <div
+              className="h-full rounded-full bg-primary transition-all"
+              style={{ width: `${totalSelectableCount > 0 ? (selectedCount / totalSelectableCount) * 100 : 0}%` }}
+            />
+          </div>
         </div>
+
+        <button
+          type="button"
+          onClick={handleSubmit}
+          disabled={!allSelected || isPending}
+          className="w-full rounded-md bg-green-600 px-4 py-3 text-base font-semibold text-white shadow-sm transition-colors hover:bg-green-700 disabled:bg-gray-300 disabled:text-gray-500 dark:disabled:bg-gray-700 dark:disabled:text-gray-400"
+        >
+          {isPending
+            ? 'Submitting...'
+            : allSelected
+              ? (hasSubmitted ? 'Update Predictions' : 'Submit All Predictions')
+              : `Submit Predictions (${selectedCount} of ${totalSelectableCount} picked)`}
+        </button>
       </div>
 
       {/* Interactive bracket diagram -- uses augmentedMatchups to show speculative entrants */}
@@ -1146,16 +1161,6 @@ function AdvancedPredictionMode({
           showSeedNumbers={bracket.showSeedNumbers}
         />
       </div>
-
-      {/* Submit button */}
-      <button
-        type="button"
-        onClick={handleSubmit}
-        disabled={!allSelected || isPending}
-        className="w-full rounded-md bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground shadow-sm transition-colors hover:bg-primary/90 disabled:opacity-50"
-      >
-        {isPending ? 'Submitting...' : hasSubmitted ? 'Update Predictions' : 'Submit All Predictions'}
-      </button>
     </div>
   )
 }
