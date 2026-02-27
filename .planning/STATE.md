@@ -11,7 +11,7 @@ See: .planning/PROJECT.md (updated 2026-02-26)
 
 Phase: All 28 phases complete
 Status: v1.3 milestone archived
-Last activity: 2026-02-27 - Completed quick task 13: Show bracket/poll card metadata near top of detail and live pages
+Last activity: 2026-02-27 - Completed quick task 14: Move prediction bracket submit button above diagram and restyle for visibility
 
 Progress: [################################] 100% (milestones v1.0-v1.3 complete, all 28 phases done)
 
@@ -76,9 +76,10 @@ None -- all v1.3 requirements shipped.
 | 11 | Fix bracket edit page entrant images (logoUrl serialization) | 2026-02-27 | d5e54de | [11-when-uploading-images-and-creating-the-b](./quick/11-when-uploading-images-and-creating-the-b/) |
 | 12 | Resize predictive bracket simple mode vote cards to match SE sizing | 2026-02-27 | 8a248d5 | [12-predictive-bracket-simple-mode-vote-card](./quick/12-predictive-bracket-simple-mode-vote-card/) |
 | 13 | Show bracket/poll card metadata near top of detail and live pages | 2026-02-27 | 84f5d8e | [13-show-bracket-poll-card-metadata-near-top](./quick/13-show-bracket-poll-card-metadata-near-top/) |
+| 14 | Move prediction bracket submit button above diagram and restyle for visibility | 2026-02-27 | a6a993d | [14-move-prediction-bracket-submit-button-to](./quick/14-move-prediction-bracket-submit-button-to/) |
 
 ## Session Continuity
 
 Last session: 2026-02-27
-Stopped at: Completed quick task 13 - show bracket/poll card metadata near top of detail and live pages
+Stopped at: Completed quick task 14 - move prediction bracket submit button above diagram and restyle for visibility
 Resume: Start next milestone with `/gsd:new-milestone`
