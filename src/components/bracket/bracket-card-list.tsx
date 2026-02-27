@@ -23,16 +23,24 @@ interface BracketData {
   sportGender?: string | null
 }
 
+interface SessionOption {
+  id: string
+  name: string | null
+  code: string
+}
+
 interface BracketCardListProps {
   brackets: BracketData[]
+  sessions?: SessionOption[]
 }
 
 type RemovalType = 'delete' | 'archive' | null
 
-export function BracketCardList({ brackets }: BracketCardListProps) {
+export function BracketCardList({ brackets, sessions = [] }: BracketCardListProps) {
   const router = useRouter()
   const [items, setItems] = useState(brackets)
   const [removalTypes, setRemovalTypes] = useState<Record<string, RemovalType>>({})
+  const [sessionFilter, setSessionFilter] = useState('all')
 
   // Sync local state when server data changes (e.g., after rename + router.refresh)
   useEffect(() => {
@@ -54,25 +62,51 @@ export function BracketCardList({ brackets }: BracketCardListProps) {
     return { opacity: 0 }
   }
 
+  const filteredItems = items.filter((bracket) => {
+    if (sessionFilter === 'all') return true
+    if (sessionFilter === 'none') return !bracket.sessionId
+    return bracket.sessionId === sessionFilter
+  })
+
   return (
-    <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-      <AnimatePresence mode="popLayout">
-        {items.map((bracket) => (
-          <motion.div
-            key={bracket.id}
-            layout
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={getExitAnimation(bracket.id)}
-            transition={{ duration: 0.25 }}
+    <div className="space-y-4">
+      {sessions.length > 0 && (
+        <div className="flex items-center gap-2">
+          <span className="text-xs font-medium text-muted-foreground">Session:</span>
+          <select
+            value={sessionFilter}
+            onChange={(e) => setSessionFilter(e.target.value)}
+            className="rounded-md border bg-background px-3 py-1.5 text-xs font-medium text-foreground"
           >
-            <BracketCard
-              bracket={bracket}
-              onRemoved={(type) => handleRemove(bracket.id, type)}
-            />
-          </motion.div>
-        ))}
-      </AnimatePresence>
+            <option value="all">All Sessions</option>
+            <option value="none">No Session</option>
+            {sessions.map((s) => (
+              <option key={s.id} value={s.id}>
+                {s.name || `Session ${s.code}`}
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+        <AnimatePresence mode="popLayout">
+          {filteredItems.map((bracket) => (
+            <motion.div
+              key={bracket.id}
+              layout
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={getExitAnimation(bracket.id)}
+              transition={{ duration: 0.25 }}
+            >
+              <BracketCard
+                bracket={bracket}
+                onRemoved={(type) => handleRemove(bracket.id, type)}
+              />
+            </motion.div>
+          ))}
+        </AnimatePresence>
+      </div>
     </div>
   )
 }

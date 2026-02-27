@@ -63,7 +63,20 @@ export default async function PollsPage() {
           </Link>
         </div>
       ) : (
-        <PollCardList polls={serialized} />
+        <PollCardList
+          polls={serialized}
+          sessions={(() => {
+            const seen = new Set<string>()
+            const sessions: { id: string; name: string | null; code: string }[] = []
+            for (const p of polls) {
+              if (p.session && !seen.has(p.session.id)) {
+                seen.add(p.session.id)
+                sessions.push({ id: p.session.id, name: p.session.name, code: p.session.code })
+              }
+            }
+            return sessions
+          })()}
+        />
       )}
     </div>
   )

@@ -75,7 +75,20 @@ export default async function BracketsPage() {
           </Link>
         </div>
       ) : (
-        <BracketCardList brackets={serialized} />
+        <BracketCardList
+          brackets={serialized}
+          sessions={(() => {
+            const seen = new Set<string>()
+            const sessions: { id: string; name: string | null; code: string }[] = []
+            for (const b of brackets) {
+              if (b.session && !seen.has(b.session.id)) {
+                seen.add(b.session.id)
+                sessions.push({ id: b.session.id, name: b.session.name, code: b.session.code })
+              }
+            }
+            return sessions
+          })()}
+        />
       )}
     </div>
   )

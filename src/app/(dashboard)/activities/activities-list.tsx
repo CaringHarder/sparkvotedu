@@ -32,8 +32,15 @@ interface ActivityItem {
   }
 }
 
+interface SessionOption {
+  id: string
+  name: string | null
+  code: string
+}
+
 interface ActivitiesListProps {
   items: ActivityItem[]
+  sessions?: SessionOption[]
 }
 
 const STATUS_TABS = ['All', 'Active', 'Draft', 'Closed'] as const
@@ -51,9 +58,10 @@ function formatDate(dateStr: string): string {
   })
 }
 
-export function ActivitiesList({ items }: ActivitiesListProps) {
+export function ActivitiesList({ items, sessions = [] }: ActivitiesListProps) {
   const [statusTab, setStatusTab] = useState<StatusTab>('All')
   const [typeFilter, setTypeFilter] = useState<TypeFilter>('All')
+  const [sessionFilter, setSessionFilter] = useState('all')
 
   const filtered = items.filter((item) => {
     // Status filter
@@ -72,6 +80,15 @@ export function ActivitiesList({ items }: ActivitiesListProps) {
     // Type filter
     if (typeFilter === 'Brackets Only' && item.type !== 'bracket') return false
     if (typeFilter === 'Polls Only' && item.type !== 'poll') return false
+
+    // Session filter
+    if (sessionFilter !== 'all') {
+      if (sessionFilter === 'none') {
+        if (item.sessionId) return false
+      } else {
+        if (item.sessionId !== sessionFilter) return false
+      }
+    }
 
     return true
   })
@@ -112,6 +129,26 @@ export function ActivitiesList({ items }: ActivitiesListProps) {
             </button>
           ))}
         </div>
+
+        {/* Session filter */}
+        {sessions.length > 0 && (
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-medium text-muted-foreground">Session:</span>
+            <select
+              value={sessionFilter}
+              onChange={(e) => setSessionFilter(e.target.value)}
+              className="rounded-md border bg-background px-3 py-1.5 text-xs font-medium text-foreground"
+            >
+              <option value="all">All Sessions</option>
+              <option value="none">No Session</option>
+              {sessions.map((s) => (
+                <option key={s.id} value={s.id}>
+                  {s.name || `Session ${s.code}`}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
       </div>
 
       {/* Results */}

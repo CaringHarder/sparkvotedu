@@ -94,7 +94,26 @@ export default async function ActivitiesPage() {
           </div>
         </div>
       ) : (
-        <ActivitiesList items={allItems} />
+        <ActivitiesList
+          items={allItems}
+          sessions={(() => {
+            const seen = new Set<string>()
+            const sessions: { id: string; name: string | null; code: string }[] = []
+            for (const b of brackets) {
+              if (b.session && !seen.has(b.session.id)) {
+                seen.add(b.session.id)
+                sessions.push({ id: b.session.id, name: b.session.name, code: b.session.code })
+              }
+            }
+            for (const p of polls) {
+              if (p.session && !seen.has(p.session.id)) {
+                seen.add(p.session.id)
+                sessions.push({ id: p.session.id, name: p.session.name, code: p.session.code })
+              }
+            }
+            return sessions
+          })()}
+        />
       )}
     </div>
   )
