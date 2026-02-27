@@ -832,7 +832,7 @@ function SimplePredictionMode({
   const allPicked = currentIndex >= selectableMatchups.length && allSelected
 
   return (
-    <div className="mx-auto max-w-md px-2 py-4 sm:px-4 sm:py-6">
+    <div className="mx-auto max-w-2xl px-4 py-4 sm:px-6 sm:py-6">
       <h2 className="mb-4 text-center text-xl font-bold sm:text-2xl">{bracket.name}</h2>
 
       {/* Progress indicator (hidden when showing confirmation or all picked) */}
@@ -910,7 +910,7 @@ function SimplePredictionMode({
               animate={{ opacity: 1, scale: 1 }}
               exit={{ x: -300, opacity: 0 }}
               transition={{ duration: 0.3, ease: 'easeOut' }}
-              className="w-full max-w-md"
+              className="w-full"
             >
               <div className="flex min-h-[140px] flex-col items-center justify-center rounded-xl border bg-card p-8 shadow-sm">
                 <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
