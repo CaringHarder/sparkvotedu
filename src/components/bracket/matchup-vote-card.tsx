@@ -98,7 +98,7 @@ const MatchupVoteCardInner = React.memo(function MatchupVoteCardInner({
           transition-all duration-200
           ${isInteractive ? 'cursor-pointer hover:scale-105 active:scale-95' : 'cursor-default'}
           ${isVoted
-            ? 'border-primary bg-primary/10 shadow-md'
+            ? 'border-green-500 bg-green-50 shadow-md dark:border-green-600 dark:bg-green-950/30'
             : isNotChosen
               ? 'border-border bg-muted/50 opacity-50'
               : 'border-border bg-card hover:border-primary/50'
@@ -113,7 +113,7 @@ const MatchupVoteCardInner = React.memo(function MatchupVoteCardInner({
 
         {/* Checkmark for voted entrant */}
         {isVoted && (
-          <span className="absolute right-2 top-2 flex h-6 w-6 items-center justify-center rounded-full bg-primary text-white text-xs">
+          <span className="absolute right-2 top-2 flex h-6 w-6 items-center justify-center rounded-full bg-green-600 dark:bg-green-500 text-white text-xs">
             {isPending ? (
               <span className="block h-3 w-3 animate-spin rounded-full border-2 border-white border-t-transparent" />
             ) : (
@@ -145,7 +145,7 @@ const MatchupVoteCardInner = React.memo(function MatchupVoteCardInner({
   }
 
   return (
-    <div className="w-full max-w-md rounded-xl border bg-card p-4 shadow-sm">
+    <div className="w-full max-w-md rounded-xl border border-gray-300 dark:border-border bg-card p-4 shadow-sm">
       {/* Status badge */}
       <div className="mb-3 flex items-center justify-center">
         <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${statusBadge.className}`}>

@@ -1223,9 +1223,10 @@ function MatchupPredictionCard({
 }) {
   const entrant1 = matchup.entrant1
   const entrant2 = matchup.entrant2
+  const hasVoted = selectedWinnerId !== null
 
   return (
-    <div className={`rounded-lg border p-3 ${isSpeculative ? 'border-dashed border-blue-300 dark:border-blue-700' : ''}`}>
+    <div className={`rounded-lg border border-gray-300 dark:border-border p-3 ${hasVoted ? 'bg-green-50 dark:bg-green-950/30' : ''} ${isSpeculative ? 'border-dashed border-blue-300 dark:border-blue-700' : ''}`}>
       <div className="mb-1.5 flex items-center gap-2 text-xs text-muted-foreground">
         <span>Round {matchup.round}, Match {matchup.position}</span>
         {isSpeculative && (
