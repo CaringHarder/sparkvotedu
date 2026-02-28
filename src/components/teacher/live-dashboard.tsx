@@ -1288,6 +1288,7 @@ export function LiveDashboard({
           viewingMode={bracket.viewingMode}
           roundRobinPacing={bracket.roundRobinPacing}
           predictiveMode={bracket.predictiveMode}
+          predictiveResolutionMode={bracket.predictiveResolutionMode}
           sportGender={bracket.sportGender}
           entrantCount={bracket.entrants.length}
           sessionName={sessionName}

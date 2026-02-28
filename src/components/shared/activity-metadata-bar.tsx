@@ -24,6 +24,7 @@ interface BracketMetadataBarProps {
   viewingMode: string
   roundRobinPacing?: string | null
   predictiveMode?: string | null
+  predictiveResolutionMode?: string | null
   sportGender?: string | null
   entrantCount: number
   sessionName?: string | null
@@ -35,6 +36,7 @@ export function BracketMetadataBar({
   viewingMode,
   roundRobinPacing,
   predictiveMode,
+  predictiveResolutionMode,
   sportGender,
   entrantCount,
   sessionName,
@@ -94,6 +96,13 @@ export function BracketMetadataBar({
         >
           <Eye className="mr-0.5 inline h-2.5 w-2.5" />
           {predictiveMode === 'simple' ? 'Simple' : 'Advanced'}
+        </span>
+      )}
+
+      {/* Resolution mode badge (predictive only) */}
+      {bracketType === 'predictive' && (
+        <span className="whitespace-nowrap rounded-full bg-rose-100 px-2 py-0.5 text-[10px] font-medium text-rose-700 dark:bg-rose-900/40 dark:text-rose-300">
+          {predictiveResolutionMode === 'auto' ? 'Prediction is Vote' : 'Vote Only'}
         </span>
       )}
 

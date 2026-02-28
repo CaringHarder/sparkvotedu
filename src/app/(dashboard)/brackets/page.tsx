@@ -30,6 +30,7 @@ export default async function BracketsPage() {
       viewingMode: b.viewingMode,
       roundRobinPacing: b.roundRobinPacing ?? null,
       predictiveMode: b.predictiveMode ?? null,
+      predictiveResolutionMode: b.predictiveResolutionMode ?? null,
       sportGender: b.sportGender ?? null,
     }))
     .filter((b) => b.status !== 'archived')

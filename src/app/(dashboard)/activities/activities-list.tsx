@@ -25,6 +25,7 @@ interface ActivityItem {
     viewingMode?: string
     roundRobinPacing?: string | null
     predictiveMode?: string | null
+    predictiveResolutionMode?: string | null
     sessionName?: string | null
     // Poll meta
     pollType?: string
@@ -353,6 +354,12 @@ function ActivityItemCard({ item }: { item: ActivityItem }) {
                 >
                   <Eye className="mr-0.5 h-2.5 w-2.5" />
                   {item.meta.predictiveMode === 'simple' ? 'Simple' : 'Advanced'}
+                </span>
+              )}
+              {/* Resolution mode badge (predictive brackets only) */}
+              {isBracket && item.meta.bracketType === 'predictive' && (
+                <span className="inline-flex items-center whitespace-nowrap rounded-full bg-rose-100 px-2 py-0.5 text-[10px] font-medium text-rose-700 dark:bg-rose-900/40 dark:text-rose-300">
+                  {item.meta.predictiveResolutionMode === 'auto' ? 'Prediction is Vote' : 'Vote Only'}
                 </span>
               )}
               {/* Session badge */}

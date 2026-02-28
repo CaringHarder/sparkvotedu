@@ -34,6 +34,7 @@ export default async function ActivitiesPage() {
       viewingMode: b.viewingMode,
       roundRobinPacing: b.roundRobinPacing ?? null,
       predictiveMode: b.predictiveMode ?? null,
+      predictiveResolutionMode: b.predictiveResolutionMode ?? null,
       sessionName: b.session?.name ?? null,
     },
   }))
