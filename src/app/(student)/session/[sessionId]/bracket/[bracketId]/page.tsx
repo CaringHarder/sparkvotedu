@@ -13,6 +13,7 @@ import { RoundRobinMatchups } from '@/components/bracket/round-robin-matchups'
 import { PredictiveBracket } from '@/components/bracket/predictive-bracket'
 import { PredictionLeaderboard } from '@/components/bracket/prediction-leaderboard'
 import { PredictionReveal } from '@/components/bracket/prediction-reveal'
+import { getSessionParticipant } from '@/lib/student/session-store'
 import { createClient } from '@/lib/supabase/client'
 import { getMyPredictions, getLeaderboard } from '@/actions/prediction'
 import { WinnerReveal } from '@/components/bracket/winner-reveal'
@@ -83,7 +84,7 @@ type PageState =
  * Student bracket voting page.
  *
  * Client component that:
- * 1. Reads participant identity from localStorage (established Phase 2 pattern)
+ * 1. Reads participant identity from sessionStorage (per-tab, via session-store helper)
  * 2. Fetches bracket state from /api/brackets/[bracketId]/state
  * 3. Fetches participant's initial votes from /api/brackets/[bracketId]/votes
  * 4. Routes to correct bracket view based on bracketType:
@@ -139,17 +140,9 @@ export default function StudentBracketVotingPage() {
 
   useEffect(() => {
     async function loadBracket() {
-      // Read participant identity from localStorage
-      let participantId: string | null = null
-      try {
-        const stored = localStorage.getItem(`sparkvotedu_session_${sessionId}`)
-        if (stored) {
-          const data = JSON.parse(stored)
-          participantId = data.participantId ?? null
-        }
-      } catch {
-        // localStorage not available
-      }
+      // Read participant identity from sessionStorage (per-tab)
+      const stored = getSessionParticipant(sessionId)
+      const participantId = stored?.participantId ?? null
 
       if (!participantId) {
         setState({ type: 'no-identity' })

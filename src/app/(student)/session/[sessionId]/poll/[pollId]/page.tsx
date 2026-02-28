@@ -3,6 +3,7 @@
 import { useEffect, useState, useRef, useCallback } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
+import { getSessionParticipant } from '@/lib/student/session-store'
 import { SimplePollVote } from '@/components/student/simple-poll-vote'
 import { RankedPollVote } from '@/components/student/ranked-poll-vote'
 import { useRealtimePoll } from '@/hooks/use-realtime-poll'
@@ -49,7 +50,7 @@ type PageState =
  * Student poll voting page.
  *
  * Client component that:
- * 1. Reads participant identity from localStorage (same pattern as bracket voting page from 04-04)
+ * 1. Reads participant identity from sessionStorage (per-tab, via session-store helper)
  * 2. Fetches poll data from GET /api/polls/[pollId]/state
  * 3. Fetches existing votes for vote restoration via query param ?pid=
  * 4. Routes to SimplePollVote or RankedPollVote based on poll type
@@ -165,19 +166,9 @@ export default function StudentPollVotingPage() {
 
   useEffect(() => {
     async function loadPoll() {
-      // Read participant identity from localStorage
-      let participantId: string | null = null
-      try {
-        const stored = localStorage.getItem(
-          `sparkvotedu_session_${sessionId}`
-        )
-        if (stored) {
-          const data = JSON.parse(stored)
-          participantId = data.participantId ?? null
-        }
-      } catch {
-        // localStorage not available
-      }
+      // Read participant identity from sessionStorage (per-tab)
+      const stored = getSessionParticipant(sessionId)
+      const participantId = stored?.participantId ?? null
 
       if (!participantId) {
         setState({ type: 'no-identity' })

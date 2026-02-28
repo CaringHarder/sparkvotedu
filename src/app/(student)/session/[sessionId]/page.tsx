@@ -1,6 +1,7 @@
 'use client'
 
 import { useParams } from 'next/navigation'
+import { getSessionParticipant } from '@/lib/student/session-store'
 import { ActivityGrid } from '@/components/student/activity-grid'
 
 /**
@@ -11,29 +12,15 @@ import { ActivityGrid } from '@/components/student/activity-grid'
  * only one activity is active.
  *
  * Participant identity is managed by the session layout via
- * localStorage (sparkvotedu_session_{sessionId}).
+ * sessionStorage (per-tab, sparkvotedu_session_{sessionId}).
  */
 export default function StudentSessionPage() {
   const params = useParams<{ sessionId: string }>()
   const sessionId = params.sessionId
 
-  // Read participantId from localStorage session data
-  const participantId =
-    typeof window !== 'undefined'
-      ? (() => {
-          try {
-            const stored = localStorage.getItem(
-              `sparkvotedu_session_${sessionId}`
-            )
-            if (stored) {
-              return JSON.parse(stored).participantId ?? ''
-            }
-          } catch {
-            // localStorage not available
-          }
-          return ''
-        })()
-      : ''
+  // Read participantId from sessionStorage session data (per-tab)
+  const stored = typeof window !== 'undefined' ? getSessionParticipant(sessionId) : null
+  const participantId = stored?.participantId ?? ''
 
   return (
     <div className="container mx-auto py-6 px-4">

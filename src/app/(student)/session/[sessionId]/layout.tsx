@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
+import { getSessionParticipant } from '@/lib/student/session-store'
 import { SessionHeader } from '@/components/student/session-header'
 import { MobileBottomNav } from '@/components/student/mobile-bottom-nav'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -34,14 +35,9 @@ export default function SessionLayout({
     params.then(({ sessionId: sid }) => {
       setSessionId(sid)
 
-      try {
-        const stored = localStorage.getItem(`sparkvotedu_session_${sid}`)
-        if (stored) {
-          const data: ParticipantStore = JSON.parse(stored)
-          setParticipant(data)
-        }
-      } catch {
-        // localStorage not available
+      const data = getSessionParticipant(sid)
+      if (data) {
+        setParticipant(data)
       }
       setLoading(false)
     })
