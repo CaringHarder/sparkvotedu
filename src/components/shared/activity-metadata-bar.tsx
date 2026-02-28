@@ -84,9 +84,16 @@ export function BracketMetadataBar({
       )}
 
       {/* Prediction mode badge (predictive only) */}
-      {bracketType === 'predictive' && (
-        <span className="whitespace-nowrap rounded-full bg-rose-100 px-2 py-0.5 text-[10px] font-medium text-rose-700 dark:bg-rose-900/40 dark:text-rose-300">
-          {predictiveMode === 'predict_then_vote' ? 'Predict Then Vote' : 'Vote Only'}
+      {bracketType === 'predictive' && predictiveMode && (
+        <span
+          className={`whitespace-nowrap rounded-full px-2 py-0.5 text-[10px] font-medium ${
+            predictiveMode === 'simple'
+              ? 'bg-teal-100 text-teal-700 dark:bg-teal-900/40 dark:text-teal-300'
+              : 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300'
+          }`}
+        >
+          <Eye className="mr-0.5 inline h-2.5 w-2.5" />
+          {predictiveMode === 'simple' ? 'Simple' : 'Advanced'}
         </span>
       )}
 

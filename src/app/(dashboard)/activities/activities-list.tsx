@@ -343,9 +343,16 @@ function ActivityItemCard({ item }: { item: ActivityItem }) {
                 </span>
               )}
               {/* Prediction mode badge (predictive brackets only) */}
-              {isBracket && item.meta.bracketType === 'predictive' && (
-                <span className="inline-flex items-center whitespace-nowrap rounded-full bg-rose-100 px-2 py-0.5 text-[10px] font-medium text-rose-700 dark:bg-rose-900/40 dark:text-rose-300">
-                  {item.meta.predictiveMode === 'predict_then_vote' ? 'Predict Then Vote' : 'Vote Only'}
+              {isBracket && item.meta.bracketType === 'predictive' && item.meta.predictiveMode && (
+                <span
+                  className={`inline-flex items-center whitespace-nowrap rounded-full px-2 py-0.5 text-[10px] font-medium ${
+                    item.meta.predictiveMode === 'simple'
+                      ? 'bg-teal-100 text-teal-700 dark:bg-teal-900/40 dark:text-teal-300'
+                      : 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300'
+                  }`}
+                >
+                  <Eye className="mr-0.5 h-2.5 w-2.5" />
+                  {item.meta.predictiveMode === 'simple' ? 'Simple' : 'Advanced'}
                 </span>
               )}
               {/* Session badge */}
