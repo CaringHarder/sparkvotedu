@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { claimIdentity, joinSessionByName } from '@/actions/student'
 import { validateFirstName } from '@/lib/validations/first-name'
+import { setSessionParticipant } from '@/lib/student/session-store'
 import type { DuplicateCandidate } from '@/types/student'
 
 interface SessionInfo {
@@ -60,17 +61,16 @@ export function NameDisambiguation({
         }
 
         if (result.participant && result.session) {
+          // Store identity in sessionStorage (per-tab)
+          setSessionParticipant(result.session.id, {
+            participantId: result.participant.id,
+            firstName: result.participant.firstName,
+            funName: result.participant.funName,
+            sessionId: result.session.id,
+            rerollUsed: result.participant.rerollUsed,
+          })
+          // Keep last session code in localStorage (convenience auto-fill, not identity)
           try {
-            localStorage.setItem(
-              `sparkvotedu_session_${result.session.id}`,
-              JSON.stringify({
-                participantId: result.participant.id,
-                firstName: result.participant.firstName,
-                funName: result.participant.funName,
-                sessionId: result.session.id,
-                rerollUsed: result.participant.rerollUsed,
-              })
-            )
             localStorage.setItem('sparkvotedu_last_session_code', code)
           } catch {
             // localStorage unavailable -- fail-silent
@@ -143,17 +143,16 @@ export function NameDisambiguation({
       }
 
       if (result.participant && result.session) {
+        // Store identity in sessionStorage (per-tab)
+        setSessionParticipant(result.session.id, {
+          participantId: result.participant.id,
+          firstName: result.participant.firstName,
+          funName: result.participant.funName,
+          sessionId: result.session.id,
+          rerollUsed: result.participant.rerollUsed,
+        })
+        // Keep last session code in localStorage (convenience auto-fill, not identity)
         try {
-          localStorage.setItem(
-            `sparkvotedu_session_${result.session.id}`,
-            JSON.stringify({
-              participantId: result.participant.id,
-              firstName: result.participant.firstName,
-              funName: result.participant.funName,
-              sessionId: result.session.id,
-              rerollUsed: result.participant.rerollUsed,
-            })
-          )
           localStorage.setItem('sparkvotedu_last_session_code', code)
         } catch {
           // localStorage unavailable -- fail-silent

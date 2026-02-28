@@ -8,6 +8,7 @@ import {
   DropdownMenuContent,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
+import { updateSessionParticipant } from '@/lib/student/session-store'
 import { RerollButton } from './reroll-button'
 import { RecoveryCodeDialog } from './recovery-code-dialog'
 import { EditNameDialog } from './edit-name-dialog'
@@ -33,44 +34,15 @@ export function SessionHeader({
     setFunName(newName)
     setRerollUsed(true)
 
-    // Update localStorage with new name
-    try {
-      const keys = Object.keys(localStorage)
-      for (const key of keys) {
-        if (key.startsWith('sparkvotedu_session_')) {
-          const data = JSON.parse(localStorage.getItem(key) || '{}')
-          if (data.participantId === participantId) {
-            data.funName = newName
-            data.rerollUsed = true
-            localStorage.setItem(key, JSON.stringify(data))
-            break
-          }
-        }
-      }
-    } catch {
-      // localStorage not available
-    }
+    // Update sessionStorage with new fun name
+    updateSessionParticipant(participantId, { funName: newName, rerollUsed: true })
   }
 
   function handleNameUpdated(newName: string) {
     setFirstName(newName)
 
-    // Update localStorage with new first name
-    try {
-      const keys = Object.keys(localStorage)
-      for (const key of keys) {
-        if (key.startsWith('sparkvotedu_session_')) {
-          const data = JSON.parse(localStorage.getItem(key) || '{}')
-          if (data.participantId === participantId) {
-            data.firstName = newName
-            localStorage.setItem(key, JSON.stringify(data))
-            break
-          }
-        }
-      }
-    } catch {
-      // localStorage not available
-    }
+    // Update sessionStorage with new first name
+    updateSessionParticipant(participantId, { firstName: newName })
   }
 
   return (

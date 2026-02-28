@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { joinSessionByName } from '@/actions/student'
 import { validateFirstName } from '@/lib/validations/first-name'
+import { setSessionParticipant } from '@/lib/student/session-store'
 import { NameDisambiguation } from '@/components/student/name-disambiguation'
 import type { DuplicateCandidate } from '@/types/student'
 
@@ -80,18 +81,16 @@ export function NameEntryForm({ code, sessionInfo }: NameEntryFormProps) {
       }
 
       if (result.participant && result.session) {
-        // Success -- store participant data and session code in localStorage
+        // Success -- store participant identity in sessionStorage (per-tab)
+        setSessionParticipant(result.session.id, {
+          participantId: result.participant.id,
+          firstName: result.participant.firstName,
+          funName: result.participant.funName,
+          sessionId: result.session.id,
+          rerollUsed: result.participant.rerollUsed,
+        })
+        // Keep last session code in localStorage (convenience auto-fill, not identity)
         try {
-          localStorage.setItem(
-            `sparkvotedu_session_${result.session.id}`,
-            JSON.stringify({
-              participantId: result.participant.id,
-              firstName: result.participant.firstName,
-              funName: result.participant.funName,
-              sessionId: result.session.id,
-              rerollUsed: result.participant.rerollUsed,
-            })
-          )
           localStorage.setItem('sparkvotedu_last_session_code', code)
         } catch {
           // localStorage unavailable -- fail-silent
