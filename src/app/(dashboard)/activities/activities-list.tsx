@@ -323,8 +323,8 @@ function ActivityItemCard({ item }: { item: ActivityItem }) {
                   : `${item.meta.votes ?? 0} votes`}
               </span>
 
-              {/* Viewing mode badge (brackets only) */}
-              {isBracket && item.meta.viewingMode && (
+              {/* Viewing mode badge (single elimination brackets only) */}
+              {isBracket && item.meta.bracketType === 'single_elimination' && item.meta.viewingMode && (
                 <span
                   className={`inline-flex items-center whitespace-nowrap rounded-full px-2 py-0.5 text-[10px] font-medium ${
                     item.meta.viewingMode === 'simple'

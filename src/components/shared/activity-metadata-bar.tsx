@@ -62,8 +62,8 @@ export function BracketMetadataBar({
         </span>
       )}
 
-      {/* Viewing mode badge */}
-      {viewingMode && (
+      {/* Viewing mode badge (single elimination only) */}
+      {bracketType === 'single_elimination' && viewingMode && (
         <span
           className={`whitespace-nowrap rounded-full px-2 py-0.5 text-[10px] font-medium ${
             viewingMode === 'simple'

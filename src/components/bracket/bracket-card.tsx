@@ -178,8 +178,8 @@ export function BracketCard({ bracket, onRemoved }: BracketCardProps) {
               </span>
             )}
             <BracketStatusBadge status={bracket.status} />
-            {/* Viewing mode badge */}
-            {bracket.viewingMode && (
+            {/* Viewing mode badge (single elimination only) */}
+            {bracket.bracketType === 'single_elimination' && bracket.viewingMode && (
               <span
                 className={`whitespace-nowrap rounded-full px-2 py-0.5 text-[10px] font-medium ${
                   bracket.viewingMode === 'simple'
