@@ -1281,7 +1281,7 @@ export async function undoRoundPredictive(
       if (bracket.predictionStatus === 'completed') {
         // Bracket was completed, set back to 'revealing'
         updateData.predictionStatus = 'revealing'
-        updateData.status = 'active' // un-complete the bracket
+        updateData.status = 'paused' // un-complete the bracket (server action auto-pauses before undo)
       }
 
       if (
