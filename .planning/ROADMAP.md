@@ -65,7 +65,7 @@
 
 **Milestone Goal:** Give teachers full control over their activities (pause, undo, reopen, edit settings), streamline creation with quick-create workflows, and polish student-facing UX.
 
-- [ ] **Phase 29: Pause/Resume & Go Live** - Teachers can freeze and unfreeze any activity, with playful student-facing feedback and server-side vote enforcement
+- [x] **Phase 29: Pause/Resume & Go Live** - Teachers can freeze and unfreeze any activity, with playful student-facing feedback and server-side vote enforcement (completed 2026-03-01)
 - [ ] **Phase 30: Undo Round Advancement** - Teachers can reverse the most recent round in any bracket type, with cascading cleanup of downstream matchups
 - [ ] **Phase 31: Reopen Completed Activities** - Teachers can bring completed brackets and closed polls back to life for additional voting
 - [ ] **Phase 32: Settings Editing** - Teachers can adjust display settings on brackets and polls after creation, even while live
@@ -86,7 +86,7 @@
   3. Pause and resume work identically for polls (same overlay, same server enforcement)
   4. A student who tries to submit a vote on a paused activity via API manipulation receives a rejection (server-side guard)
   5. All "View Live" buttons and labels throughout the app now read "Go Live"
-**Plans:** 2/3 plans executed
+**Plans:** 3/3 plans complete
 
 Plans:
 - [ ] 29-01-PLAN.md -- Backend foundation: types, validation, DAL transitions, broadcast events, vote guards, realtime hooks, API filters
@@ -225,7 +225,7 @@ Note: Phases 33-36 are independent of the control feature chain (29-32) and can 
 | 26. Student Activity Removal | v1.3 | 2/2 | Complete | 2026-02-26 |
 | 27. SE Final Round Realtime Fix | v1.3 | 1/1 | Complete | 2026-02-26 |
 | 28. RR All-at-Once Completion Fix | v1.3 | 3/3 | Complete | 2026-02-26 |
-| 29. Pause/Resume & Go Live | 2/3 | In Progress|  | - |
+| 29. Pause/Resume & Go Live | 3/3 | Complete   | 2026-03-01 | - |
 | 30. Undo Round Advancement | v2.0 | 0/TBD | Not started | - |
 | 31. Reopen Completed Activities | v2.0 | 0/TBD | Not started | - |
 | 32. Settings Editing | v2.0 | 0/TBD | Not started | - |
