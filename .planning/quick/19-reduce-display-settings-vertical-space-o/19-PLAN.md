@@ -84,26 +84,11 @@ Do NOT change the component interface or props. The layout change propagates to 
   <action>
 **QuickSettingsToggle changes:**
 
-1. Add a subtle left border separator so inline items have visual distinction: wrap the existing label element in a container, or add a left border directly to the label. Specifically, add `border-l border-border/50 pl-4` to the label className to create a light vertical separator between items. The first item's separator will be handled via CSS: add `first:border-l-0 first:pl-0` -- however since these are direct children, use the approach of adding the classes `[&:not(:first-child)]:border-l [&:not(:first-child)]:border-border/50 [&:not(:first-child)]:pl-4` to each item. ACTUALLY, the simpler approach: since the parent uses `gap-x-4`, just leave the toggle as-is for spacing. Only add a minor visual separator.
+1. Add `whitespace-nowrap` to the label className to prevent text wrapping mid-item. No border separators -- the parent's `gap-x-4` handles spacing.
 
-Simpler approach -- just add a subtle visual divider using a pipe character or border. The cleanest method: add `border-l border-border/40 pl-4` to the label's className. The parent flex-wrap container handles the case where an item is first via gap, and the left border creates visual grouping. This looks good even when items wrap.
+2. Flatten the label text structure: remove the `<div className="flex flex-col">` wrapper. Render the label as a single inline `<span>`. Move the `description` prop to a `title` attribute on the label span instead of visible text.
 
-So change the label className from:
-`"flex items-center gap-2"`
-to:
-`"flex items-center gap-2 border-l border-border/40 pl-4 first:border-l-0 first:pl-0"`
-
-Wait -- `first:` pseudo won't work since these are React children, not CSS siblings. The parent is a flex container and these ARE siblings in the DOM. Tailwind's `first:` maps to `:first-child` which WILL work on DOM siblings. BUT -- in the bracket live page, the first children are `LockedSettingIndicator` components, not `QuickSettingsToggle`. So the `first:` selector won't trigger on QuickSettingsToggle items anyway since they're not the first child.
-
-Better approach: Do NOT add separators to individual items. Instead, keep items clean and let the parent's `gap-x-4` handle spacing. The compact horizontal flow is sufficient visual improvement without separators. Keep it simple.
-
-Final QuickSettingsToggle change: Keep the existing className `"flex items-center gap-2"` but add `whitespace-nowrap` to prevent the label text from wrapping mid-item. No other changes needed -- the component is already compact enough for inline flow.
-
-So the label className becomes: `"flex items-center gap-2 whitespace-nowrap"`
-
-Remove the `<div className="flex flex-col">` wrapper around the label text and description. Instead, render the label span inline. For the description prop: since descriptions would break the compact inline layout, render description as a title attribute on the label instead of visible text. This keeps the toggle compact while preserving the info.
-
-Updated structure:
+Final structure:
 ```tsx
 <label className="flex items-center gap-2 whitespace-nowrap">
   {icon && <span className="h-4 w-4 shrink-0 text-muted-foreground">{icon}</span>}
@@ -114,14 +99,10 @@ Updated structure:
 
 **LockedSettingIndicator changes:**
 
-Add `whitespace-nowrap` to the outer div className to prevent wrapping mid-item.
+1. Add `whitespace-nowrap` to the outer div className.
+2. Reduce gap from `gap-2` to `gap-1.5` for tighter inline spacing.
 
-Change from:
-`"flex items-center gap-2 text-sm"`
-to:
-`"flex items-center gap-1.5 text-sm whitespace-nowrap"`
-
-Also reduce the gap slightly from `gap-2` to `gap-1.5` to be more compact inline.
+Change className from `"flex items-center gap-2 text-sm"` to `"flex items-center gap-1.5 text-sm whitespace-nowrap"`.
 
 Do NOT change either component's interface or props.
   </action>
