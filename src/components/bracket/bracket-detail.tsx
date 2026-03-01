@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from 'react'
 import Link from 'next/link'
-import { ArrowLeft, Pencil, Link2, Unlink, ChevronDown, ChevronUp, Play, RefreshCw } from 'lucide-react'
+import { ArrowLeft, Pencil, Link2, Unlink, ChevronDown, ChevronUp, Play, RefreshCw, Eye } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { BracketWithDetails, RoundRobinStanding, PredictionScore } from '@/lib/bracket/types'
 import { BracketDiagram } from '@/components/bracket/bracket-diagram'
@@ -14,7 +14,8 @@ import { PredictionLeaderboard } from '@/components/bracket/prediction-leaderboa
 import { DoubleElimDiagram } from '@/components/bracket/double-elim-diagram'
 import { BracketStatusBadge, BracketLifecycleControls } from '@/components/bracket/bracket-status'
 import { BracketMetadataBar } from '@/components/shared/activity-metadata-bar'
-import { assignBracketToSession } from '@/actions/bracket'
+import { QuickSettingsToggle } from '@/components/shared/quick-settings-toggle'
+import { assignBracketToSession, updateBracketViewingMode } from '@/actions/bracket'
 import { recordResult, advanceRound } from '@/actions/round-robin'
 import { triggerSportsSync } from '@/actions/sports'
 
@@ -41,6 +42,23 @@ export function BracketDetail({ bracket, totalRounds, sessions, standings = [], 
   const [showEntrants, setShowEntrants] = useState(false)
   const [syncing, setSyncing] = useState(false)
   const [syncError, setSyncError] = useState<string | null>(null)
+
+  // Viewing mode toggle state (single_elimination only)
+  const [viewingMode, setViewingMode] = useState(bracket.viewingMode)
+  const [isUpdatingMode, setIsUpdatingMode] = useState(false)
+
+  async function handleViewingModeChange(checked: boolean) {
+    const newMode = checked ? 'advanced' : 'simple'
+    setIsUpdatingMode(true)
+    setViewingMode(newMode) // optimistic update
+    try {
+      await updateBracketViewingMode({ bracketId: bracket.id, viewingMode: newMode })
+    } catch {
+      setViewingMode(viewingMode) // revert on error
+    } finally {
+      setIsUpdatingMode(false)
+    }
+  }
 
   const isRoundRobin = bracket.bracketType === 'round_robin'
   const isPredictive = bracket.bracketType === 'predictive'
@@ -190,6 +208,16 @@ export function BracketDetail({ bracket, totalRounds, sessions, standings = [], 
         sessionName={sessionName}
         createdAt={bracket.createdAt}
       />
+
+      {bracket.bracketType === 'single_elimination' && (
+        <QuickSettingsToggle
+          label={viewingMode === 'advanced' ? 'Advanced Mode' : 'Simple Mode'}
+          checked={viewingMode === 'advanced'}
+          onCheckedChange={handleViewingModeChange}
+          disabled={isUpdatingMode}
+          icon={<Eye className="h-4 w-4" />}
+        />
+      )}
 
       {bracket.description && (
         <p className="text-sm text-muted-foreground">{bracket.description}</p>

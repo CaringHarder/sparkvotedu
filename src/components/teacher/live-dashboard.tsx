@@ -14,7 +14,7 @@ import { ParticipationSidebar } from '@/components/teacher/participation-sidebar
 import { VoteProgressBar } from '@/components/teacher/vote-progress-bar'
 import { QRCodeDisplay } from '@/components/teacher/qr-code-display'
 import { openMatchupsForVoting, advanceMatchup, batchAdvanceRound, undoRoundAdvancement, reopenBracket } from '@/actions/bracket-advance'
-import { Undo2, RotateCcw } from 'lucide-react'
+import { Undo2, RotateCcw, Eye } from 'lucide-react'
 import { recordResult, advanceRound } from '@/actions/round-robin'
 import { triggerSportsSync } from '@/actions/sports'
 import { updatePredictionStatus } from '@/actions/prediction'
@@ -22,8 +22,9 @@ import { PredictionLeaderboard } from '@/components/bracket/prediction-leaderboa
 import { PredictiveBracket } from '@/components/bracket/predictive-bracket'
 import { calculateRoundRobinStandings, type RoundRobinResult } from '@/lib/bracket/round-robin'
 import { BracketMetadataBar } from '@/components/shared/activity-metadata-bar'
+import { QuickSettingsToggle } from '@/components/shared/quick-settings-toggle'
 import { Switch } from '@/components/ui/switch'
-import { updateBracketStatus } from '@/actions/bracket'
+import { updateBracketStatus, updateBracketViewingMode } from '@/actions/bracket'
 import type { BracketWithDetails, MatchupData, RoundRobinStanding, PredictionScore } from '@/lib/bracket/types'
 import type { VoteCounts } from '@/types/vote'
 
@@ -146,6 +147,23 @@ export function LiveDashboard({
       }
     })
   }, [bracket.id])
+
+  // Viewing mode toggle state (single_elimination only)
+  const [viewingMode, setViewingMode] = useState(bracket.viewingMode)
+  const [isUpdatingMode, setIsUpdatingMode] = useState(false)
+
+  const handleViewingModeChange = useCallback(async (checked: boolean) => {
+    const newMode = checked ? 'advanced' : 'simple'
+    setIsUpdatingMode(true)
+    setViewingMode(newMode) // optimistic update
+    try {
+      await updateBracketViewingMode({ bracketId: bracket.id, viewingMode: newMode })
+    } catch {
+      setViewingMode(viewingMode) // revert on error
+    } finally {
+      setIsUpdatingMode(false)
+    }
+  }, [bracket.id, viewingMode])
 
   // Sports bracket sync state
   const [isSyncing, setIsSyncing] = useState(false)
@@ -1223,6 +1241,17 @@ export function LiveDashboard({
             <Switch checked={!isPaused} onCheckedChange={handlePauseToggle} disabled={isPending} />
             <span className="text-xs font-medium">{isPaused ? 'Paused' : 'Active'}</span>
           </div>
+        )}
+
+        {/* Viewing mode toggle -- only for single_elimination brackets */}
+        {bracket.bracketType === 'single_elimination' && (
+          <QuickSettingsToggle
+            label={viewingMode === 'advanced' ? 'Advanced Mode' : 'Simple Mode'}
+            checked={viewingMode === 'advanced'}
+            onCheckedChange={handleViewingModeChange}
+            disabled={isUpdatingMode}
+            icon={<Eye className="h-4 w-4" />}
+          />
         )}
 
         {/* Reopen button -- only shown for completed brackets */}
