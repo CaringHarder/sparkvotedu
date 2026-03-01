@@ -22,12 +22,12 @@ See: .planning/PROJECT.md (updated 2026-02-28)
 
 ## Current Position
 
-Phase: 31.1 of 36 (Activity Card Layout Fix & Quick Settings Toggle) -- COMPLETE
-Plan: 3 of 3 complete
-Status: Phase Complete
-Last activity: 2026-03-01 -- Completed 31.1-03 (quick settings toggle UI wiring)
+Phase: 32 of 36 (Settings Editing) -- IN PROGRESS
+Plan: 1 of 4 complete
+Status: Executing
+Last activity: 2026-03-01 -- Completed 32-01 (shared foundation components and backend)
 
-Progress: [##░░░░░░░░] 14% (v2.0)
+Progress: [##░░░░░░░░] 17% (v2.0)
 
 ## Performance Metrics
 
@@ -71,6 +71,8 @@ Recent from research:
 - 31.1-02: Poll settings broadcast only fires when allowVoteChange or showLiveResults change
 - 31.1-03: Bracket viewing mode toggle only shown for single_elimination brackets (not DE, RR, or Predictive)
 - 31.1-03: Students see settings changes in real time via broadcast + refetch (no page refresh needed)
+- 32-01: Keep existing updateBracketViewingMode for backward compat until Plans 02-03 migrate callers
+- 32-01: Default showVoteCounts/showSeedNumbers to true in hook state, matching DB defaults
 
 ### Roadmap Evolution
 
@@ -112,9 +114,10 @@ None -- all v1.3 requirements shipped.
 | Phase 31.1 P01 | 2min | 2 tasks | 5 files |
 | Phase 31.1 P02 | 2min | 2 tasks | 4 files |
 | Phase 31.1 P03 | 3min | 3 tasks | 6 files |
+| Phase 32 P01 | 2min | 2 tasks | 5 files |
 
 ## Session Continuity
 
 Last session: 2026-03-01
-Stopped at: Completed 31.1-03-PLAN.md (quick settings toggle UI wiring -- Phase 31.1 complete)
-Resume: `/gsd:execute-phase` to continue with Phase 32
+Stopped at: Completed 32-01-PLAN.md (shared foundation components and backend)
+Resume: `/gsd:execute-phase` to continue with Phase 32 Plan 02
