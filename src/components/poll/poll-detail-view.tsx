@@ -81,6 +81,20 @@ const STATUS_ACTIONS: Record<
         'bg-amber-600 text-white hover:bg-amber-700',
     },
   ],
+  paused: [
+    {
+      label: 'Resume',
+      newStatus: 'active',
+      className:
+        'bg-green-600 text-white hover:bg-green-700',
+    },
+    {
+      label: 'End',
+      newStatus: 'closed',
+      className:
+        'bg-amber-600 text-white hover:bg-amber-700',
+    },
+  ],
   closed: [
     {
       label: 'Reopen',

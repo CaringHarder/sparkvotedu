@@ -603,7 +603,8 @@ export async function deleteBracketPermanentlyDAL(
 // Valid forward-only status transitions
 const VALID_TRANSITIONS: Record<string, string[]> = {
   draft: ['active', 'completed', 'archived'],
-  active: ['completed', 'archived'],
+  active: ['paused', 'completed', 'archived'],
+  paused: ['active', 'completed', 'archived'],
   completed: ['archived'],
   archived: [],
 }

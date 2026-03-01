@@ -2,7 +2,7 @@
 export type PollType = 'simple' | 'ranked'
 
 /** Poll lifecycle status */
-export type PollStatus = 'draft' | 'active' | 'closed' | 'archived'
+export type PollStatus = 'draft' | 'active' | 'paused' | 'closed' | 'archived'
 
 /** Core poll data matching Prisma Poll model */
 export interface PollData {

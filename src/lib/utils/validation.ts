@@ -86,7 +86,7 @@ export const updateEntrantsSchema = z.object({
 
 export const updateBracketStatusSchema = z.object({
   bracketId: z.string().uuid(),
-  status: z.enum(['draft', 'active', 'completed']),
+  status: z.enum(['draft', 'active', 'paused', 'completed']),
 })
 
 export const deleteBracketSchema = z.object({
@@ -220,7 +220,7 @@ export const castRankedPollVoteSchema = z.object({
 
 export const updatePollStatusSchema = z.object({
   pollId: z.string().uuid(),
-  status: z.enum(['draft', 'active', 'closed', 'archived']),
+  status: z.enum(['draft', 'active', 'paused', 'closed', 'archived']),
 })
 
 export const deletePollSchema = z.object({

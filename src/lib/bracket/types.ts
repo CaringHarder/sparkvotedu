@@ -3,7 +3,7 @@
 export type BracketSize = number
 
 // Bracket lifecycle statuses
-export type BracketStatus = 'draft' | 'active' | 'completed'
+export type BracketStatus = 'draft' | 'active' | 'paused' | 'completed'
 
 // Bracket type discriminator for all bracket formats
 export type BracketType = 'single_elimination' | 'double_elimination' | 'round_robin' | 'predictive' | 'sports'

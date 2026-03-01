@@ -3,7 +3,8 @@ import { prisma } from '@/lib/prisma'
 // Valid forward-only poll status transitions
 const VALID_POLL_TRANSITIONS: Record<string, string[]> = {
   draft: ['active', 'archived'],
-  active: ['closed', 'archived'],
+  active: ['paused', 'closed', 'archived'],
+  paused: ['active', 'closed', 'archived'],
   closed: ['archived', 'draft'],
   archived: [],
 }
