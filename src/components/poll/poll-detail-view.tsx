@@ -27,7 +27,18 @@ import {
 } from '@/actions/poll'
 import { PollMetadataBar } from '@/components/shared/activity-metadata-bar'
 import { QuickSettingsToggle } from '@/components/shared/quick-settings-toggle'
+import { DisplaySettingsSection } from '@/components/shared/display-settings-section'
+import { LockedSettingIndicator } from '@/components/shared/locked-setting-indicator'
 import type { PollStatus } from '@/lib/poll/types'
+
+function getPollTypeLabel(type: string): string {
+  const labels: Record<string, string> = {
+    simple: 'Multiple Choice',
+    ranked: 'Ranked Choice',
+    rating: 'Rating Scale',
+  }
+  return labels[type] ?? type
+}
 
 interface PollDetailData {
   id: string
@@ -372,7 +383,17 @@ export function PollDetailView({ poll, sessions, sessionName }: PollDetailViewPr
               </ul>
             </div>
 
-            <div className="flex flex-wrap items-center gap-4">
+            <DisplaySettingsSection disabled={poll.status === 'closed' || poll.status === 'archived'}>
+              {/* Locked structural settings */}
+              <LockedSettingIndicator label="Type" value={getPollTypeLabel(poll.pollType)} />
+              {poll.pollType === 'ranked' && poll.rankingDepth && (
+                <LockedSettingIndicator
+                  label="Ranking Depth"
+                  value={`Top ${poll.rankingDepth}`}
+                />
+              )}
+
+              {/* Editable display settings */}
               <QuickSettingsToggle
                 label="Show Live Results"
                 checked={showLiveResults}
@@ -387,15 +408,7 @@ export function PollDetailView({ poll, sessions, sessionName }: PollDetailViewPr
                 disabled={isUpdatingSettings}
                 icon={<RefreshCw className="h-4 w-4" />}
               />
-              {poll.pollType === 'ranked' && (
-                <span className="text-sm">
-                  Ranking depth:{' '}
-                  <strong>
-                    {poll.rankingDepth ? `Top ${poll.rankingDepth}` : 'All options'}
-                  </strong>
-                </span>
-              )}
-            </div>
+            </DisplaySettingsSection>
 
             <div className="text-xs text-muted-foreground">
               Created: {new Date(poll.createdAt).toLocaleDateString()} &middot; Updated:{' '}
