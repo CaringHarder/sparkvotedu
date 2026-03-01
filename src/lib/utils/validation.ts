@@ -176,6 +176,14 @@ export const reopenBracketSchema = z.object({
 
 export type ReopenBracketInput = z.infer<typeof reopenBracketSchema>
 
+// Update bracket viewing mode schema
+export const updateBracketViewingModeSchema = z.object({
+  bracketId: z.string().uuid(),
+  viewingMode: z.enum(['simple', 'advanced']),
+})
+
+export type UpdateBracketViewingModeInput = z.infer<typeof updateBracketViewingModeSchema>
+
 // Reopen closed poll validation schema
 export const reopenPollSchema = z.object({
   pollId: z.string().uuid(),

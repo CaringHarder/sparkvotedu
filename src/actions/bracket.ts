@@ -20,6 +20,7 @@ import {
   updateBracketStatusSchema,
   updateEntrantsSchema,
   deleteBracketSchema,
+  updateBracketViewingModeSchema,
 } from '@/lib/utils/validation'
 import {
   canCreateBracket,
@@ -522,5 +523,55 @@ export async function deleteBracketPermanently(input: unknown) {
     return { success: true }
   } catch {
     return { error: 'Failed to permanently delete bracket' }
+  }
+}
+
+/**
+ * Update a bracket's viewing mode (simple/advanced).
+ * Auth -> validate -> ownership check -> update -> broadcast -> revalidate -> return
+ *
+ * Works on all bracket states (draft, active, paused, completed) since
+ * viewing mode is a display-only setting that doesn't affect bracket integrity.
+ * No auto-adjustment of other settings when switching modes.
+ */
+export async function updateBracketViewingMode(input: unknown) {
+  const teacher = await getAuthenticatedTeacher()
+  if (!teacher) {
+    return { error: 'Not authenticated' }
+  }
+
+  const parsed = updateBracketViewingModeSchema.safeParse(input)
+  if (!parsed.success) {
+    return { error: 'Invalid viewing mode data', issues: parsed.error.issues }
+  }
+
+  const { bracketId, viewingMode } = parsed.data
+
+  try {
+    // Ownership check: verify bracket belongs to this teacher
+    const bracket = await prisma.bracket.findUnique({
+      where: { id: bracketId },
+      select: { teacherId: true },
+    })
+    if (!bracket || bracket.teacherId !== teacher.id) {
+      return { error: 'Bracket not found' }
+    }
+
+    // Update viewingMode in database
+    await prisma.bracket.update({
+      where: { id: bracketId },
+      data: { viewingMode },
+    })
+
+    // Broadcast settings_changed event to connected students
+    await broadcastBracketUpdate(bracketId, 'settings_changed', { viewingMode })
+
+    // Revalidate paths
+    revalidatePath('/activities')
+    revalidatePath(`/brackets/${bracketId}`)
+
+    return { success: true }
+  } catch {
+    return { error: 'Failed to update bracket viewing mode' }
   }
 }
