@@ -136,6 +136,16 @@ export default function StudentPollVotingPage() {
     setShowReveal(true)
   }, [])
 
+  // Merge reactive settings from useRealtimePoll into poll object
+  // (matches effectiveBracket pattern from bracket student page)
+  // Must be called unconditionally (React rules of hooks) -- before early returns
+  const readyPoll = state.type === 'ready' ? state.poll : (state.type === 'not-active' ? state.poll : null)
+  const effectivePoll = useMemo(() => readyPoll ? ({
+    ...readyPoll,
+    allowVoteChange,
+    showLiveResults,
+  }) : null, [readyPoll, allowVoteChange, showLiveResults])
+
   // Compute winner text for reveal animation
   const winnerText = (() => {
     if (state.type !== 'ready') return 'Results are in!'
@@ -339,14 +349,6 @@ export default function StudentPollVotingPage() {
   // Ready state: render appropriate voting component (or closed state after live transition)
   const { poll, participantId, existingVotes } = state
 
-  // Merge reactive settings from useRealtimePoll into poll object
-  // (matches effectiveBracket pattern from bracket student page)
-  const effectivePoll = useMemo(() => ({
-    ...poll,
-    allowVoteChange,
-    showLiveResults,
-  }), [poll, allowVoteChange, showLiveResults])
-
   // After reveal dismissed: show clean "poll closed" state (live transition, not initial load)
   if (closedDetected && !showReveal && !showCountdown) {
     return (
@@ -377,13 +379,13 @@ export default function StudentPollVotingPage() {
         <div className="mx-auto max-w-xl">
           {poll.pollType === 'ranked' ? (
             <RankedPollVote
-              poll={effectivePoll}
+              poll={effectivePoll!}
               participantId={participantId}
               existingVotes={existingVotes}
             />
           ) : (
             <SimplePollVote
-              poll={effectivePoll}
+              poll={effectivePoll!}
               participantId={participantId}
               existingVotes={existingVotes}
             />
