@@ -241,6 +241,12 @@ export async function updatePollStatus(input: unknown) {
   const { pollId, status } = parsed.data
 
   try {
+    // Read old status before transition (needed for resume detection)
+    const pollBefore = await prisma.poll.findFirst({
+      where: { id: pollId, teacherId: teacher.id },
+      select: { status: true },
+    })
+
     const result = await updatePollStatusDAL(pollId, teacher.id, status)
 
     if ('error' in result) {
@@ -251,7 +257,7 @@ export async function updatePollStatus(input: unknown) {
     // Both the poll-specific channel (poll:{pollId}) and the activity channel
     // (activities:{sessionId}) must receive the event so that both the teacher
     // dashboard poll view AND the student activity grid update in real time.
-    if (status === 'active') {
+    if (status === 'active' && pollBefore?.status !== 'paused') {
       broadcastPollUpdate(pollId, 'poll_activated').catch(console.error)
       if (result.sessionId) {
         broadcastActivityUpdate(result.sessionId).catch(console.error)
@@ -267,6 +273,21 @@ export async function updatePollStatus(input: unknown) {
 
     if (status === 'archived') {
       broadcastPollUpdate(pollId, 'poll_archived').catch(console.error)
+      if (result.sessionId) {
+        broadcastActivityUpdate(result.sessionId).catch(console.error)
+      }
+    }
+
+    // Broadcast pause/resume events to poll channel + activity channel
+    if (status === 'paused') {
+      broadcastPollUpdate(pollId, 'poll_paused').catch(console.error)
+      if (result.sessionId) {
+        broadcastActivityUpdate(result.sessionId).catch(console.error)
+      }
+    }
+
+    if (status === 'active' && pollBefore?.status === 'paused') {
+      broadcastPollUpdate(pollId, 'poll_resumed').catch(console.error)
       if (result.sessionId) {
         broadcastActivityUpdate(result.sessionId).catch(console.error)
       }
@@ -403,6 +424,11 @@ export async function castPollVote(input: unknown) {
 
     if (!poll) {
       return { error: 'Poll not found' }
+    }
+
+    // Block votes when the poll is paused (teacher paused voting)
+    if (poll.status === 'paused') {
+      return { error: 'Voting is paused by your teacher' }
     }
 
     if (poll.status !== 'active') {

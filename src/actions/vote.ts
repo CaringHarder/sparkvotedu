@@ -30,12 +30,17 @@ export async function castVote(input: unknown) {
       select: {
         status: true,
         bracketId: true,
-        bracket: { select: { sessionId: true } },
+        bracket: { select: { sessionId: true, status: true } },
       },
     })
 
     if (!matchup) {
       return { error: 'Matchup not found' }
+    }
+
+    // Block votes when the bracket is paused (teacher paused voting)
+    if (matchup.bracket.status === 'paused') {
+      return { error: 'Voting is paused by your teacher' }
     }
 
     // Only allow voting on matchups in "voting" status

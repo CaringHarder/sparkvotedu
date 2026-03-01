@@ -29,7 +29,7 @@ import {
   canUseEntrantCount,
 } from '@/lib/gates/features'
 import type { SubscriptionTier } from '@/lib/gates/tiers'
-import { broadcastActivityUpdate } from '@/lib/realtime/broadcast'
+import { broadcastActivityUpdate, broadcastBracketUpdate } from '@/lib/realtime/broadcast'
 import { revalidatePath } from 'next/cache'
 import { z } from 'zod'
 
@@ -141,6 +141,12 @@ export async function updateBracketStatus(input: unknown) {
   }
 
   try {
+    // Read old status before transition (needed for resume detection)
+    const bracketBefore = await prisma.bracket.findFirst({
+      where: { id: parsed.data.bracketId, teacherId: teacher.id },
+      select: { status: true, sessionId: true },
+    })
+
     const result = await updateBracketStatusDAL(
       parsed.data.bracketId,
       teacher.id,
@@ -163,6 +169,21 @@ export async function updateBracketStatus(input: unknown) {
       })
       if (bracket?.sessionId) {
         broadcastActivityUpdate(bracket.sessionId).catch(console.error)
+      }
+    }
+
+    // Broadcast pause/resume events to bracket channel + activity channel
+    if (parsed.data.status === 'paused') {
+      broadcastBracketUpdate(parsed.data.bracketId, 'bracket_paused', {}).catch(console.error)
+      if (bracketBefore?.sessionId) {
+        broadcastActivityUpdate(bracketBefore.sessionId).catch(console.error)
+      }
+    }
+
+    if (parsed.data.status === 'active' && bracketBefore?.status === 'paused') {
+      broadcastBracketUpdate(parsed.data.bracketId, 'bracket_resumed', {}).catch(console.error)
+      if (bracketBefore.sessionId) {
+        broadcastActivityUpdate(bracketBefore.sessionId).catch(console.error)
       }
     }
 

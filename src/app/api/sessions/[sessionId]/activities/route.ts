@@ -37,7 +37,7 @@ export async function GET(
       where: {
         sessionId,
         OR: [
-          { status: { in: ['active', 'completed'] } },
+          { status: { in: ['active', 'paused', 'completed'] } },
           { predictionStatus: 'predictions_open' },
         ],
       },
@@ -92,7 +92,7 @@ export async function GET(
     const polls = await prisma.poll.findMany({
       where: {
         sessionId,
-        status: { in: ['active', 'closed'] },
+        status: { in: ['active', 'paused', 'closed'] },
       },
       select: {
         id: true,

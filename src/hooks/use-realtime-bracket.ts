@@ -155,7 +155,9 @@ export function useRealtimeBracket(bracketId: string, batchIntervalMs = 2000) {
           type === 'bracket_completed' ||
           type === 'prediction_status_changed' ||
           type === 'reveal_round' ||
-          type === 'reveal_complete'
+          type === 'reveal_complete' ||
+          type === 'bracket_paused' ||
+          type === 'bracket_resumed'
         ) {
           fetchBracketState()
         }
