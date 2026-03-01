@@ -86,5 +86,5 @@ None -- all v1.3 requirements shipped.
 ## Session Continuity
 
 Last session: 2026-03-01
-Stopped at: Completed 29-03-PLAN.md (student paused overlay) -- Phase 29 complete
-Resume: `/gsd:execute-phase 30` to begin next phase
+Stopped at: Phase 30 context gathered
+Resume: `/gsd:plan-phase 30` to create phase plan
