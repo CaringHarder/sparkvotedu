@@ -69,7 +69,7 @@
 - [x] **Phase 30: Undo Round Advancement** - Teachers can reverse the most recent round in any bracket type, with cascading cleanup of downstream matchups (completed 2026-03-01)
 - [x] **Phase 31: Reopen Completed Activities** - Teachers can bring completed brackets and closed polls back to life for additional voting (completed 2026-03-01)
 - [x] **Phase 31.1: Activity Card Layout Fix & Quick Settings Toggle** - Fix card title truncation at mid-width viewports and add inline simple/advanced toggle (INSERTED) (completed 2026-03-01)
-- [ ] **Phase 32: Settings Editing** - Teachers can adjust display settings on brackets and polls after creation, even while live
+- [x] **Phase 32: Settings Editing** - Teachers can adjust display settings on brackets and polls after creation, even while live (completed 2026-03-01)
 - [ ] **Phase 33: Bracket Quick Create** - Teachers can create a bracket in two clicks using curated topic chips and an entrant count picker
 - [ ] **Phase 34: Poll Quick Create & Image Polish** - Teachers can create polls with just a question and options, with image previews matching bracket style
 - [ ] **Phase 35: Real-Time Vote Indicators** - Teachers see per-student green dot indicators as students vote, updating live across all activity types
@@ -152,7 +152,7 @@ Plans:
   2. Teacher opens a poll's settings and can toggle display options (show live results, allow vote change) even if the poll is currently live; changes save and persist
   3. When a teacher changes display settings on a live activity, all connected student views update in real time without requiring a page refresh
   4. Structural settings (bracket type, bracket size, poll type) are visibly locked after creation with a clear indicator explaining they cannot be changed
-**Plans:** 3/4 plans executed
+**Plans:** 4/4 plans complete
 
 Plans:
 - [ ] 32-01-PLAN.md -- Foundation: DisplaySettingsSection, LockedSettingIndicator, consolidated updateBracketSettings action, useRealtimeBracket hook extension
@@ -251,7 +251,7 @@ Note: Phases 33-36 are independent of the control feature chain (29-32) and can 
 | 30. Undo Round Advancement | 3/3 | Complete    | 2026-03-01 | - |
 | 31. Reopen Completed Activities | 2/2 | Complete    | 2026-03-01 | - |
 | 31.1 Activity Card Layout Fix & Quick Settings Toggle | 3/3 | Complete    | 2026-03-01 | - |
-| 32. Settings Editing | 3/4 | In Progress|  | - |
+| 32. Settings Editing | 4/4 | Complete   | 2026-03-01 | - |
 | 33. Bracket Quick Create | v2.0 | 0/TBD | Not started | - |
 | 34. Poll Quick Create & Image Polish | v2.0 | 0/TBD | Not started | - |
 | 35. Real-Time Vote Indicators | v2.0 | 0/TBD | Not started | - |

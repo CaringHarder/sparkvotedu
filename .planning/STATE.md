@@ -22,10 +22,10 @@ See: .planning/PROJECT.md (updated 2026-02-28)
 
 ## Current Position
 
-Phase: 32 of 36 (Settings Editing) -- IN PROGRESS
-Plan: 3 of 4 complete
-Status: Executing
-Last activity: 2026-03-01 -- Completed 32-03 (poll display settings wiring)
+Phase: 32 of 36 (Settings Editing) -- COMPLETE
+Plan: 4 of 4 complete
+Status: Phase Complete
+Last activity: 2026-03-01 -- Completed 32-04 (student bracket viewingMode routing)
 
 Progress: [##░░░░░░░░] 17% (v2.0)
 
@@ -74,6 +74,10 @@ Recent from research:
 - 32-01: Keep existing updateBracketViewingMode for backward compat until Plans 02-03 migrate callers
 - 32-01: Default showVoteCounts/showSeedNumbers to true in hook state, matching DB defaults
 - 32-03: Used 'archived' instead of 'completed' in poll disabled check -- PollStatus has no 'completed' value
+- 32-04: SELiveView wrapper keeps useRealtimeBracket call unconditional per React hooks rules
+- 32-04: DESimpleVoting uses MatchupVoteCard's internal useVote hook (no double-submit via onVoteTracked pattern)
+- 32-04: RR isSimpleMode purely from realtime viewingMode (no roundRobinVotingStyle fallback)
+- 32-04: effectiveBracket pattern: useMemo merging realtime showSeedNumbers/showVoteCounts into bracket prop
 
 ### Roadmap Evolution
 
@@ -118,9 +122,10 @@ None -- all v1.3 requirements shipped.
 | Phase 32 P01 | 2min | 2 tasks | 5 files |
 | Phase 32 P02 | 3min | 2 tasks | 2 files |
 | Phase 32 P03 | 2min | 2 tasks | 2 files |
+| Phase 32 P04 | 5min | 2 tasks | 3 files |
 
 ## Session Continuity
 
 Last session: 2026-03-01
-Stopped at: Completed 32-02-PLAN.md (bracket pages settings wiring)
-Resume: `/gsd:execute-phase` to continue with Phase 32 Plan 04
+Stopped at: Completed 32-04-PLAN.md (student bracket viewingMode routing)
+Resume: `/gsd:execute-phase` to continue with Phase 33
