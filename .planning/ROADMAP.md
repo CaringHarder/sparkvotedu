@@ -136,7 +136,7 @@ Plans:
   3. Teacher can toggle "Show Live Results" and "Allow Vote Change" on both the poll detail page and live dashboard
   4. Settings changes on live activities take effect immediately for connected students without page refresh
   5. Toggles have visible labels and blend into existing page layout (no separate Quick Settings section)
-**Plans:** 3 plans
+**Plans:** 2/3 plans executed
 
 Plans:
 - [ ] 31.1-01-PLAN.md -- Card layout fix (auto-fill grid, badge wrap) + QuickSettingsToggle reusable component
@@ -248,7 +248,7 @@ Note: Phases 33-36 are independent of the control feature chain (29-32) and can 
 | 29. Pause/Resume & Go Live | 3/3 | Complete    | 2026-03-01 | - |
 | 30. Undo Round Advancement | 3/3 | Complete    | 2026-03-01 | - |
 | 31. Reopen Completed Activities | 2/2 | Complete    | 2026-03-01 | - |
-| 31.1 Activity Card Layout Fix & Quick Settings Toggle | v2.0 | 0/3 | Not started | - |
+| 31.1 Activity Card Layout Fix & Quick Settings Toggle | 2/3 | In Progress|  | - |
 | 32. Settings Editing | v2.0 | 0/TBD | Not started | - |
 | 33. Bracket Quick Create | v2.0 | 0/TBD | Not started | - |
 | 34. Poll Quick Create & Image Polish | v2.0 | 0/TBD | Not started | - |

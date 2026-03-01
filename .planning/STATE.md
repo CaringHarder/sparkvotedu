@@ -2,13 +2,13 @@
 gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: Teacher Power-Ups
-status: unknown
-last_updated: "2026-03-01T14:31:03.300Z"
+status: in-progress
+last_updated: "2026-03-01T16:05:29Z"
 progress:
   total_phases: 14
   completed_phases: 13
-  total_plans: 39
-  completed_plans: 39
+  total_plans: 42
+  completed_plans: 40
 ---
 
 # Project State
@@ -18,16 +18,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-02-28)
 
 **Core value:** Teachers can instantly engage any classroom through voting -- on any topic, in any format -- and see participation happen in real time.
-**Current focus:** v2.0 Teacher Power-Ups -- Phase 31: Reopen Completed Activities
+**Current focus:** v2.0 Teacher Power-Ups -- Phase 31.1: Activity Card Layout Fix & Quick Settings Toggle
 
 ## Current Position
 
-Phase: 31 of 36 (Reopen Completed Activities)
-Plan: 2 of 2 complete
-Status: Phase Complete
-Last activity: 2026-03-01 -- Completed 31-02 (reopen UI across context menu and live dashboards)
+Phase: 31.1 of 36 (Activity Card Layout Fix & Quick Settings Toggle)
+Plan: 1 of 3 complete
+Status: In Progress
+Last activity: 2026-03-01 -- Completed 31.1-01 (card grid layout fix & QuickSettingsToggle component)
 
-Progress: [#░░░░░░░░░] 5% (v2.0)
+Progress: [#░░░░░░░░░] 7% (v2.0)
 
 ## Performance Metrics
 
@@ -65,6 +65,8 @@ Recent from research:
 - 31-02: No confirmation dialog on reopen -- paused state is safe by default
 - 31-02: Reopen menu item placed after Duplicate, before Archive separator
 - 31-02: Poll Reopen button rewired from handleStatusChange(draft) to reopenPoll server action
+- 31.1-01: Used inline style for gridTemplateColumns instead of Tailwind arbitrary value for reliable cross-build compatibility
+- 31.1-01: QuickSettingsToggle uses label element wrapping for accessible click-to-toggle interaction
 
 ### Roadmap Evolution
 
@@ -103,9 +105,10 @@ None -- all v1.3 requirements shipped.
 | 18 | Fix prediction bracket tabulation results lost on remount | 2026-03-01 | d16bccc | Verified | [18-fix-prediction-bracket-tabulation-result](./quick/18-fix-prediction-bracket-tabulation-result/) |
 | Phase 31 P01 | 3min | 2 tasks | 10 files |
 | Phase 31 P02 | 5min | 3 tasks | 4 files |
+| Phase 31.1 P01 | 2min | 2 tasks | 5 files |
 
 ## Session Continuity
 
 Last session: 2026-03-01
-Stopped at: Completed 31-02-PLAN.md (reopen UI -- phase 31 complete)
-Resume: `/gsd:execute-phase` to continue with Phase 31.1 (Activity Card Layout Fix & Quick Settings Toggle)
+Stopped at: Completed 31.1-01-PLAN.md (card grid layout fix & QuickSettingsToggle)
+Resume: `/gsd:execute-phase` to continue with Phase 31.1 Plan 02
