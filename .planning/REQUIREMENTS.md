@@ -24,7 +24,7 @@ Requirements for v2.0 Teacher Power-Ups. Each maps to roadmap phases.
 - [ ] **CTRL-13**: Teacher can reopen a closed poll (preserves all existing votes)
 - [ ] **CTRL-14**: Teacher can edit display settings (simple/advanced, show seeds, show vote counts, timer) on a bracket after creation
 - [ ] **CTRL-15**: Teacher can edit display settings (show live results, allow vote change) on a poll after creation
-- [ ] **CTRL-16**: Display settings changes broadcast to student views in real time
+- [x] **CTRL-16**: Display settings changes broadcast to student views in real time
 - [ ] **CTRL-17**: Structural settings (bracket type, size, poll type) are locked after creation with clear indicator
 
 ### Creation UX
@@ -99,7 +99,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | CTRL-13 | Phase 31 | Pending |
 | CTRL-14 | Phase 32 | Pending |
 | CTRL-15 | Phase 32 | Pending |
-| CTRL-16 | Phase 32 | Pending |
+| CTRL-16 | Phase 32 | Complete |
 | CTRL-17 | Phase 32 | Pending |
 | CREATE-01 | Phase 33 | Pending |
 | CREATE-02 | Phase 33 | Pending |
