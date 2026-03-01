@@ -473,6 +473,115 @@ export async function updatePredictionStatusDAL(
   return { success: true }
 }
 
+/**
+ * Re-compute tabulation results (read-only) for a bracket in previewing status.
+ *
+ * Used to restore vote counts after component remount. Does NOT write anything
+ * to the database -- purely re-derives TabulationResult[] from persisted
+ * predictions and matchup state.
+ *
+ * For matchups that already have a winnerId set in the DB (from prior tabulation
+ * or teacher override), the DB winnerId takes precedence over the pure engine result.
+ */
+export async function getTabulationResults(
+  bracketId: string,
+  teacherId: string
+): Promise<{ results: TabulationResult[]; unresolvedCount: number } | { error: string }> {
+  const bracket = await prisma.bracket.findFirst({
+    where: { id: bracketId, teacherId },
+    select: {
+      id: true,
+      bracketType: true,
+      predictiveResolutionMode: true,
+      predictionStatus: true,
+      size: true,
+      maxEntrants: true,
+    },
+  })
+
+  if (!bracket) {
+    return { error: 'Bracket not found' }
+  }
+
+  if (bracket.bracketType !== 'predictive') {
+    return { error: 'Bracket is not a predictive bracket' }
+  }
+
+  if (bracket.predictiveResolutionMode !== 'auto') {
+    return { error: 'Bracket is not in auto-resolution mode' }
+  }
+
+  const currentStatus = bracket.predictionStatus ?? 'draft'
+  if (currentStatus !== 'previewing') {
+    return { error: `Cannot fetch tabulation results from status '${currentStatus}'` }
+  }
+
+  // Fetch all predictions (same query as tabulateBracketPredictions)
+  const predictions = await prisma.prediction.findMany({
+    where: { bracketId },
+    select: {
+      participantId: true,
+      matchupId: true,
+      predictedWinnerId: true,
+    },
+  })
+
+  // Fetch all matchups with entrant data + winnerId for override preservation
+  const matchups = await prisma.matchup.findMany({
+    where: { bracketId },
+    select: {
+      id: true,
+      round: true,
+      position: true,
+      entrant1Id: true,
+      entrant2Id: true,
+      isBye: true,
+      nextMatchupId: true,
+      winnerId: true,
+    },
+  })
+
+  // Build TabulationInput from matchups
+  const tabulationInputs: TabulationInput[] = matchups.map((m) => ({
+    matchupId: m.id,
+    round: m.round,
+    position: m.position,
+    entrant1Id: m.entrant1Id,
+    entrant2Id: m.entrant2Id,
+    isBye: m.isBye,
+    nextMatchupId: m.nextMatchupId,
+  }))
+
+  // Calculate total rounds
+  const effectiveSize = bracket.maxEntrants ?? bracket.size
+  const totalRounds = Math.ceil(Math.log2(effectiveSize))
+
+  // Call pure tabulation engine (read-only -- computes vote counts)
+  const results = tabulatePredictions(predictions, tabulationInputs, totalRounds)
+
+  // Build DB winnerId lookup for override preservation
+  const dbWinnerById = new Map(
+    matchups.filter((m) => m.winnerId != null).map((m) => [m.id, m.winnerId])
+  )
+
+  // For matchups that already have a winnerId in the DB (from prior tabulation
+  // or teacher override), use that as the authoritative winner
+  for (const result of results) {
+    const dbWinnerId = dbWinnerById.get(result.matchupId)
+    if (dbWinnerId) {
+      result.winnerId = dbWinnerId
+      result.status = 'resolved'
+    }
+  }
+
+  // Compute unresolvedCount from results where status !== 'resolved'
+  const unresolvedCount = results.filter(
+    (r) => r.status !== 'resolved'
+  ).length
+
+  return { results, unresolvedCount }
+}
+
 // ---------------------------------------------------------------------------
 // Auto-resolution DAL functions
 // ---------------------------------------------------------------------------

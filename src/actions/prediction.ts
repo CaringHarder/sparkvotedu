@@ -12,6 +12,7 @@ import {
   releaseResultsDAL,
   revealRoundDAL,
   reopenPredictionsDAL,
+  getTabulationResults,
 } from '@/lib/dal/prediction'
 import { canUseBracketType } from '@/lib/gates/features'
 import {
@@ -238,6 +239,43 @@ export async function prepareResults(input: unknown) {
     }
   } catch {
     return { error: 'Failed to prepare results' }
+  }
+}
+
+/**
+ * Fetch tabulation results for a bracket in previewing status (read-only).
+ *
+ * Auth -> validate -> feature gate -> DAL (no revalidatePath -- read-only)
+ *
+ * Used to restore vote counts after component remount. Does not mutate DB.
+ */
+export async function fetchTabulationResults(input: unknown) {
+  const teacher = await getAuthenticatedTeacher()
+  if (!teacher) {
+    return { error: 'Not authenticated' }
+  }
+
+  const parsed = prepareResultsSchema.safeParse(input)
+  if (!parsed.success) {
+    return { error: 'Invalid input data', issues: parsed.error.issues }
+  }
+
+  const { bracketId } = parsed.data
+
+  // Feature gate: predictive bracket type requires pro_plus
+  const gate = canUseBracketType(
+    teacher.subscriptionTier as SubscriptionTier,
+    'predictive'
+  )
+  if (!gate.allowed) {
+    return { error: gate.reason }
+  }
+
+  try {
+    const result = await getTabulationResults(bracketId, teacher.id)
+    return result
+  } catch {
+    return { error: 'Failed to fetch tabulation results' }
   }
 }
 
