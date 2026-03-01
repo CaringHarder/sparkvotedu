@@ -108,9 +108,11 @@ export function useRealtimeBracket(bracketId: string, batchIntervalMs = 2000) {
         setPredictionStatus(data.predictionStatus)
       }
 
-      // Check if bracket is complete
+      // Check if bracket is complete -- reset when reopened
       if (data.status === 'completed') {
         setBracketCompleted(true)
+      } else {
+        setBracketCompleted(false)
       }
     } catch {
       // Fetch failure is non-fatal -- will retry on next event or interval
@@ -161,7 +163,9 @@ export function useRealtimeBracket(bracketId: string, batchIntervalMs = 2000) {
           type === 'reveal_round' ||
           type === 'reveal_complete' ||
           type === 'bracket_paused' ||
-          type === 'bracket_resumed'
+          type === 'bracket_resumed' ||
+          type === 'round_undone' ||
+          type === 'bracket_reopened'
         ) {
           fetchBracketState()
         }

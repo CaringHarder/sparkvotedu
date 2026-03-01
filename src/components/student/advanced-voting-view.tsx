@@ -98,6 +98,15 @@ export function AdvancedVotingView({
     }
   }, [bracketCompleted, revealState, showCelebration, currentMatchups, totalRounds])
 
+  // Reset celebration/reveal state when bracket is reopened (bracketCompleted becomes false)
+  useEffect(() => {
+    if (!bracketCompleted) {
+      setShowCelebration(false)
+      setRevealState(null)
+      hasShownRevealRef.current = false
+    }
+  }, [bracketCompleted])
+
   // Derive champion name
   const championName = (() => {
     const finalMatchup = currentMatchups.find(

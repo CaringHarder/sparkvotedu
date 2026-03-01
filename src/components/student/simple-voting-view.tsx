@@ -100,6 +100,14 @@ export function SimpleVotingView({
     }
   }, [bracketCompleted])
 
+  // Reset celebration/reveal state when bracket is reopened (bracketCompleted becomes false)
+  useEffect(() => {
+    if (!bracketCompleted) {
+      setShowCelebration(false)
+      setRevealState(null)
+    }
+  }, [bracketCompleted])
+
   // Derive champion name from final matchup
   const championName = (() => {
     const maxRound = Math.max(...allMatchups.map((m) => m.round), 0)

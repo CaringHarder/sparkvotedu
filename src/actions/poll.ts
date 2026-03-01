@@ -17,6 +17,7 @@ import {
   getRankedPollVotes,
   unarchivePollDAL,
   deletePollPermanentlyDAL,
+  reopenPollDAL,
 } from '@/lib/dal/poll'
 import {
   createPollSchema,
@@ -25,6 +26,7 @@ import {
   updatePollStatusSchema,
   castPollVoteSchema,
   castRankedPollVoteSchema,
+  reopenPollSchema,
 } from '@/lib/utils/validation'
 import {
   broadcastPollVoteUpdate,
@@ -650,5 +652,51 @@ export async function deletePollPermanently(input: unknown) {
     return { success: true }
   } catch {
     return { error: 'Failed to permanently delete poll' }
+  }
+}
+
+// Schema for reopening a closed poll
+const reopenPollInputSchema = reopenPollSchema
+
+/**
+ * Reopen a closed poll. Transitions to paused with allowVoteChange locked to false.
+ *
+ * Auth -> validate -> DAL -> broadcast -> revalidate -> return
+ */
+export async function reopenPoll(input: unknown) {
+  const teacher = await getAuthenticatedTeacher()
+  if (!teacher) {
+    return { error: 'Not authenticated' }
+  }
+
+  const parsed = reopenPollInputSchema.safeParse(input)
+  if (!parsed.success) {
+    return { error: 'Invalid reopen data', issues: parsed.error.issues }
+  }
+
+  const { pollId } = parsed.data
+
+  try {
+    const result = await reopenPollDAL(pollId, teacher.id)
+
+    if ('error' in result) {
+      return { error: result.error }
+    }
+
+    // Broadcast poll_reopened event (fire-and-forget)
+    broadcastPollUpdate(pollId, 'poll_reopened').catch(console.error)
+
+    // Notify session activity channel if poll belongs to a session
+    if (result.sessionId) {
+      broadcastActivityUpdate(result.sessionId).catch(console.error)
+    }
+
+    revalidatePath('/activities')
+    revalidatePath(`/polls/${pollId}`)
+    revalidatePath(`/polls/${pollId}/live`)
+
+    return { success: true }
+  } catch {
+    return { error: 'Failed to reopen poll' }
   }
 }

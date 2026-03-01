@@ -114,7 +114,8 @@ export function useRealtimePoll(pollId: string, sessionId?: string | null, batch
           type === 'poll_activated' ||
           type === 'poll_archived' ||
           type === 'poll_paused' ||
-          type === 'poll_resumed'
+          type === 'poll_resumed' ||
+          type === 'poll_reopened'
         ) {
           fetchPollState()
         }

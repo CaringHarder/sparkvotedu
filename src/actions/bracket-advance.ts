@@ -23,8 +23,9 @@ import {
   openVotingSchema,
   updateBracketVotingSettingsSchema,
   undoRoundSchema,
+  reopenBracketSchema,
 } from '@/lib/utils/validation'
-import { updateBracketStatusDAL } from '@/lib/dal/bracket'
+import { updateBracketStatusDAL, reopenBracketDAL } from '@/lib/dal/bracket'
 import { revalidatePath } from 'next/cache'
 import { z } from 'zod'
 
@@ -468,6 +469,49 @@ export async function undoRoundAdvancement(input: unknown) {
     return { success: true, ...undoResult }
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Failed to undo round advancement'
+    return { error: message }
+  }
+}
+
+/**
+ * Reopen a completed bracket. Undoes the final round and transitions to paused.
+ *
+ * Auth -> validate -> DAL (undo final round + status change) -> broadcast -> revalidate
+ */
+export async function reopenBracket(input: unknown) {
+  const teacher = await getAuthenticatedTeacher()
+  if (!teacher) {
+    return { error: 'Not authenticated' }
+  }
+
+  const parsed = reopenBracketSchema.safeParse(input)
+  if (!parsed.success) {
+    return { error: 'Invalid reopen data', issues: parsed.error.issues }
+  }
+
+  const { bracketId } = parsed.data
+
+  try {
+    const result = await reopenBracketDAL(bracketId, teacher.id)
+
+    if ('error' in result) {
+      return { error: result.error }
+    }
+
+    // Broadcast bracket_reopened event (fire-and-forget)
+    broadcastBracketUpdate(bracketId, 'bracket_reopened', {}).catch(console.error)
+
+    // Notify session activity channel if bracket belongs to a session
+    if (result.sessionId) {
+      broadcastActivityUpdate(result.sessionId).catch(console.error)
+    }
+
+    revalidatePath(`/brackets/${bracketId}`)
+    revalidatePath(`/brackets/${bracketId}/live`)
+
+    return { success: true }
+  } catch (err) {
+    const message = err instanceof Error ? err.message : 'Failed to reopen bracket'
     return { error: message }
   }
 }
