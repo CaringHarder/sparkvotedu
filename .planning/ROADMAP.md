@@ -103,7 +103,7 @@ Plans:
   3. Teacher clicks Undo Round on an RR bracket and the most recent round's results are cleared, reopening those matchups for voting
   4. Teacher clicks Undo Round on a predictive bracket and the most recent round's resolutions are reversed, restoring matchups to unresolved state
   5. If a teacher already advanced rounds beyond the one being undone, all cascading dependent matchups and votes in later rounds are cleared as part of the undo
-**Plans:** 1/3 plans executed
+**Plans:** 2/3 plans executed
 
 Plans:
 - [ ] 30-01-PLAN.md -- Backend undo engine: SE + RR + DE + Predictive undo functions and round detection utility in advancement.ts
@@ -226,7 +226,7 @@ Note: Phases 33-36 are independent of the control feature chain (29-32) and can 
 | 27. SE Final Round Realtime Fix | v1.3 | 1/1 | Complete | 2026-02-26 |
 | 28. RR All-at-Once Completion Fix | v1.3 | 3/3 | Complete | 2026-02-26 |
 | 29. Pause/Resume & Go Live | 3/3 | Complete    | 2026-03-01 | - |
-| 30. Undo Round Advancement | 1/3 | In Progress|  | - |
+| 30. Undo Round Advancement | 2/3 | In Progress|  | - |
 | 31. Reopen Completed Activities | v2.0 | 0/TBD | Not started | - |
 | 32. Settings Editing | v2.0 | 0/TBD | Not started | - |
 | 33. Bracket Quick Create | v2.0 | 0/TBD | Not started | - |
