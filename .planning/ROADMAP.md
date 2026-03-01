@@ -127,13 +127,21 @@ Plans:
 
 ### Phase 31.1: Activity Card Layout Fix & Quick Settings Toggle (INSERTED)
 
-**Goal:** [Urgent work - to be planned]
-**Requirements**: TBD
+**Goal:** Activity cards display properly at all screen sizes with readable titles/descriptions/metadata, and teachers can quickly toggle key bracket/poll settings inline on detail and live dashboard pages
+**Requirements**: Overlaps with CTRL-14/15/16/17 scope (quick-toggle subset)
 **Depends on:** Phase 31
-**Plans:** 0 plans
+**Success Criteria** (what must be TRUE):
+  1. Activity cards never squeeze below readable width -- grids auto-adjust column count with a minimum card width floor
+  2. Teacher can toggle bracket viewing mode (simple/advanced) on both the bracket detail page and live dashboard for single_elimination brackets
+  3. Teacher can toggle "Show Live Results" and "Allow Vote Change" on both the poll detail page and live dashboard
+  4. Settings changes on live activities take effect immediately for connected students without page refresh
+  5. Toggles have visible labels and blend into existing page layout (no separate Quick Settings section)
+**Plans:** 3 plans
 
 Plans:
-- [ ] TBD (run /gsd:plan-phase 31.1 to break down)
+- [ ] 31.1-01-PLAN.md -- Card layout fix (auto-fill grid, badge wrap) + QuickSettingsToggle reusable component
+- [ ] 31.1-02-PLAN.md -- Backend: updateBracketViewingMode action, broadcast types, updatePoll broadcast
+- [ ] 31.1-03-PLAN.md -- Wire toggles on 4 teacher pages + student real-time hook updates
 
 ### Phase 32: Settings Editing
 **Goal**: Teachers can adjust display settings on brackets and polls after creation -- even while live -- without risking structural data corruption
@@ -240,7 +248,7 @@ Note: Phases 33-36 are independent of the control feature chain (29-32) and can 
 | 29. Pause/Resume & Go Live | 3/3 | Complete    | 2026-03-01 | - |
 | 30. Undo Round Advancement | 3/3 | Complete    | 2026-03-01 | - |
 | 31. Reopen Completed Activities | 2/2 | Complete    | 2026-03-01 | - |
-| 31.1 Activity Card Layout Fix & Quick Settings Toggle | v2.0 | 0/TBD | Not started | - |
+| 31.1 Activity Card Layout Fix & Quick Settings Toggle | v2.0 | 0/3 | Not started | - |
 | 32. Settings Editing | v2.0 | 0/TBD | Not started | - |
 | 33. Bracket Quick Create | v2.0 | 0/TBD | Not started | - |
 | 34. Poll Quick Create & Image Polish | v2.0 | 0/TBD | Not started | - |
