@@ -7,6 +7,11 @@ import {
   advanceDoubleElimMatchup,
   undoMatchupAdvancement,
   isBracketComplete,
+  undoRoundSE,
+  undoRoundRR,
+  undoRoundDE,
+  undoRoundPredictive,
+  getMostRecentAdvancedRound,
 } from '@/lib/bracket/advancement'
 import { openMatchupsForVoting as openMatchupsForVotingDAL } from '@/lib/dal/vote'
 import {
@@ -17,7 +22,9 @@ import {
   advanceMatchupSchema,
   openVotingSchema,
   updateBracketVotingSettingsSchema,
+  undoRoundSchema,
 } from '@/lib/utils/validation'
+import { updateBracketStatusDAL } from '@/lib/dal/bracket'
 import { revalidatePath } from 'next/cache'
 import { z } from 'zod'
 
@@ -328,6 +335,139 @@ export async function updateBracketVotingSettings(input: unknown) {
   } catch (err) {
     console.error('Failed to update bracket voting settings:', err)
     const message = err instanceof Error ? err.message : 'Failed to update bracket voting settings'
+    return { error: message }
+  }
+}
+
+/**
+ * Undo the most recently advanced round for a bracket.
+ *
+ * Auth -> validate -> ownership + status check -> auto-pause -> validate round ->
+ * dispatch to type-specific engine -> broadcast -> revalidate
+ *
+ * This is the single entry point for the frontend undo UI. It handles all
+ * cross-cutting concerns and delegates to the bracket-type-specific engine
+ * functions (undoRoundSE, undoRoundRR, undoRoundDE, undoRoundPredictive).
+ */
+export async function undoRoundAdvancement(input: unknown) {
+  const teacher = await getAuthenticatedTeacher()
+  if (!teacher) {
+    return { error: 'Not authenticated' }
+  }
+
+  const parsed = undoRoundSchema.safeParse(input)
+  if (!parsed.success) {
+    return { error: 'Invalid undo data', issues: parsed.error.issues }
+  }
+
+  const { bracketId, round, region } = parsed.data
+
+  try {
+    // Verify bracket ownership and get status + type info
+    const bracket = await prisma.bracket.findFirst({
+      where: { id: bracketId, teacherId: teacher.id },
+      select: {
+        id: true,
+        sessionId: true,
+        bracketType: true,
+        status: true,
+        predictiveResolutionMode: true,
+      },
+    })
+
+    if (!bracket) {
+      return { error: 'Bracket not found or not owned by you' }
+    }
+
+    // Status guard: only allow undo on active, paused, or just-completed brackets
+    if (bracket.status === 'draft' || bracket.status === 'archived') {
+      return { error: 'Can only undo rounds on active or paused brackets' }
+    }
+
+    // For completed brackets, only allow if getMostRecentAdvancedRound returns a result
+    // (meaning the bracket was just finished and can be undone)
+    if (bracket.status === 'completed') {
+      const recentRound = await getMostRecentAdvancedRound(bracketId, bracket.bracketType)
+      if (!recentRound) {
+        return { error: 'Can only undo rounds on active or paused brackets' }
+      }
+    }
+
+    // Auto-pause: if bracket is active, pause it first via DAL (uses VALID_TRANSITIONS)
+    if (bracket.status === 'active') {
+      await updateBracketStatusDAL(bracketId, teacher.id, 'paused')
+      broadcastBracketUpdate(bracketId, 'bracket_paused', {}).catch(console.error)
+    }
+
+    // If bracket was completed, transition to paused via direct update
+    // (completed -> paused is not in VALID_TRANSITIONS, same pattern as unarchiveBracketDAL)
+    if (bracket.status === 'completed') {
+      await prisma.bracket.update({
+        where: { id: bracketId },
+        data: { status: 'paused' },
+      })
+      broadcastBracketUpdate(bracketId, 'bracket_paused', {}).catch(console.error)
+    }
+
+    // Validate that the requested round is the most recently advanced round
+    const mostRecent = await getMostRecentAdvancedRound(bracketId, bracket.bracketType)
+    if (!mostRecent) {
+      return { error: 'No advanced rounds found to undo' }
+    }
+
+    if (mostRecent.round !== round) {
+      return { error: `Round ${round} is not the most recently advanced round` }
+    }
+
+    // For DE brackets, also check region matches if returned
+    if (bracket.bracketType === 'double_elimination' && mostRecent.region) {
+      if (region && region !== mostRecent.region) {
+        return { error: `Region '${region}' does not match the most recently advanced region '${mostRecent.region}'` }
+      }
+    }
+
+    // Dispatch to type-specific engine function
+    let undoResult: Record<string, unknown>
+    switch (bracket.bracketType) {
+      case 'single_elimination':
+        undoResult = await undoRoundSE(bracketId, round)
+        break
+      case 'round_robin':
+        undoResult = await undoRoundRR(bracketId, round)
+        break
+      case 'double_elimination': {
+        if (!region) {
+          return { error: 'Region is required for double elimination undo' }
+        }
+        undoResult = await undoRoundDE(bracketId, round, region)
+        break
+      }
+      case 'predictive':
+        undoResult = await undoRoundPredictive(bracketId, round)
+        break
+      default:
+        return { error: 'Undo not supported for this bracket type' }
+    }
+
+    // Broadcast round_undone event
+    broadcastBracketUpdate(bracketId, 'round_undone', {
+      round,
+      region,
+      bracketType: bracket.bracketType,
+    }).catch(console.error)
+
+    // Notify session activity channel if bracket belongs to a session
+    if (bracket.sessionId) {
+      broadcastActivityUpdate(bracket.sessionId).catch(console.error)
+    }
+
+    // Revalidate bracket pages
+    revalidatePath(`/brackets/${bracketId}`)
+    revalidatePath(`/brackets/${bracketId}/live`)
+
+    return { success: true, ...undoResult }
+  } catch (err) {
+    const message = err instanceof Error ? err.message : 'Failed to undo round advancement'
     return { error: message }
   }
 }
