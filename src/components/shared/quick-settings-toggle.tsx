@@ -20,14 +20,9 @@ export function QuickSettingsToggle({
   description,
 }: QuickSettingsToggleProps) {
   return (
-    <label className="flex items-center gap-2">
+    <label className="flex items-center gap-2 whitespace-nowrap">
       {icon && <span className="h-4 w-4 shrink-0 text-muted-foreground">{icon}</span>}
-      <div className="flex flex-col">
-        <span className="text-sm font-medium text-muted-foreground">{label}</span>
-        {description && (
-          <span className="text-xs text-muted-foreground">{description}</span>
-        )}
-      </div>
+      <span className="text-sm font-medium text-muted-foreground" title={description}>{label}</span>
       <Switch
         checked={checked}
         onCheckedChange={onCheckedChange}
