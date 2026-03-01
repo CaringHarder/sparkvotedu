@@ -84,41 +84,41 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| CTRL-01 | — | Pending |
-| CTRL-02 | — | Pending |
-| CTRL-03 | — | Pending |
-| CTRL-04 | — | Pending |
-| CTRL-05 | — | Pending |
-| CTRL-06 | — | Pending |
-| CTRL-07 | — | Pending |
-| CTRL-08 | — | Pending |
-| CTRL-09 | — | Pending |
-| CTRL-10 | — | Pending |
-| CTRL-11 | — | Pending |
-| CTRL-12 | — | Pending |
-| CTRL-13 | — | Pending |
-| CTRL-14 | — | Pending |
-| CTRL-15 | — | Pending |
-| CTRL-16 | — | Pending |
-| CTRL-17 | — | Pending |
-| CREATE-01 | — | Pending |
-| CREATE-02 | — | Pending |
-| CREATE-03 | — | Pending |
-| CREATE-04 | — | Pending |
-| CREATE-05 | — | Pending |
-| LIVE-01 | — | Pending |
-| LIVE-02 | — | Pending |
-| LIVE-03 | — | Pending |
-| LIVE-04 | — | Pending |
-| FIX-01 | — | Pending |
-| FIX-02 | — | Pending |
-| FIX-03 | — | Pending |
+| CTRL-01 | Phase 29 | Pending |
+| CTRL-02 | Phase 29 | Pending |
+| CTRL-03 | Phase 29 | Pending |
+| CTRL-04 | Phase 29 | Pending |
+| CTRL-05 | Phase 29 | Pending |
+| CTRL-06 | Phase 29 | Pending |
+| CTRL-07 | Phase 30 | Pending |
+| CTRL-08 | Phase 30 | Pending |
+| CTRL-09 | Phase 30 | Pending |
+| CTRL-10 | Phase 30 | Pending |
+| CTRL-11 | Phase 30 | Pending |
+| CTRL-12 | Phase 31 | Pending |
+| CTRL-13 | Phase 31 | Pending |
+| CTRL-14 | Phase 32 | Pending |
+| CTRL-15 | Phase 32 | Pending |
+| CTRL-16 | Phase 32 | Pending |
+| CTRL-17 | Phase 32 | Pending |
+| CREATE-01 | Phase 33 | Pending |
+| CREATE-02 | Phase 33 | Pending |
+| CREATE-03 | Phase 34 | Pending |
+| CREATE-04 | Phase 34 | Pending |
+| CREATE-05 | Phase 34 | Pending |
+| LIVE-01 | Phase 35 | Pending |
+| LIVE-02 | Phase 35 | Pending |
+| LIVE-03 | Phase 35 | Pending |
+| LIVE-04 | Phase 29 | Pending |
+| FIX-01 | Phase 36 | Pending |
+| FIX-02 | Phase 36 | Pending |
+| FIX-03 | Phase 36 | Pending |
 
 **Coverage:**
 - v2.0 requirements: 29 total
-- Mapped to phases: 0
-- Unmapped: 29 ⚠️
+- Mapped to phases: 29
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-02-28*
-*Last updated: 2026-02-28 after initial definition*
+*Last updated: 2026-02-28 after roadmap creation*

@@ -5,49 +5,34 @@
 See: .planning/PROJECT.md (updated 2026-02-28)
 
 **Core value:** Teachers can instantly engage any classroom through voting -- on any topic, in any format -- and see participation happen in real time.
-**Current focus:** v2.0 Teacher Power-Ups
+**Current focus:** v2.0 Teacher Power-Ups -- Phase 29: Pause/Resume & Go Live
 
 ## Current Position
 
-Phase: Not started (defining requirements)
-Plan: —
-Status: Defining requirements
-Last activity: 2026-02-28 — Milestone v2.0 started
+Phase: 29 of 36 (Pause/Resume & Go Live)
+Plan: --
+Status: Ready to plan
+Last activity: 2026-02-28 -- Roadmap created for v2.0 (8 phases, 29 requirements)
+
+Progress: [░░░░░░░░░░] 0% (v2.0)
 
 ## Performance Metrics
 
-**v1.0 MVP (shipped 2026-02-16):**
-- Phases: 13 (1-11 + 7.1)
-- Plans: 101
-- Commits: 447 (215 feat/fix)
-- LOC: 41,773 TypeScript
-- Timeline: 20 days (2026-01-28 to 2026-02-16)
+**v1.0 MVP (shipped 2026-02-16):** 13 phases, 101 plans, 447 commits, 20 days
+**v1.1 Production Readiness (shipped 2026-02-21):** 5 phases, 9 plans, 38 commits, 6 days
+**v1.2 Classroom Hardening (shipped 2026-02-24):** 6 phases, 20 plans, 4 days
+**v1.3 Bug Fixes & UX Parity (shipped 2026-02-26):** 4 phases, 11 plans, 68 commits, 2 days
 
-**v1.1 Production Readiness & Deploy (shipped 2026-02-21):**
-- Phases: 5 (14-18)
-- Plans: 9
-- Tasks: 22
-- Commits: 38
-- LOC: 45,280 TypeScript (final)
-- Timeline: 6 days (2026-02-16 to 2026-02-21)
-
-**v1.2 Classroom Hardening (shipped 2026-02-24):**
-- Phases: 6 (19-24)
-- Plans: 20
-- Timeline: 4 days (2026-02-21 to 2026-02-24)
-
-**v1.3 Bug Fixes & UX Parity (shipped 2026-02-26):**
-- Phases: 4 (25-28)
-- Plans: 11
-- Commits: 68 (16 feat/fix)
-- LOC: 80,750 TypeScript (final)
-- Timeline: 2 days (2026-02-24 to 2026-02-26)
+**Cumulative:** 28 phases, 141 plans across 4 milestones
 
 ## Accumulated Context
 
 ### Decisions
 
 All decisions archived in PROJECT.md Key Decisions table.
+Recent from research:
+- v2.0: Use `paused` as status value (not separate `pausedAt` column) -- simpler, no migration, reuses VALID_TRANSITIONS
+- v2.0: Only @radix-ui/react-switch, @radix-ui/react-tabs, and optionally sonner needed as new packages
 
 ### Pending Todos
 
@@ -57,6 +42,7 @@ None -- all v1.3 requirements shipped.
 
 - Microsoft and Apple OAuth held -- code complete, needs console config
 - FingerprintJS cleanup deferred (CLEAN-01, CLEAN-02)
+- DE bracket undo is highest-risk engineering in v2.0 (loser bracket reversal)
 
 ### Quick Tasks Completed
 
@@ -83,5 +69,5 @@ None -- all v1.3 requirements shipped.
 ## Session Continuity
 
 Last session: 2026-02-28
-Stopped at: v2.0 milestone initialized, defining requirements
-Resume: Continue with requirements → roadmap
+Stopped at: v2.0 roadmap created -- 8 phases (29-36), 29 requirements mapped
+Resume: `/gsd:plan-phase 29` to begin planning Pause/Resume & Go Live
