@@ -811,3 +811,500 @@ export async function undoRoundRR(
     { timeout: 30000 }
   )
 }
+
+/**
+ * Undo a round of double-elimination advancement for a specific region.
+ *
+ * Handles cross-region cascade effects:
+ * - Winners region: reverses loser placements into the losers bracket,
+ *   cascades to downstream LB and GF matchups.
+ * - Losers region: clears LB round results, cascades to downstream LB and GF.
+ * - Grand finals: handles GF match 1 and reset match deletion.
+ *
+ * All mutations are atomic within a single Prisma $transaction.
+ */
+export async function undoRoundDE(
+  bracketId: string,
+  round: number,
+  region: 'winners' | 'losers' | 'grand_finals'
+): Promise<{
+  undoneMatchups: number
+  clearedVotes: number
+  cascadedMatchups: number
+  deletedMatchups: number
+}> {
+  return prisma.$transaction(
+    async (tx: TransactionClient) => {
+      let totalUndone = 0
+      let totalVotesCleared = 0
+      let totalCascaded = 0
+      let totalDeleted = 0
+
+      // Fetch ALL matchups for the bracket (needed for cross-region cleanup)
+      const allMatchups = await tx.matchup.findMany({
+        where: { bracketId },
+        select: {
+          id: true,
+          round: true,
+          position: true,
+          status: true,
+          bracketRegion: true,
+          entrant1Id: true,
+          entrant2Id: true,
+          winnerId: true,
+          nextMatchupId: true,
+        },
+      })
+
+      const wbMatchups = allMatchups.filter((m) => m.bracketRegion === 'winners')
+      const lbMatchups = allMatchups.filter((m) => m.bracketRegion === 'losers')
+      const gfMatchups = allMatchups
+        .filter((m) => m.bracketRegion === 'grand_finals')
+        .sort((a, b) => a.round - b.round)
+
+      const wbMaxRound = wbMatchups.length > 0 ? Math.max(...wbMatchups.map((m) => m.round)) : 0
+      const lbMaxRound = lbMatchups.length > 0 ? Math.max(...lbMatchups.map((m) => m.round)) : 0
+      const losersRoundOffset = wbMaxRound
+
+      // Helper: delete votes and clear a set of matchups
+      async function clearMatchups(matchupIds: string[]) {
+        if (matchupIds.length === 0) return 0
+        await tx.vote.deleteMany({ where: { matchupId: { in: matchupIds } } })
+        await tx.matchup.updateMany({
+          where: { id: { in: matchupIds } },
+          data: { winnerId: null, entrant1Id: null, entrant2Id: null, status: 'pending' },
+        })
+        return matchupIds.length
+      }
+
+      // Helper: delete votes and clear only winnerId/status (preserve entrants) for a set of matchups
+      async function clearWinnersOnly(matchupIds: string[]) {
+        if (matchupIds.length === 0) return 0
+        await tx.vote.deleteMany({ where: { matchupId: { in: matchupIds } } })
+        await tx.matchup.updateMany({
+          where: { id: { in: matchupIds } },
+          data: { winnerId: null, status: 'pending' },
+        })
+        return matchupIds.length
+      }
+
+      if (region === 'winners') {
+        // --- Winners bracket undo ---
+
+        // 1. Get WB matchups in target round with status 'decided'
+        const targetMatchups = wbMatchups.filter(
+          (m) => m.round === round && m.status === 'decided'
+        )
+        if (targetMatchups.length === 0) {
+          return { undoneMatchups: 0, clearedVotes: 0, cascadedMatchups: 0, deletedMatchups: 0 }
+        }
+
+        const targetIds = targetMatchups.map((m) => m.id)
+
+        // 2. Delete votes from target matchups
+        const voteResult = await tx.vote.deleteMany({
+          where: { matchupId: { in: targetIds } },
+        })
+        totalVotesCleared += voteResult.count
+
+        // 3. Clear winnerId, set status to 'pending'
+        await tx.matchup.updateMany({
+          where: { id: { in: targetIds } },
+          data: { winnerId: null, status: 'pending' },
+        })
+        totalUndone = targetMatchups.length
+
+        // 4. Clear propagated entrants in next WB round (via nextMatchupId + getSlotForPosition)
+        for (const matchup of targetMatchups) {
+          if (matchup.nextMatchupId) {
+            const slot = getSlotForPosition(matchup.position)
+            await tx.matchup.update({
+              where: { id: matchup.nextMatchupId },
+              data: { [slot]: null },
+            })
+          }
+        }
+
+        // 5. Reverse loser placements in LB
+        const wbEngineRound = round // WB has no offset
+        const lbEngineRound = wbRoundToLbEngineRound(wbEngineRound)
+        const lbDbRound = lbEngineRound + losersRoundOffset
+        const lbTargetMatchups = lbMatchups.filter((m) => m.round === lbDbRound)
+
+        if (wbEngineRound === 1) {
+          // WB R1 losers fill both entrant1Id and entrant2Id on LB R1 matchups
+          for (const lbm of lbTargetMatchups) {
+            await tx.matchup.update({
+              where: { id: lbm.id },
+              data: { entrant1Id: null, entrant2Id: null },
+            })
+          }
+        } else {
+          // WB R(n>1) losers fill entrant2Id on LB major round matchups
+          for (const lbm of lbTargetMatchups) {
+            await tx.matchup.update({
+              where: { id: lbm.id },
+              data: { entrant2Id: null },
+            })
+          }
+        }
+
+        // 6. Check if undoing WB final: clear entrant2Id on LB final
+        if (round === wbMaxRound) {
+          const lbFinal = lbMatchups.find(
+            (m) => m.round === lbMaxRound && m.position === 1
+          )
+          if (lbFinal) {
+            await tx.matchup.update({
+              where: { id: lbFinal.id },
+              data: { entrant2Id: null },
+            })
+          }
+        }
+
+        // 7. Cascade: clear all LB matchups in rounds >= lbDbRound that were affected
+        const lbCascadeMatchups = lbMatchups.filter((m) => m.round >= lbDbRound)
+        const lbCascadeIds = lbCascadeMatchups.map((m) => m.id)
+        totalCascaded += await clearMatchups(lbCascadeIds)
+
+        // 7b. Clear all GF matchups. Delete GF reset matches (dynamically created).
+        if (gfMatchups.length > 0) {
+          const gfBaseRound = Math.min(...gfMatchups.map((m) => m.round))
+          // Reset matches have no nextMatchupId and round > base GF round
+          const resetMatchups = gfMatchups.filter(
+            (m) => m.round > gfBaseRound
+          )
+          if (resetMatchups.length > 0) {
+            const resetIds = resetMatchups.map((m) => m.id)
+            await tx.vote.deleteMany({ where: { matchupId: { in: resetIds } } })
+            await tx.matchup.deleteMany({ where: { id: { in: resetIds } } })
+            totalDeleted += resetMatchups.length
+          }
+
+          // Clear GF match 1
+          const gfMatch1Ids = gfMatchups
+            .filter((m) => m.round === gfBaseRound)
+            .map((m) => m.id)
+          totalCascaded += await clearMatchups(gfMatch1Ids)
+        }
+
+        // 8. Cascade: clear all WB matchups in rounds > target round
+        const wbCascadeMatchups = wbMatchups.filter((m) => m.round > round)
+        if (wbCascadeMatchups.length > 0) {
+          const wbCascadeIds = wbCascadeMatchups.map((m) => m.id)
+          totalCascaded += await clearMatchups(wbCascadeIds)
+        }
+      } else if (region === 'losers') {
+        // --- Losers bracket undo ---
+
+        // 1. Get LB matchups in target round with status 'decided'
+        const targetMatchups = lbMatchups.filter(
+          (m) => m.round === round && m.status === 'decided'
+        )
+        if (targetMatchups.length === 0) {
+          return { undoneMatchups: 0, clearedVotes: 0, cascadedMatchups: 0, deletedMatchups: 0 }
+        }
+
+        const targetIds = targetMatchups.map((m) => m.id)
+
+        // 2. Delete votes, clear winnerId, set status to 'pending'
+        const voteResult = await tx.vote.deleteMany({
+          where: { matchupId: { in: targetIds } },
+        })
+        totalVotesCleared += voteResult.count
+
+        await tx.matchup.updateMany({
+          where: { id: { in: targetIds } },
+          data: { winnerId: null, status: 'pending' },
+        })
+        totalUndone = targetMatchups.length
+
+        // 3. Clear propagated entrants in next LB round via nextMatchupId
+        for (const matchup of targetMatchups) {
+          if (matchup.nextMatchupId) {
+            // LB survivors go to entrant1Id in the next round
+            // Use the same slot logic: minor->major = entrant1Id, major->minor = position-based
+            const nextMatchup = allMatchups.find((m) => m.id === matchup.nextMatchupId)
+            if (nextMatchup && nextMatchup.bracketRegion === 'grand_finals') {
+              // LB final -> GF: clear entrant2Id
+              await tx.matchup.update({
+                where: { id: matchup.nextMatchupId },
+                data: { entrant2Id: null },
+              })
+            } else {
+              // Within LB: determine slot based on round count comparison
+              const currentRoundCount = lbMatchups.filter((m) => m.round === matchup.round).length
+              const nextRoundCount = nextMatchup
+                ? lbMatchups.filter((m) => m.round === nextMatchup.round).length
+                : 0
+
+              if (currentRoundCount === nextRoundCount) {
+                // 1-to-1 (minor->major): LB survivors go to entrant1Id
+                await tx.matchup.update({
+                  where: { id: matchup.nextMatchupId },
+                  data: { entrant1Id: null },
+                })
+              } else {
+                // 2-to-1 (major->minor): standard position-based slot
+                const slot = getSlotForPosition(matchup.position)
+                await tx.matchup.update({
+                  where: { id: matchup.nextMatchupId },
+                  data: { [slot]: null },
+                })
+              }
+            }
+          }
+        }
+
+        // 4. If undoing LB final: clear entrant2Id on GF matchup
+        if (round === lbMaxRound) {
+          for (const gfm of gfMatchups) {
+            await tx.matchup.update({
+              where: { id: gfm.id },
+              data: { entrant2Id: null },
+            })
+          }
+        }
+
+        // 5. Cascade: clear all LB matchups in rounds > target round
+        const lbCascadeMatchups = lbMatchups.filter((m) => m.round > round)
+        if (lbCascadeMatchups.length > 0) {
+          totalCascaded += await clearMatchups(lbCascadeMatchups.map((m) => m.id))
+        }
+
+        // 5b. Clear all GF matchups and delete any GF reset match
+        if (gfMatchups.length > 0) {
+          const gfBaseRound = Math.min(...gfMatchups.map((m) => m.round))
+          const resetMatchups = gfMatchups.filter((m) => m.round > gfBaseRound)
+          if (resetMatchups.length > 0) {
+            const resetIds = resetMatchups.map((m) => m.id)
+            await tx.vote.deleteMany({ where: { matchupId: { in: resetIds } } })
+            await tx.matchup.deleteMany({ where: { id: { in: resetIds } } })
+            totalDeleted += resetMatchups.length
+          }
+
+          const gfMatch1Ids = gfMatchups
+            .filter((m) => m.round === gfBaseRound)
+            .map((m) => m.id)
+          totalCascaded += await clearMatchups(gfMatch1Ids)
+        }
+      } else if (region === 'grand_finals') {
+        // --- Grand finals undo ---
+
+        if (gfMatchups.length === 0) {
+          return { undoneMatchups: 0, clearedVotes: 0, cascadedMatchups: 0, deletedMatchups: 0 }
+        }
+
+        const gfBaseRound = Math.min(...gfMatchups.map((m) => m.round))
+
+        if (gfMatchups.length > 1) {
+          // Multiple GF matchups exist (reset match was created)
+          const gfHighestRound = Math.max(...gfMatchups.map((m) => m.round))
+
+          if (round === gfHighestRound) {
+            // Undoing the reset match: DELETE the reset matchup entirely
+            const resetMatchups = gfMatchups.filter((m) => m.round === gfHighestRound)
+            const resetIds = resetMatchups.map((m) => m.id)
+            await tx.vote.deleteMany({ where: { matchupId: { in: resetIds } } })
+            await tx.matchup.deleteMany({ where: { id: { in: resetIds } } })
+            totalDeleted += resetMatchups.length
+            totalUndone = resetMatchups.length
+          } else {
+            // Undoing GF match 1: clear winner, delete votes, set status to pending.
+            // Also delete any existing reset match.
+            const gfMatch1Ids = gfMatchups
+              .filter((m) => m.round === gfBaseRound)
+              .map((m) => m.id)
+            const voteResult = await tx.vote.deleteMany({
+              where: { matchupId: { in: gfMatch1Ids } },
+            })
+            totalVotesCleared += voteResult.count
+
+            await tx.matchup.updateMany({
+              where: { id: { in: gfMatch1Ids } },
+              data: { winnerId: null, status: 'pending' },
+            })
+            totalUndone = gfMatch1Ids.length
+
+            // Delete the reset match
+            const resetMatchups = gfMatchups.filter((m) => m.round > gfBaseRound)
+            if (resetMatchups.length > 0) {
+              const resetIds = resetMatchups.map((m) => m.id)
+              await tx.vote.deleteMany({ where: { matchupId: { in: resetIds } } })
+              await tx.matchup.deleteMany({ where: { id: { in: resetIds } } })
+              totalDeleted += resetMatchups.length
+            }
+          }
+        } else {
+          // Single GF matchup: clear winnerId, delete votes, set status to 'pending'
+          const gfMatch = gfMatchups[0]
+          const voteResult = await tx.vote.deleteMany({
+            where: { matchupId: gfMatch.id },
+          })
+          totalVotesCleared += voteResult.count
+
+          await tx.matchup.update({
+            where: { id: gfMatch.id },
+            data: { winnerId: null, status: 'pending' },
+          })
+          totalUndone = 1
+        }
+      }
+
+      return {
+        undoneMatchups: totalUndone,
+        clearedVotes: totalVotesCleared,
+        cascadedMatchups: totalCascaded,
+        deletedMatchups: totalDeleted,
+      }
+    },
+    { timeout: 30000 }
+  )
+}
+
+/**
+ * Undo a round of predictive bracket advancement.
+ *
+ * Clears matchup winners and downstream propagation without deleting student
+ * predictions (predictions are preserved per CONTEXT.md locked decision).
+ *
+ * For vote_based resolution mode, votes are also deleted. For manual/auto
+ * modes, there are no votes to delete.
+ *
+ * If the bracket is in 'revealing' state and revealedUpToRound >= the target
+ * round, revealedUpToRound is adjusted. If predictionStatus is 'completed',
+ * it is set back to 'revealing'.
+ *
+ * All mutations are atomic within a single Prisma $transaction.
+ */
+export async function undoRoundPredictive(
+  bracketId: string,
+  round: number
+): Promise<{ undoneMatchups: number; clearedVotes: number; cascadedMatchups: number }> {
+  return prisma.$transaction(
+    async (tx: TransactionClient) => {
+      // Fetch bracket info for resolution mode and prediction status
+      const bracket = await tx.bracket.findUnique({
+        where: { id: bracketId },
+        select: {
+          predictiveResolutionMode: true,
+          predictionStatus: true,
+          revealedUpToRound: true,
+        },
+      })
+
+      if (!bracket) {
+        throw new Error('Bracket not found')
+      }
+
+      const isVoteBased = bracket.predictiveResolutionMode === 'vote_based'
+
+      // 1. Get non-bye matchups in the target round with status 'decided'
+      const roundMatchups = await tx.matchup.findMany({
+        where: {
+          bracketId,
+          round,
+          status: 'decided',
+          isBye: false,
+        },
+      })
+
+      if (roundMatchups.length === 0) {
+        return { undoneMatchups: 0, clearedVotes: 0, cascadedMatchups: 0 }
+      }
+
+      const roundMatchupIds = roundMatchups.map((m) => m.id)
+      let totalVotesCleared = 0
+
+      // 2. Clear winnerId and set status to 'pending' on target round matchups
+      await tx.matchup.updateMany({
+        where: { id: { in: roundMatchupIds } },
+        data: { winnerId: null, status: 'pending' },
+      })
+
+      // 3. IMPORTANT: Do NOT delete from the predictions table
+
+      // 4. For vote_based mode, delete votes from target round
+      if (isVoteBased) {
+        const voteResult = await tx.vote.deleteMany({
+          where: { matchupId: { in: roundMatchupIds } },
+        })
+        totalVotesCleared += voteResult.count
+      }
+
+      // 5. Clear propagated entrants in next round (same as SE: nextMatchupId + getSlotForPosition)
+      for (const matchup of roundMatchups) {
+        if (matchup.nextMatchupId) {
+          const slot = getSlotForPosition(matchup.position)
+          await tx.matchup.update({
+            where: { id: matchup.nextMatchupId },
+            data: { [slot]: null },
+          })
+        }
+      }
+
+      // 6. Cascade to downstream rounds: clear winnerId, entrant1Id, entrant2Id,
+      //    set status to 'pending' for all non-bye matchups in rounds > target round
+      const downstreamMatchups = await tx.matchup.findMany({
+        where: { bracketId, round: { gt: round }, isBye: false },
+      })
+
+      let cascadedMatchups = 0
+      if (downstreamMatchups.length > 0) {
+        const downstreamIds = downstreamMatchups.map((m) => m.id)
+
+        // Delete votes from downstream matchups (if vote_based)
+        if (isVoteBased) {
+          const downstreamVotes = await tx.vote.deleteMany({
+            where: { matchupId: { in: downstreamIds } },
+          })
+          totalVotesCleared += downstreamVotes.count
+        }
+
+        // Clear winners, entrants, and reset status on downstream matchups
+        await tx.matchup.updateMany({
+          where: { id: { in: downstreamIds } },
+          data: {
+            winnerId: null,
+            entrant1Id: null,
+            entrant2Id: null,
+            status: 'pending',
+          },
+        })
+
+        cascadedMatchups = downstreamMatchups.length
+      }
+
+      // 7. Adjust bracket prediction status / revealedUpToRound
+      const updateData: Record<string, unknown> = {}
+
+      if (bracket.predictionStatus === 'completed') {
+        // Bracket was completed, set back to 'revealing'
+        updateData.predictionStatus = 'revealing'
+        updateData.status = 'active' // un-complete the bracket
+      }
+
+      if (
+        bracket.revealedUpToRound != null &&
+        bracket.revealedUpToRound >= round
+      ) {
+        // Adjust revealedUpToRound to one below the target round
+        updateData.revealedUpToRound = round === 1 ? null : round - 1
+      }
+
+      if (Object.keys(updateData).length > 0) {
+        await tx.bracket.update({
+          where: { id: bracketId },
+          data: updateData,
+        })
+      }
+
+      return {
+        undoneMatchups: roundMatchups.length,
+        clearedVotes: totalVotesCleared,
+        cascadedMatchups,
+      }
+    },
+    { timeout: 30000 }
+  )
+}
