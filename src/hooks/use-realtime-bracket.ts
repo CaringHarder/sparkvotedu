@@ -62,6 +62,8 @@ export function useRealtimeBracket(bracketId: string, batchIntervalMs = 2000) {
   const [bracketStatus, setBracketStatus] = useState<string>('active')
   const [predictionStatus, setPredictionStatus] = useState<string | null>(null)
   const [viewingMode, setViewingMode] = useState<string>('simple')
+  const [showVoteCounts, setShowVoteCounts] = useState<boolean>(true)
+  const [showSeedNumbers, setShowSeedNumbers] = useState<boolean>(true)
   const [transport, setTransport] = useState<'websocket' | 'polling'>('websocket')
 
   // Ref for batching vote updates -- accumulates between flushes
@@ -107,6 +109,14 @@ export function useRealtimeBracket(bracketId: string, batchIntervalMs = 2000) {
       // Track viewing mode changes (for student bracket view)
       if (data.viewingMode) {
         setViewingMode(data.viewingMode)
+      }
+
+      // Track display settings changes
+      if (data.showVoteCounts !== undefined) {
+        setShowVoteCounts(data.showVoteCounts)
+      }
+      if (data.showSeedNumbers !== undefined) {
+        setShowSeedNumbers(data.showSeedNumbers)
       }
 
       // Track prediction status changes
@@ -209,5 +219,5 @@ export function useRealtimeBracket(bracketId: string, batchIntervalMs = 2000) {
     }
   }, [bracketId, supabase, batchIntervalMs, fetchBracketState])
 
-  return { voteCounts, matchups, bracketCompleted, bracketStatus, predictionStatus, viewingMode, transport, refetch: fetchBracketState }
+  return { voteCounts, matchups, bracketCompleted, bracketStatus, predictionStatus, viewingMode, showVoteCounts, showSeedNumbers, transport, refetch: fetchBracketState }
 }

@@ -184,6 +184,15 @@ export const updateBracketViewingModeSchema = z.object({
 
 export type UpdateBracketViewingModeInput = z.infer<typeof updateBracketViewingModeSchema>
 
+// Consolidated bracket settings schema (replaces updateBracketViewingModeSchema for callers)
+export const updateBracketSettingsSchema = z.object({
+  bracketId: z.string().uuid(),
+  viewingMode: z.enum(['simple', 'advanced']).optional(),
+  showSeedNumbers: z.boolean().optional(),
+  showVoteCounts: z.boolean().optional(),
+})
+export type UpdateBracketSettingsInput = z.infer<typeof updateBracketSettingsSchema>
+
 // Reopen closed poll validation schema
 export const reopenPollSchema = z.object({
   pollId: z.string().uuid(),

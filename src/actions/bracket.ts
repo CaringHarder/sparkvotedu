@@ -21,6 +21,7 @@ import {
   updateEntrantsSchema,
   deleteBracketSchema,
   updateBracketViewingModeSchema,
+  updateBracketSettingsSchema,
 } from '@/lib/utils/validation'
 import {
   canCreateBracket,
@@ -573,5 +574,58 @@ export async function updateBracketViewingMode(input: unknown) {
     return { success: true }
   } catch {
     return { error: 'Failed to update bracket viewing mode' }
+  }
+}
+
+/**
+ * Update one or more bracket display settings (viewingMode, showSeedNumbers, showVoteCounts).
+ * Consolidated action replacing per-field updates.
+ * Auth -> validate -> ownership check -> update -> broadcast -> revalidate -> return
+ */
+export async function updateBracketSettings(input: unknown) {
+  const teacher = await getAuthenticatedTeacher()
+  if (!teacher) {
+    return { error: 'Not authenticated' }
+  }
+
+  const parsed = updateBracketSettingsSchema.safeParse(input)
+  if (!parsed.success) {
+    return { error: 'Invalid settings data', issues: parsed.error.issues }
+  }
+
+  const { bracketId, viewingMode, showSeedNumbers, showVoteCounts } = parsed.data
+
+  try {
+    // Ownership check: verify bracket belongs to this teacher
+    const bracket = await prisma.bracket.findUnique({
+      where: { id: bracketId },
+      select: { teacherId: true },
+    })
+    if (!bracket || bracket.teacherId !== teacher.id) {
+      return { error: 'Bracket not found' }
+    }
+
+    // Build update data from only the defined (non-undefined) fields
+    const updateData: Record<string, unknown> = {}
+    if (viewingMode !== undefined) updateData.viewingMode = viewingMode
+    if (showSeedNumbers !== undefined) updateData.showSeedNumbers = showSeedNumbers
+    if (showVoteCounts !== undefined) updateData.showVoteCounts = showVoteCounts
+
+    // Update database
+    await prisma.bracket.update({
+      where: { id: bracketId },
+      data: updateData,
+    })
+
+    // Broadcast settings_changed event to connected students
+    await broadcastBracketUpdate(bracketId, 'settings_changed', updateData)
+
+    // Revalidate paths
+    revalidatePath('/activities')
+    revalidatePath(`/brackets/${bracketId}`)
+
+    return { success: true }
+  } catch {
+    return { error: 'Failed to update bracket settings' }
   }
 }
