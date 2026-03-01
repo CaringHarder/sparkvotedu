@@ -8,7 +8,7 @@ progress:
   total_phases: 14
   completed_phases: 13
   total_plans: 42
-  completed_plans: 40
+  completed_plans: 41
 ---
 
 # Project State
@@ -23,9 +23,9 @@ See: .planning/PROJECT.md (updated 2026-02-28)
 ## Current Position
 
 Phase: 31.1 of 36 (Activity Card Layout Fix & Quick Settings Toggle)
-Plan: 1 of 3 complete
+Plan: 2 of 3 complete
 Status: In Progress
-Last activity: 2026-03-01 -- Completed 31.1-01 (card grid layout fix & QuickSettingsToggle component)
+Last activity: 2026-03-01 -- Completed 31.1-02 (backend quick settings infrastructure)
 
 Progress: [#░░░░░░░░░] 7% (v2.0)
 
@@ -67,6 +67,8 @@ Recent from research:
 - 31-02: Poll Reopen button rewired from handleStatusChange(draft) to reopenPoll server action
 - 31.1-01: Used inline style for gridTemplateColumns instead of Tailwind arbitrary value for reliable cross-build compatibility
 - 31.1-01: QuickSettingsToggle uses label element wrapping for accessible click-to-toggle interaction
+- 31.1-02: Bracket viewing mode toggle works on all states (display-only setting, no integrity impact)
+- 31.1-02: Poll settings broadcast only fires when allowVoteChange or showLiveResults change
 
 ### Roadmap Evolution
 
@@ -106,9 +108,10 @@ None -- all v1.3 requirements shipped.
 | Phase 31 P01 | 3min | 2 tasks | 10 files |
 | Phase 31 P02 | 5min | 3 tasks | 4 files |
 | Phase 31.1 P01 | 2min | 2 tasks | 5 files |
+| Phase 31.1 P02 | 2min | 2 tasks | 4 files |
 
 ## Session Continuity
 
 Last session: 2026-03-01
-Stopped at: Completed 31.1-01-PLAN.md (card grid layout fix & QuickSettingsToggle)
-Resume: `/gsd:execute-phase` to continue with Phase 31.1 Plan 02
+Stopped at: Completed 31.1-02-PLAN.md (backend quick settings infrastructure)
+Resume: `/gsd:execute-phase` to continue with Phase 31.1 Plan 03
