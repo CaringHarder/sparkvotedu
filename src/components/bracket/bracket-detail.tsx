@@ -2,7 +2,8 @@
 
 import { useState, useTransition } from 'react'
 import Link from 'next/link'
-import { ArrowLeft, Pencil, Radio, Link2, Unlink, ChevronDown, ChevronUp, Play, RefreshCw } from 'lucide-react'
+import { ArrowLeft, Pencil, Link2, Unlink, ChevronDown, ChevronUp, Play, RefreshCw } from 'lucide-react'
+import { cn } from '@/lib/utils'
 import type { BracketWithDetails, RoundRobinStanding, PredictionScore } from '@/lib/bracket/types'
 import { BracketDiagram } from '@/components/bracket/bracket-diagram'
 import { RegionBracketView } from '@/components/bracket/region-bracket-view'
@@ -140,13 +141,23 @@ export function BracketDetail({ bracket, totalRounds, sessions, standings = [], 
 
         {/* Actions */}
         <div className="flex items-center gap-2">
-          {bracket.status === 'active' && !isPredictiveAuto && !(isPredictive && bracket.predictionStatus === 'predictions_open') && (
+          {!isPredictiveAuto && !(isPredictive && bracket.predictionStatus === 'predictions_open') && (
             <Link
               href={`/brackets/${bracket.id}/live`}
-              className="inline-flex items-center gap-1.5 rounded-md bg-green-600 px-3 py-1.5 text-xs font-medium text-white shadow-sm transition-colors hover:bg-green-700"
+              className={cn(
+                'inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-colors',
+                bracket.status === 'active' || bracket.status === 'paused'
+                  ? 'bg-green-600 text-white shadow-sm hover:bg-green-700'
+                  : 'border text-muted-foreground hover:bg-accent hover:text-foreground'
+              )}
             >
-              <Radio className="h-3.5 w-3.5 animate-pulse" />
-              View Live
+              {(bracket.status === 'active' || bracket.status === 'paused') && (
+                <span className="relative flex h-2 w-2">
+                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-green-300 opacity-75" />
+                  <span className="relative inline-flex h-2 w-2 rounded-full bg-green-400" />
+                </span>
+              )}
+              Go Live
             </Link>
           )}
           {bracket.status === 'draft' && (

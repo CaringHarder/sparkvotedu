@@ -8,10 +8,10 @@ import {
   Pencil,
   Copy,
   Trash2,
-  Radio,
   Link2,
   Unlink,
 } from 'lucide-react'
+import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { PollStatusBadge } from '@/components/poll/poll-status'
@@ -192,15 +192,23 @@ export function PollDetailView({ poll, sessions, sessionName }: PollDetailViewPr
 
         {/* Actions */}
         <div className="flex items-center gap-2">
-          {poll.status === 'active' && (
-            <Link
-              href={`/polls/${poll.id}/live`}
-              className="inline-flex items-center gap-1.5 rounded-md bg-green-600 px-3 py-1.5 text-xs font-medium text-white shadow-sm transition-colors hover:bg-green-700"
-            >
-              <Radio className="h-3.5 w-3.5 animate-pulse" />
-              View Live
-            </Link>
-          )}
+          <Link
+            href={`/polls/${poll.id}/live`}
+            className={cn(
+              'inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-colors',
+              poll.status === 'active' || poll.status === 'paused'
+                ? 'bg-green-600 text-white shadow-sm hover:bg-green-700'
+                : 'border text-muted-foreground hover:bg-accent hover:text-foreground'
+            )}
+          >
+            {(poll.status === 'active' || poll.status === 'paused') && (
+              <span className="relative flex h-2 w-2">
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-green-300 opacity-75" />
+                <span className="relative inline-flex h-2 w-2 rounded-full bg-green-400" />
+              </span>
+            )}
+            Go Live
+          </Link>
 
           {/* Status transition buttons */}
           {statusActions.map((action) => (

@@ -9,6 +9,7 @@ import { updateBracketStatus, deleteBracket } from '@/actions/bracket'
 const statusStyles: Record<string, string> = {
   draft: 'bg-muted text-muted-foreground',
   active: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400',
+  paused: 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300',
   completed: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400',
 }
 

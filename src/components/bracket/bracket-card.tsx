@@ -3,7 +3,8 @@
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useState, useRef, useEffect, useTransition } from 'react'
-import { Trophy, Calendar, Radio, QrCode, LinkIcon, Eye, BookOpen } from 'lucide-react'
+import { Trophy, Calendar, QrCode, LinkIcon, Eye, BookOpen } from 'lucide-react'
+import { cn } from '@/lib/utils'
 import { BracketStatusBadge } from './bracket-status'
 import { CardContextMenu } from '@/components/shared/card-context-menu'
 import { renameBracket } from '@/actions/bracket'
@@ -248,19 +249,27 @@ export function BracketCard({ bracket, onRemoved }: BracketCardProps) {
 
       {/* Actions bar */}
       <div className="flex items-center gap-1.5 border-t px-3 py-2">
-        {/* View Live -- active brackets */}
-        {bracket.status === 'active' && (
-          <Link
-            href={`/brackets/${bracket.id}/live`}
-            className="inline-flex items-center gap-1 rounded-md bg-green-600 px-2.5 py-1 text-xs font-medium text-white transition-colors hover:bg-green-700"
-          >
-            <Radio className="h-3 w-3 animate-pulse" />
-            View Live
-          </Link>
-        )}
+        {/* Go Live -- always visible */}
+        <Link
+          href={`/brackets/${bracket.id}/live`}
+          className={cn(
+            'inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-colors',
+            bracket.status === 'active' || bracket.status === 'paused'
+              ? 'bg-green-600 text-white shadow-sm hover:bg-green-700'
+              : 'border text-muted-foreground hover:bg-accent hover:text-foreground'
+          )}
+        >
+          {(bracket.status === 'active' || bracket.status === 'paused') && (
+            <span className="relative flex h-2 w-2">
+              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-green-300 opacity-75" />
+              <span className="relative inline-flex h-2 w-2 rounded-full bg-green-400" />
+            </span>
+          )}
+          Go Live
+        </Link>
 
-        {/* QR Code -- active brackets with a session code */}
-        {bracket.status === 'active' && bracket.sessionCode && (
+        {/* QR Code -- active/paused brackets with a session code */}
+        {(bracket.status === 'active' || bracket.status === 'paused') && bracket.sessionCode && (
           <button
             type="button"
             onClick={() => setShowQR(!showQR)}
@@ -271,8 +280,8 @@ export function BracketCard({ bracket, onRemoved }: BracketCardProps) {
           </button>
         )}
 
-        {/* Copy Link -- active brackets with a session code */}
-        {bracket.status === 'active' && joinUrl && (
+        {/* Copy Link -- active/paused brackets with a session code */}
+        {(bracket.status === 'active' || bracket.status === 'paused') && joinUrl && (
           <button
             type="button"
             onClick={() => handleCopy(joinUrl, 'link')}
