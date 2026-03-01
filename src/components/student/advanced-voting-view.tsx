@@ -6,6 +6,7 @@ import { RegionBracketView } from '@/components/bracket/region-bracket-view'
 import { WinnerReveal } from '@/components/bracket/winner-reveal'
 import { CelebrationScreen } from '@/components/bracket/celebration-screen'
 import { useRealtimeBracket } from '@/hooks/use-realtime-bracket'
+import { PausedOverlay } from '@/components/student/paused-overlay'
 import { castVote } from '@/actions/vote'
 import type { BracketWithDetails, MatchupData } from '@/lib/bracket/types'
 
@@ -42,7 +43,7 @@ export function AdvancedVotingView({
   const hasShownRevealRef = useRef(false)
 
   // Real-time bracket updates
-  const { matchups: realtimeMatchups, bracketCompleted, transport } =
+  const { matchups: realtimeMatchups, bracketCompleted, transport, bracketStatus } =
     useRealtimeBracket(bracket.id)
 
   // Use realtime matchups when available, otherwise initial
@@ -133,6 +134,7 @@ export function AdvancedVotingView({
 
   return (
     <div className="flex flex-col px-2 py-3 sm:px-4 sm:py-4">
+      <PausedOverlay visible={bracketStatus === 'paused'} />
       {/* Winner Reveal overlay */}
       {revealState && (
         <WinnerReveal

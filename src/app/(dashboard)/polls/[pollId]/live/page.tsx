@@ -24,8 +24,8 @@ export default async function PollLivePage({
     redirect('/activities')
   }
 
-  // Only active and closed polls can have a live view
-  if (poll.status !== 'active' && poll.status !== 'closed') {
+  // Only active, paused, and closed polls can have a live view
+  if (poll.status !== 'active' && poll.status !== 'paused' && poll.status !== 'closed') {
     redirect(`/polls/${pollId}`)
   }
 

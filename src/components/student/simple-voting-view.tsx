@@ -6,6 +6,7 @@ import { MatchupVoteCard } from '@/components/bracket/matchup-vote-card'
 import { WinnerReveal } from '@/components/bracket/winner-reveal'
 import { CelebrationScreen } from '@/components/bracket/celebration-screen'
 import { useRealtimeBracket } from '@/hooks/use-realtime-bracket'
+import { PausedOverlay } from '@/components/student/paused-overlay'
 import type { MatchupData } from '@/lib/bracket/types'
 
 interface SimpleVotingViewProps {
@@ -44,7 +45,7 @@ export function SimpleVotingView({
   const prevMatchupStatusRef = useRef<Record<string, string>>({})
 
   // Real-time bracket updates (includes integrated transport fallback)
-  const { matchups: realtimeMatchups, bracketCompleted, transport } = useRealtimeBracket(bracketId)
+  const { matchups: realtimeMatchups, bracketCompleted, transport, bracketStatus } = useRealtimeBracket(bracketId)
 
   // Use realtime matchups when available, otherwise initial
   const allMatchups = (realtimeMatchups as MatchupData[] | null) ?? initialMatchups
@@ -179,6 +180,7 @@ export function SimpleVotingView({
 
   return (
     <div className="mx-auto max-w-2xl px-4 py-4 sm:px-6 sm:py-6">
+      <PausedOverlay visible={bracketStatus === 'paused'} />
       {winnerRevealOverlay}
       {celebrationOverlay}
       <h1 className="mb-4 text-center text-2xl font-bold sm:mb-6 sm:text-3xl">{bracketName}</h1>

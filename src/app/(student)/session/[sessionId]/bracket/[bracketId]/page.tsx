@@ -105,9 +105,6 @@ export default function StudentBracketVotingPage() {
   const [showDeletionToast, setShowDeletionToast] = useState(false)
   const router = useRouter()
 
-  // Track bracket-level status for pause overlay (uses same broadcast channel as sub-components)
-  const { bracketStatus } = useRealtimeBracket(bracketId)
-
   // Redirect to session dashboard when bracket is not found or wrong session
   useEffect(() => {
     if (state.type === 'not-found' || state.type === 'wrong-session') {
@@ -370,7 +367,7 @@ export default function StudentBracketVotingPage() {
     return (
       <>
         {deletionToast}
-        <PausedOverlay visible={bracketStatus === 'paused'} />
+
         <div>
           {backLink}
           <PredictiveStudentView
@@ -388,7 +385,7 @@ export default function StudentBracketVotingPage() {
     return (
       <>
         {deletionToast}
-        <PausedOverlay visible={bracketStatus === 'paused'} />
+
         <div>
           {backLink}
           <RRLiveView
@@ -405,7 +402,7 @@ export default function StudentBracketVotingPage() {
     return (
       <>
         {deletionToast}
-        <PausedOverlay visible={bracketStatus === 'paused'} />
+
         <div>
           {backLink}
           <DEVotingView
@@ -423,7 +420,7 @@ export default function StudentBracketVotingPage() {
     return (
       <>
         {deletionToast}
-        <PausedOverlay visible={bracketStatus === 'paused'} />
+
         <div>
           {backLink}
           <SimpleVotingView
@@ -442,7 +439,6 @@ export default function StudentBracketVotingPage() {
   return (
     <>
       {deletionToast}
-      <PausedOverlay visible={bracketStatus === 'paused'} />
       <div>
         {backLink}
         <AdvancedVotingView
@@ -484,7 +480,7 @@ function DEVotingView({
   const hasShownRevealRef = useRef(false)
 
   // Real-time bracket updates
-  const { matchups: realtimeMatchups, transport, bracketCompleted } = useRealtimeBracket(bracket.id)
+  const { matchups: realtimeMatchups, transport, bracketCompleted, bracketStatus } = useRealtimeBracket(bracket.id)
   const currentMatchups = (realtimeMatchups as MatchupData[] | null) ?? bracket.matchups
 
   const handleEntrantClick = useCallback(
@@ -553,6 +549,7 @@ function DEVotingView({
 
   return (
     <div className="px-4 py-6">
+      <PausedOverlay visible={bracketStatus === 'paused'} />
       {/* Winner Reveal overlay */}
       {revealState && (
         <WinnerReveal
@@ -669,7 +666,7 @@ function RRLiveView({
   const isSimpleMode = bracket.roundRobinVotingStyle === 'simple'
 
   // Real-time bracket updates
-  const { matchups: realtimeMatchups, transport, bracketCompleted } = useRealtimeBracket(bracket.id)
+  const { matchups: realtimeMatchups, transport, bracketCompleted, bracketStatus } = useRealtimeBracket(bracket.id)
   const currentMatchups = (realtimeMatchups as MatchupData[] | null) ?? bracket.matchups
 
   // Votable matchups for simple mode: currently voting, sorted by round then position
@@ -769,6 +766,7 @@ function RRLiveView({
 
   return (
     <div className="px-4 py-6">
+      <PausedOverlay visible={bracketStatus === 'paused'} />
       {/* Winner Reveal countdown overlay */}
       {revealState && (
         <WinnerReveal
@@ -1027,7 +1025,7 @@ function PredictiveStudentView({
   }, [])
 
   // Real-time bracket updates (includes predictionStatus tracking)
-  const { matchups: realtimeMatchups, predictionStatus: realtimePredictionStatus } =
+  const { matchups: realtimeMatchups, predictionStatus: realtimePredictionStatus, bracketStatus } =
     useRealtimeBracket(bracket.id)
 
   // Use real-time prediction status if available, otherwise initial
@@ -1123,6 +1121,7 @@ function PredictiveStudentView({
   // Manual/vote_based mode: tabbed view with Bracket + Results
   return (
     <div className="space-y-3">
+      <PausedOverlay visible={bracketStatus === 'paused'} />
       {/* Manual mode notice */}
       {isManualMode && (
         <div className="rounded-lg border border-blue-200 bg-blue-50 px-4 py-2.5 text-center text-sm text-blue-700 dark:border-blue-800 dark:bg-blue-950/30 dark:text-blue-300">
