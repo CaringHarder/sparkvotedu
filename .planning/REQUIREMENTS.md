@@ -1,0 +1,124 @@
+# Requirements: SparkVotEDU
+
+**Defined:** 2026-02-28
+**Core Value:** Teachers can instantly engage any classroom through voting -- on any topic, in any format -- and see participation happen in real time.
+
+## v2.0 Requirements
+
+Requirements for v2.0 Teacher Power-Ups. Each maps to roadmap phases.
+
+### Teacher Controls
+
+- [ ] **CTRL-01**: Teacher can pause an active bracket, stopping all student voting
+- [ ] **CTRL-02**: Teacher can pause an active poll, stopping all student voting
+- [ ] **CTRL-03**: Teacher can resume a paused bracket, re-enabling student voting
+- [ ] **CTRL-04**: Teacher can resume a paused poll, re-enabling student voting
+- [ ] **CTRL-05**: Student sees playful "needs to cook" themed overlay when activity is paused
+- [ ] **CTRL-06**: Server rejects vote attempts on paused activities (server-side enforcement)
+- [ ] **CTRL-07**: Teacher can undo the most recent round advancement in SE brackets (clears winners, reopens voting)
+- [ ] **CTRL-08**: Teacher can undo the most recent round advancement in DE brackets (reverses losers bracket placement)
+- [ ] **CTRL-09**: Teacher can undo the most recent round advancement in RR brackets
+- [ ] **CTRL-10**: Teacher can undo the most recent round in predictive brackets
+- [ ] **CTRL-11**: Undo cascades to clear dependent matchups in later rounds that used undone winners
+- [ ] **CTRL-12**: Teacher can reopen a completed bracket (lands in paused state for review)
+- [ ] **CTRL-13**: Teacher can reopen a closed poll (preserves all existing votes)
+- [ ] **CTRL-14**: Teacher can edit display settings (simple/advanced, show seeds, show vote counts, timer) on a bracket after creation
+- [ ] **CTRL-15**: Teacher can edit display settings (show live results, allow vote change) on a poll after creation
+- [ ] **CTRL-16**: Display settings changes broadcast to student views in real time
+- [ ] **CTRL-17**: Structural settings (bracket type, size, poll type) are locked after creation with clear indicator
+
+### Creation UX
+
+- [ ] **CREATE-01**: Bracket creation page has Quick Create mode with topic list chips (matching poll pattern)
+- [ ] **CREATE-02**: Teacher picks a topic and entrant count (4/8/16), bracket creates with SE/simple/no seeds defaults
+- [ ] **CREATE-03**: Poll Quick Create shows only question and options fields (settings hidden)
+- [ ] **CREATE-04**: Poll settings (allow vote change, show live results) available only in Step-by-Step mode
+- [ ] **CREATE-05**: Poll option images preview in same style as bracket entrant images before creation
+
+### Live Dashboard
+
+- [ ] **LIVE-01**: Student Activity panel shows green dot indicator when a student has voted on the active round/poll
+- [ ] **LIVE-02**: Vote indicators update in real time as students vote (no refresh needed)
+- [ ] **LIVE-03**: Vote indicators work across all 4 bracket types and polls
+- [ ] **LIVE-04**: All "View Live" labels changed to "Go Live" throughout the app
+
+### Bug Fixes
+
+- [ ] **FIX-01**: Duplicating a poll and removing options correctly removes them after update
+- [ ] **FIX-02**: Student poll view with 2 options displays centered
+- [ ] **FIX-03**: Duplicate name flow suggests adding last initial (e.g., "Try David R.") with pre-filled input
+
+## Future Requirements
+
+Deferred to future release. Tracked but not in current roadmap.
+
+### Undo Edge Cases
+
+- **UNDO-01**: Undo for predictive brackets with scored leaderboard recalculation
+- **UNDO-02**: Bulk undo across multiple rounds in one action
+
+### Advanced Creation
+
+- **ACREATE-01**: Quick Create for DE and RR bracket types
+- **ACREATE-02**: Settings presets/templates ("save my preferred settings")
+
+### Cleanup
+
+- **CLEAN-01**: Remove FingerprintJS package from dependencies
+- **CLEAN-02**: Remove device fingerprint columns from database schema
+
+## Out of Scope
+
+| Feature | Reason |
+|---------|--------|
+| Full audit log / history for undo | Massive DB complexity; single-level undo covers 95% of teacher mistakes |
+| Edit entrants/options while live | Changing entrants mid-vote invalidates existing votes; allow rename only |
+| Auto-pause when all voted | Removes teacher control over pacing; "All voted!" badge is sufficient |
+| Student-facing vote timer auto-close | Conflicts with deliberative voting model; optional timer display exists |
+| Per-student pause (mute one student) | Really per-student ban; existing `banned` field handles disruption |
+| Undo to arbitrary point in history | Cascading multi-round undo too risky for data integrity |
+
+## Traceability
+
+Which phases cover which requirements. Updated during roadmap creation.
+
+| Requirement | Phase | Status |
+|-------------|-------|--------|
+| CTRL-01 | — | Pending |
+| CTRL-02 | — | Pending |
+| CTRL-03 | — | Pending |
+| CTRL-04 | — | Pending |
+| CTRL-05 | — | Pending |
+| CTRL-06 | — | Pending |
+| CTRL-07 | — | Pending |
+| CTRL-08 | — | Pending |
+| CTRL-09 | — | Pending |
+| CTRL-10 | — | Pending |
+| CTRL-11 | — | Pending |
+| CTRL-12 | — | Pending |
+| CTRL-13 | — | Pending |
+| CTRL-14 | — | Pending |
+| CTRL-15 | — | Pending |
+| CTRL-16 | — | Pending |
+| CTRL-17 | — | Pending |
+| CREATE-01 | — | Pending |
+| CREATE-02 | — | Pending |
+| CREATE-03 | — | Pending |
+| CREATE-04 | — | Pending |
+| CREATE-05 | — | Pending |
+| LIVE-01 | — | Pending |
+| LIVE-02 | — | Pending |
+| LIVE-03 | — | Pending |
+| LIVE-04 | — | Pending |
+| FIX-01 | — | Pending |
+| FIX-02 | — | Pending |
+| FIX-03 | — | Pending |
+
+**Coverage:**
+- v2.0 requirements: 29 total
+- Mapped to phases: 0
+- Unmapped: 29 ⚠️
+
+---
+*Requirements defined: 2026-02-28*
+*Last updated: 2026-02-28 after initial definition*
