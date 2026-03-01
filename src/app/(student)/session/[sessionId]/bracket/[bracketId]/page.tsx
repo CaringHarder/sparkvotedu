@@ -415,33 +415,13 @@ export default function StudentBracketVotingPage() {
     )
   }
 
-  // Single-elimination (default): viewingMode routing
-  if (bracket.viewingMode === 'simple') {
-    return (
-      <>
-        {deletionToast}
-
-        <div>
-          {backLink}
-          <SimpleVotingView
-            matchups={bracket.matchups}
-            participantId={participantId}
-            bracketId={bracket.id}
-            bracketName={bracket.name}
-            initialVotes={initialVotes}
-          />
-        </div>
-      </>
-    )
-  }
-
-  // Default to advanced view
+  // Single-elimination (default): wrapper with realtime viewingMode routing
   return (
     <>
       {deletionToast}
       <div>
         {backLink}
-        <AdvancedVotingView
+        <SELiveView
           bracket={bracket}
           participantId={participantId}
           initialVotes={initialVotes}
@@ -453,6 +433,43 @@ export default function StudentBracketVotingPage() {
 
 // --- Wrapper components for real-time + voting ---
 // These exist as separate components so hooks can be called unconditionally.
+
+/**
+ * SELiveView: Single-elimination bracket with realtime viewingMode routing.
+ * Reads viewingMode from useRealtimeBracket to reactively switch between
+ * SimpleVotingView and AdvancedVotingView without page refresh.
+ */
+function SELiveView({
+  bracket,
+  participantId,
+  initialVotes,
+}: {
+  bracket: BracketWithDetails
+  participantId: string
+  initialVotes: Record<string, string | null>
+}) {
+  const { viewingMode } = useRealtimeBracket(bracket.id)
+
+  if (viewingMode === 'simple') {
+    return (
+      <SimpleVotingView
+        matchups={bracket.matchups}
+        participantId={participantId}
+        bracketId={bracket.id}
+        bracketName={bracket.name}
+        initialVotes={initialVotes}
+      />
+    )
+  }
+
+  return (
+    <AdvancedVotingView
+      bracket={bracket}
+      participantId={participantId}
+      initialVotes={initialVotes}
+    />
+  )
+}
 
 /**
  * DEVotingView: Double-elimination bracket with real-time subscription and voting.
@@ -480,7 +497,7 @@ function DEVotingView({
   const hasShownRevealRef = useRef(false)
 
   // Real-time bracket updates
-  const { matchups: realtimeMatchups, transport, bracketCompleted, bracketStatus } = useRealtimeBracket(bracket.id)
+  const { matchups: realtimeMatchups, transport, bracketCompleted, bracketStatus, viewingMode } = useRealtimeBracket(bracket.id)
   const currentMatchups = (realtimeMatchups as MatchupData[] | null) ?? bracket.matchups
 
   const handleEntrantClick = useCallback(
@@ -547,6 +564,39 @@ function DEVotingView({
   const votableMatchups = currentMatchups.filter((m) => m.status === 'voting')
   const votedCount = votableMatchups.filter((m) => votes[m.id] != null).length
 
+  // Simple mode: card-by-card voting for votable matchups
+  if (viewingMode === 'simple') {
+    return (
+      <div className="px-4 py-6">
+        <PausedOverlay visible={bracketStatus === 'paused'} />
+        {revealState && (
+          <WinnerReveal
+            entrant1Name={revealState.entrant1Name}
+            entrant2Name={revealState.entrant2Name}
+            onComplete={handleRevealComplete}
+          />
+        )}
+        {showCelebration && (
+          <CelebrationScreen
+            championName={championName}
+            bracketName={bracket.name}
+            onDismiss={() => { setShowCelebration(false); setRevealState(null) }}
+          />
+        )}
+        <DESimpleVoting
+          matchups={votableMatchups}
+          participantId={participantId}
+          bracketId={bracket.id}
+          bracketName={bracket.name}
+          votes={votes}
+          onVoteTracked={(matchupId, entrantId) => setVotes((prev) => ({ ...prev, [matchupId]: entrantId }))}
+          transport={transport}
+        />
+      </div>
+    )
+  }
+
+  // Advanced mode (default): full DoubleElimDiagram
   return (
     <div className="px-4 py-6">
       <PausedOverlay visible={bracketStatus === 'paused'} />
@@ -595,6 +645,130 @@ function DEVotingView({
         onEntrantClick={handleEntrantClick}
         votedEntrantIds={votes}
       />
+    </div>
+  )
+}
+
+/**
+ * DESimpleVoting: Card-by-card voting for double-elimination simple mode.
+ * Shows one votable matchup at a time with animated slide transitions.
+ * Uses MatchupVoteCard for consistent UX with SE and RR simple modes.
+ */
+function DESimpleVoting({
+  matchups,
+  participantId,
+  bracketId: _bracketId,
+  bracketName,
+  votes,
+  onVoteTracked,
+  transport,
+}: {
+  matchups: MatchupData[]
+  participantId: string
+  bracketId: string
+  bracketName: string
+  votes: Record<string, string | null>
+  onVoteTracked: (matchupId: string, entrantId: string) => void
+  transport: 'websocket' | 'polling'
+}) {
+  const [currentIndex, setCurrentIndex] = useState(0)
+  const [showConfirmation, setShowConfirmation] = useState(false)
+
+  // Filter to unvoted matchups
+  const unvotedMatchups = matchups.filter((m) => !votes[m.id])
+
+  // Clamp index
+  const safeIndex = Math.max(0, Math.min(currentIndex, unvotedMatchups.length - 1))
+  const currentMatchup = unvotedMatchups[safeIndex]
+
+  // All voted: show waiting state
+  if (unvotedMatchups.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center py-8 text-center">
+        <div className="mb-3 flex h-16 w-16 items-center justify-center rounded-full bg-green-100 dark:bg-green-900/30">
+          <svg viewBox="0 0 20 20" fill="currentColor" className="h-8 w-8 text-green-600 dark:text-green-400">
+            <path fillRule="evenodd" d="M16.704 4.153a.75.75 0 01.143 1.052l-8 10.5a.75.75 0 01-1.127.075l-4.5-4.5a.75.75 0 011.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 011.05-.143z" clipRule="evenodd" />
+          </svg>
+        </div>
+        <p className="text-lg font-semibold text-foreground">All votes submitted!</p>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Waiting for your teacher to advance...
+        </p>
+        <div className="mt-4 h-1.5 w-24 overflow-hidden rounded-full bg-muted">
+          <div className="h-full w-full animate-pulse rounded-full bg-primary/40" />
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <div className="mx-auto max-w-2xl">
+      <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+        <h1 className="text-2xl font-bold">{bracketName}</h1>
+        <div className="flex items-center gap-2">
+          {transport === 'polling' && (
+            <span className="text-xs text-muted-foreground">(polling)</span>
+          )}
+        </div>
+      </div>
+
+      {/* Progress indicator */}
+      {!showConfirmation && (
+        <p className="mb-4 text-center text-sm text-muted-foreground">
+          Matchup {safeIndex + 1} of {unvotedMatchups.length}
+        </p>
+      )}
+
+      {/* Animated card area */}
+      <div className="flex justify-center overflow-hidden">
+        <AnimatePresence mode="wait">
+          {showConfirmation ? (
+            <motion.div
+              key={`confirm-${safeIndex}`}
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ x: -300, opacity: 0 }}
+              transition={{ duration: 0.3, ease: 'easeOut' }}
+              className="w-full"
+            >
+              <div className="flex min-h-[140px] flex-col items-center justify-center rounded-xl border bg-card p-8 shadow-sm">
+                <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
+                  <svg viewBox="0 0 20 20" fill="currentColor" className="h-6 w-6 text-primary">
+                    <path fillRule="evenodd" d="M16.704 4.153a.75.75 0 01.143 1.052l-8 10.5a.75.75 0 01-1.127.075l-4.5-4.5a.75.75 0 011.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 011.05-.143z" clipRule="evenodd" />
+                  </svg>
+                </div>
+                <p className="text-lg font-semibold text-foreground">Vote Submitted!</p>
+              </div>
+            </motion.div>
+          ) : currentMatchup ? (
+            <motion.div
+              key={`matchup-${currentMatchup.id}`}
+              initial={{ x: 300, opacity: 0 }}
+              animate={{ x: 0, opacity: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              transition={{ duration: 0.3, ease: 'easeOut' }}
+              className="w-full"
+            >
+              <MatchupVoteCard
+                key={currentMatchup.id}
+                matchup={currentMatchup}
+                participantId={participantId}
+                initialVote={votes[currentMatchup.id] ?? null}
+                onVoteSubmitted={() => {
+                  // MatchupVoteCard's useVote hook already submitted to server
+                  // Just sync parent state for tracking
+                  onVoteTracked(currentMatchup.id, 'tracked')
+                  setShowConfirmation(true)
+                  setTimeout(() => {
+                    setShowConfirmation(false)
+                    setCurrentIndex((i) => i + 1)
+                  }, 1200)
+                }}
+              />
+            </motion.div>
+          ) : null}
+        </AnimatePresence>
+      </div>
     </div>
   )
 }
@@ -662,11 +836,11 @@ function RRLiveView({
   } | null>(null)
   const hasShownRevealRef = useRef(false)
 
-  // Derive simple mode flag
-  const isSimpleMode = bracket.roundRobinVotingStyle === 'simple'
-
   // Real-time bracket updates
-  const { matchups: realtimeMatchups, transport, bracketCompleted, bracketStatus } = useRealtimeBracket(bracket.id)
+  const { matchups: realtimeMatchups, transport, bracketCompleted, bracketStatus, viewingMode } = useRealtimeBracket(bracket.id)
+
+  // Derive simple mode flag from realtime viewingMode
+  const isSimpleMode = viewingMode === 'simple'
   const currentMatchups = (realtimeMatchups as MatchupData[] | null) ?? bracket.matchups
 
   // Votable matchups for simple mode: currently voting, sorted by round then position
