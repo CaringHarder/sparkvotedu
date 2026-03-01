@@ -13,7 +13,8 @@ import { CelebrationScreen } from '@/components/bracket/celebration-screen'
 import { ParticipationSidebar } from '@/components/teacher/participation-sidebar'
 import { VoteProgressBar } from '@/components/teacher/vote-progress-bar'
 import { QRCodeDisplay } from '@/components/teacher/qr-code-display'
-import { openMatchupsForVoting, advanceMatchup, batchAdvanceRound } from '@/actions/bracket-advance'
+import { openMatchupsForVoting, advanceMatchup, batchAdvanceRound, undoRoundAdvancement } from '@/actions/bracket-advance'
+import { Undo2 } from 'lucide-react'
 import { recordResult, advanceRound } from '@/actions/round-robin'
 import { triggerSportsSync } from '@/actions/sports'
 import { updatePredictionStatus } from '@/actions/prediction'
@@ -111,6 +112,10 @@ export function LiveDashboard({
 
   // Pause/resume state
   const [isPaused, setIsPaused] = useState(bracket.status === 'paused')
+
+  // Undo round state
+  const [showUndoConfirm, setShowUndoConfirm] = useState(false)
+  const [undoFeedback, setUndoFeedback] = useState<string | null>(null)
 
   // DE region navigation state
   const [deRegion, setDeRegion] = useState<DERegion>('winners')
@@ -1007,6 +1012,115 @@ export function LiveDashboard({
 
   // isPredictive is now used for PredictionLeaderboard rendering
 
+  // ---------------------------------------------------------------------------
+  // Undo round detection: compute the most recent undoable round per bracket type
+  // ---------------------------------------------------------------------------
+
+  const undoableRound = useMemo(() => {
+    // Only available on active, paused, or just-completed brackets
+    if (bracket.status === 'draft') return null
+
+    if (isRoundRobin) {
+      // RR: highest roundRobinRound where all matchups are decided
+      // AND no next round has voting/decided matchups
+      const roundGroups = new Map<number, MatchupData[]>()
+      for (const m of currentMatchups) {
+        const rr = m.roundRobinRound ?? 1
+        if (!roundGroups.has(rr)) roundGroups.set(rr, [])
+        roundGroups.get(rr)!.push(m)
+      }
+      const sortedRounds = [...roundGroups.keys()].sort((a, b) => b - a)
+      for (const rr of sortedRounds) {
+        const matchups = roundGroups.get(rr)!
+        if (matchups.every(m => m.status === 'decided')) {
+          // Check next round
+          const nextRound = roundGroups.get(rr + 1)
+          if (!nextRound || nextRound.every(m => m.status === 'pending')) {
+            return { round: rr, label: `Undo Round ${rr} Results` }
+          }
+        }
+      }
+      return null
+    }
+
+    if (isDoubleElim) {
+      // DE: check each region for undoable rounds
+      // Check GF first (most recent action), then LB, then WB
+      const regions: DERegion[] = ['grand_finals', 'losers', 'winners']
+      for (const region of regions) {
+        const regionMatchups = currentMatchups.filter(m => m.bracketRegion === region)
+        if (regionMatchups.length === 0) continue
+        const roundGroups = new Map<number, MatchupData[]>()
+        for (const m of regionMatchups) {
+          if (!roundGroups.has(m.round)) roundGroups.set(m.round, [])
+          roundGroups.get(m.round)!.push(m)
+        }
+        const sortedRounds = [...roundGroups.keys()].sort((a, b) => b - a)
+        for (const r of sortedRounds) {
+          const matchups = roundGroups.get(r)!
+          if (matchups.every(m => m.status === 'decided')) {
+            const nextRound = roundGroups.get(r + 1)
+            if (!nextRound || nextRound.every(m => m.status === 'pending')) {
+              const regionLabel = region === 'grand_finals' ? 'Grand Finals' : region === 'losers' ? 'Losers' : 'Winners'
+              return { round: r, region, label: `Undo ${regionLabel} Round` }
+            }
+          }
+        }
+      }
+      return null
+    }
+
+    if (isPredictive) {
+      // Predictive: same as SE but label says "Undo Resolution"
+      for (let r = totalRounds; r >= 1; r--) {
+        const roundMatchups = currentMatchups.filter(m => m.round === r && !m.isBye)
+        if (roundMatchups.length === 0) continue
+        if (roundMatchups.every(m => m.status === 'decided')) {
+          const nextRound = currentMatchups.filter(m => m.round === r + 1)
+          if (nextRound.length === 0 || nextRound.every(m => m.status === 'pending' || m.isBye)) {
+            return { round: r, label: 'Undo Resolution' }
+          }
+        }
+      }
+      return null
+    }
+
+    // SE (default): highest decided round where next round is all pending
+    for (let r = totalRounds; r >= 1; r--) {
+      const roundMatchups = currentMatchups.filter(m => m.round === r)
+      if (roundMatchups.length === 0) continue
+      if (roundMatchups.every(m => m.status === 'decided')) {
+        const nextRound = currentMatchups.filter(m => m.round === r + 1)
+        if (nextRound.length === 0 || nextRound.every(m => m.status === 'pending')) {
+          return { round: r, label: `Undo Round ${r}` }
+        }
+      }
+    }
+    return null
+  }, [currentMatchups, bracket.status, isRoundRobin, isDoubleElim, isPredictive, totalRounds])
+
+  // Undo round handler
+  const handleUndoRound = useCallback(() => {
+    if (!undoableRound) return
+    setError(null)
+    setUndoFeedback(null)
+    startTransition(async () => {
+      const result = await undoRoundAdvancement({
+        bracketId: bracket.id,
+        round: undoableRound.round,
+        region: undoableRound.region,
+      })
+      if (result && 'error' in result) {
+        setError(result.error as string)
+      } else {
+        setUndoFeedback(`${undoableRound.label} complete`)
+        setShowUndoConfirm(false)
+        // Auto-clear feedback after 3 seconds
+        setTimeout(() => setUndoFeedback(null), 3000)
+      }
+    })
+  }, [undoableRound, bracket.id])
+
   return (
     <div className="flex h-full flex-col gap-3">
       {/* Winner Reveal overlay */}
@@ -1046,6 +1160,39 @@ export function LiveDashboard({
             >
               Continue
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* Undo round confirmation dialog */}
+      {showUndoConfirm && undoableRound && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm">
+          <div className="mx-4 w-full max-w-sm space-y-4 rounded-xl border bg-card p-6 shadow-xl">
+            <h3 className="text-lg font-bold">Confirm Undo</h3>
+            <p className="text-sm text-muted-foreground">
+              This will reverse the most recent round advancement and clear all downstream matchups, votes, and results. The bracket will be paused.
+            </p>
+            <p className="text-sm font-medium">
+              Action: {undoableRound.label}
+            </p>
+            <div className="flex gap-3">
+              <button
+                type="button"
+                onClick={() => setShowUndoConfirm(false)}
+                className="flex-1 rounded-lg border px-4 py-2 text-sm font-medium hover:bg-muted"
+                disabled={isPending}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleUndoRound}
+                disabled={isPending}
+                className="flex-1 rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700 disabled:opacity-50"
+              >
+                {isPending ? 'Undoing...' : 'Undo'}
+              </button>
+            </div>
           </div>
         </div>
       )}
@@ -1304,6 +1451,24 @@ export function LiveDashboard({
           >
             {isPending ? 'Closing...' : 'Close Predictions'}
           </button>
+        )}
+
+        {/* Undo round button -- appears near advance controls when undo is available */}
+        {undoableRound && !undoFeedback && (
+          <button
+            onClick={() => setShowUndoConfirm(true)}
+            disabled={isPending}
+            title="Reverses the most recent round and clears downstream matchups"
+            className="flex items-center gap-1.5 rounded-md border border-red-300 px-3 py-1.5 text-xs font-medium text-red-600 hover:bg-red-50 disabled:opacity-50 dark:border-red-800 dark:text-red-400 dark:hover:bg-red-950"
+          >
+            <Undo2 className="h-3.5 w-3.5" />
+            {undoableRound.label}
+          </button>
+        )}
+        {undoFeedback && (
+          <span className="rounded-md bg-green-50 px-3 py-1.5 text-xs font-medium text-green-700 dark:bg-green-900/20 dark:text-green-400">
+            {undoFeedback}
+          </span>
         )}
 
         {bracketDone && !isPredictiveAuto && !isSports && (
