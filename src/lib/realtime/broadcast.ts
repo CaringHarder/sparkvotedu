@@ -89,6 +89,7 @@ type BracketUpdateType =
   | 'results_prepared'
   | 'bracket_paused'
   | 'bracket_resumed'
+  | 'round_undone'
 
 /**
  * Broadcast a bracket state change to a bracket channel.

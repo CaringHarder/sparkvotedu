@@ -160,6 +160,15 @@ export const prepareResultsSchema = z.object({
   bracketId: z.string().uuid(),
 })
 
+// Undo round advancement validation schema
+export const undoRoundSchema = z.object({
+  bracketId: z.string().uuid(),
+  round: z.number().int().positive(),
+  region: z.enum(['winners', 'losers', 'grand_finals']).optional(),
+})
+
+export type UndoRoundInput = z.infer<typeof undoRoundSchema>
+
 // Round-robin validation schemas
 export const recordRoundRobinResultSchema = z.object({
   bracketId: z.string().uuid(),
