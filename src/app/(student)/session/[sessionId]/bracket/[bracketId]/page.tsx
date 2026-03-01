@@ -18,6 +18,7 @@ import { createClient } from '@/lib/supabase/client'
 import { getMyPredictions, getLeaderboard } from '@/actions/prediction'
 import { WinnerReveal } from '@/components/bracket/winner-reveal'
 import { CelebrationScreen } from '@/components/bracket/celebration-screen'
+import { PausedOverlay } from '@/components/student/paused-overlay'
 import { useRealtimeBracket } from '@/hooks/use-realtime-bracket'
 import { castVote } from '@/actions/vote'
 import { calculateRoundRobinStandings } from '@/lib/bracket/round-robin'
@@ -103,6 +104,9 @@ export default function StudentBracketVotingPage() {
   const [state, setState] = useState<PageState>({ type: 'loading' })
   const [showDeletionToast, setShowDeletionToast] = useState(false)
   const router = useRouter()
+
+  // Track bracket-level status for pause overlay (uses same broadcast channel as sub-components)
+  const { bracketStatus } = useRealtimeBracket(bracketId)
 
   // Redirect to session dashboard when bracket is not found or wrong session
   useEffect(() => {
@@ -366,6 +370,7 @@ export default function StudentBracketVotingPage() {
     return (
       <>
         {deletionToast}
+        <PausedOverlay visible={bracketStatus === 'paused'} />
         <div>
           {backLink}
           <PredictiveStudentView
@@ -383,6 +388,7 @@ export default function StudentBracketVotingPage() {
     return (
       <>
         {deletionToast}
+        <PausedOverlay visible={bracketStatus === 'paused'} />
         <div>
           {backLink}
           <RRLiveView
@@ -399,6 +405,7 @@ export default function StudentBracketVotingPage() {
     return (
       <>
         {deletionToast}
+        <PausedOverlay visible={bracketStatus === 'paused'} />
         <div>
           {backLink}
           <DEVotingView
@@ -416,6 +423,7 @@ export default function StudentBracketVotingPage() {
     return (
       <>
         {deletionToast}
+        <PausedOverlay visible={bracketStatus === 'paused'} />
         <div>
           {backLink}
           <SimpleVotingView
@@ -434,6 +442,7 @@ export default function StudentBracketVotingPage() {
   return (
     <>
       {deletionToast}
+      <PausedOverlay visible={bracketStatus === 'paused'} />
       <div>
         {backLink}
         <AdvancedVotingView

@@ -59,6 +59,7 @@ export function useRealtimeBracket(bracketId: string, batchIntervalMs = 2000) {
   const [voteCounts, setVoteCounts] = useState<VoteCounts>({})
   const [matchups, setMatchups] = useState<MatchupState[] | null>(null)
   const [bracketCompleted, setBracketCompleted] = useState(false)
+  const [bracketStatus, setBracketStatus] = useState<string>('active')
   const [predictionStatus, setPredictionStatus] = useState<string | null>(null)
   const [transport, setTransport] = useState<'websocket' | 'polling'>('websocket')
 
@@ -98,6 +99,9 @@ export function useRealtimeBracket(bracketId: string, batchIntervalMs = 2000) {
         }
       }
       setVoteCounts(counts)
+
+      // Track bracket-level status (used for paused overlay on student pages)
+      setBracketStatus(data.status)
 
       // Track prediction status changes
       if (data.predictionStatus != null) {
@@ -194,5 +198,5 @@ export function useRealtimeBracket(bracketId: string, batchIntervalMs = 2000) {
     }
   }, [bracketId, supabase, batchIntervalMs, fetchBracketState])
 
-  return { voteCounts, matchups, bracketCompleted, predictionStatus, transport, refetch: fetchBracketState }
+  return { voteCounts, matchups, bracketCompleted, bracketStatus, predictionStatus, transport, refetch: fetchBracketState }
 }

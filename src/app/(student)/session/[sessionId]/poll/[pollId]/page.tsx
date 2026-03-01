@@ -10,6 +10,7 @@ import { useRealtimePoll } from '@/hooks/use-realtime-poll'
 import { createClient } from '@/lib/supabase/client'
 import { PollReveal } from '@/components/poll/poll-reveal'
 import { WinnerReveal } from '@/components/bracket/winner-reveal'
+import { PausedOverlay } from '@/components/student/paused-overlay'
 import type { PollWithOptions, PollOptionData } from '@/lib/poll/types'
 
 /**
@@ -188,8 +189,8 @@ export default function StudentPollVotingPage() {
         // Convert to PollWithOptions
         const poll = toPollWithOptions(pollData)
 
-        // Handle non-active poll
-        if (pollData.status !== 'active') {
+        // Handle non-active poll (paused polls show voting UI with overlay)
+        if (pollData.status !== 'active' && pollData.status !== 'paused') {
           setState({ type: 'not-active', status: pollData.status, poll })
           return
         }
@@ -362,6 +363,7 @@ export default function StudentPollVotingPage() {
   return (
     <>
       {deletionToast}
+      <PausedOverlay visible={pollStatus === 'paused'} />
       <div className="container mx-auto px-4 py-6">
         {backLink}
         <div className="mx-auto max-w-xl">
@@ -414,7 +416,7 @@ function toPollWithOptions(data: PollStateResponse): PollWithOptions {
     question: data.question,
     description: null,
     pollType: data.pollType as 'simple' | 'ranked',
-    status: data.status as 'draft' | 'active' | 'closed' | 'archived',
+    status: data.status as 'draft' | 'active' | 'paused' | 'closed' | 'archived',
     allowVoteChange: data.allowVoteChange,
     showLiveResults: data.showLiveResults,
     rankingDepth: data.rankingDepth,
