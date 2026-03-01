@@ -13,6 +13,7 @@ import {
   releaseResults,
   revealNextRound,
   reopenPredictions,
+  fetchTabulationResults,
 } from '@/actions/prediction'
 import { usePredictions } from '@/hooks/use-predictions'
 import { usePredictionCascade } from '@/hooks/use-prediction-cascade'
@@ -104,6 +105,21 @@ function TeacherPredictiveView({
 
   const totalRounds = Math.ceil(Math.log2(bracket.maxEntrants ?? bracket.size))
   const revealedUpToRound = bracket.revealedUpToRound ?? 0
+
+  // Re-fetch tabulation results on mount when in previewing status
+  // (results are lost on remount since they live in useState only)
+  useEffect(() => {
+    if (isAutoMode && predictionStatus === 'previewing' && tabulationResults.length === 0) {
+      fetchTabulationResults({ bracketId: bracket.id }).then((result) => {
+        if (result && 'results' in result && result.results) {
+          setTabulationResults(result.results as TabulationResult[])
+          setUnresolvedCount(result.unresolvedCount ?? 0)
+        }
+      })
+    }
+  }, [isAutoMode, predictionStatus, bracket.id]) // eslint-disable-line react-hooks/exhaustive-deps
+  // NOTE: Intentionally omit tabulationResults.length from deps to avoid refetch loop.
+  // We only want this to run on mount/status change, not when results are updated by user actions.
 
   // F key shortcut for presentation mode toggle, Escape to exit
   useEffect(() => {
