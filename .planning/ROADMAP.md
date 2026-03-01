@@ -168,10 +168,11 @@ Plans:
   1. Bracket creation page shows a Quick Create mode with topic list chips (matching the existing poll quick-create pattern)
   2. Teacher picks a topic chip and selects an entrant count (4/8/16), clicks create, and a bracket is created with SE type, simple display mode, no seeds as defaults -- no other fields required
   3. The created bracket appears in the teacher's bracket list assigned to the correct session, ready to activate
-**Plans**: TBD
+**Plans:** 2 plans
 
 Plans:
-- [ ] 33-01: TBD
+- [ ] 33-01-PLAN.md -- Page restructure with tab toggle + BracketQuickCreate component (topic chips, count picker, session dropdown, instant create)
+- [ ] 33-02-PLAN.md -- Human verification of complete Quick Create flow
 
 ### Phase 34: Poll Quick Create & Image Polish
 **Goal**: Teachers can create a poll with just a question and options, with settings available only in the step-by-step path, and image previews matching bracket visual style
@@ -252,7 +253,7 @@ Note: Phases 33-36 are independent of the control feature chain (29-32) and can 
 | 31. Reopen Completed Activities | 2/2 | Complete    | 2026-03-01 | - |
 | 31.1 Activity Card Layout Fix & Quick Settings Toggle | 3/3 | Complete    | 2026-03-01 | - |
 | 32. Settings Editing | 5/5 | Complete    | 2026-03-01 | - |
-| 33. Bracket Quick Create | v2.0 | 0/TBD | Not started | - |
+| 33. Bracket Quick Create | v2.0 | 0/2 | Not started | - |
 | 34. Poll Quick Create & Image Polish | v2.0 | 0/TBD | Not started | - |
 | 35. Real-Time Vote Indicators | v2.0 | 0/TBD | Not started | - |
 | 36. Bug Fixes | v2.0 | 0/TBD | Not started | - |
