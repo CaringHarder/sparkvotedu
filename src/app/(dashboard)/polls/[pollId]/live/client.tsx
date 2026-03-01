@@ -9,6 +9,7 @@ import { PollResults } from '@/components/poll/poll-results'
 import { QRCodeDisplay } from '@/components/teacher/qr-code-display'
 import { updatePollStatus } from '@/actions/poll'
 import { PollMetadataBar } from '@/components/shared/activity-metadata-bar'
+import { Switch } from '@/components/ui/switch'
 import type { PollWithOptions, PollStatus } from '@/lib/poll/types'
 
 interface PollLiveClientProps {
@@ -43,6 +44,29 @@ export function PollLiveClient({
   const [presenting, setPresenting] = useState(false)
   const [currentStatus, setCurrentStatus] = useState<PollStatus>(poll.status)
   const [forceReveal, setForceReveal] = useState(false)
+
+  // Pause/resume state
+  const [isPaused, setIsPaused] = useState(poll.status === 'paused')
+
+  // Sync isPaused with poll status changes
+  useEffect(() => {
+    setIsPaused(currentStatus === 'paused')
+  }, [currentStatus])
+
+  // Pause toggle handler -- instant, no confirmation dialog
+  function handlePauseToggle(checked: boolean) {
+    setError(null)
+    const newStatus: PollStatus = checked ? 'active' : 'paused'
+    startTransition(async () => {
+      const result = await updatePollStatus({ pollId: poll.id, status: newStatus })
+      if (result && 'error' in result) {
+        setError(result.error as string)
+      } else {
+        setCurrentStatus(newStatus)
+        setIsPaused(!checked)
+      }
+    })
+  }
 
   // Keyboard shortcut: F key toggles presentation mode
   useEffect(() => {
@@ -108,6 +132,14 @@ export function PollLiveClient({
 
         <h1 className="text-lg font-bold tracking-tight">{poll.question}</h1>
 
+        {/* Pause/Resume toggle -- only shown for active or paused polls */}
+        {(currentStatus === 'active' || currentStatus === 'paused') && (
+          <div className="flex items-center gap-2">
+            <Switch checked={!isPaused} onCheckedChange={handlePauseToggle} disabled={isPending} />
+            <span className="text-xs font-medium">{isPaused ? 'Paused' : 'Active'}</span>
+          </div>
+        )}
+
         <div className="flex-1" />
 
         {/* QR Code chip */}
@@ -121,6 +153,13 @@ export function PollLiveClient({
         createdAt={typeof poll.createdAt === 'string' ? poll.createdAt : new Date(poll.createdAt).toISOString()}
       />
 
+      {/* Amber banner when activity is paused */}
+      {isPaused && (
+        <div className="rounded-lg bg-amber-100 px-4 py-2 text-center text-sm font-medium text-amber-800 dark:bg-amber-900/30 dark:text-amber-300">
+          Activity Paused -- Students cannot vote
+        </div>
+      )}
+
       {/* Error */}
       {error && (
         <div className="rounded-md border border-destructive bg-destructive/10 p-3 text-sm text-destructive">
@@ -133,7 +172,7 @@ export function PollLiveClient({
 
       {/* Control bar */}
       <div className="flex flex-wrap items-center gap-2 border-t pt-4">
-        {currentStatus === 'active' && (
+        {(currentStatus === 'active' || currentStatus === 'paused') && (
           <Button
             variant="destructive"
             size="sm"

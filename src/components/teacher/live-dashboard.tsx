@@ -21,6 +21,8 @@ import { PredictionLeaderboard } from '@/components/bracket/prediction-leaderboa
 import { PredictiveBracket } from '@/components/bracket/predictive-bracket'
 import { calculateRoundRobinStandings, type RoundRobinResult } from '@/lib/bracket/round-robin'
 import { BracketMetadataBar } from '@/components/shared/activity-metadata-bar'
+import { Switch } from '@/components/ui/switch'
+import { updateBracketStatus } from '@/actions/bracket'
 import type { BracketWithDetails, MatchupData, RoundRobinStanding, PredictionScore } from '@/lib/bracket/types'
 import type { VoteCounts } from '@/types/vote'
 
@@ -107,6 +109,9 @@ export function LiveDashboard({
   const [isPending, startTransition] = useTransition()
   const [error, setError] = useState<string | null>(null)
 
+  // Pause/resume state
+  const [isPaused, setIsPaused] = useState(bracket.status === 'paused')
+
   // DE region navigation state
   const [deRegion, setDeRegion] = useState<DERegion>('winners')
 
@@ -117,6 +122,25 @@ export function LiveDashboard({
   const isSports = bracket.bracketType === 'sports'
   const isPredictiveManual = isPredictive && bracket.predictiveResolutionMode === 'manual'
   const isPredictiveAuto = isPredictive && bracket.predictiveResolutionMode === 'auto'
+
+  // Sync isPaused with bracket.status changes from realtime updates
+  useEffect(() => {
+    setIsPaused(bracket.status === 'paused')
+  }, [bracket.status])
+
+  // Pause toggle handler -- instant, no confirmation dialog
+  const handlePauseToggle = useCallback((checked: boolean) => {
+    setError(null)
+    const newStatus = checked ? 'active' : 'paused'
+    startTransition(async () => {
+      const result = await updateBracketStatus({ bracketId: bracket.id, status: newStatus })
+      if (result && 'error' in result) {
+        setError(result.error as string)
+      } else {
+        setIsPaused(!checked)
+      }
+    })
+  }, [bracket.id])
 
   // Sports bracket sync state
   const [isSyncing, setIsSyncing] = useState(false)
@@ -1034,6 +1058,14 @@ export function LiveDashboard({
           LIVE
         </span>
 
+        {/* Pause/Resume toggle -- only shown for active or paused brackets */}
+        {(bracket.status === 'active' || bracket.status === 'paused') && (
+          <div className="flex items-center gap-2">
+            <Switch checked={!isPaused} onCheckedChange={handlePauseToggle} disabled={isPending} />
+            <span className="text-xs font-medium">{isPaused ? 'Paused' : 'Active'}</span>
+          </div>
+        )}
+
         {/* DE region tabs */}
         {isDoubleElim && (
           <div className="flex gap-1">
@@ -1295,6 +1327,13 @@ export function LiveDashboard({
           createdAt={bracket.createdAt}
         />
       </div>
+
+      {/* Amber banner when activity is paused */}
+      {isPaused && (
+        <div className="rounded-lg bg-amber-100 px-4 py-2 text-center text-sm font-medium text-amber-800 dark:bg-amber-900/30 dark:text-amber-300">
+          Activity Paused -- Students cannot vote
+        </div>
+      )}
 
       {/* Sports bracket sync status bar */}
       {isSports && (
