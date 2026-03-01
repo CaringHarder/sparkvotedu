@@ -86,12 +86,12 @@
   3. Pause and resume work identically for polls (same overlay, same server enforcement)
   4. A student who tries to submit a vote on a paused activity via API manipulation receives a rejection (server-side guard)
   5. All "View Live" buttons and labels throughout the app now read "Go Live"
-**Plans**: TBD
+**Plans:** 3 plans
 
 Plans:
-- [ ] 29-01: TBD
-- [ ] 29-02: TBD
-- [ ] 29-03: TBD
+- [ ] 29-01-PLAN.md -- Backend foundation: types, validation, DAL transitions, broadcast events, vote guards, realtime hooks, API filters
+- [ ] 29-02-PLAN.md -- Teacher controls: Radix Switch, pause toggle + banner in dashboards, Go Live rename + state indicators, status badges
+- [ ] 29-03-PLAN.md -- Student overlay: cooking-themed PausedOverlay component, bracket + poll student page integration
 
 ### Phase 30: Undo Round Advancement
 **Goal**: Teachers can reverse the most recent round advancement in any bracket type, restoring the bracket to its pre-advancement state with all downstream effects cleaned up
