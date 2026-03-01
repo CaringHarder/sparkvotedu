@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from 'react'
 import Link from 'next/link'
-import { ArrowLeft, Pencil, Link2, Unlink, ChevronDown, ChevronUp, Play, RefreshCw, Eye } from 'lucide-react'
+import { ArrowLeft, Pencil, Link2, Unlink, ChevronDown, ChevronUp, Play, RefreshCw, Eye, Hash, BarChart3 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { BracketWithDetails, RoundRobinStanding, PredictionScore } from '@/lib/bracket/types'
 import { BracketDiagram } from '@/components/bracket/bracket-diagram'
@@ -15,7 +15,9 @@ import { DoubleElimDiagram } from '@/components/bracket/double-elim-diagram'
 import { BracketStatusBadge, BracketLifecycleControls } from '@/components/bracket/bracket-status'
 import { BracketMetadataBar } from '@/components/shared/activity-metadata-bar'
 import { QuickSettingsToggle } from '@/components/shared/quick-settings-toggle'
-import { assignBracketToSession, updateBracketViewingMode } from '@/actions/bracket'
+import { DisplaySettingsSection } from '@/components/shared/display-settings-section'
+import { LockedSettingIndicator } from '@/components/shared/locked-setting-indicator'
+import { assignBracketToSession, updateBracketSettings } from '@/actions/bracket'
 import { recordResult, advanceRound } from '@/actions/round-robin'
 import { triggerSportsSync } from '@/actions/sports'
 
@@ -43,21 +45,58 @@ export function BracketDetail({ bracket, totalRounds, sessions, standings = [], 
   const [syncing, setSyncing] = useState(false)
   const [syncError, setSyncError] = useState<string | null>(null)
 
-  // Viewing mode toggle state (single_elimination only)
+  // Display settings state
   const [viewingMode, setViewingMode] = useState(bracket.viewingMode)
-  const [isUpdatingMode, setIsUpdatingMode] = useState(false)
+  const [showSeedNumbers, setShowSeedNumbers] = useState(bracket.showSeedNumbers ?? true)
+  const [showVoteCounts, setShowVoteCounts] = useState(bracket.showVoteCounts ?? true)
+  const [isUpdatingSettings, setIsUpdatingSettings] = useState(false)
 
   async function handleViewingModeChange(checked: boolean) {
     const newMode = checked ? 'advanced' : 'simple'
-    setIsUpdatingMode(true)
-    setViewingMode(newMode) // optimistic update
+    setIsUpdatingSettings(true)
+    setViewingMode(newMode)
     try {
-      await updateBracketViewingMode({ bracketId: bracket.id, viewingMode: newMode })
+      await updateBracketSettings({ bracketId: bracket.id, viewingMode: newMode })
     } catch {
-      setViewingMode(viewingMode) // revert on error
+      setViewingMode(viewingMode)
     } finally {
-      setIsUpdatingMode(false)
+      setIsUpdatingSettings(false)
     }
+  }
+
+  async function handleShowSeedsChange(checked: boolean) {
+    setIsUpdatingSettings(true)
+    setShowSeedNumbers(checked)
+    try {
+      await updateBracketSettings({ bracketId: bracket.id, showSeedNumbers: checked })
+    } catch {
+      setShowSeedNumbers(!checked)
+    } finally {
+      setIsUpdatingSettings(false)
+    }
+  }
+
+  async function handleShowVoteCountsChange(checked: boolean) {
+    setIsUpdatingSettings(true)
+    setShowVoteCounts(checked)
+    try {
+      await updateBracketSettings({ bracketId: bracket.id, showVoteCounts: checked })
+    } catch {
+      setShowVoteCounts(!checked)
+    } finally {
+      setIsUpdatingSettings(false)
+    }
+  }
+
+  function getBracketTypeLabel(type: string): string {
+    const labels: Record<string, string> = {
+      single_elimination: 'Single Elimination',
+      double_elimination: 'Double Elimination',
+      round_robin: 'Round Robin',
+      predictive: 'Predictive',
+      sports: 'Sports',
+    }
+    return labels[type] ?? type
   }
 
   const isRoundRobin = bracket.bracketType === 'round_robin'
@@ -209,15 +248,42 @@ export function BracketDetail({ bracket, totalRounds, sessions, standings = [], 
         createdAt={bracket.createdAt}
       />
 
-      {bracket.bracketType === 'single_elimination' && (
+      <DisplaySettingsSection disabled={bracket.status === 'completed'}>
+        {/* Locked structural settings */}
+        <LockedSettingIndicator label="Type" value={getBracketTypeLabel(bracket.bracketType)} />
+        <LockedSettingIndicator label="Size" value={`${bracket.entrants.length} entrants`} />
+
+        {/* Editable display settings */}
         <QuickSettingsToggle
           label={viewingMode === 'advanced' ? 'Advanced Mode' : 'Simple Mode'}
           checked={viewingMode === 'advanced'}
           onCheckedChange={handleViewingModeChange}
-          disabled={isUpdatingMode}
+          disabled={isUpdatingSettings}
           icon={<Eye className="h-4 w-4" />}
         />
-      )}
+
+        {/* Show Seeds -- for SE, DE, and Predictive only */}
+        {(bracket.bracketType === 'single_elimination' || bracket.bracketType === 'double_elimination' || bracket.bracketType === 'predictive') && (
+          <QuickSettingsToggle
+            label="Show Seeds"
+            checked={showSeedNumbers}
+            onCheckedChange={handleShowSeedsChange}
+            disabled={isUpdatingSettings}
+            icon={<Hash className="h-4 w-4" />}
+          />
+        )}
+
+        {/* Show Vote Counts -- for SE and DE only */}
+        {(bracket.bracketType === 'single_elimination' || bracket.bracketType === 'double_elimination') && (
+          <QuickSettingsToggle
+            label="Show Vote Counts"
+            checked={showVoteCounts}
+            onCheckedChange={handleShowVoteCountsChange}
+            disabled={isUpdatingSettings}
+            icon={<BarChart3 className="h-4 w-4" />}
+          />
+        )}
+      </DisplaySettingsSection>
 
       {bracket.description && (
         <p className="text-sm text-muted-foreground">{bracket.description}</p>
