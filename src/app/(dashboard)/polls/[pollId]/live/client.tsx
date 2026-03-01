@@ -7,7 +7,7 @@ import { ArrowLeft, Maximize, XCircle, RotateCcw } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { PollResults } from '@/components/poll/poll-results'
 import { QRCodeDisplay } from '@/components/teacher/qr-code-display'
-import { updatePollStatus } from '@/actions/poll'
+import { updatePollStatus, reopenPoll } from '@/actions/poll'
 import { PollMetadataBar } from '@/components/shared/activity-metadata-bar'
 import { Switch } from '@/components/ui/switch'
 import type { PollWithOptions, PollStatus } from '@/lib/poll/types'
@@ -189,7 +189,15 @@ export function PollLiveClient({
           <Button
             variant="outline"
             size="sm"
-            onClick={() => handleStatusChange('draft')}
+            onClick={() => {
+              startTransition(async () => {
+                const result = await reopenPoll({ pollId: poll.id })
+                if ('success' in result && result.success) {
+                  setCurrentStatus('paused')
+                  setIsPaused(true)
+                }
+              })
+            }}
             disabled={isPending}
             className="gap-1.5"
           >

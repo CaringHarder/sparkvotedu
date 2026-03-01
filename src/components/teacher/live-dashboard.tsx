@@ -13,8 +13,8 @@ import { CelebrationScreen } from '@/components/bracket/celebration-screen'
 import { ParticipationSidebar } from '@/components/teacher/participation-sidebar'
 import { VoteProgressBar } from '@/components/teacher/vote-progress-bar'
 import { QRCodeDisplay } from '@/components/teacher/qr-code-display'
-import { openMatchupsForVoting, advanceMatchup, batchAdvanceRound, undoRoundAdvancement } from '@/actions/bracket-advance'
-import { Undo2 } from 'lucide-react'
+import { openMatchupsForVoting, advanceMatchup, batchAdvanceRound, undoRoundAdvancement, reopenBracket } from '@/actions/bracket-advance'
+import { Undo2, RotateCcw } from 'lucide-react'
 import { recordResult, advanceRound } from '@/actions/round-robin'
 import { triggerSportsSync } from '@/actions/sports'
 import { updatePredictionStatus } from '@/actions/prediction'
@@ -1121,6 +1121,18 @@ export function LiveDashboard({
     })
   }, [undoableRound, bracket.id])
 
+  // Reopen completed bracket handler
+  const handleReopenBracket = useCallback(async () => {
+    startTransition(async () => {
+      const result = await reopenBracket({ bracketId: bracket.id })
+      if ('error' in result) {
+        console.error('Reopen failed:', result.error)
+      }
+      // On success, the bracket refetches via realtime broadcast
+      // and bracket.status will change to 'paused'
+    })
+  }, [bracket.id])
+
   return (
     <div className="flex h-full flex-col gap-3">
       {/* Winner Reveal overlay */}
@@ -1211,6 +1223,19 @@ export function LiveDashboard({
             <Switch checked={!isPaused} onCheckedChange={handlePauseToggle} disabled={isPending} />
             <span className="text-xs font-medium">{isPaused ? 'Paused' : 'Active'}</span>
           </div>
+        )}
+
+        {/* Reopen button -- only shown for completed brackets */}
+        {bracket.status === 'completed' && (
+          <button
+            type="button"
+            onClick={handleReopenBracket}
+            disabled={isPending}
+            className="inline-flex items-center gap-1.5 rounded-md border bg-background px-3 py-1.5 text-sm font-medium hover:bg-muted disabled:opacity-50"
+          >
+            <RotateCcw className="h-4 w-4" />
+            {isPending ? 'Reopening...' : 'Reopen'}
+          </button>
         )}
 
         {/* DE region tabs */}
