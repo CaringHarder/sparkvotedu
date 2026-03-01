@@ -152,11 +152,13 @@ Plans:
   2. Teacher opens a poll's settings and can toggle display options (show live results, allow vote change) even if the poll is currently live; changes save and persist
   3. When a teacher changes display settings on a live activity, all connected student views update in real time without requiring a page refresh
   4. Structural settings (bracket type, bracket size, poll type) are visibly locked after creation with a clear indicator explaining they cannot be changed
-**Plans**: TBD
+**Plans:** 4 plans
 
 Plans:
-- [ ] 32-01: TBD
-- [ ] 32-02: TBD
+- [ ] 32-01-PLAN.md -- Foundation: DisplaySettingsSection, LockedSettingIndicator, consolidated updateBracketSettings action, useRealtimeBracket hook extension
+- [ ] 32-02-PLAN.md -- Bracket teacher pages: DisplaySettingsSection on bracket detail + live dashboard with all toggles and locked indicators
+- [ ] 32-03-PLAN.md -- Poll teacher pages: DisplaySettingsSection on poll detail + live dashboard with locked indicators
+- [ ] 32-04-PLAN.md -- Student bracket page: viewingMode routing for all bracket types, DE simple mode, showVoteCounts/showSeedNumbers reactivity
 
 ### Phase 33: Bracket Quick Create
 **Goal**: Teachers can create a bracket in two clicks by picking a curated topic and entrant count, skipping the multi-step wizard entirely
