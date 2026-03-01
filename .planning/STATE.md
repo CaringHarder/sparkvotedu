@@ -10,9 +10,9 @@ See: .planning/PROJECT.md (updated 2026-02-28)
 ## Current Position
 
 Phase: 29 of 36 (Pause/Resume & Go Live)
-Plan: 1 of 3 complete
+Plan: 2 of 3 complete
 Status: Executing
-Last activity: 2026-03-01 -- Completed 29-01 (pause/resume backend foundation)
+Last activity: 2026-03-01 -- Completed 29-02 (teacher UI toggle & Go Live)
 
 Progress: [#░░░░░░░░░] 3% (v2.0)
 
@@ -35,6 +35,7 @@ Recent from research:
 - v2.0: Only @radix-ui/react-switch, @radix-ui/react-tabs, and optionally sonner needed as new packages
 - 29-01: Read old status before DAL transition to distinguish resume (paused->active) from initial activation (draft->active)
 - 29-01: Live page guard only blocks 'draft' -- paused passes through without modification
+- 29-02: Instant pause toggle with no confirmation dialog; Go Live button always visible with pulsing state indicator
 
 ### Pending Todos
 
@@ -71,5 +72,5 @@ None -- all v1.3 requirements shipped.
 ## Session Continuity
 
 Last session: 2026-03-01
-Stopped at: Completed 29-01-PLAN.md (pause/resume backend foundation)
-Resume: `/gsd:execute-plan 29-02` to build teacher UI toggle
+Stopped at: Completed 29-02-PLAN.md (teacher UI toggle & Go Live)
+Resume: `/gsd:execute-plan 29-03` to build student overlay
