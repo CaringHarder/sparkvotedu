@@ -3,12 +3,12 @@ gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: Teacher Power-Ups
 status: unknown
-last_updated: "2026-03-01T04:19:56.072Z"
+last_updated: "2026-03-01T06:01:01.000Z"
 progress:
   total_phases: 11
   completed_phases: 11
   total_plans: 34
-  completed_plans: 34
+  completed_plans: 35
 ---
 
 # Project State
@@ -18,16 +18,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-02-28)
 
 **Core value:** Teachers can instantly engage any classroom through voting -- on any topic, in any format -- and see participation happen in real time.
-**Current focus:** v2.0 Teacher Power-Ups -- Phase 29: Pause/Resume & Go Live
+**Current focus:** v2.0 Teacher Power-Ups -- Phase 30: Undo Round Advancement
 
 ## Current Position
 
-Phase: 29 of 36 (Pause/Resume & Go Live)
-Plan: 3 of 3 complete
-Status: Phase Complete
-Last activity: 2026-03-01 -- Completed 29-03 (student paused overlay)
+Phase: 30 of 36 (Undo Round Advancement)
+Plan: 1 of 3 complete
+Status: In Progress
+Last activity: 2026-03-01 -- Completed 30-01 (undo engine functions)
 
-Progress: [#░░░░░░░░░] 3% (v2.0)
+Progress: [#░░░░░░░░░] 5% (v2.0)
 
 ## Performance Metrics
 
@@ -50,6 +50,9 @@ Recent from research:
 - 29-01: Live page guard only blocks 'draft' -- paused passes through without modification
 - 29-02: Instant pause toggle with no confirmation dialog; Go Live button always visible with pulsing state indicator
 - 29-03: Top-level useRealtimeBracket for bracketStatus avoids duplicating overlay integration across sub-components
+- 30-01: Undone matchups reset to 'pending' (not 'voting') since bracket auto-pauses on undo
+- 30-01: GF reset matches are fully deleted (not just cleared) since they are dynamically created
+- 30-01: Predictive undo adjusts revealedUpToRound and predictionStatus when in revealing/completed state
 
 ### Pending Todos
 
@@ -86,5 +89,5 @@ None -- all v1.3 requirements shipped.
 ## Session Continuity
 
 Last session: 2026-03-01
-Stopped at: Phase 30 context gathered
-Resume: `/gsd:plan-phase 30` to create phase plan
+Stopped at: Completed 30-01-PLAN.md (undo engine functions)
+Resume: `/gsd:execute-plan 30 02` to implement server action and UI
