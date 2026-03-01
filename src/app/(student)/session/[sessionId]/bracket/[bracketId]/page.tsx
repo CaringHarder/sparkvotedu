@@ -497,8 +497,15 @@ function DEVotingView({
   const hasShownRevealRef = useRef(false)
 
   // Real-time bracket updates
-  const { matchups: realtimeMatchups, transport, bracketCompleted, bracketStatus, viewingMode } = useRealtimeBracket(bracket.id)
+  const { matchups: realtimeMatchups, transport, bracketCompleted, bracketStatus, viewingMode, showSeedNumbers, showVoteCounts } = useRealtimeBracket(bracket.id)
   const currentMatchups = (realtimeMatchups as MatchupData[] | null) ?? bracket.matchups
+
+  // Create effective bracket with realtime display settings for child components
+  const effectiveBracket = useMemo(() => ({
+    ...bracket,
+    showSeedNumbers,
+    showVoteCounts,
+  }), [bracket, showSeedNumbers, showVoteCounts])
 
   const handleEntrantClick = useCallback(
     (matchupId: string, entrantId: string) => {
@@ -638,7 +645,7 @@ function DEVotingView({
         )}
       </div>
       <DoubleElimDiagram
-        bracket={bracket}
+        bracket={effectiveBracket}
         entrants={bracket.entrants}
         matchups={currentMatchups}
         isTeacher={false}
@@ -1199,16 +1206,19 @@ function PredictiveStudentView({
   }, [])
 
   // Real-time bracket updates (includes predictionStatus tracking)
-  const { matchups: realtimeMatchups, predictionStatus: realtimePredictionStatus, bracketStatus } =
+  const { matchups: realtimeMatchups, predictionStatus: realtimePredictionStatus, bracketStatus, viewingMode, showVoteCounts, showSeedNumbers } =
     useRealtimeBracket(bracket.id)
 
   // Use real-time prediction status if available, otherwise initial
   const effectiveStatus = realtimePredictionStatus ?? bracket.predictionStatus ?? 'draft'
 
-  // Merge real-time matchups into bracket
-  const liveBracket = realtimeMatchups
-    ? { ...bracket, matchups: realtimeMatchups as MatchupData[] }
-    : bracket
+  // Merge real-time matchups and display settings into bracket
+  const liveBracket = {
+    ...bracket,
+    ...(realtimeMatchups ? { matchups: realtimeMatchups as MatchupData[] } : {}),
+    showVoteCounts,
+    showSeedNumbers,
+  }
 
   const totalRounds = Math.ceil(Math.log2(bracket.maxEntrants ?? bracket.size))
   const isAutoMode = bracket.predictiveResolutionMode === 'auto'
@@ -1246,10 +1256,11 @@ function PredictiveStudentView({
   if (effectiveStatus === 'predictions_open' || effectiveStatus === 'draft') {
     return (
       <PredictiveBracket
-        bracket={bracket}
+        bracket={liveBracket}
         participantId={participantId}
         isTeacher={false}
         effectivePredictionStatus={effectiveStatus}
+        viewingMode={viewingMode}
       />
     )
   }

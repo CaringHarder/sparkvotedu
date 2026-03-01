@@ -42,8 +42,8 @@ export function AdvancedVotingView({
   const prevMatchupStatusRef = useRef<Record<string, string>>({})
   const hasShownRevealRef = useRef(false)
 
-  // Real-time bracket updates
-  const { matchups: realtimeMatchups, bracketCompleted, transport, bracketStatus } =
+  // Real-time bracket updates (includes display settings for reactive showSeedNumbers)
+  const { matchups: realtimeMatchups, bracketCompleted, transport, bracketStatus, showSeedNumbers } =
     useRealtimeBracket(bracket.id)
 
   // Use realtime matchups when available, otherwise initial
@@ -200,7 +200,7 @@ export function AdvancedVotingView({
             bracketSize={bracket.maxEntrants ?? bracket.size}
             onEntrantClick={handleEntrantClick}
             votedEntrantIds={votes}
-            showSeedNumbers={bracket.showSeedNumbers}
+            showSeedNumbers={showSeedNumbers}
           />
         ) : (
           <BracketDiagram
@@ -208,7 +208,7 @@ export function AdvancedVotingView({
             totalRounds={totalRounds}
             onEntrantClick={handleEntrantClick}
             votedEntrantIds={votes}
-            showSeedNumbers={bracket.showSeedNumbers}
+            showSeedNumbers={showSeedNumbers}
           />
         )}
       </div>

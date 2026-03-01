@@ -27,6 +27,8 @@ interface PredictiveBracketProps {
   participantId: string
   isTeacher: boolean
   effectivePredictionStatus?: string
+  /** From realtime hook -- overrides bracket.predictiveMode for mode routing */
+  viewingMode?: string
 }
 
 /**
@@ -35,8 +37,9 @@ interface PredictiveBracketProps {
  * Students: Submit/edit predictions during predictions_open phase.
  * Teachers: Manage prediction lifecycle + view aggregate prediction stats.
  */
-export function PredictiveBracket({ bracket, participantId, isTeacher, effectivePredictionStatus }: PredictiveBracketProps) {
-  const predictiveMode = bracket.predictiveMode ?? 'simple'
+export function PredictiveBracket({ bracket, participantId, isTeacher, effectivePredictionStatus, viewingMode: viewingModeProp }: PredictiveBracketProps) {
+  // Use viewingMode from prop (realtime) if provided, otherwise fall back to bracket.predictiveMode
+  const predictiveMode = viewingModeProp === 'advanced' ? 'advanced' : viewingModeProp === 'simple' ? 'simple' : (bracket.predictiveMode ?? 'simple')
   const predictionStatus = effectivePredictionStatus ?? bracket.predictionStatus ?? 'draft'
 
   const { myPredictions, leaderboard, isLoading, refetch } = usePredictions(
