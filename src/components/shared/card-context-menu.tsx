@@ -10,6 +10,7 @@ import {
   Copy,
   Archive,
   Trash2,
+  RotateCcw,
 } from 'lucide-react'
 import {
   DropdownMenu,
@@ -20,7 +21,8 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { DeleteConfirmDialog } from '@/components/shared/delete-confirm-dialog'
 import { renameBracket, duplicateBracket, archiveBracket, deleteBracket } from '@/actions/bracket'
-import { renamePoll, duplicatePoll, archivePoll, deletePoll } from '@/actions/poll'
+import { renamePoll, duplicatePoll, archivePoll, deletePoll, reopenPoll } from '@/actions/poll'
+import { reopenBracket } from '@/actions/bracket-advance'
 
 interface CardContextMenuProps {
   itemId: string
@@ -33,6 +35,7 @@ interface CardContextMenuProps {
   onDuplicated?: (newId: string) => void
   onArchived?: () => void
   onDeleted?: () => void
+  onReopened?: () => void
 }
 
 export function CardContextMenu({
@@ -46,6 +49,7 @@ export function CardContextMenu({
   onDuplicated,
   onArchived,
   onDeleted,
+  onReopened,
 }: CardContextMenuProps) {
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
@@ -98,6 +102,23 @@ export function CardContextMenu({
         const result = await archivePoll({ pollId: itemId })
         if ('success' in result && result.success) {
           onArchived?.()
+        }
+      }
+    })
+  }
+
+  function handleReopen(e: Event) {
+    e.stopPropagation()
+    startTransition(async () => {
+      if (itemType === 'bracket') {
+        const result = await reopenBracket({ bracketId: itemId })
+        if ('success' in result && result.success) {
+          onReopened?.()
+        }
+      } else {
+        const result = await reopenPoll({ pollId: itemId })
+        if ('success' in result && result.success) {
+          onReopened?.()
         }
       }
     })
@@ -176,6 +197,16 @@ export function CardContextMenu({
             <Copy className="h-4 w-4" />
             Duplicate
           </DropdownMenuItem>
+
+          {(status === 'completed' || status === 'closed') && !isArchived && (
+            <DropdownMenuItem
+              disabled={isPending}
+              onSelect={handleReopen}
+            >
+              <RotateCcw className="h-4 w-4" />
+              Reopen
+            </DropdownMenuItem>
+          )}
 
           <DropdownMenuSeparator />
 
