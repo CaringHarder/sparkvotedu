@@ -86,7 +86,7 @@
   3. Pause and resume work identically for polls (same overlay, same server enforcement)
   4. A student who tries to submit a vote on a paused activity via API manipulation receives a rejection (server-side guard)
   5. All "View Live" buttons and labels throughout the app now read "Go Live"
-**Plans:** 3 plans
+**Plans:** 1/3 plans executed
 
 Plans:
 - [ ] 29-01-PLAN.md -- Backend foundation: types, validation, DAL transitions, broadcast events, vote guards, realtime hooks, API filters
@@ -225,7 +225,7 @@ Note: Phases 33-36 are independent of the control feature chain (29-32) and can 
 | 26. Student Activity Removal | v1.3 | 2/2 | Complete | 2026-02-26 |
 | 27. SE Final Round Realtime Fix | v1.3 | 1/1 | Complete | 2026-02-26 |
 | 28. RR All-at-Once Completion Fix | v1.3 | 3/3 | Complete | 2026-02-26 |
-| 29. Pause/Resume & Go Live | v2.0 | 0/TBD | Not started | - |
+| 29. Pause/Resume & Go Live | 1/3 | In Progress|  | - |
 | 30. Undo Round Advancement | v2.0 | 0/TBD | Not started | - |
 | 31. Reopen Completed Activities | v2.0 | 0/TBD | Not started | - |
 | 32. Settings Editing | v2.0 | 0/TBD | Not started | - |

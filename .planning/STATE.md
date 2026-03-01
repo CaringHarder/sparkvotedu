@@ -10,11 +10,11 @@ See: .planning/PROJECT.md (updated 2026-02-28)
 ## Current Position
 
 Phase: 29 of 36 (Pause/Resume & Go Live)
-Plan: --
-Status: Ready to plan
-Last activity: 2026-02-28 -- Roadmap created for v2.0 (8 phases, 29 requirements)
+Plan: 1 of 3 complete
+Status: Executing
+Last activity: 2026-03-01 -- Completed 29-01 (pause/resume backend foundation)
 
-Progress: [░░░░░░░░░░] 0% (v2.0)
+Progress: [#░░░░░░░░░] 3% (v2.0)
 
 ## Performance Metrics
 
@@ -33,6 +33,8 @@ All decisions archived in PROJECT.md Key Decisions table.
 Recent from research:
 - v2.0: Use `paused` as status value (not separate `pausedAt` column) -- simpler, no migration, reuses VALID_TRANSITIONS
 - v2.0: Only @radix-ui/react-switch, @radix-ui/react-tabs, and optionally sonner needed as new packages
+- 29-01: Read old status before DAL transition to distinguish resume (paused->active) from initial activation (draft->active)
+- 29-01: Live page guard only blocks 'draft' -- paused passes through without modification
 
 ### Pending Todos
 
@@ -68,6 +70,6 @@ None -- all v1.3 requirements shipped.
 
 ## Session Continuity
 
-Last session: 2026-02-28
-Stopped at: v2.0 roadmap created -- 8 phases (29-36), 29 requirements mapped
-Resume: `/gsd:plan-phase 29` to begin planning Pause/Resume & Go Live
+Last session: 2026-03-01
+Stopped at: Completed 29-01-PLAN.md (pause/resume backend foundation)
+Resume: `/gsd:execute-plan 29-02` to build teacher UI toggle
