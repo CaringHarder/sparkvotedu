@@ -10,8 +10,19 @@ import { QRCodeDisplay } from '@/components/teacher/qr-code-display'
 import { updatePoll, updatePollStatus, reopenPoll } from '@/actions/poll'
 import { PollMetadataBar } from '@/components/shared/activity-metadata-bar'
 import { QuickSettingsToggle } from '@/components/shared/quick-settings-toggle'
+import { DisplaySettingsSection } from '@/components/shared/display-settings-section'
+import { LockedSettingIndicator } from '@/components/shared/locked-setting-indicator'
 import { Switch } from '@/components/ui/switch'
 import type { PollWithOptions, PollStatus } from '@/lib/poll/types'
+
+function getPollTypeLabel(type: string): string {
+  const labels: Record<string, string> = {
+    simple: 'Multiple Choice',
+    ranked: 'Ranked Choice',
+    rating: 'Rating Scale',
+  }
+  return labels[type] ?? type
+}
 
 interface PollLiveClientProps {
   poll: PollWithOptions
@@ -170,7 +181,21 @@ export function PollLiveClient({
           </div>
         )}
 
-        {/* Quick settings toggles */}
+        <div className="flex-1" />
+
+        {/* QR Code chip */}
+        {sessionCode && <QRCodeDisplay code={sessionCode} />}
+      </div>
+
+      <DisplaySettingsSection disabled={currentStatus === 'closed' || currentStatus === 'archived'}>
+        <LockedSettingIndicator label="Type" value={getPollTypeLabel(poll.pollType)} />
+        {poll.pollType === 'ranked' && poll.rankingDepth && (
+          <LockedSettingIndicator
+            label="Ranking Depth"
+            value={`Top ${poll.rankingDepth}`}
+          />
+        )}
+
         <QuickSettingsToggle
           label="Show Live Results"
           checked={showLiveResults}
@@ -185,12 +210,7 @@ export function PollLiveClient({
           disabled={isUpdatingSettings}
           icon={<RefreshCw className="h-4 w-4" />}
         />
-
-        <div className="flex-1" />
-
-        {/* QR Code chip */}
-        {sessionCode && <QRCodeDisplay code={sessionCode} />}
-      </div>
+      </DisplaySettingsSection>
 
       <PollMetadataBar
         pollType={poll.pollType}
