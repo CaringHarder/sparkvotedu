@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useRef, useCallback } from 'react'
+import { useEffect, useState, useRef, useCallback, useMemo } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { getSessionParticipant } from '@/lib/student/session-store'
@@ -104,7 +104,7 @@ export default function StudentPollVotingPage() {
   }, [sessionId, pollId, state.type, router])
 
   // Real-time subscription -- called unconditionally (React rules of hooks)
-  const { pollStatus, voteCounts, bordaScores } = useRealtimePoll(pollId)
+  const { pollStatus, voteCounts, bordaScores, allowVoteChange, showLiveResults } = useRealtimePoll(pollId)
 
   // Reveal animation state
   const [showReveal, setShowReveal] = useState(false)
@@ -339,6 +339,14 @@ export default function StudentPollVotingPage() {
   // Ready state: render appropriate voting component (or closed state after live transition)
   const { poll, participantId, existingVotes } = state
 
+  // Merge reactive settings from useRealtimePoll into poll object
+  // (matches effectiveBracket pattern from bracket student page)
+  const effectivePoll = useMemo(() => ({
+    ...poll,
+    allowVoteChange,
+    showLiveResults,
+  }), [poll, allowVoteChange, showLiveResults])
+
   // After reveal dismissed: show clean "poll closed" state (live transition, not initial load)
   if (closedDetected && !showReveal && !showCountdown) {
     return (
@@ -369,13 +377,13 @@ export default function StudentPollVotingPage() {
         <div className="mx-auto max-w-xl">
           {poll.pollType === 'ranked' ? (
             <RankedPollVote
-              poll={poll}
+              poll={effectivePoll}
               participantId={participantId}
               existingVotes={existingVotes}
             />
           ) : (
             <SimplePollVote
-              poll={poll}
+              poll={effectivePoll}
               participantId={participantId}
               existingVotes={existingVotes}
             />
