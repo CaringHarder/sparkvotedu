@@ -10,6 +10,8 @@ import {
   Trash2,
   Link2,
   Unlink,
+  Eye,
+  RefreshCw,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
@@ -17,12 +19,14 @@ import { Card, CardContent } from '@/components/ui/card'
 import { PollStatusBadge } from '@/components/poll/poll-status'
 import { PollForm } from '@/components/poll/poll-form'
 import {
+  updatePoll,
   updatePollStatus,
   deletePoll,
   duplicatePoll,
   assignPollToSession,
 } from '@/actions/poll'
 import { PollMetadataBar } from '@/components/shared/activity-metadata-bar'
+import { QuickSettingsToggle } from '@/components/shared/quick-settings-toggle'
 import type { PollStatus } from '@/lib/poll/types'
 
 interface PollDetailData {
@@ -119,6 +123,35 @@ export function PollDetailView({ poll, sessions, sessionName }: PollDetailViewPr
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const [currentSessionId, setCurrentSessionId] = useState<string | null>(poll.sessionId)
   const [sessionError, setSessionError] = useState<string | null>(null)
+
+  // Quick settings toggle state
+  const [showLiveResults, setShowLiveResults] = useState(poll.showLiveResults)
+  const [allowVoteChange, setAllowVoteChange] = useState(poll.allowVoteChange)
+  const [isUpdatingSettings, setIsUpdatingSettings] = useState(false)
+
+  async function handleShowLiveResultsChange(checked: boolean) {
+    setIsUpdatingSettings(true)
+    setShowLiveResults(checked) // optimistic
+    try {
+      await updatePoll({ pollId: poll.id, showLiveResults: checked })
+    } catch {
+      setShowLiveResults(!checked) // revert
+    } finally {
+      setIsUpdatingSettings(false)
+    }
+  }
+
+  async function handleAllowVoteChangeChange(checked: boolean) {
+    setIsUpdatingSettings(true)
+    setAllowVoteChange(checked) // optimistic
+    try {
+      await updatePoll({ pollId: poll.id, allowVoteChange: checked })
+    } catch {
+      setAllowVoteChange(!checked) // revert
+    } finally {
+      setIsUpdatingSettings(false)
+    }
+  }
 
   function handleSessionAssign(sessionId: string | null) {
     setSessionError(null)
@@ -339,17 +372,23 @@ export function PollDetailView({ poll, sessions, sessionName }: PollDetailViewPr
               </ul>
             </div>
 
-            <div className="flex flex-wrap gap-4 text-sm">
-              <span>
-                Vote changes:{' '}
-                <strong>{poll.allowVoteChange ? 'Allowed' : 'Not allowed'}</strong>
-              </span>
-              <span>
-                Live results:{' '}
-                <strong>{poll.showLiveResults ? 'Visible' : 'Hidden'}</strong>
-              </span>
+            <div className="flex flex-wrap items-center gap-4">
+              <QuickSettingsToggle
+                label="Show Live Results"
+                checked={showLiveResults}
+                onCheckedChange={handleShowLiveResultsChange}
+                disabled={isUpdatingSettings}
+                icon={<Eye className="h-4 w-4" />}
+              />
+              <QuickSettingsToggle
+                label="Allow Vote Change"
+                checked={allowVoteChange}
+                onCheckedChange={handleAllowVoteChangeChange}
+                disabled={isUpdatingSettings}
+                icon={<RefreshCw className="h-4 w-4" />}
+              />
               {poll.pollType === 'ranked' && (
-                <span>
+                <span className="text-sm">
                   Ranking depth:{' '}
                   <strong>
                     {poll.rankingDepth ? `Top ${poll.rankingDepth}` : 'All options'}

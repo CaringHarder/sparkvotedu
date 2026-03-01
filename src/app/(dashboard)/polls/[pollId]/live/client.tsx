@@ -3,12 +3,13 @@
 import { useState, useEffect, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { ArrowLeft, Maximize, XCircle, RotateCcw } from 'lucide-react'
+import { ArrowLeft, Maximize, XCircle, RotateCcw, Eye, RefreshCw } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { PollResults } from '@/components/poll/poll-results'
 import { QRCodeDisplay } from '@/components/teacher/qr-code-display'
-import { updatePollStatus, reopenPoll } from '@/actions/poll'
+import { updatePoll, updatePollStatus, reopenPoll } from '@/actions/poll'
 import { PollMetadataBar } from '@/components/shared/activity-metadata-bar'
+import { QuickSettingsToggle } from '@/components/shared/quick-settings-toggle'
 import { Switch } from '@/components/ui/switch'
 import type { PollWithOptions, PollStatus } from '@/lib/poll/types'
 
@@ -47,6 +48,35 @@ export function PollLiveClient({
 
   // Pause/resume state
   const [isPaused, setIsPaused] = useState(poll.status === 'paused')
+
+  // Quick settings toggle state
+  const [showLiveResults, setShowLiveResults] = useState(poll.showLiveResults)
+  const [allowVoteChange, setAllowVoteChange] = useState(poll.allowVoteChange)
+  const [isUpdatingSettings, setIsUpdatingSettings] = useState(false)
+
+  async function handleShowLiveResultsChange(checked: boolean) {
+    setIsUpdatingSettings(true)
+    setShowLiveResults(checked) // optimistic
+    try {
+      await updatePoll({ pollId: poll.id, showLiveResults: checked })
+    } catch {
+      setShowLiveResults(!checked) // revert
+    } finally {
+      setIsUpdatingSettings(false)
+    }
+  }
+
+  async function handleAllowVoteChangeChange(checked: boolean) {
+    setIsUpdatingSettings(true)
+    setAllowVoteChange(checked) // optimistic
+    try {
+      await updatePoll({ pollId: poll.id, allowVoteChange: checked })
+    } catch {
+      setAllowVoteChange(!checked) // revert
+    } finally {
+      setIsUpdatingSettings(false)
+    }
+  }
 
   // Sync isPaused with poll status changes
   useEffect(() => {
@@ -139,6 +169,22 @@ export function PollLiveClient({
             <span className="text-xs font-medium">{isPaused ? 'Paused' : 'Active'}</span>
           </div>
         )}
+
+        {/* Quick settings toggles */}
+        <QuickSettingsToggle
+          label="Show Live Results"
+          checked={showLiveResults}
+          onCheckedChange={handleShowLiveResultsChange}
+          disabled={isUpdatingSettings}
+          icon={<Eye className="h-4 w-4" />}
+        />
+        <QuickSettingsToggle
+          label="Allow Vote Change"
+          checked={allowVoteChange}
+          onCheckedChange={handleAllowVoteChangeChange}
+          disabled={isUpdatingSettings}
+          icon={<RefreshCw className="h-4 w-4" />}
+        />
 
         <div className="flex-1" />
 

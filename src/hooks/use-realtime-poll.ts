@@ -42,6 +42,8 @@ export function useRealtimePoll(pollId: string, sessionId?: string | null, batch
   const [pollStatus, setPollStatus] = useState<PollStatus>('draft')
   const [bordaScores, setBordaScores] = useState<BordaScore[] | null>(null)
   const [participantCount, setParticipantCount] = useState(0)
+  const [allowVoteChange, setAllowVoteChange] = useState(false)
+  const [showLiveResults, setShowLiveResults] = useState(false)
   const [transport, setTransport] = useState<'websocket' | 'polling'>('websocket')
 
   // Ref for batching vote updates -- accumulates between flushes
@@ -58,6 +60,8 @@ export function useRealtimePoll(pollId: string, sessionId?: string | null, batch
       setVoteCounts(data.voteCounts)
       setTotalVotes(data.totalVotes)
       setPollStatus(data.status)
+      setAllowVoteChange(data.allowVoteChange)
+      setShowLiveResults(data.showLiveResults)
 
       if (data.participantCount !== undefined) {
         setParticipantCount(data.participantCount)
@@ -115,7 +119,8 @@ export function useRealtimePoll(pollId: string, sessionId?: string | null, batch
           type === 'poll_archived' ||
           type === 'poll_paused' ||
           type === 'poll_resumed' ||
-          type === 'poll_reopened'
+          type === 'poll_reopened' ||
+          type === 'poll_settings_changed'
         ) {
           fetchPollState()
         }
@@ -161,5 +166,5 @@ export function useRealtimePoll(pollId: string, sessionId?: string | null, batch
     }
   }, [pollId, sessionId, supabase, batchIntervalMs, fetchPollState])
 
-  return { voteCounts, totalVotes, pollStatus, bordaScores, transport, participantCount, refetch: fetchPollState }
+  return { voteCounts, totalVotes, pollStatus, bordaScores, allowVoteChange, showLiveResults, transport, participantCount, refetch: fetchPollState }
 }
