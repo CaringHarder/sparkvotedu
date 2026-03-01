@@ -152,7 +152,7 @@ Plans:
   2. Teacher opens a poll's settings and can toggle display options (show live results, allow vote change) even if the poll is currently live; changes save and persist
   3. When a teacher changes display settings on a live activity, all connected student views update in real time without requiring a page refresh
   4. Structural settings (bracket type, bracket size, poll type) are visibly locked after creation with a clear indicator explaining they cannot be changed
-**Plans:** 2/4 plans executed
+**Plans:** 3/4 plans executed
 
 Plans:
 - [ ] 32-01-PLAN.md -- Foundation: DisplaySettingsSection, LockedSettingIndicator, consolidated updateBracketSettings action, useRealtimeBracket hook extension
@@ -251,7 +251,7 @@ Note: Phases 33-36 are independent of the control feature chain (29-32) and can 
 | 30. Undo Round Advancement | 3/3 | Complete    | 2026-03-01 | - |
 | 31. Reopen Completed Activities | 2/2 | Complete    | 2026-03-01 | - |
 | 31.1 Activity Card Layout Fix & Quick Settings Toggle | 3/3 | Complete    | 2026-03-01 | - |
-| 32. Settings Editing | 2/4 | In Progress|  | - |
+| 32. Settings Editing | 3/4 | In Progress|  | - |
 | 33. Bracket Quick Create | v2.0 | 0/TBD | Not started | - |
 | 34. Poll Quick Create & Image Polish | v2.0 | 0/TBD | Not started | - |
 | 35. Real-Time Vote Indicators | v2.0 | 0/TBD | Not started | - |
