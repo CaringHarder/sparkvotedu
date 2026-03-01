@@ -68,7 +68,7 @@
 - [x] **Phase 29: Pause/Resume & Go Live** - Teachers can freeze and unfreeze any activity, with playful student-facing feedback and server-side vote enforcement (completed 2026-03-01)
 - [x] **Phase 30: Undo Round Advancement** - Teachers can reverse the most recent round in any bracket type, with cascading cleanup of downstream matchups (completed 2026-03-01)
 - [x] **Phase 31: Reopen Completed Activities** - Teachers can bring completed brackets and closed polls back to life for additional voting (completed 2026-03-01)
-- [ ] **Phase 31.1: Activity Card Layout Fix & Quick Settings Toggle** - Fix card title truncation at mid-width viewports and add inline simple/advanced toggle (INSERTED)
+- [x] **Phase 31.1: Activity Card Layout Fix & Quick Settings Toggle** - Fix card title truncation at mid-width viewports and add inline simple/advanced toggle (INSERTED) (completed 2026-03-01)
 - [ ] **Phase 32: Settings Editing** - Teachers can adjust display settings on brackets and polls after creation, even while live
 - [ ] **Phase 33: Bracket Quick Create** - Teachers can create a bracket in two clicks using curated topic chips and an entrant count picker
 - [ ] **Phase 34: Poll Quick Create & Image Polish** - Teachers can create polls with just a question and options, with image previews matching bracket style
@@ -136,7 +136,7 @@ Plans:
   3. Teacher can toggle "Show Live Results" and "Allow Vote Change" on both the poll detail page and live dashboard
   4. Settings changes on live activities take effect immediately for connected students without page refresh
   5. Toggles have visible labels and blend into existing page layout (no separate Quick Settings section)
-**Plans:** 2/3 plans executed
+**Plans:** 3/3 plans complete
 
 Plans:
 - [ ] 31.1-01-PLAN.md -- Card layout fix (auto-fill grid, badge wrap) + QuickSettingsToggle reusable component
@@ -248,7 +248,7 @@ Note: Phases 33-36 are independent of the control feature chain (29-32) and can 
 | 29. Pause/Resume & Go Live | 3/3 | Complete    | 2026-03-01 | - |
 | 30. Undo Round Advancement | 3/3 | Complete    | 2026-03-01 | - |
 | 31. Reopen Completed Activities | 2/2 | Complete    | 2026-03-01 | - |
-| 31.1 Activity Card Layout Fix & Quick Settings Toggle | 2/3 | In Progress|  | - |
+| 31.1 Activity Card Layout Fix & Quick Settings Toggle | 3/3 | Complete   | 2026-03-01 | - |
 | 32. Settings Editing | v2.0 | 0/TBD | Not started | - |
 | 33. Bracket Quick Create | v2.0 | 0/TBD | Not started | - |
 | 34. Poll Quick Create & Image Polish | v2.0 | 0/TBD | Not started | - |

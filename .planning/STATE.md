@@ -3,12 +3,12 @@ gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: Teacher Power-Ups
 status: in-progress
-last_updated: "2026-03-01T16:05:29Z"
+last_updated: "2026-03-01T16:18:38Z"
 progress:
   total_phases: 14
-  completed_phases: 13
+  completed_phases: 14
   total_plans: 42
-  completed_plans: 41
+  completed_plans: 42
 ---
 
 # Project State
@@ -22,12 +22,12 @@ See: .planning/PROJECT.md (updated 2026-02-28)
 
 ## Current Position
 
-Phase: 31.1 of 36 (Activity Card Layout Fix & Quick Settings Toggle)
-Plan: 2 of 3 complete
-Status: In Progress
-Last activity: 2026-03-01 -- Completed 31.1-02 (backend quick settings infrastructure)
+Phase: 31.1 of 36 (Activity Card Layout Fix & Quick Settings Toggle) -- COMPLETE
+Plan: 3 of 3 complete
+Status: Phase Complete
+Last activity: 2026-03-01 -- Completed 31.1-03 (quick settings toggle UI wiring)
 
-Progress: [#░░░░░░░░░] 7% (v2.0)
+Progress: [##░░░░░░░░] 14% (v2.0)
 
 ## Performance Metrics
 
@@ -69,6 +69,8 @@ Recent from research:
 - 31.1-01: QuickSettingsToggle uses label element wrapping for accessible click-to-toggle interaction
 - 31.1-02: Bracket viewing mode toggle works on all states (display-only setting, no integrity impact)
 - 31.1-02: Poll settings broadcast only fires when allowVoteChange or showLiveResults change
+- 31.1-03: Bracket viewing mode toggle only shown for single_elimination brackets (not DE, RR, or Predictive)
+- 31.1-03: Students see settings changes in real time via broadcast + refetch (no page refresh needed)
 
 ### Roadmap Evolution
 
@@ -109,9 +111,10 @@ None -- all v1.3 requirements shipped.
 | Phase 31 P02 | 5min | 3 tasks | 4 files |
 | Phase 31.1 P01 | 2min | 2 tasks | 5 files |
 | Phase 31.1 P02 | 2min | 2 tasks | 4 files |
+| Phase 31.1 P03 | 3min | 3 tasks | 6 files |
 
 ## Session Continuity
 
 Last session: 2026-03-01
-Stopped at: Completed 31.1-02-PLAN.md (backend quick settings infrastructure)
-Resume: `/gsd:execute-phase` to continue with Phase 31.1 Plan 03
+Stopped at: Completed 31.1-03-PLAN.md (quick settings toggle UI wiring -- Phase 31.1 complete)
+Resume: `/gsd:execute-phase` to continue with Phase 32
