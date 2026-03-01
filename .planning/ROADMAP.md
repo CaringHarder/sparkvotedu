@@ -239,7 +239,7 @@ Note: Phases 33-36 are independent of the control feature chain (29-32) and can 
 | 28. RR All-at-Once Completion Fix | v1.3 | 3/3 | Complete | 2026-02-26 |
 | 29. Pause/Resume & Go Live | 3/3 | Complete    | 2026-03-01 | - |
 | 30. Undo Round Advancement | 3/3 | Complete    | 2026-03-01 | - |
-| 31. Reopen Completed Activities | 2/2 | Complete   | 2026-03-01 | - |
+| 31. Reopen Completed Activities | 2/2 | Complete    | 2026-03-01 | - |
 | 31.1 Activity Card Layout Fix & Quick Settings Toggle | v2.0 | 0/TBD | Not started | - |
 | 32. Settings Editing | v2.0 | 0/TBD | Not started | - |
 | 33. Bracket Quick Create | v2.0 | 0/TBD | Not started | - |
