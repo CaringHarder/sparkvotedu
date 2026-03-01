@@ -23,9 +23,9 @@ See: .planning/PROJECT.md (updated 2026-02-28)
 ## Current Position
 
 Phase: 31 of 36 (Reopen Completed Activities)
-Plan: 1 of 2 complete
-Status: In Progress
-Last activity: 2026-03-01 -- Completed 31-01 (backend infrastructure for reopen)
+Plan: 2 of 2 complete
+Status: Phase Complete
+Last activity: 2026-03-01 -- Completed 31-02 (reopen UI across context menu and live dashboards)
 
 Progress: [#░░░░░░░░░] 5% (v2.0)
 
@@ -62,6 +62,9 @@ Recent from research:
 - 31-01: Bracket reopen uses undo engine to clear final round (champion is implicitly cleared via winnerId)
 - 31-01: Poll reopen locks allowVoteChange=false to prevent already-voted students from changing votes
 - 31-01: Bypass VALID_TRANSITIONS for completed->paused and closed->paused via direct prisma update
+- 31-02: No confirmation dialog on reopen -- paused state is safe by default
+- 31-02: Reopen menu item placed after Duplicate, before Archive separator
+- 31-02: Poll Reopen button rewired from handleStatusChange(draft) to reopenPoll server action
 
 ### Roadmap Evolution
 
@@ -99,9 +102,10 @@ None -- all v1.3 requirements shipped.
 | 16 | Show correct bracket/poll settings on cards (viewingMode guard) | 2026-02-28 | 62335a3 | Verified | [16-show-correct-bracket-poll-settings-on-ca](./quick/16-show-correct-bracket-poll-settings-on-ca/) |
 | 18 | Fix prediction bracket tabulation results lost on remount | 2026-03-01 | d16bccc | Verified | [18-fix-prediction-bracket-tabulation-result](./quick/18-fix-prediction-bracket-tabulation-result/) |
 | Phase 31 P01 | 3min | 2 tasks | 10 files |
+| Phase 31 P02 | 5min | 3 tasks | 4 files |
 
 ## Session Continuity
 
 Last session: 2026-03-01
-Stopped at: Completed 31-01-PLAN.md (backend infrastructure for reopen)
-Resume: `/gsd:execute-phase` to continue with 31-02 (reopen UI)
+Stopped at: Completed 31-02-PLAN.md (reopen UI -- phase 31 complete)
+Resume: `/gsd:execute-phase` to continue with Phase 31.1 (Activity Card Layout Fix & Quick Settings Toggle)
