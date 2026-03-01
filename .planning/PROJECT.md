@@ -58,9 +58,36 @@ Teachers can instantly engage any classroom through voting -- on any topic, in a
 - ✓ Archive views for brackets and polls with recover and permanent delete -- v1.3
 - ✓ Optimistic inline rename display (no stale name flash) -- v1.3
 
+## Current Milestone: v2.0 Teacher Power-Ups
+
+**Goal:** Give teachers full control over their activities (pause, undo, reopen, edit settings), streamline creation with quick-create brackets, and polish student-facing UX.
+
+**Target features:**
+- Pause/resume brackets and polls (playful student-facing "needs to cook" message)
+- Undo round advancement and reopen voting
+- Reopen completed brackets/polls
+- Edit bracket/poll settings after creation (display settings even while live)
+- Quick Create for brackets (topic list chips, pick # of entrants, two clicks)
+- Simplified poll Quick Create (question + options only, settings in Step-by-Step)
+- Real-time student vote indicators in Student Activity panel (green dots)
+- Poll image options match bracket preview style
+- "View Live" → "Go Live" terminology
+- Bug fixes: duplicate poll retains removed options, 2-option poll centering, duplicate name flow clarity
+
 ### Active
 
-(No active requirements -- planning next milestone)
+- Pause/resume any bracket or poll with playful student-facing message
+- Undo round advancement and reopen voting on that round
+- Reopen a completed bracket or poll for more voting
+- Edit bracket/poll settings after creation (display settings changeable during live)
+- Quick Create for brackets with topic list chips and entrant count picker
+- Simplified poll Quick Create (question + options only)
+- Real-time student vote indicators (green dots) in Student Activity panel across all types
+- Poll image options preview matching bracket image style before creation
+- "View Live" → "Go Live" label change everywhere
+- Fix: duplicated poll retains removed options after update
+- Fix: student 2-option poll layout off-center
+- Fix: duplicate name flow suggests adding last initial
 
 ### Out of Scope
 
@@ -80,7 +107,7 @@ Teachers can instantly engage any classroom through voting -- on any topic, in a
 
 ## Context
 
-**Current state:** v1.3 shipped 2026-02-26. Live at sparkvotedu.com. 80,750 LOC TypeScript. 28 phases completed across 4 milestones.
+**Current state:** v2.0 milestone started 2026-02-28. Live at sparkvotedu.com. 80,750 LOC TypeScript. 28 phases completed across 4 milestones (v1.0-v1.3).
 
 **Tech stack:** Next.js 16 (App Router, Turbopack), Prisma v7, Supabase (auth + realtime + storage), Stripe (billing), SportsDataIO (sports data), Tailwind CSS v4, shadcn/ui, Framer Motion.
 
@@ -126,4 +153,4 @@ Teachers can instantly engage any classroom through voting -- on any topic, in a
 | Default roundRobinPacing to round_by_round when null | Existing brackets without pacing set behave as before | ✓ Good -- backward compatible |
 
 ---
-*Last updated: 2026-02-26 after v1.3 milestone*
+*Last updated: 2026-02-28 after v2.0 milestone start*

@@ -2,18 +2,17 @@
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-02-26)
+See: .planning/PROJECT.md (updated 2026-02-28)
 
 **Core value:** Teachers can instantly engage any classroom through voting -- on any topic, in any format -- and see participation happen in real time.
-**Current focus:** Planning next milestone
+**Current focus:** v2.0 Teacher Power-Ups
 
 ## Current Position
 
-Phase: All 28 phases complete
-Status: v1.3 milestone archived
-Last activity: 2026-03-01 - Completed quick task 18: Fix prediction bracket tabulation results lost on remount
-
-Progress: [################################] 100% (milestones v1.0-v1.3 complete, all 28 phases done)
+Phase: Not started (defining requirements)
+Plan: —
+Status: Defining requirements
+Last activity: 2026-02-28 — Milestone v2.0 started
 
 ## Performance Metrics
 
@@ -84,5 +83,5 @@ None -- all v1.3 requirements shipped.
 ## Session Continuity
 
 Last session: 2026-02-28
-Stopped at: Completed quick task 18 - fix prediction bracket tabulation results lost on remount
-Resume: Start next milestone with `/gsd:new-milestone`
+Stopped at: v2.0 milestone initialized, defining requirements
+Resume: Continue with requirements → roadmap
