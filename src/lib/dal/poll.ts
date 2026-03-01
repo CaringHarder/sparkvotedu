@@ -384,6 +384,36 @@ export async function unarchivePollDAL(
 }
 
 /**
+ * Reopen a closed poll by transitioning to paused with allowVoteChange locked to false.
+ *
+ * Bypasses VALID_POLL_TRANSITIONS intentionally (same pattern as unarchive).
+ * Sets allowVoteChange=false so already-voted students cannot change their vote
+ * when the poll is resumed.
+ *
+ * Ownership enforced via teacherId filter.
+ */
+export async function reopenPollDAL(
+  pollId: string,
+  teacherId: string
+) {
+  const poll = await prisma.poll.findFirst({
+    where: { id: pollId, teacherId, status: 'closed' },
+    select: { id: true, sessionId: true },
+  })
+
+  if (!poll) {
+    return { error: 'Poll not found or not closed' }
+  }
+
+  const updated = await prisma.poll.update({
+    where: { id: pollId },
+    data: { status: 'paused', allowVoteChange: false },
+  })
+
+  return updated
+}
+
+/**
  * Permanently delete an archived poll and all related data (cascade).
  * Only archived polls can be permanently deleted.
  * Ownership enforced via teacherId filter.

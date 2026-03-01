@@ -169,6 +169,20 @@ export const undoRoundSchema = z.object({
 
 export type UndoRoundInput = z.infer<typeof undoRoundSchema>
 
+// Reopen completed bracket validation schema
+export const reopenBracketSchema = z.object({
+  bracketId: z.string().uuid(),
+})
+
+export type ReopenBracketInput = z.infer<typeof reopenBracketSchema>
+
+// Reopen closed poll validation schema
+export const reopenPollSchema = z.object({
+  pollId: z.string().uuid(),
+})
+
+export type ReopenPollInput = z.infer<typeof reopenPollSchema>
+
 // Round-robin validation schemas
 export const recordRoundRobinResultSchema = z.object({
   bracketId: z.string().uuid(),

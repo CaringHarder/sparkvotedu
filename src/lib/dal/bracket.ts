@@ -11,6 +11,13 @@ import {
 } from '@/lib/bracket/double-elim'
 import { createRoundRobinBracketDAL } from '@/lib/dal/round-robin'
 import { broadcastBracketUpdate } from '@/lib/realtime/broadcast'
+import {
+  getMostRecentAdvancedRound,
+  undoRoundSE,
+  undoRoundRR,
+  undoRoundDE,
+  undoRoundPredictive,
+} from '@/lib/bracket/advancement'
 import type { MatchupSeed, MatchupSeedWithBye, BracketRegion } from '@/lib/bracket/types'
 
 /**
@@ -880,6 +887,62 @@ export async function duplicateBracketDAL(
       include: { entrants: { orderBy: { seedPosition: 'asc' } } },
     })
   })
+}
+
+/**
+ * Reopen a completed bracket by undoing the final round and transitioning to paused.
+ *
+ * Uses the undo engine (undoRoundSE/RR/DE/Predictive) to clear the final round
+ * results, which implicitly clears the champion (derived from final matchup winnerId).
+ * Then transitions completed -> paused via direct prisma update (bypasses
+ * VALID_TRANSITIONS, same pattern as unarchiveBracketDAL).
+ *
+ * Ownership enforced via teacherId filter.
+ */
+export async function reopenBracketDAL(
+  bracketId: string,
+  teacherId: string
+) {
+  const bracket = await prisma.bracket.findFirst({
+    where: { id: bracketId, teacherId, status: 'completed' },
+    select: { id: true, bracketType: true, sessionId: true },
+  })
+
+  if (!bracket) {
+    return { error: 'Bracket not found or not completed' }
+  }
+
+  // Determine the final round to undo
+  const finalRound = await getMostRecentAdvancedRound(bracketId, bracket.bracketType)
+  if (!finalRound) {
+    return { error: 'No advanced rounds found' }
+  }
+
+  // Dispatch to the appropriate undo function based on bracket type
+  switch (bracket.bracketType) {
+    case 'single_elimination':
+      await undoRoundSE(bracketId, finalRound.round)
+      break
+    case 'round_robin':
+      await undoRoundRR(bracketId, finalRound.round)
+      break
+    case 'double_elimination':
+      await undoRoundDE(bracketId, finalRound.round, finalRound.region! as 'winners' | 'losers' | 'grand_finals')
+      break
+    case 'predictive':
+      await undoRoundPredictive(bracketId, finalRound.round)
+      break
+    default:
+      return { error: 'Reopen not supported for this bracket type' }
+  }
+
+  // Transition completed -> paused (bypasses VALID_TRANSITIONS, same pattern as unarchive)
+  await prisma.bracket.update({
+    where: { id: bracketId },
+    data: { status: 'paused' },
+  })
+
+  return { success: true, sessionId: bracket.sessionId }
 }
 
 /**

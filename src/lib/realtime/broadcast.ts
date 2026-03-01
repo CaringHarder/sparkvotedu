@@ -90,6 +90,7 @@ type BracketUpdateType =
   | 'bracket_paused'
   | 'bracket_resumed'
   | 'round_undone'
+  | 'bracket_reopened'
 
 /**
  * Broadcast a bracket state change to a bracket channel.
@@ -167,7 +168,7 @@ export async function broadcastPollVoteUpdate(
 }
 
 // Poll update event types
-type PollUpdateType = 'poll_activated' | 'poll_closed' | 'poll_archived' | 'poll_paused' | 'poll_resumed'
+type PollUpdateType = 'poll_activated' | 'poll_closed' | 'poll_archived' | 'poll_paused' | 'poll_resumed' | 'poll_reopened'
 
 /**
  * Broadcast a poll state change to the poll channel.
