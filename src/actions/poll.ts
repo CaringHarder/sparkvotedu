@@ -127,6 +127,14 @@ export async function updatePoll(input: unknown) {
       return { error: 'Poll not found' }
     }
 
+    // Broadcast settings change to connected students when student-facing settings change
+    if (data.allowVoteChange !== undefined || data.showLiveResults !== undefined) {
+      await broadcastPollUpdate(pollId, 'poll_settings_changed', {
+        allowVoteChange: data.allowVoteChange,
+        showLiveResults: data.showLiveResults,
+      })
+    }
+
     revalidatePath('/activities')
     revalidatePath(`/polls/${pollId}`)
     return { success: true }
