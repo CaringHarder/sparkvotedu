@@ -1,397 +1,506 @@
-# Stack Research: v1.3 Bug Fixes & UX Parity
+# Stack Research: v2.0 Teacher Power-Ups
 
-**Domain:** EdTech classroom voting platform -- bug fixes and UI parity for polls and brackets
-**Researched:** 2026-02-24
-**Confidence:** HIGH (all patterns verified against installed versions and existing codebase)
+**Domain:** EdTech classroom voting platform -- teacher controls, quick-create, UX polish
+**Researched:** 2026-02-28
+**Confidence:** HIGH (all recommendations verified against installed versions, existing codebase patterns, and current Radix/shadcn docs)
 
 ---
 
 ## Executive Summary
 
-v1.3 requires **zero new npm packages**. All five features are achievable with the existing stack (Next.js 16.1.6, React 19.2.3, Supabase JS 2.93.3, shadcn/ui DropdownMenu, Framer Motion 12.x). The work is logic fixes and UI assembly from existing primitives, not library additions.
+v2.0 requires **two new Radix UI packages** (switch, tabs) and **one optional package** (sonner for toast feedback). Everything else is achievable with the existing stack. The new features split into three categories:
 
-The critical pattern theme across all five items is **React state lifecycle management**: specifically, knowing when to use `useRef` vs `useState`, when cleanup runs, and how to defer "guard" flag setting until after async operations complete. The `hasShownRevealRef` pattern already established in Phase 24 (DEVotingView, teacher live-dashboard) is the canonical solution for all stale-ref issues.
+1. **State machine extensions** (pause/resume, undo, reopen) -- require a Prisma migration to add `paused` status to brackets and polls, plus new broadcast event types. No new npm packages.
+2. **Quick-create UX** (bracket topic chips, simplified poll) -- pure UI work using existing components plus new shadcn/ui Switch and Tabs primitives for settings toggles and creation mode switching.
+3. **Real-time vote indicators** (green dots in Student Activity panel) -- extend existing broadcast + refetch pattern with a new `student_voted` event. No new packages.
+
+The critical architectural insight: pause/resume is NOT a new status value. It is a boolean `pausedAt` timestamp column on both `brackets` and `polls` tables. This avoids breaking the existing `draft -> active -> completed` status machine while allowing pause/resume to work at any point during `active` status.
 
 ---
 
 ## Current Stack (Verified from package.json)
 
-| Technology | Installed Version | Role in v1.3 |
-|------------|-------------------|---------------|
+| Technology | Installed Version | Changes for v2.0 |
+|------------|-------------------|-------------------|
 | Next.js | 16.1.6 | No changes needed |
-| React | 19.2.3 | `useRef`, `useTransition`, `useFormStatus` -- existing hooks |
-| @radix-ui/react-dropdown-menu | ^2.1.16 | Already installed; used in `DropdownMenu` via shadcn/ui |
-| @supabase/supabase-js | ^2.93.3 | Broadcast REST API for `activity_deleted` event |
+| React | 19.2.3 | No changes needed |
+| Prisma | ^7.3.0 | Migration: add `paused_at` column to brackets + polls |
+| @supabase/supabase-js | ^2.93.3 | New broadcast event types only |
+| @radix-ui/react-dialog | ^1.1.15 | Already installed; used for undo confirmations |
+| @radix-ui/react-dropdown-menu | ^2.1.16 | Already installed; no changes |
 | Tailwind CSS | ^4 | No changes needed |
 | motion (Framer Motion) | ^12.29.2 | No changes needed |
-| lucide-react | ^0.563.0 | `MoreVertical` icon already used in bracket-card.tsx |
-| Prisma | ^7.3.0 | No changes needed |
-| Zod | ^4.3.6 | No changes needed |
+| lucide-react | ^0.563.0 | New icons: Pause, Play, Undo2, RotateCcw, Settings, Zap |
+| Zod | ^4.3.6 | New validation schemas for settings updates |
 
 ---
 
-## What Changes (No New Packages)
+## New Packages Required
 
-### 1. Poll Context Menu (Triple-Dot Menu)
+### 1. @radix-ui/react-switch (for Settings Editing)
 
-**Goal:** Add a `MoreVertical` triple-dot context menu to poll cards matching the bracket card pattern.
+| Property | Value |
+|----------|-------|
+| Package | `@radix-ui/react-switch` |
+| Version | `^1.2.6` |
+| Purpose | Toggle controls for bracket/poll display settings (showVoteCounts, showSeedNumbers, showLiveResults, allowVoteChange) |
+| Why | The settings editing feature needs toggle switches for boolean settings. Switch is the correct semantic control (not checkbox) for on/off display preferences. Already used by shadcn/ui `Switch` component wrapper. Matches existing Radix primitive pattern in the project. |
 
-**Pattern source:** `src/components/bracket/bracket-card.tsx` -- already implements the same menu with `MoreVertical` from lucide-react, a custom `menuRef`, `menuOpen` state, `showDeleteConfirm` dialog, and outside-click cleanup via `useEffect`.
+**Alternative considered:** Plain checkbox inputs or custom toggle buttons. Not recommended because Switch provides proper ARIA semantics for toggle controls, keyboard accessibility (Space to toggle), and consistent Radix animation patterns matching the existing dropdown-menu and dialog primitives.
 
-**Implementation:** New `PollCardMenu` component (or inline on the polls list page). Use the existing `shadcn/ui` `DropdownMenu`/`DropdownMenuTrigger`/`DropdownMenuContent`/`DropdownMenuItem` primitives already installed via `@radix-ui/react-dropdown-menu`.
+### 2. @radix-ui/react-tabs (for Quick Create Mode Switching)
 
-The bracket-card uses a custom DOM-managed menu (not shadcn DropdownMenu) whereas `session-card-menu.tsx` uses the shadcn DropdownMenu primitive. Either pattern is valid; the shadcn one is cleaner and already available.
+| Property | Value |
+|----------|-------|
+| Package | `@radix-ui/react-tabs` |
+| Version | `^1.1.13` |
+| Purpose | Switch between "Quick Create" and "Step-by-Step" creation modes for both brackets and polls |
+| Why | The bracket creation form needs a clean toggle between Quick Create (topic chips + entrant count) and the existing Step-by-Step wizard. Tabs is the correct pattern for mutually exclusive content panels. Keyboard navigation (arrow keys), ARIA tablist/tab/tabpanel roles, and automatic activation are built in. |
 
-**Key primitives (all already installed):**
+**Alternative considered:** Custom button group with conditional rendering. Not recommended because Tabs provides correct accessibility semantics (tablist role, automatic focus management) that a custom solution would need to reimplement.
 
-```typescript
-import { MoreVertical, Trash2 } from 'lucide-react'
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
-```
+### 3. sonner (Optional -- for Action Feedback Toasts)
 
-**Stop-propagation pattern** (critical for cards that are also links):
+| Property | Value |
+|----------|-------|
+| Package | `sonner` |
+| Version | `^2.0.7` |
+| Purpose | Non-blocking success/error feedback for pause, resume, undo, reopen, and settings edit actions |
+| Why | The v2.0 teacher controls (pause, undo, reopen, settings edit) are rapid-fire actions that need lightweight feedback without modal dialogs. Currently the app has no toast/notification system -- it uses either inline error text or Dialog modals. Toasts are the right pattern for confirmable-but-non-disruptive feedback ("Bracket paused", "Round 2 undone", "Settings saved"). shadcn/ui has a first-class `Sonner` component wrapper. |
 
-```typescript
-// Prevent card navigation when clicking the menu trigger
-<DropdownMenuTrigger asChild>
-  <button
-    onClick={(e) => {
-      e.stopPropagation()
-      e.preventDefault()
-    }}
-  >
-    <MoreVertical className="h-4 w-4" />
-  </button>
-</DropdownMenuTrigger>
-```
-
-**No new packages needed.** The DropdownMenu component is already in `src/components/ui/dropdown-menu.tsx`.
+**Alternative: Skip sonner, use inline feedback.** This is viable for MVP. The pause/resume button can show state change visually (icon swap + label change). Undo can show inline success text. Settings edit can show a checkmark. Toasts add polish but are not strictly required. **Recommendation: Add sonner.** The teacher will be performing many rapid actions in v2.0, and toast feedback is the standard pattern.
 
 ---
 
-### 2. RR All-at-Once Bracket Premature Completion Fix
+## What Does NOT Need New Packages
 
-**Goal:** Prevent RR bracket from marking completion before all matchups in an all-at-once pacing round are decided.
+### Pause/Resume Controls
+**Why no new package:** This is a database state change + broadcast event + UI button swap. The `pausedAt` timestamp column uses Prisma's existing `DateTime?` type. The student-facing "needs to cook" message is a conditional render in existing student voting components. The broadcast uses the existing `broadcastBracketUpdate` and `broadcastPollUpdate` functions with new event types (`bracket_paused`, `bracket_resumed`, `poll_paused`, `poll_resumed`).
 
-**Root cause pattern:** The existing `bracketDone` computation (corrected in Phase 24) and the server-side `isRoundRobinComplete` function already check that all matchups are decided. The issue is whether the server-side action or client-side hook prematurely detects completion when only some matchups in a round are decided.
+### Undo Round Advancement / Reopen Voting
+**Why no new package:** `undoMatchupAdvancement` already exists in `src/lib/bracket/advancement.ts`. Undo round is a batch version of existing undo logic. Reopen completed bracket/poll is a status transition (`completed` -> `active`) with vote cleanup. The existing `Dialog` component (`@radix-ui/react-dialog ^1.1.15`) handles undo confirmation dialogs using the established pattern in `delete-confirm-dialog.tsx`.
 
-**Key existing pattern to understand:**
+### Real-Time Student Vote Indicators (Green Dots)
+**Why no new package:** The `ParticipationSidebar` already shows per-student vote status with green dots for a selected matchup. The v2.0 feature extends this to show "has voted on ANY active matchup" without requiring matchup selection. This is a query change in the activities API endpoint + a new broadcast event. The existing Supabase broadcast pattern handles it.
 
-```typescript
-// In use-realtime-bracket.ts (lines 139-152):
-// 'winner_selected' -> fetchBracketState() [bracket may still be 'active']
-// 'bracket_completed' -> fetchBracketState() AND setBracketCompleted(true)
-```
+### Quick Create for Brackets
+**Why no new package:** The `TopicPicker` component and `CURATED_TOPICS` data already exist. Quick Create is a new UI flow that: (1) shows topic list chips from `curated-topics.ts`, (2) lets teacher pick entrant count, (3) auto-creates bracket with defaults. All primitives (Button, Card, Badge, Input) exist.
 
-**Investigation target:** `src/actions/round-robin.ts` `isRoundRobinComplete` -- confirm it checks ALL matchups across ALL rounds (not just the current round). The query must be `matchups.every(m => m.status === 'decided')` across all rounds, not scoped to a single round.
+### Simplified Poll Quick Create
+**Why no new package:** The `POLL_TEMPLATES` data already exists in `src/lib/poll/templates.ts`. Simplified flow is: question input + options list, create with default settings. The existing `OptionList` component handles option management.
 
-**No new packages needed.** Fix is a query condition change in the existing Prisma DAL.
-
----
-
-### 3. SE Bracket Final Round Realtime Update Fix
-
-**Goal:** Fix single-elimination bracket final round not updating in realtime on the student view.
-
-**Root cause pattern (diagnosed via Phase 24 work):** The race condition between `winner_selected` and `bracket_completed` broadcasts creates two rapid `fetchBracketState()` calls. The second fetch resolves while a setTimeout is pending, cancelling the timer and leaving the ref already set (preventing rescheduling). This is identical to the teacher RR race condition fixed in Phase 24-05.
-
-**Canonical fix (established in Phase 24-05):**
-
-Move `hasShownRevealRef.current = true` INSIDE the `setTimeout` callback, not before it. This ensures that if the cleanup function cancels the timer, the ref is NOT yet set -- allowing the next effect run to reschedule the timer.
-
-```typescript
-// WRONG (pre-Phase-24-05 pattern -- ref set before timer fires):
-hasShownRevealRef.current = true
-const timer = setTimeout(() => {
-  setRevealState({ ... })
-}, 2000)
-return () => clearTimeout(timer)
-
-// CORRECT (Phase-24-05 pattern -- ref set INSIDE callback):
-const timer = setTimeout(() => {
-  hasShownRevealRef.current = true  // set here, not before
-  setRevealState({ ... })
-}, 2000)
-return () => clearTimeout(timer)
-```
-
-**Dependency array volatility:** The `currentMatchups` dependency in celebration-trigger useEffects causes frequent re-runs because `fetchBracketState` calls `setMatchups(data.matchups)` with a new array reference on every fetch. This is the mechanism that cancels timers. Rather than removing `currentMatchups` from the dependency array (which would require a ref-based workaround), the correct fix is to keep the dependency but move the guard flag setting inside the timer callback.
-
-**No new packages needed.** Pure React pattern fix in existing components.
+### Post-Creation Settings Editing
+**Why no new package (besides Switch):** Settings editing is a form with the existing Dialog component as container, Input/Label for text fields, and the new Switch for boolean toggles. Zod validates the update payload. A new `updateBracketSettings` server action calls a new DAL function.
 
 ---
 
-### 4. Student View Dynamic Activity Removal on Delete
+## Prisma Migration Plan
 
-**Goal:** When a teacher deletes a poll or bracket while students are on the session dashboard, the deleted activity card should disappear without a page refresh.
+A single migration adds the `paused_at` column to both tables:
 
-**Current architecture:** `useRealtimeActivities` subscribes to the `activities:{sessionId}` channel and listens for `activity_update` events. On any such event, it re-fetches the activity list from the server. The hook correctly removes deleted items because the API endpoint naturally excludes deleted records.
-
-**Gap:** The teacher's `deletePoll` and `deleteBracket` server actions currently call `revalidatePath` but do NOT call `broadcastActivityUpdate(sessionId)`. Without a broadcast, the realtime hook never fires on student devices.
-
-**Verified in source code:**
-
-```typescript
-// src/actions/poll.ts deletePoll (line 194-203):
-// EXISTING: revalidatePath('/activities')
-// MISSING:  broadcastActivityUpdate(result.sessionId)
-
-// src/actions/bracket.ts deleteBracket:
-// EXISTING: router.refresh() in the client component
-// MISSING:  broadcastActivityUpdate(sessionId) in the server action
+```sql
+-- Add pause capability to brackets and polls
+ALTER TABLE "brackets" ADD COLUMN "paused_at" TIMESTAMP(3);
+ALTER TABLE "polls" ADD COLUMN "paused_at" TIMESTAMP(3);
 ```
 
-**Fix:** Add `broadcastActivityUpdate(sessionId)` to both `deletePoll` and `deleteBracket` server actions. The `broadcastActivityUpdate` function already exists in `src/lib/realtime/broadcast.ts` and uses the established REST API pattern. The deleted poll/bracket will no longer appear in the API response, so students will see the activity grid update automatically when the broadcast fires.
+**Schema additions:**
 
-**Broadcast pattern (already implemented, just needs to be called on delete):**
+```prisma
+model Bracket {
+  // ... existing fields ...
+  pausedAt  DateTime? @map("paused_at")
+}
 
-```typescript
-// In src/lib/realtime/broadcast.ts (already exists):
-export async function broadcastActivityUpdate(sessionId: string): Promise<void> {
-  await broadcastMessage({
-    topic: `activities:${sessionId}`,
-    event: 'activity_update',
-    payload: {},
-  })
+model Poll {
+  // ... existing fields ...
+  pausedAt  DateTime? @map("paused_at")
 }
 ```
 
-The client hook (`useRealtimeActivities`) already handles `activity_update` events by re-fetching. The re-fetch will return the activity list without the deleted item. No new event type needed -- the existing `activity_update` + re-fetch pattern handles removals correctly.
+**Why `pausedAt` timestamp instead of a `paused` status:**
 
-**SessionId retrieval for delete actions:** The server action must fetch the `sessionId` before deleting (to include in the broadcast). For polls, the DAL can return the sessionId on delete. For brackets, same approach. Neither action currently returns the sessionId from the DAL on delete -- this is the only code change needed beyond calling `broadcastActivityUpdate`.
-
-**No new packages needed.** Extend existing `broadcastActivityUpdate` call pattern.
+1. **Preserves the status machine.** The existing `draft -> active -> completed` flow is deeply embedded in queries, gates, broadcast events, and student views. Adding `paused` as a fourth status would require updating every `status: 'active'` check across 40+ files.
+2. **Pause is orthogonal to status.** A bracket can be paused while `active`. It can be unpaused and remain `active`. This is a modifier on the `active` state, not a separate lifecycle stage.
+3. **Timestamp provides audit trail.** Teachers can see when they paused. Future analytics can track pause frequency and duration.
+4. **Simple boolean check.** `isPaused = pausedAt !== null` in application code. Resume = `set pausedAt to null`.
 
 ---
 
-### 5. Sign-Out Button Click Visual Feedback
+## New Broadcast Event Types
 
-**Goal:** Show a visual "Signing out..." state on the Sign Out button when clicked, to indicate the action is in progress (the redirect can take 1-2 seconds on slow connections).
-
-**Current implementation:**
+Added to the existing `BracketUpdateType` and `PollUpdateType` unions in `src/lib/realtime/broadcast.ts`:
 
 ```typescript
-// src/components/auth/signout-button.tsx
-export function SignOutButton() {
-  return (
-    <form action={signOut}>
-      <Button type="submit" variant="ghost" size="sm">
-        Sign Out
-      </Button>
-    </form>
-  )
-}
+// Bracket additions
+type BracketUpdateType =
+  | 'winner_selected'
+  | 'round_advanced'
+  | 'matchup_opened'
+  | 'bracket_completed'
+  | 'voting_opened'
+  | 'prediction_status_changed'
+  | 'reveal_round'
+  | 'reveal_complete'
+  | 'results_prepared'
+  | 'bracket_paused'      // NEW: teacher paused the bracket
+  | 'bracket_resumed'     // NEW: teacher resumed the bracket
+  | 'bracket_reopened'    // NEW: teacher reopened a completed bracket
+  | 'round_undone'        // NEW: teacher undid a round advancement
+
+// Poll additions
+type PollUpdateType =
+  | 'poll_activated'
+  | 'poll_closed'
+  | 'poll_archived'
+  | 'poll_paused'         // NEW: teacher paused the poll
+  | 'poll_resumed'        // NEW: teacher resumed the poll
+  | 'poll_reopened'       // NEW: teacher reopened a closed poll
 ```
 
-The `signOut` server action calls `supabase.auth.signOut()` then `redirect('/login')`. The redirect can take 1-2 seconds on slow connections, leaving no feedback.
+These events are handled by the existing `useRealtimeBracket` and `useRealtimePoll` hooks via their `bracket_update` and `poll_update` listeners, which already trigger `fetchBracketState()` and `fetchPollState()` refetches on any structural event. No hook changes needed -- just add the new event types to the switch statements.
 
-**Two valid patterns -- choose based on component topology:**
+---
 
-**Pattern A (useFormStatus -- preferred for `<form action={...}>`):**
+## New shadcn/ui Components to Generate
 
-`useFormStatus` reads the pending state from the nearest parent `<form>`. It must be called from a CHILD component rendered inside the form, not from the same component that renders the form.
+After installing the Radix packages, generate the shadcn/ui wrappers:
+
+```bash
+# Generate shadcn/ui component wrappers (copies source into src/components/ui/)
+npx shadcn@latest add switch
+npx shadcn@latest add tabs
+npx shadcn@latest add sonner   # if adding toast support
+```
+
+These will create:
+- `src/components/ui/switch.tsx` -- wraps `@radix-ui/react-switch`
+- `src/components/ui/tabs.tsx` -- wraps `@radix-ui/react-tabs`
+- `src/components/ui/sonner.tsx` -- wraps `sonner` library (if added)
+
+---
+
+## Installation
+
+```bash
+# Required new packages (2)
+npm install @radix-ui/react-switch@^1.2.6 @radix-ui/react-tabs@^1.1.13
+
+# Optional (recommended) toast package
+npm install sonner@^2.0.7
+
+# Generate shadcn/ui wrappers
+npx shadcn@latest add switch tabs
+
+# If adding sonner:
+npx shadcn@latest add sonner
+```
+
+No new dev dependencies needed.
+
+---
+
+## New Zod Validation Schemas
 
 ```typescript
-'use client'
-import { useFormStatus } from 'react-dom'
-import { signOut } from '@/actions/auth'
-import { Button } from '@/components/ui/button'
+// Update bracket settings (post-creation editing)
+export const updateBracketSettingsSchema = z.object({
+  bracketId: z.string().uuid(),
+  // Display settings (changeable during live)
+  viewingMode: z.enum(['simple', 'advanced']).optional(),
+  showVoteCounts: z.boolean().optional(),
+  showSeedNumbers: z.boolean().optional(),
+  votingTimerSeconds: z.number().int().min(5).max(300).nullable().optional(),
+  // RR-specific (changeable during live if no rounds decided)
+  roundRobinStandingsMode: z.enum(['live', 'suspenseful']).optional(),
+})
 
-function SignOutButtonInner() {
-  const { pending } = useFormStatus()
-  return (
-    <Button type="submit" variant="ghost" size="sm" disabled={pending}>
-      {pending ? 'Signing out...' : 'Sign Out'}
-    </Button>
-  )
-}
+// Update poll settings (post-creation editing)
+export const updatePollSettingsSchema = z.object({
+  pollId: z.string().uuid(),
+  // Display settings (changeable during live)
+  showLiveResults: z.boolean().optional(),
+  allowVoteChange: z.boolean().optional(),
+})
 
-export function SignOutButton() {
-  return (
-    <form action={signOut}>
-      <SignOutButtonInner />
-    </form>
-  )
-}
+// Pause/resume bracket
+export const pauseBracketSchema = z.object({
+  bracketId: z.string().uuid(),
+})
+
+// Pause/resume poll
+export const pausePollSchema = z.object({
+  pollId: z.string().uuid(),
+})
+
+// Reopen completed bracket
+export const reopenBracketSchema = z.object({
+  bracketId: z.string().uuid(),
+})
+
+// Undo round (batch undo all matchups in a round)
+export const undoRoundSchema = z.object({
+  bracketId: z.string().uuid(),
+  round: z.number().int().min(1),
+})
 ```
 
-**Pattern B (useTransition -- for event-handler-based calls):**
+---
 
-```typescript
-'use client'
-import { useTransition } from 'react'
-import { signOut } from '@/actions/auth'
-import { Button } from '@/components/ui/button'
+## New Server Actions Required
 
-export function SignOutButton() {
-  const [isPending, startTransition] = useTransition()
-  return (
-    <Button
-      variant="ghost"
-      size="sm"
-      disabled={isPending}
-      onClick={() => startTransition(() => signOut())}
-    >
-      {isPending ? 'Signing out...' : 'Sign Out'}
-    </Button>
-  )
-}
-```
+| Action | File | Purpose |
+|--------|------|---------|
+| `pauseBracket` | `src/actions/bracket.ts` | Set `pausedAt = now()` on bracket, broadcast `bracket_paused` |
+| `resumeBracket` | `src/actions/bracket.ts` | Set `pausedAt = null`, broadcast `bracket_resumed` |
+| `pausePoll` | `src/actions/poll.ts` | Set `pausedAt = now()` on poll, broadcast `poll_paused` |
+| `resumePoll` | `src/actions/poll.ts` | Set `pausedAt = null`, broadcast `poll_resumed` |
+| `reopenBracket` | `src/actions/bracket.ts` | Set `status = 'active'`, clear final winner, broadcast `bracket_reopened` |
+| `reopenPoll` | `src/actions/poll.ts` | Set `status = 'active'`, broadcast `poll_reopened` |
+| `undoRound` | `src/actions/bracket-advance.ts` | Batch undo all decided matchups in round N, reopen voting, broadcast `round_undone` |
+| `updateBracketSettings` | `src/actions/bracket.ts` | Update display settings, broadcast settings change |
+| `updatePollSettings` | `src/actions/poll.ts` | Update display settings, broadcast settings change |
 
-**Recommendation:** Use `useFormStatus` (Pattern A). It is the idiomatic React 19 pattern for `<form action={serverAction}>` submissions and has zero risk of the `redirect()` call conflict (redirect works normally inside `startTransition` too, but `useFormStatus` is the canonical match for the form-action pattern).
+All follow the established pattern: `auth -> validate (Zod) -> ownership check -> DAL mutation -> broadcast -> revalidatePath -> return`.
 
-**No new packages needed.** `useFormStatus` is from `react-dom` (already installed as React 19.2.3).
+---
+
+## New DAL Functions Required
+
+| Function | File | Purpose |
+|----------|------|---------|
+| `pauseBracketDAL` | `src/lib/dal/bracket.ts` | `UPDATE brackets SET paused_at = NOW() WHERE id = ? AND teacher_id = ?` |
+| `resumeBracketDAL` | `src/lib/dal/bracket.ts` | `UPDATE brackets SET paused_at = NULL WHERE id = ? AND teacher_id = ?` |
+| `pausePollDAL` | `src/lib/dal/poll.ts` | Same pattern for polls |
+| `resumePollDAL` | `src/lib/dal/poll.ts` | Same pattern for polls |
+| `reopenBracketDAL` | `src/lib/dal/bracket.ts` | Set status to `active`, clear final matchup winner |
+| `reopenPollDAL` | `src/lib/dal/poll.ts` | Set status to `active` |
+| `undoRoundDAL` | `src/lib/dal/bracket.ts` | Batch reset matchups in round N, reopen for voting |
+| `updateBracketSettingsDAL` | `src/lib/dal/bracket.ts` | Update settings fields on bracket |
+| `updatePollSettingsDAL` | `src/lib/dal/poll.ts` | Update settings fields on poll |
+
+---
+
+## Alternatives Considered
+
+| Recommended | Alternative | Why Not Alternative |
+|-------------|-------------|---------------------|
+| `pausedAt` timestamp column | `paused` boolean column | Timestamp provides audit trail and "when paused" info for free |
+| `pausedAt` timestamp column | New `paused` status value | Would break 40+ files that check `status: 'active'`; pause is orthogonal to lifecycle |
+| @radix-ui/react-switch | Plain HTML checkbox | No ARIA toggle semantics, no animation, inconsistent with existing Radix primitive usage |
+| @radix-ui/react-tabs | Custom button toggle | No tablist/tab/tabpanel ARIA roles, no keyboard arrow navigation |
+| sonner | react-hot-toast | sonner has first-class shadcn/ui wrapper, better TypeScript types, newer API |
+| sonner | No toasts (inline feedback only) | Viable for MVP; toasts add polish for rapid teacher actions but not strictly required |
+| Extend existing broadcast events | New WebSocket channels per feature | Unnecessary complexity; existing channel+refetch pattern handles all new events cleanly |
 
 ---
 
 ## What NOT to Add
 
-| Avoid | Why | What to Do Instead |
-|-------|-----|---------------------|
-| Socket.IO, Pusher, Ably | Activity removal is already handled by the broadcast re-fetch pattern; missing the `broadcastActivityUpdate` call on delete is the gap, not the transport | Add `broadcastActivityUpdate` call to `deletePoll` and `deleteBracket` server actions |
-| `react-hot-toast` or `sonner` | Already have a deletion confirmation dialog pattern from `bracket-card.tsx`; poll delete confirmation should match that | Reuse the existing confirmation dialog pattern (inline div or shadcn `Dialog`) |
-| A new menu library | `@radix-ui/react-dropdown-menu` is already installed and wrapped by shadcn/ui | Use existing `src/components/ui/dropdown-menu.tsx` |
-| `postgres_changes` subscription for delete detection | Adds RLS complexity (currently deny-all RLS blocks postgres_changes for anon role) and is slower than broadcast for this use case | Use existing broadcast pattern with `broadcastActivityUpdate` |
-| `useEffectEvent` (experimental React hook) | While `useEffectEvent` solves stale closure elegantly, it is experimental and not available in stable React 19.2.3 | Use the `hasShownRevealRef` pattern: move guard flag setting inside the timer callback |
-| `useOptimistic` for instant deletion | Adds complexity; the re-fetch after broadcast is fast enough (~100-200ms); optimistic removal risks showing deleted items as removed before confirmation | Keep the broadcast-then-refetch pattern; it is already fast enough for classroom use |
+| Avoid | Why | Use Instead |
+|-------|-----|-------------|
+| `@radix-ui/react-alert-dialog` | Already have `@radix-ui/react-dialog` installed; AlertDialog is for destructive confirmations which can use the existing Dialog pattern from `delete-confirm-dialog.tsx` | Reuse existing Dialog component for undo/reopen confirmations |
+| `@radix-ui/react-tooltip` | Green dot vote indicators are self-explanatory; tooltips would add interaction overhead on a panel that teachers glance at, not hover over | Use aria-label attributes for accessibility instead |
+| `zustand` or `jotai` for pause state | Pause state lives in the database and is broadcast via Supabase Realtime; client state management would duplicate server state | Keep server-authoritative state with broadcast+refetch |
+| `@tanstack/react-query` | The existing `fetch` + `useState` + broadcast refetch pattern works well; adding TanStack Query adds a paradigm shift with no clear benefit for 80K LOC codebase | Continue with existing `useCallback` fetch pattern |
+| `react-hook-form` | Settings editing forms are small (3-5 toggles); RHF is overkill when controlled components + Zod validation work fine | Controlled `useState` + Zod `safeParse` on submit |
+| Socket.IO / Pusher / Ably | Supabase Broadcast already handles all real-time needs; adding a second transport would duplicate infrastructure | Extend existing Supabase broadcast with new event types |
+| `postgres_changes` for pause detection | RLS deny-all blocks postgres_changes for anon role; broadcast is faster and already the established pattern | Use broadcast+refetch pattern |
 
 ---
 
-## Version Compatibility (Verified)
+## Version Compatibility
 
-| Package | Version | Notes for v1.3 |
-|---------|---------|----------------|
-| react / react-dom | 19.2.3 | `useFormStatus` is stable in React 19 (moved from canary). `useTransition` stable since React 18. `useRef` is core. |
-| @radix-ui/react-dropdown-menu | ^2.1.16 | Already installed. `DropdownMenu` wrapping in `src/components/ui/dropdown-menu.tsx` handles all the animation and accessibility. |
-| @supabase/supabase-js | ^2.93.3 | Broadcast REST API (`POST /realtime/v1/api/broadcast`) confirmed working for all other activity events. Adding `broadcastActivityUpdate` on delete uses the identical pattern. |
-| next | 16.1.6 | Server actions with `redirect()` inside `useFormStatus` form context work correctly. `revalidatePath` calls continue to work for the teacher view. |
-| lucide-react | ^0.563.0 | `MoreVertical`, `Trash2` already imported in `bracket-card.tsx` -- same icons will be used for poll menu. |
+| Package A | Compatible With | Notes |
+|-----------|-----------------|-------|
+| `@radix-ui/react-switch@^1.2.6` | `react@19.2.3`, `react-dom@19.2.3` | Verified: Radix 1.2.x supports React 19 |
+| `@radix-ui/react-tabs@^1.1.13` | `react@19.2.3`, `react-dom@19.2.3` | Verified: Radix 1.1.x supports React 19 |
+| `sonner@^2.0.7` | `react@19.2.3`, `next@16.1.6` | Verified: sonner 2.x supports React 18+ and Next.js App Router |
+| `@radix-ui/react-switch@^1.2.6` | `@radix-ui/react-dialog@1.1.15` | Same Radix ecosystem; no version conflicts |
+| `@radix-ui/react-tabs@^1.1.13` | `@radix-ui/react-dropdown-menu@2.1.16` | Same Radix ecosystem; no version conflicts |
+| Prisma migration (add column) | `prisma@^7.3.0` | Simple ALTER TABLE; no Prisma version issues |
 
 ---
 
-## React Pattern Reference for This Milestone
+## Integration Points by Feature
 
-### Pattern 1: Ref Guard Inside Timer (SE bracket final round, RR celebration fixes)
+### Pause/Resume
+- **Schema:** `pausedAt` on Bracket and Poll models
+- **Broadcast:** New event types in existing broadcast functions
+- **Student view:** Conditional "needs to cook" overlay in student voting components, gated by `pausedAt !== null` from bracket/poll state API
+- **Teacher view:** Play/Pause toggle button in live dashboard header, context menu, and bracket/poll card
+- **API:** Activities endpoint filters paused items to still show but with visual indicator
 
-The canonical fix for useEffect timer race conditions where a cleanup function cancels the timer but the guard ref was already set synchronously:
+### Undo Round / Reopen
+- **Existing code:** `undoMatchupAdvancement` in `src/lib/bracket/advancement.ts` already handles single matchup undo with vote blocking check on next matchup
+- **Extension needed:** Batch undo (all matchups in a round) using `$transaction`
+- **Reopen:** Status transition `completed -> active` with optional vote/winner cleanup
+- **Broadcast:** `round_undone` and `bracket_reopened` events trigger full refetch on student views
+
+### Quick Create (Brackets)
+- **Existing code:** `TopicPicker`, `CURATED_TOPICS` already exist
+- **New flow:** Topic chip selection -> entrant count picker -> auto-create with SE defaults
+- **No API changes:** Uses existing `createBracket` server action with pre-filled data
+
+### Simplified Poll Quick Create
+- **Existing code:** `POLL_TEMPLATES`, `PollWizard` already exist
+- **New flow:** Question + options only -> create with default settings (allowVoteChange=true, showLiveResults=false)
+- **No API changes:** Uses existing `createPoll` server action
+
+### Real-Time Vote Indicators
+- **Existing code:** `ParticipationSidebar` already shows green dots per matchup
+- **Extension:** Aggregate "has voted on any active matchup" indicator without requiring matchup selection
+- **Broadcast:** New `student_voted` event on `activities:{sessionId}` channel
+- **API:** Activities endpoint already returns `hasVoted` per participant
+
+### Settings Editing
+- **New UI:** Dialog/sheet with Switch toggles and Input fields
+- **Validation:** Zod schemas for safe settings updates
+- **Safety:** Some settings locked during active voting (bracket type, size, entrants); display settings (showVoteCounts, viewingMode) always editable
+
+---
+
+## React Pattern Reference for v2.0
+
+### Pattern 1: Optimistic Toggle (Pause/Resume Button)
 
 ```typescript
-// CANONICAL PATTERN (Phase 24-05 established):
-const hasShownRevealRef = useRef(false)
+'use client'
+import { useTransition } from 'react'
+import { Pause, Play } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { pauseBracket, resumeBracket } from '@/actions/bracket'
 
-useEffect(() => {
-  if (condition && !hasShownRevealRef.current) {
-    // Do NOT set the ref here -- it would prevent rescheduling on cleanup
-    const timer = setTimeout(() => {
-      hasShownRevealRef.current = true  // Set INSIDE callback
-      setRevealState({ ... })
-    }, 2000)
-    return () => clearTimeout(timer)  // Cleanup only cancels timer, not ref
+function PauseResumeButton({ bracketId, isPaused }: { bracketId: string; isPaused: boolean }) {
+  const [isPending, startTransition] = useTransition()
+
+  function handleToggle() {
+    startTransition(async () => {
+      if (isPaused) {
+        await resumeBracket({ bracketId })
+      } else {
+        await pauseBracket({ bracketId })
+      }
+    })
   }
-}, [dependency1, dependency2])
-```
 
-Why this works: If the effect cleanup fires (due to dependency change) before the timer fires, `hasShownRevealRef.current` is still `false`. The next effect run will re-schedule the timer. Only when the timer actually fires does the ref get set to `true`, preventing subsequent re-triggers.
-
-### Pattern 2: useFormStatus for Server Action Pending State
-
-```typescript
-// Must be called in a CHILD component inside the <form>, not the form component itself
-import { useFormStatus } from 'react-dom'
-
-function SubmitButton({ label, pendingLabel }: { label: string; pendingLabel: string }) {
-  const { pending } = useFormStatus()
   return (
-    <Button type="submit" disabled={pending}>
-      {pending ? pendingLabel : label}
+    <Button
+      variant="outline"
+      size="sm"
+      onClick={handleToggle}
+      disabled={isPending}
+    >
+      {isPaused ? <Play className="mr-1 h-4 w-4" /> : <Pause className="mr-1 h-4 w-4" />}
+      {isPaused ? 'Resume' : 'Pause'}
     </Button>
   )
 }
 ```
 
-### Pattern 3: Broadcast on Delete for Realtime List Updates
+### Pattern 2: Settings Edit Dialog with Switch
 
 ```typescript
-// In server action -- after deleting, broadcast to update all student views:
-export async function deletePoll(input: unknown) {
-  // ... auth + validation ...
-  const deleted = await deletePollDAL(parsed.data.pollId, teacher.id)
-  if (!deleted) return { error: 'Poll not found' }
+import { Switch } from '@/components/ui/switch'
+import { Label } from '@/components/ui/label'
 
-  // Existing: revalidatePath for teacher server-side cache
-  revalidatePath('/activities')
-
-  // ADD: broadcast to update student realtime views
-  if (deleted.sessionId) {
-    broadcastActivityUpdate(deleted.sessionId).catch(console.error)
-  }
-
-  return { success: true }
-}
+// Inside a Dialog
+<div className="flex items-center justify-between">
+  <Label htmlFor="show-votes">Show vote counts to students</Label>
+  <Switch
+    id="show-votes"
+    checked={showVoteCounts}
+    onCheckedChange={setShowVoteCounts}
+  />
+</div>
 ```
 
-The `.catch(console.error)` pattern follows the existing convention in this codebase -- broadcast failures are best-effort and must not break the delete flow.
+### Pattern 3: Quick Create Tabs
+
+```typescript
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Zap, Settings } from 'lucide-react'
+
+<Tabs defaultValue="quick">
+  <TabsList>
+    <TabsTrigger value="quick">
+      <Zap className="mr-1 h-4 w-4" /> Quick Create
+    </TabsTrigger>
+    <TabsTrigger value="wizard">
+      <Settings className="mr-1 h-4 w-4" /> Step-by-Step
+    </TabsTrigger>
+  </TabsList>
+  <TabsContent value="quick">
+    {/* Topic chips + entrant count picker */}
+  </TabsContent>
+  <TabsContent value="wizard">
+    {/* Existing BracketForm wizard */}
+  </TabsContent>
+</Tabs>
+```
 
 ---
 
-## Supabase Realtime Architecture (No Changes)
+## Supabase Realtime Architecture (Minimal Changes)
 
-The dual-channel broadcast pattern is unchanged:
+The existing dual-channel broadcast pattern extends cleanly:
 
 ```
-Teacher Server Action (delete/update)
+Teacher Server Action (pause/undo/reopen/settings)
     |
-    | POST /realtime/v1/api/broadcast  (service_role key)
+    | POST /realtime/v1/api/broadcast (service_role key)
     v
 Supabase Broadcast
     |
-    | WebSocket
+    | WebSocket (or polling fallback)
     v
-Student Browser (useRealtimeActivities)
-    | activity_update event received
+Student Browser (useRealtimeBracket / useRealtimePoll)
+    | bracket_update or poll_update event received
+    | type = 'bracket_paused' | 'bracket_resumed' | 'round_undone' | ...
     v
-fetchActivities() -> /api/sessions/{sessionId}/activities
-    | response excludes deleted item
+fetchBracketState() / fetchPollState()
+    | response includes pausedAt field
     v
-setActivities(filtered) -> card removed from DOM
+UI renders pause overlay or updated state
 ```
 
-The same `activities:{sessionId}` channel used for activation events (Phase 24-01) handles removal events. No new channel needed.
+No new channels. No new subscription hooks. The existing hooks already handle any `bracket_update` or `poll_update` event by refetching. The only code change is adding the new event types to the type unions and ensuring the state API endpoints include `pausedAt` in their response.
 
 ---
 
-## Migration Execution Order (v1.3)
+## Migration Execution Order
 
-Ordered by independence and risk:
+Based on dependencies:
 
-1. **Sign-out button visual feedback** -- purely additive UI change, zero risk
-2. **Poll context menu** -- new component using existing primitives, no data changes
-3. **Student activity removal broadcast** -- add `broadcastActivityUpdate` to delete server actions; requires DAL to return `sessionId` on delete
-4. **SE bracket final round realtime fix** -- move `hasShownRevealRef.current = true` inside setTimeout in relevant student bracket page effect
-5. **RR all-at-once premature completion fix** -- requires investigation of `isRoundRobinComplete` query scope; should fix before SE bracket fix to understand if same root cause
-
-Items 1-2 have no dependencies. Items 3-5 are independent of each other and of 1-2.
+1. **Prisma migration** -- add `pausedAt` column (all features depend on schema)
+2. **Install packages** -- @radix-ui/react-switch, @radix-ui/react-tabs, sonner
+3. **Generate shadcn/ui wrappers** -- switch, tabs, sonner
+4. **Broadcast event types** -- extend type unions (enables all real-time features)
+5. **Pause/resume** -- simplest teacher control, validates broadcast pattern
+6. **Settings editing** -- uses new Switch component, validates settings update flow
+7. **Undo round / reopen** -- builds on existing `undoMatchupAdvancement`
+8. **Quick create brackets** -- UI-only, no backend changes
+9. **Simplified poll create** -- UI-only, no backend changes
+10. **Real-time vote indicators** -- extends existing participation sidebar
+11. **Bug fixes & label changes** -- independent, can be done in parallel
 
 ---
 
 ## Sources
 
 - **package.json (HIGH confidence):** Direct read of `/Users/davidreynoldsjr/VibeCoding/SparkVotEDU/package.json` -- all installed versions verified
-- **Existing codebase (HIGH confidence):** Read `src/components/teacher/session-card-menu.tsx`, `src/components/bracket/bracket-card.tsx`, `src/components/auth/signout-button.tsx`, `src/hooks/use-realtime-activities.ts`, `src/hooks/use-realtime-bracket.ts`, `src/lib/realtime/broadcast.ts`, `src/actions/poll.ts`, `src/actions/auth.ts` -- architecture fully understood
-- **Phase 24 debug files (HIGH confidence):** Read all `.planning/debug/*.md` files -- root causes confirmed for all five features; celebration-loops-infinitely.md and teacher-rr-celebration-not-triggering.md directly identify the hasShownRevealRef pattern as the fix
-- **Phase 24 verification (HIGH confidence):** Read `24-VERIFICATION.md` -- confirms hasShownRevealRef inside-callback pattern is already validated and working in production (Plans 05-06)
-- **React useFormStatus docs (HIGH confidence, verified via WebSearch):** https://react.dev/reference/react-dom/hooks/useFormStatus -- `useFormStatus` is stable in React 19, must be called from child inside form, returns `pending` boolean
-- **React useTransition docs (HIGH confidence):** https://react.dev/reference/react/useTransition -- alternative to useFormStatus for event-handler pattern
-- **shadcn/ui DropdownMenu (HIGH confidence, verified via WebSearch):** https://ui.shadcn.com/docs/components/dropdown-menu -- already installed via `@radix-ui/react-dropdown-menu@2.1.16`; wraps Radix primitives with correct accessibility and animation
-- **Supabase Broadcast REST API (HIGH confidence):** https://supabase.com/docs/guides/realtime/broadcast -- REST broadcast via `POST /realtime/v1/api/broadcast` confirmed supported; existing pattern in `src/lib/realtime/broadcast.ts` is correct and matches docs
-- **React useRef stale closure pattern (MEDIUM confidence, WebSearch):** Multiple sources confirm: refs avoid stale closures because `ref.current` always evaluates to the actual value; moving ref assignment inside timer callback prevents cancelled-timer false-positive locking
+- **Prisma schema (HIGH confidence):** Direct read of `prisma/schema.prisma` -- Bracket and Poll models analyzed for status fields, existing columns, and migration patterns
+- **Existing codebase (HIGH confidence):** Read `src/lib/realtime/broadcast.ts` (broadcast event types), `src/hooks/use-realtime-bracket.ts` (event handling pattern), `src/hooks/use-realtime-poll.ts` (poll event handling), `src/hooks/use-realtime-activities.ts` (activity refresh pattern), `src/components/teacher/participation-sidebar.tsx` (green dot vote indicator pattern), `src/lib/bracket/types.ts` (BracketStatus type), `src/lib/bracket/advancement.ts` (existing undoMatchupAdvancement), `src/lib/bracket/curated-topics.ts` (topic data), `src/lib/poll/templates.ts` (poll template data), `src/components/bracket/topic-picker.tsx` (existing topic picker UI), `src/components/bracket/bracket-form.tsx` (creation wizard), `src/components/poll/poll-wizard.tsx` (poll creation wizard), `src/components/teacher/delete-confirm-dialog.tsx` (confirmation dialog pattern)
+- **@radix-ui/react-switch npm (HIGH confidence):** https://www.npmjs.com/package/@radix-ui/react-switch -- v1.2.6 latest, supports React 19
+- **@radix-ui/react-tabs npm (HIGH confidence):** https://www.npmjs.com/package/@radix-ui/react-tabs -- v1.1.13 latest, supports React 19
+- **sonner npm (HIGH confidence):** https://www.npmjs.com/package/sonner -- v2.0.7 latest, supports React 18+ and Next.js App Router
+- **shadcn/ui Switch docs (HIGH confidence):** https://ui.shadcn.com/docs/components/radix/switch -- wraps @radix-ui/react-switch
+- **shadcn/ui Tabs docs (HIGH confidence):** https://ui.shadcn.com/docs/components/radix/tabs -- wraps @radix-ui/react-tabs
+- **shadcn/ui Sonner docs (HIGH confidence):** https://ui.shadcn.com/docs/components/radix/sonner -- wraps sonner library
+- **shadcn/ui February 2026 changelog (MEDIUM confidence):** https://ui.shadcn.com/docs/changelog/2026-02-radix-ui -- unified radix-ui package for new-york style; this project uses individual @radix-ui packages which remain supported
+- **Existing Prisma migration (HIGH confidence):** Read `prisma/migrations/20260223183446_phase23_session_archiving/migration.sql` -- confirms ALTER TABLE + ADD COLUMN pattern for nullable timestamp columns
 
 ---
 
-*Stack research for: SparkVotEDU v1.3 Bug Fixes & UX Parity*
-*Researched: 2026-02-24*
+*Stack research for: SparkVotEDU v2.0 Teacher Power-Ups*
+*Researched: 2026-02-28*

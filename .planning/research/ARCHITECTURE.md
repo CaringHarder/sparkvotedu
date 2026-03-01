@@ -1,732 +1,637 @@
-# Architecture Research: v1.3 Bug Fixes & UX Parity
+# Architecture Research: v2.0 Teacher Power-Ups
 
-**Domain:** Integration architecture for 5 targeted fixes to existing classroom voting app
-**Researched:** 2026-02-24
-**Confidence:** HIGH (direct codebase analysis of all relevant source files)
+**Domain:** Integration architecture for teacher activity controls, quick-create brackets, and UX polish
+**Researched:** 2026-02-28
+**Confidence:** HIGH (direct codebase analysis of 80,750 LOC across 564 files)
 
 ---
 
 ## Current Architecture Snapshot
 
-SparkVotEDU v1.2 established this dual-channel broadcast architecture, which all 5 fixes integrate into:
+SparkVotEDU uses a layered architecture with clean separation. Every new v2.0 feature integrates into this existing flow:
 
 ```
-TEACHER BROWSER                        STUDENT BROWSER
-  LiveDashboard / PollLive               ActivityGrid / StudentBracketPage
-         |                                         |
-  useRealtimeBracket()               useRealtimeActivities()
-  useRealtimePoll()                  useRealtimeBracket()
-         |                                         |
-         +------ Supabase Realtime WebSocket ------+
-                          |
-              +===========+===========+
-              |                       |
-      bracket:{id}             activities:{sessionId}
-      poll:{id}                (session-wide channel)
-      (activity-specific       Event: activity_update
-       channels)               Event: participant_joined
-      Event: vote_update
-      Event: bracket_update
-      Event: poll_update
-              |                       |
-              +===========+===========+
-                          |
-         Server Actions (src/actions/*.ts)
-                          |
-              broadcastMessage() via REST API
-              POST /realtime/v1/api/broadcast
-              (service_role key, no WebSocket)
-                          |
-                        Prisma
-                     (bypassrls)
-                          |
-                     PostgreSQL
+TEACHER BROWSER                              STUDENT BROWSER
+  LiveDashboard / PollLiveClient               ActivityGrid / Bracket/Poll pages
+         |                                              |
+  +----- Client Components ------+            +---- Client Components ----+
+  | RoundAdvancementControls     |            | SimpleVotingView          |
+  | ParticipationSidebar         |            | AdvancedVotingView        |
+  | VoteProgressBar              |            | SimplePollVote            |
+  | PollResults                  |            | ActivityCard              |
+  +------------------------------+            +---------------------------+
+         |                                              |
+  +----- Realtime Hooks ---------+            +---- Realtime Hooks -------+
+  | useRealtimeBracket()         |            | useRealtimeBracket()      |
+  | useRealtimePoll()            |            | useRealtimeActivities()   |
+  | useSessionPresence()         |            | useRealtimePoll()         |
+  +------------------------------+            +---------------------------+
+         |                                              |
+         +---------- Supabase Realtime WebSocket -------+
+                     (with HTTP polling fallback)
+                              |
+                  +-----------+-----------+
+                  |                       |
+           bracket:{id}            activities:{sessionId}
+           poll:{id}               (session-wide channel)
+           (activity-specific       Event: activity_update
+            channels)               Event: participant_joined
+           Event: vote_update
+           Event: bracket_update
+           Event: poll_vote_update
+           Event: poll_update
+
+                              |
+                    Server Actions
+                  (src/actions/*.ts)
+                  Auth -> Validate -> DAL -> Broadcast -> Revalidate
+                              |
+                    Data Access Layer
+                  (src/lib/dal/*.ts)
+                  Prisma queries, ownership checks
+                              |
+                    Bracket Engine
+                  (src/lib/bracket/*.ts)
+                  Advancement, matchup generation, byes
+                              |
+                    PostgreSQL via Prisma v7
+                  (Supabase hosted, RLS deny-all)
 ```
 
-### Key Facts for v1.3 Fixes
+### Key Architectural Patterns Already Established
 
-1. **`broadcastActivityUpdate(sessionId)`** sends `{ topic: 'activities:{sessionId}', event: 'activity_update', payload: {} }`. The `useRealtimeActivities` hook listens for this and **refetches from `/api/sessions/{sessionId}/activities`**. The hook does NOT listen for a `participant_removed` event -- it only responds to `activity_update`.
-
-2. **`broadcastBracketUpdate(bracketId, type, payload)`** sends to `bracket:{bracketId}`. The `useRealtimeBracket` hook triggers `fetchBracketState()` on these types: `winner_selected`, `round_advanced`, `voting_opened`, `bracket_completed`, `prediction_status_changed`, `reveal_round`, `reveal_complete`. The final round of SE uses this exact path -- `advanceMatchup` broadcasts `winner_selected` then checks `isBracketComplete` and conditionally broadcasts `bracket_completed`.
-
-3. **`rrAllDecided` in `LiveDashboard`** (line 856-858) checks `currentMatchups.every((m) => m.status === 'decided')`. For an RR bracket with `pacing: 'all_at_once'`, all matchups start as `pending` (not `voting`), so `rrAllDecided` is `false` until every single matchup transitions to `decided`. The bug is in `isRoundRobinComplete()` in the DAL -- it only fires the `bracket_completed` broadcast when the function is called, which only happens inside `recordResult()` in `round-robin.ts`. When all matchups are decided individually, this works, but `rrAllDecided` in `LiveDashboard` relies on `currentMatchups` from real-time data, which requires a preceding `winner_selected` broadcast to trigger `fetchBracketState()`.
-
-4. **`removeStudent` / `banStudent` in `class-session.ts`** calls the DAL but does NOT broadcast anything. The student dashboard's `useRealtimeActivities` never receives a signal that the participant list changed.
-
-5. **`SignOutButton` in `signout-button.tsx`** uses `<form action={signOut}>` -- a form submission. It provides no pending state feedback to the user during the server-side sign-out redirect.
-
-6. **Poll context menu**: `src/app/(dashboard)/polls/page.tsx` renders poll cards as `<Link>` wrapping a `<Card>`. No `SessionCardMenu`-pattern component exists for polls. `SessionCardMenu` lives in `src/components/teacher/session-card-menu.tsx` and is the reference pattern for a three-dot dropdown overlaid on a card.
+| Pattern | Where Used | Implication for v2.0 |
+|---------|-----------|----------------------|
+| Forward-only status transitions | `VALID_TRANSITIONS` in DAL bracket/poll | Must expand transition maps for pause/resume/reopen |
+| Server action → DAL → Broadcast | Every mutation in `src/actions/` | New actions follow same Auth → Validate → DAL → Broadcast → Revalidate |
+| Dual-channel broadcast | `broadcastActivityUpdate` + `broadcastBracketUpdate` | Pause/resume must notify both channels |
+| Transport fallback | `useRealtimeBracket`, `useRealtimePoll` | Pause state must be included in polling API responses |
+| Ownership enforcement via teacherId | Every DAL function | New DAL functions follow same pattern |
+| `useEffect` prop sync for client state | Bracket/poll cards after `router.refresh()` | New status values need same sync pattern |
 
 ---
 
-## Fix 1: Poll Context Menu
+## Feature-by-Feature Integration Analysis
 
-### Current State
+### 1. Pause/Resume Brackets and Polls
 
-`src/app/(dashboard)/polls/page.tsx` renders each poll card as a plain `<Link>` wrapping a `<Card>`. There is no three-dot context menu. The existing poll actions (delete, duplicate, assign to session) exist only in `PollDetailView` (`src/components/poll/poll-detail-view.tsx`) -- the full detail page.
+**Status model change -- the core decision:**
 
-The reference pattern is `SessionCardMenu` at `src/components/teacher/session-card-menu.tsx`:
-
+The current bracket status flow is:
 ```
-sessions/page.tsx
-  <div className="relative">               <- position anchor
-    <Link href={...}>
-      <Card>...</Card>
-    </Link>
-    <div className="absolute right-3 top-3 z-10">
-      <SessionCardMenu sessionId=... />    <- overlaid menu
-    </div>
-  </div>
+draft → active → completed → archived
 ```
 
-`SessionCardMenu` uses Radix `DropdownMenu` with `e.stopPropagation()` on trigger click to prevent the Link navigation from firing when the menu opens.
+Adding `paused` requires a bidirectional transition between `active` and `paused`. This is the only backward transition for brackets (polls already have `closed → draft`).
 
-### What to Build
+**Recommended approach: Add `paused` status value, no schema migration needed.**
 
-**NEW component:** `src/components/poll/poll-card-menu.tsx`
+The `status` field is already a `String` type (not an enum), so no Prisma migration is required. The change is purely in the transition validation maps.
 
-Mirror the `SessionCardMenu` pattern exactly:
+#### Modified Files
 
-```typescript
-// Component structure
-'use client'
-export function PollCardMenu({ pollId, pollQuestion, onAction }: {
-  pollId: string
-  pollQuestion: string
-  onAction?: () => void
-}) {
-  // DropdownMenu with items:
-  //   - Duplicate (calls duplicatePoll server action)
-  //   - Delete (opens ConfirmDialog, calls deletePoll server action)
-  // On success: router.refresh() or onAction() for live list update
-}
+| Layer | File | Change |
+|-------|------|--------|
+| DAL | `src/lib/dal/bracket.ts` | Add `paused` to `VALID_TRANSITIONS`: `active → ['paused', 'completed', 'archived']`, `paused → ['active', 'completed', 'archived']` |
+| DAL | `src/lib/dal/poll.ts` | Add `paused` to `VALID_POLL_TRANSITIONS`: `active → ['paused', 'closed', 'archived']`, `paused → ['active', 'closed', 'archived']` |
+| Broadcast | `src/lib/realtime/broadcast.ts` | Add `BracketUpdateType: 'bracket_paused' \| 'bracket_resumed'`, add `PollUpdateType: 'poll_paused' \| 'poll_resumed'` |
+| Server Action | `src/actions/bracket.ts` | `updateBracketStatus` already handles any valid transition; add broadcast for paused/resumed events |
+| Server Action | `src/actions/poll.ts` | `updatePollStatus` same -- add broadcast for paused/resumed |
+| Live Dashboard | `src/components/teacher/live-dashboard.tsx` | Add Pause/Resume button in header (toggles between `active` ↔ `paused`) |
+| Poll Live | `src/app/(dashboard)/polls/[pollId]/live/client.tsx` | Add Pause/Resume button alongside existing Close Poll button |
+| Bracket State API | `src/app/api/brackets/[bracketId]/state/route.ts` | Already returns `status` field -- no change needed, `paused` propagates automatically |
+| Poll State API | `src/app/api/polls/[pollId]/state/route.ts` | Already returns `status` field -- same |
+| Session Activities API | `src/app/api/sessions/[sessionId]/activities/route.ts` | Add `paused` to the status filter: `status: { in: ['active', 'paused', 'closed'] }` so paused activities still appear to students |
+
+#### New Components
+
+| Component | Location | Purpose |
+|-----------|----------|---------|
+| `PausedOverlay` | `src/components/student/paused-overlay.tsx` | Full-screen overlay shown to students when activity is paused. Playful "needs to cook" message with cooking animation. Listens to realtime for resume event to auto-dismiss. |
+
+#### Student-Side Behavior
+
+When bracket/poll status is `paused`:
+- Student voting pages show `PausedOverlay` component over the existing voting UI
+- Activity cards in student grid show a "Paused" badge instead of "Active" pulse
+- Vote submission server actions reject with "Activity is paused" if status is `paused` (add guard to `castPollVote` in poll.ts and `castVote` in vote.ts)
+- When resumed, broadcast triggers `useRealtimeBracket`/`useRealtimePoll` refetch, overlay auto-dismisses
+
+#### Data Flow
+
 ```
+Teacher clicks "Pause"
+  → updateBracketStatus({ bracketId, status: 'paused' })
+    → DAL validates: active → paused (allowed)
+    → Prisma update
+    → broadcastBracketUpdate(bracketId, 'bracket_paused', {})
+    → broadcastActivityUpdate(sessionId)  // student grid updates
+    → revalidatePath
+  ← Student: useRealtimeBracket receives bracket_update → refetch
+    → PausedOverlay renders when status === 'paused'
+  ← Student: useRealtimeActivities receives activity_update → refetch
+    → ActivityCard shows "Paused" badge
 
-**MODIFY:** `src/app/(dashboard)/polls/page.tsx`
-
-Wrap each poll card in a relative container, add `PollCardMenu` as absolute overlay (identical structure to sessions/page.tsx).
-
-### Integration Points
-
-| File | Change Type | What Changes |
-|------|-------------|--------------|
-| `src/components/poll/poll-card-menu.tsx` | **NEW** | Radix DropdownMenu with duplicate + delete |
-| `src/app/(dashboard)/polls/page.tsx` | **MODIFY** | Add relative wrapper + PollCardMenu overlay per card |
-| `src/actions/poll.ts` | **No change** | `deletePoll` and `duplicatePoll` already exist |
-
-**No broadcast changes needed.** Deleting or duplicating a poll does not emit a realtime event (only the teacher's page needs to update, and `router.refresh()` handles that).
-
-### Build Notes
-
-- The `e.stopPropagation()` + `e.preventDefault()` on the DropdownMenuTrigger's `onClick` is critical -- without it, clicking the menu trigger navigates to `/polls/{id}`.
-- `duplicatePoll` returns `{ poll: { id, question } }` -- no session assignment, so no broadcast needed.
-- `deletePoll` calls `revalidatePath('/activities')` internally -- `router.refresh()` after calling it updates the page.
+Teacher clicks "Resume"
+  → updateBracketStatus({ bracketId, status: 'active' })
+    → DAL validates: paused → active (allowed)
+    → broadcastBracketUpdate(bracketId, 'bracket_resumed', {})
+    → broadcastActivityUpdate(sessionId)
+  ← PausedOverlay auto-dismisses
+```
 
 ---
 
-## Fix 2: RR All-at-Once Completion
+### 2. Undo Round Advancement & Reopen Voting
 
-### Current Bug
+**Already partially implemented.** The `undoAdvancement` server action and `undoMatchupAdvancement` engine function exist in `src/actions/bracket-advance.ts` and `src/lib/bracket/advancement.ts`. The `RoundAdvancementControls` component already has an undo button per decided matchup.
 
-For round-robin brackets with `roundRobinPacing: 'all_at_once'`, the teacher opens all matchups for voting at once. Results are recorded via `recordResult()` in `src/actions/round-robin.ts`.
+**What's new for v2.0:** Undo an entire round (batch undo), not just individual matchups. And reopen voting on a round that was closed.
 
-After each `recordResult` call, `isRoundRobinComplete()` is called to check if all matchups are decided. When the final matchup is decided, `isRoundRobinComplete()` returns a winnerId and the action:
+#### Modified Files
 
-1. Updates `bracket.status = 'completed'` in Prisma
-2. Calls `broadcastBracketUpdate(bracketId, 'bracket_completed', { winnerId })`
+| Layer | File | Change |
+|-------|------|--------|
+| Engine | `src/lib/bracket/advancement.ts` | Add `batchUndoRound(bracketId, round)`: iterates decided matchups in round, calls `undoMatchupAdvancement` for each in reverse position order. Must also clear winners from next-round matchups. |
+| Server Action | `src/actions/bracket-advance.ts` | Add `batchUndoRound` server action following existing pattern |
+| Component | `src/components/teacher/round-advancement-controls.tsx` | Add "Undo Round" button when all matchups in current round are decided. Already has per-matchup undo. |
+| Live Dashboard | `src/components/teacher/live-dashboard.tsx` | Wire new batch undo action |
 
-The `useRealtimeBracket` hook receives `bracket_completed`, calls `fetchBracketState()`, and sets `setBracketCompleted(true)`.
+#### Key Constraint
 
-**The bug is in `LiveDashboard.tsx` `bracketDone` computation** (lines 856-863):
-
+The existing `undoMatchupAdvancement` already blocks undo if the next matchup has votes:
 ```typescript
-const rrAllDecided = isRoundRobin
-  ? currentMatchups.length > 0 && currentMatchups.every((m) => m.status === 'decided')
-  : false
-const bracketDone = isDoubleElim
-  ? deBracketDone
-  : isRoundRobin
-    ? rrAllDecided           // <-- relies on currentMatchups from real-time
-    : (currentRound === totalRounds && allRoundDecided)
-```
-
-`currentMatchups` is populated from `realtimeMatchups` (from `useRealtimeBracket`). The hook only fetches when a `bracket_update` broadcast arrives. When all matchups ARE decided and `bracket_completed` fires, `fetchBracketState()` runs and `realtimeMatchups` is updated. However, `rrAllDecided` is computed from `currentMatchups` BEFORE `fetchBracketState` completes because it runs asynchronously inside the hook.
-
-The additional bug is in `LiveDashboard`'s celebration fallback logic (lines 368-411): for RR brackets, the fallback only fires when `bracketCompleted && !revealState && !hasShownRevealRef.current && !isDoubleElim`. `bracketCompleted` comes from `useRealtimeBracket`'s `bracketCompleted` state (set to `true` on `bracket_completed` event). The `rrAllDecided`-based `bracketDone` and the `bracketCompleted` signal are separate -- `bracketCompleted` is the reliable one.
-
-### What the Fix Actually Is
-
-The teacher-side `LiveDashboard` needs to trigger celebration when `bracketCompleted === true`, regardless of whether `rrAllDecided` has resolved. The `bracketCompleted` flag from `useRealtimeBracket` is already correctly set when `bracket_completed` is received.
-
-The `CelebrationScreen` rendering in `LiveDashboard` is gated on `showCelebration` state, which is set by the fallback `useEffect` at lines 368-411. That effect fires when `bracketCompleted` is true -- this is the correct path for RR.
-
-The real issue: `isRoundRobinComplete()` in the DAL (line 249-266 of `src/lib/dal/round-robin.ts`) checks `allDecided` across all matchups. However, for RR `all_at_once`, because all matchups start as `pending` (not `voting`), the `recordResult()` action's `isRoundRobinComplete` query sees `pending` status matchups and returns null -- `pending !== decided`.
-
-**Root cause:** `recordResult` in the round-robin DAL (`src/lib/dal/round-robin.ts` line 137) sets `status: 'decided'` when recording a result regardless of whether the matchup was `pending` or `voting`. So `isRoundRobinComplete` checks all matchups for `status === 'decided'` -- this is correct and should work.
-
-Verify with logs: the `isRoundRobinComplete` query at line 250 fetches `status` and `winnerId`. If all matchups have `status: 'decided'`, it proceeds to `getRoundRobinStandings`. The `getRoundRobinStandings` function only queries `status: 'decided'` matchups -- so if some have `status: 'pending'` (not yet decided), `isRoundRobinComplete` returns null correctly.
-
-**The actual multi-round RR bug:** For `all_at_once` pacing with multiple rounds, the `advanceRoundRobinRound` DAL function opens matchups round-by-round (it sets `roundRobinRound === roundNumber` matchups from `pending` to `voting`). But `all_at_once` never calls `advanceRoundRobinRound` -- it opens all matchups globally. After investigation: the `LiveDashboard` RR controls show a "Next Round" button that calls `advanceRound`. For `all_at_once`, all rounds' matchups need to be opened simultaneously. The bug is that `bracketDone` uses `rrAllDecided` which requires a `fetchBracketState()` call to update `currentMatchups`, but the `winner_selected` broadcast triggers that fetch. The timing issue is that after the final `recordResult`, the `bracket_completed` event fires, the hook fetches state, sets `bracketCompleted = true`, and the `useEffect` fallback fires with a 2-second timeout -- this DOES eventually show the celebration, but there may be a race.
-
-### What to Build
-
-**MODIFY:** `src/actions/round-robin.ts` -- `recordResult` action
-
-Add a `broadcastActivityUpdate` to the session channel when the bracket completes, matching the pattern in `bracket-advance.ts`:
-
-```typescript
-if (rrWinnerId) {
-  await prisma.bracket.update({ ... })
-  broadcastBracketUpdate(bracketId, 'bracket_completed', { winnerId: rrWinnerId }).catch(console.error)
-
-  // Also notify session activity channel (mirrors bracket-advance.ts pattern)
-  const bracket = await prisma.bracket.findUnique({
-    where: { id: parsed.data.bracketId },
-    select: { sessionId: true },
-  })
-  if (bracket?.sessionId) {
-    broadcastActivityUpdate(bracket.sessionId).catch(console.error)
-  }
+if (voteCount > 0) {
+  throw new Error('Cannot undo: next matchup already has votes')
 }
 ```
 
-**VERIFY:** That `isRoundRobinComplete` correctly detects all-at-once completion. Add a debug log path in Phase to confirm the final `recordResult` actually reaches `if (rrWinnerId)`.
+This cascading guard must be respected in batch undo. If ANY next-round matchup has votes, the entire batch undo is blocked with a clear error message.
 
-### Integration Points
+#### Round Robin Undo
 
-| File | Change Type | What Changes |
-|------|-------------|--------------|
-| `src/actions/round-robin.ts` | **MODIFY** | Add `broadcastActivityUpdate` after `bracket_completed` on RR complete |
-| `src/lib/dal/round-robin.ts` | **VERIFY** | Confirm `isRoundRobinComplete` fires for all-at-once RR |
-| `src/lib/realtime/broadcast.ts` | **No change** | Existing functions are sufficient |
-
-**No new broadcast events.** The existing `bracket_completed` event is correct. The student side already handles it via `useRealtimeBracket` → `bracketCompleted` → `CelebrationScreen`.
+Round Robin uses a different advancement path (`src/actions/round-robin.ts` → `src/lib/dal/round-robin.ts`). Undo for RR means clearing the `winnerId` on a matchup and setting status back to `voting`. Simpler than SE/DE because RR matchups don't propagate to next matchups via `nextMatchupId`.
 
 ---
 
-## Fix 3: SE Final Round Realtime
+### 3. Reopen Completed Brackets/Polls
 
-### Current State
+**Status transition change:**
 
-The `useRealtimeBracket` hook subscribes to `bracket:{bracketId}` and on `bracket_update` events with type `winner_selected`, calls `fetchBracketState()`. The `fetchBracketState` function hits `/api/brackets/{bracketId}/state` and updates `matchups` state.
+Currently:
+- Brackets: `completed → archived` only
+- Polls: `closed → archived` or `closed → draft`
 
-When a teacher advances the final round matchup:
-1. `advanceMatchup()` in `bracket-advance.ts` calls `advanceMatchupWinner()`
-2. Broadcasts `winner_selected` event to `bracket:{bracketId}`
-3. Checks `isBracketComplete()` -- if true, broadcasts `bracket_completed`
-4. Both broadcasts go to the same channel
+Adding reopen means:
+- Brackets: `completed → active` (reopen for more voting)
+- Polls: `closed → active` (reopen for more voting, already partially possible via `closed → draft → active`)
 
-The student's `useRealtimeBracket` receives `winner_selected` → `fetchBracketState()` → updates `matchups`. It also receives `bracket_completed` → `setBracketCompleted(true)`.
+#### Modified Files
 
-**The reported bug** is that the final round does not update in real-time for students on SE brackets. This is counterintuitive because the broadcast path is identical for all rounds.
+| Layer | File | Change |
+|-------|------|--------|
+| DAL | `src/lib/dal/bracket.ts` | Add `completed → ['active', 'archived']` to VALID_TRANSITIONS |
+| DAL | `src/lib/dal/poll.ts` | Add `closed → ['active', 'archived', 'draft']` (already has `closed → ['archived', 'draft']`, add `active`) |
+| Server Action | `src/actions/bracket.ts` | `updateBracketStatus` handles transition; add reopen broadcast |
+| Bracket Detail Page | `src/app/(dashboard)/brackets/[bracketId]/page.tsx` | Add "Reopen" button for completed brackets |
+| Poll Live Client | `src/app/(dashboard)/polls/[pollId]/live/client.tsx` | Already has close/reopen controls for polls; verify `closed → active` works |
 
-### Likely Root Cause
+#### Reopen Semantics for Brackets
 
-The `/api/brackets/{bracketId}/state` endpoint is the source of truth for `fetchBracketState`. If that endpoint has a caching issue or returns stale data after the final winner is set, the student view does not update.
+When a completed bracket is reopened:
+- Status goes back to `active`
+- The last decided matchup(s) could optionally be re-opened for voting
+- Simplest approach: status changes to `active`, teacher manually opens specific matchups for re-voting using existing "Open for Voting" controls
+- This avoids complex "which matchups to reopen?" logic
 
-Check `src/app/api/brackets/[bracketId]/state/route.ts` for:
-1. Whether Next.js route caching is applied (missing `{ cache: 'no-store' }` in the Prisma query or response)
-2. Whether the matchup status fields are correctly included in the response shape
+#### Broadcast
 
-### What to Build
-
-**INVESTIGATE FIRST:** Read `src/app/api/brackets/[bracketId]/state/route.ts`. Look for:
-- `revalidatePath` or `next: { revalidate }` settings that could be returning cached data
-- Whether `status: 'decided'` and `winnerId` are included in the matchup select
-
-If the route is missing `cache: 'no-store'`, add it:
-
-```typescript
-// In the route handler fetch or Prisma query:
-export async function GET(request: NextRequest, { params }) {
-  // Add this header to prevent Next.js route caching:
-  const response = NextResponse.json(data)
-  response.headers.set('Cache-Control', 'no-store')
-  return response
-}
 ```
-
-**ALTERNATIVELY:** The bug may be that `fetchBracketState` is called from the hook but the fetch inside is not awaited/race-conditioned. The hook's callback is memoized with `useCallback([bracketId])` -- this is stable.
-
-**FALLBACK investigation path:** Check if the student is hitting the transport fallback (HTTP polling). The `useRealtimeBracket` hook switches to polling every 3 seconds if WebSocket doesn't connect within 5 seconds. If polling is active, the final round WILL update but with up to 3-second delay. Check `transport` state returned by the hook.
-
-### Integration Points
-
-| File | Change Type | What Changes |
-|------|-------------|--------------|
-| `src/app/api/brackets/[bracketId]/state/route.ts` | **INVESTIGATE/MODIFY** | Add `cache: 'no-store'` if Next.js caching is the culprit |
-| `src/hooks/use-realtime-bracket.ts` | **No change likely** | Hook logic is correct; issue is upstream |
-| `src/actions/bracket-advance.ts` | **No change** | Already broadcasts `winner_selected` + `bracket_completed` |
-
-**No new broadcast events needed.** The existing `winner_selected` broadcast on `advanceMatchup` is the correct trigger.
+Teacher clicks "Reopen" on completed bracket
+  → updateBracketStatus({ bracketId, status: 'active' })
+  → broadcastBracketUpdate(bracketId, 'voting_opened', {})
+  → broadcastActivityUpdate(sessionId)
+  ← Students: bracket reappears as active in activity grid
+```
 
 ---
 
-## Fix 4: Student Dynamic Removal
+### 4. Quick Create for Brackets
 
-### Current Bug
+**New component alongside existing BracketForm wizard.** The existing wizard is 3 steps (Info → Entrants → Review). Quick Create collapses this to a single panel.
 
-When a teacher removes a student via `removeStudent(participantId)` in `src/actions/class-session.ts`:
+#### New Components
 
-1. `removeParticipantDAL(participantId)` is called (deletes or marks the record)
-2. `return { success: true }` -- no broadcast
+| Component | Location | Purpose |
+|-----------|----------|---------|
+| `BracketQuickCreate` | `src/components/bracket/bracket-quick-create.tsx` | Single-panel bracket creation: topic list chips + entrant count picker → create |
 
-The student's browser remains at their current page. The `useRealtimeActivities` hook never gets a signal. The student's activity view continues working. Only when they try to vote again does the server return an error (participant not found / banned).
+#### Integration Points
 
-**The UX gap:** Students who are removed should see a message ("You've been removed from this session") rather than getting cryptic errors on vote submission. The teacher's roster needs to refresh automatically too (currently uses `onRefresh` callback which calls `router.refresh()` -- this updates the server component, which is correct for the teacher side).
+| Integration | How |
+|-------------|-----|
+| Routing | New page at `src/app/(dashboard)/brackets/new/page.tsx` -- add tab toggle between "Quick Create" and "Step-by-Step" (existing `BracketForm`) |
+| Data source | Reuses existing `CURATED_TOPICS` from `src/lib/bracket/curated-topics.ts` |
+| Creation action | Calls existing `createBracket` server action (same as wizard) |
+| Feature gates | Same tier checks applied (bracket type, entrant count, total/draft limits) |
+| Session assignment | Quick Create defaults to current active session (auto-assign) |
+| Naming | Auto-generates bracket name from selected topic list name |
 
-### What to Build
+#### UX Flow
 
-**New broadcast event:** `participant_removed` on the `activities:{sessionId}` channel.
-
-This channel is already subscribed to by `useRealtimeActivities` in the student browser. Adding a new event type to listen for there is the minimal-impact approach.
-
-**MODIFY:** `src/actions/class-session.ts` -- `removeStudent` and `banStudent`
-
-```typescript
-export async function removeStudent(participantId: string) {
-  const teacher = await getAuthenticatedTeacher()
-  if (!teacher) return { error: 'Not authenticated' }
-
-  try {
-    // Look up sessionId before deletion (DAL currently deletes without returning sessionId)
-    const participant = await prisma.studentParticipant.findUnique({
-      where: { id: participantId },
-      select: { sessionId: true },
-    })
-
-    await removeParticipantDAL(participantId)
-
-    // NEW: broadcast removal event to session channel
-    if (participant?.sessionId) {
-      broadcastMessage({
-        topic: `activities:${participant.sessionId}`,
-        event: 'participant_removed',
-        payload: { participantId },
-      }).catch(console.error)
-    }
-
-    return { success: true }
-  } catch {
-    return { error: 'Failed to remove student' }
-  }
-}
+```
+Teacher arrives at /brackets/new
+  → Sees two tabs: "Quick Create" | "Step-by-Step"
+  → Quick Create tab (default):
+    1. Grid of topic list chips (from CURATED_TOPICS), searchable
+    2. Teacher taps a topic chip → shows entrant count picker (4, 8, 16, custom)
+    3. Teacher picks count → "Create Bracket" button
+    4. createBracket() called with:
+       - name: topic list name
+       - bracketType: single_elimination (default)
+       - size: selected count
+       - entrants: first N from topic list
+       - sessionId: current active session (if any)
+    5. Redirect to bracket detail page
 ```
 
-Apply the same pattern to `banStudent`.
+#### Existing Code Reuse
 
-**MODIFY:** `src/hooks/use-realtime-activities.ts`
+The `TopicPicker` component already handles topic selection and slicing to bracket size. Quick Create can either:
+- (A) Compose `TopicPicker` directly with a size picker alongside
+- (B) Build a new streamlined component that uses `CURATED_TOPICS` data directly
 
-Add a listener for the `participant_removed` event. When received and `participantId` matches the current student, show a "removed" state rather than refetching:
+Recommendation: (B) -- build a new `BracketQuickCreate` component. The `TopicPicker` was designed for the wizard step flow with "Back" navigation. Quick Create should be a flat, chip-based layout with immediate feedback. Different UX goals warrant a separate component, but same data source.
+
+---
+
+### 5. Simplified Poll Quick Create
+
+**Same pattern as bracket quick create -- simplified poll creation alongside existing step-by-step form.**
+
+#### New Components
+
+| Component | Location | Purpose |
+|-----------|----------|---------|
+| `PollQuickCreate` | `src/components/poll/poll-quick-create.tsx` | Question + options input only. No description, no poll type toggle, no showLiveResults toggle. Defaults: simple poll, allowVoteChange=true, showLiveResults=false |
+
+#### Integration Points
+
+| Integration | How |
+|-------------|-----|
+| Routing | Add to existing poll creation page at `src/app/(dashboard)/polls/new/page.tsx` -- tab toggle between "Quick Create" and "Step-by-Step" |
+| Creation action | Calls existing `createPoll` server action |
+| Session assignment | Auto-assigns to current active session |
+| Defaults | pollType: 'simple', allowVoteChange: true, showLiveResults: false, rankingDepth: null |
+
+#### UX Flow
+
+```
+Teacher arrives at /polls/new
+  → Quick Create tab (default):
+    1. Text input: "What's your question?"
+    2. Dynamic option inputs (2 minimum, + button to add more)
+    3. "Create Poll" button
+    4. createPoll() called with defaults
+    5. Redirect to poll detail or live page
+```
+
+---
+
+### 6. Real-Time Student Vote Indicators (Green Dots)
+
+**Extends the ParticipationSidebar to show vote status across ALL activity types, not just the currently selected matchup.**
+
+#### Current State
+
+The `ParticipationSidebar` (src/components/teacher/participation-sidebar.tsx) already shows:
+- Student tiles with green dots for "voted" (per selected matchup)
+- Blue dots for "connected"
+- Gray dots for "disconnected"
+
+But it's **matchup-scoped**: only shows vote status for the currently selected matchup via `voterIds` prop.
+
+#### Required Change
+
+Add an **activity-level** vote indicator -- a green dot visible even without a matchup selected, showing "this student has voted on at least one active matchup in this bracket/poll."
+
+#### Modified Files
+
+| Layer | File | Change |
+|-------|------|--------|
+| Live Dashboard | `src/components/teacher/live-dashboard.tsx` | Compute `activityVoterIds` -- set of participant IDs who have voted on ANY active voting matchup. Pass to sidebar as new prop. |
+| Participation Sidebar | `src/components/teacher/participation-sidebar.tsx` | New prop `activityVoterIds: Set<string>`. When no matchup selected, show green dot for students in this set. Label: "has voted" vs "hasn't voted yet". |
+| Poll Live | `src/app/(dashboard)/polls/[pollId]/live/client.tsx` | If the poll live dashboard has a participation sidebar (or add one), show green dots for students who have voted. |
+
+#### Data Source for Activity-Level Voters
+
+The bracket live dashboard already receives vote counts per matchup via `useRealtimeBracket`. Computing activity-level voters requires knowing WHICH participants voted, not just counts. Two options:
+
+**(A) Extend the bracket state API** to return voter IDs per matchup (adds data to `/api/brackets/[bracketId]/state`). This leaks some info but is teacher-only.
+
+**(B) Fetch voter IDs separately** via a new endpoint like `/api/brackets/[bracketId]/voters` that returns `Record<matchupId, participantId[]>`.
+
+Recommendation: **(B)** -- separate endpoint, fetched by the live dashboard only (teacher-side). Keeps the state API lean for student polling fallback. The live dashboard periodically refetches this on vote_update events.
+
+#### New Files
+
+| File | Purpose |
+|------|---------|
+| `src/app/api/brackets/[bracketId]/voters/route.ts` | Returns voter participant IDs grouped by matchup. Teacher-only (auth required). |
+| `src/lib/dal/vote.ts` (modify) | Add `getVotersByBracket(bracketId)` DAL function |
+
+---
+
+### 7. Edit Settings After Creation
+
+**Display settings (viewingMode, showVoteCounts, showSeedNumbers, votingTimerSeconds) are already editable during live via `updateBracketVotingSettings` action.** The server action exists but the UI may not expose all settings.
+
+#### Current State
+
+`updateBracketVotingSettings` in `src/actions/bracket-advance.ts` already handles:
+- `viewingMode` (simple/advanced)
+- `showVoteCounts` (boolean)
+- `showSeedNumbers` (boolean)
+- `votingTimerSeconds` (number | null)
+
+These are **display settings** that are safe to change during live.
+
+#### What's New for v2.0
+
+1. **Settings panel UI** -- a slide-out panel or modal on the live dashboard that exposes these toggles
+2. **Poll settings editing** -- analogous toggles for polls (showLiveResults, allowVoteChange) during live
+3. **Pre-creation settings editing** -- edit settings on a draft bracket/poll before going live
+
+#### New Components
+
+| Component | Location | Purpose |
+|-----------|----------|---------|
+| `BracketSettingsPanel` | `src/components/teacher/bracket-settings-panel.tsx` | Slide-out panel on live dashboard showing display setting toggles. Calls `updateBracketVotingSettings`. |
+| `PollSettingsPanel` | `src/components/teacher/poll-settings-panel.tsx` | Same for polls. New server action needed: `updatePollSettings`. |
+
+#### Modified Files
+
+| Layer | File | Change |
+|-------|------|--------|
+| Server Action | `src/actions/poll.ts` | Existing `updatePoll` already handles field updates. May need to allow during `active` status (currently no status guard). |
+| DAL | `src/lib/dal/poll.ts` | `updatePollDAL` has no status restriction -- already works for active polls. |
+| Live Dashboard | `src/components/teacher/live-dashboard.tsx` | Add settings gear icon that opens `BracketSettingsPanel` |
+| Poll Live | `src/app/(dashboard)/polls/[pollId]/live/client.tsx` | Add settings gear icon that opens `PollSettingsPanel` |
+
+#### Broadcast on Settings Change
+
+When display settings change during live, students should see the effect immediately:
+- `viewingMode` change → broadcast needed so student bracket views switch between simple/advanced
+- `showVoteCounts` change → broadcast needed so vote count display toggles
+- `showLiveResults` change for polls → broadcast needed
+
+The existing `updateBracketVotingSettings` action does `revalidatePath` but does NOT broadcast. **Add a broadcast** for settings changes:
 
 ```typescript
-// In useRealtimeActivities, add second event listener:
-.on('broadcast', { event: 'participant_removed' }, (message) => {
-  const { participantId: removedId } = message.payload as { participantId: string }
-  if (removedId === participantId) {
-    // Signal to consumer that this student has been removed
-    setRemoved(true)
-  } else {
-    // Another student was removed -- refetch to update participant counts
-    fetchActivities()
-  }
+broadcastBracketUpdate(bracketId, 'settings_changed', {
+  viewingMode, showVoteCounts, showSeedNumbers, votingTimerSeconds
 })
 ```
 
-This requires `useRealtimeActivities` to accept the student's `participantId` (already passed in: `useRealtimeActivities(sessionId, participantId)`) and return a `removed` boolean.
+Add `'settings_changed'` to `BracketUpdateType` in `src/lib/realtime/broadcast.ts`.
 
-**MODIFY:** `src/components/student/activity-grid.tsx`
+---
 
+## Component Boundaries
+
+### New Components Summary
+
+| Component | Responsibility | Communicates With |
+|-----------|---------------|-------------------|
+| `PausedOverlay` | Student-facing pause message | `useRealtimeBracket` / `useRealtimePoll` for resume detection |
+| `BracketQuickCreate` | Two-click bracket creation from topic chips | `createBracket` action, `CURATED_TOPICS` data |
+| `PollQuickCreate` | Question + options only poll creation | `createPoll` action |
+| `BracketSettingsPanel` | Live display settings toggles | `updateBracketVotingSettings` action |
+| `PollSettingsPanel` | Live poll settings toggles | `updatePoll` action |
+
+### Modified Components Summary
+
+| Component | Modification |
+|-----------|-------------|
+| `ParticipationSidebar` | Add `activityVoterIds` prop for activity-level green dots |
+| `RoundAdvancementControls` | Add "Undo Round" button for batch undo |
+| `LiveDashboard` | Add Pause/Resume button, Settings gear, activity voter computation |
+| `PollLiveClient` | Add Pause/Resume button, Settings gear |
+| `ActivityCard` | Handle `paused` status display |
+
+---
+
+## Data Flow Changes
+
+### New Broadcast Event Types
+
+| Event Type | Channel | Trigger | Consumer |
+|------------|---------|---------|----------|
+| `bracket_paused` | `bracket:{id}` | Teacher pauses bracket | Student bracket views → show PausedOverlay |
+| `bracket_resumed` | `bracket:{id}` | Teacher resumes bracket | Student bracket views → hide PausedOverlay |
+| `poll_paused` | `poll:{id}` | Teacher pauses poll | Student poll views → show PausedOverlay |
+| `poll_resumed` | `poll:{id}` | Teacher resumes poll | Student poll views → hide PausedOverlay |
+| `settings_changed` | `bracket:{id}` | Teacher changes display settings | Student bracket views → update display |
+
+All new events follow the existing fire-and-forget broadcast pattern via `broadcastMessage` in `src/lib/realtime/broadcast.ts`.
+
+### New API Endpoints
+
+| Endpoint | Method | Purpose | Auth |
+|----------|--------|---------|------|
+| `/api/brackets/[bracketId]/voters` | GET | Voter participant IDs per matchup (for green dots) | Teacher only |
+
+### Modified Transition Maps
+
+**Bracket VALID_TRANSITIONS (src/lib/dal/bracket.ts):**
 ```typescript
-const { activities, loading, removed } = useRealtimeActivities(sessionId, participantId)
-
-if (removed) {
-  return <RemovedState />  // "You've been removed from this session"
+const VALID_TRANSITIONS: Record<string, string[]> = {
+  draft: ['active', 'completed', 'archived'],
+  active: ['paused', 'completed', 'archived'],
+  paused: ['active', 'completed', 'archived'],
+  completed: ['active', 'archived'],  // 'active' = reopen
+  archived: [],
 }
 ```
 
-### Integration Points
-
-| File | Change Type | What Changes |
-|------|-------------|--------------|
-| `src/actions/class-session.ts` | **MODIFY** | `removeStudent` + `banStudent`: look up `sessionId`, broadcast `participant_removed` |
-| `src/lib/realtime/broadcast.ts` | **MODIFY** | Add `broadcastParticipantRemoved(sessionId, participantId)` helper OR use `broadcastMessage` directly |
-| `src/hooks/use-realtime-activities.ts` | **MODIFY** | Listen for `participant_removed`, return `removed` boolean |
-| `src/components/student/activity-grid.tsx` | **MODIFY** | Consume `removed` flag, render `RemovedState` |
-
-**New broadcast event:** `participant_removed` on `activities:{sessionId}` channel with payload `{ participantId }`.
-
-**Channel choice rationale:** Using `activities:{sessionId}` (the session-wide channel) rather than a new channel avoids WebSocket connection overhead. The student is already subscribed to this channel. The teacher's session page does not subscribe to this channel (it uses `useSessionPresence` for the roster), so the teacher side is not affected.
-
----
-
-## Fix 5: Sign-Out Button Feedback
-
-### Current State
-
-`src/components/auth/signout-button.tsx`:
-
+**Poll VALID_POLL_TRANSITIONS (src/lib/dal/poll.ts):**
 ```typescript
-export function SignOutButton() {
-  return (
-    <form action={signOut}>
-      <Button type="submit" variant="ghost" size="sm">
-        Sign Out
-      </Button>
-    </form>
-  )
+const VALID_POLL_TRANSITIONS: Record<string, string[]> = {
+  draft: ['active', 'archived'],
+  active: ['paused', 'closed', 'archived'],
+  paused: ['active', 'closed', 'archived'],
+  closed: ['active', 'archived', 'draft'],  // 'active' = reopen
+  archived: [],
 }
 ```
 
-The `signOut` server action calls `supabase.auth.signOut()` then `redirect('/login')`. The redirect involves a full page navigation. During the ~500ms between form submission and the redirect completing, the button gives no visual feedback -- it could appear frozen.
+### Vote Guard for Paused Activities
 
-The `form action={signOut}` pattern uses Next.js progressive enhancement (form submission, no JavaScript needed). To add pending state, the component must opt into client-side rendering via `useFormStatus` or `useTransition`.
+Both vote server actions must check for paused status:
 
-### What to Build
+**Bracket votes** (`src/actions/vote.ts` → `castVote`): Add status check on the matchup's bracket.
+**Poll votes** (`src/actions/poll.ts` → `castPollVote`): Currently checks `poll.status !== 'active'`. Since `paused` is not `active`, this guard already works for polls.
 
-**Option A (recommended): `useFormStatus`**
-
-```typescript
-'use client'
-import { useFormStatus } from 'react-dom'
-
-function SignOutButtonInner() {
-  const { pending } = useFormStatus()
-  return (
-    <Button type="submit" variant="ghost" size="sm" disabled={pending}>
-      {pending ? 'Signing out...' : 'Sign Out'}
-    </Button>
-  )
-}
-
-export function SignOutButton() {
-  return (
-    <form action={signOut}>
-      <SignOutButtonInner />
-    </form>
-  )
-}
-```
-
-`useFormStatus` must be called in a component that is a child of the `<form>`. The outer `SignOutButton` remains a server-compatible shell; only the inner button component is a client component.
-
-**Option B: `useTransition`**
-
-Convert the form to a button with `startTransition(() => signOut())`. This loses the progressive enhancement but gives `isPending` state.
-
-Option A is better because it preserves the `<form action>` pattern and the separation of concerns.
-
-### Integration Points
-
-| File | Change Type | What Changes |
-|------|-------------|--------------|
-| `src/components/auth/signout-button.tsx` | **MODIFY** | Add `useFormStatus` inner component for pending state |
-
-**No broadcast changes. No server action changes.** The `signOut` action is unchanged.
+For bracket votes, verify the existing status check path. The vote action likely checks matchup status (`voting`) not bracket status. A paused bracket should also prevent votes, so add a bracket-level status check.
 
 ---
 
-## System Overview: How the 5 Fixes Integrate
+## Suggested Build Order
+
+Dependencies and risk drive the ordering:
 
 ```
-TEACHER BROWSER                                STUDENT BROWSER
-  /polls page                                    /session/{id} page
-  PollCardMenu (NEW)                             ActivityGrid
-      |                                               |
-  duplicatePoll()                            useRealtimeActivities()
-  deletePoll()                                        |
-  router.refresh()                           activities:{sessionId}
-  (no broadcast)                             event: activity_update    (existing)
-                                             event: participant_removed (NEW Fix 4)
-                                                       |
-  /brackets/{id}/live                          /session/{id}/bracket/{id}
-  LiveDashboard                                StudentBracketPage
-      |                                               |
-  useRealtimeBracket()                       useRealtimeBracket()
-      |                                               |
-  bracket:{id}                               bracket:{id}
-  event: bracket_completed (Fix 2, Fix 3)    event: bracket_completed
-                                             event: winner_selected (Fix 3 verify)
+Phase 1: Status Infrastructure (foundation for everything)
+  ├── Expand VALID_TRANSITIONS for bracket and poll
+  ├── Add new broadcast event types
+  ├── Add vote guards for paused status
+  └── Dependency: None. Enables everything else.
 
-  /sessions/{id}                            Sign-out button (Fix 5)
-  StudentRoster                             useFormStatus() pending state
-  removeStudent() -> broadcasts (Fix 4)
-  banStudent() -> broadcasts (Fix 4)
+Phase 2: Pause/Resume (highest teacher value, straightforward)
+  ├── Teacher-side: Pause/Resume buttons on live dashboards
+  ├── Student-side: PausedOverlay component
+  ├── Student-side: ActivityCard paused badge
+  └── Dependency: Phase 1 status infrastructure
+
+Phase 3: Reopen Completed (builds on Phase 1 transitions)
+  ├── Reopen button on completed bracket/poll detail pages
+  ├── Broadcast on reopen
+  └── Dependency: Phase 1 status infrastructure
+
+Phase 4: Undo Round (batch undo, more complex engine work)
+  ├── batchUndoRound engine function
+  ├── batchUndoRound server action
+  ├── "Undo Round" button in RoundAdvancementControls
+  └── Dependency: Phase 1. Independent of Phases 2-3.
+
+Phase 5: Quick Create Brackets (new UI, independent)
+  ├── BracketQuickCreate component
+  ├── Tab toggle on /brackets/new page
+  └── Dependency: None. Purely additive.
+
+Phase 6: Poll Quick Create (same pattern as Phase 5)
+  ├── PollQuickCreate component
+  ├── Tab toggle on /polls/new page
+  └── Dependency: None. Purely additive.
+
+Phase 7: Settings Editing (extends live dashboards)
+  ├── BracketSettingsPanel component
+  ├── PollSettingsPanel component + server action
+  ├── Settings broadcast for live sync
+  └── Dependency: None. Uses existing updateBracketVotingSettings.
+
+Phase 8: Real-Time Vote Indicators (green dots)
+  ├── New /api/brackets/[bracketId]/voters endpoint
+  ├── getVotersByBracket DAL function
+  ├── ParticipationSidebar activityVoterIds prop
+  └── Dependency: None. Extends existing sidebar.
+
+Phase 9: UX Polish & Bug Fixes
+  ├── "View Live" → "Go Live" label change
+  ├── Poll image options preview matching bracket style
+  ├── Fix: duplicated poll retains removed options
+  ├── Fix: 2-option poll centering
+  ├── Fix: duplicate name flow suggests last initial
+  └── Dependency: None. Independent fixes.
 ```
 
----
-
-## Data Flows
-
-### Fix 1: Poll Context Menu (No Real-Time)
-
-```
-Teacher clicks "..." on poll card
-  -> DropdownMenu opens (stopPropagation prevents Link nav)
-  -> "Duplicate" item clicked
-      -> duplicatePoll({ pollId }) server action
-      -> Creates new poll in Prisma
-      -> revalidatePath('/activities')
-      -> router.refresh() from PollCardMenu
-      -> Page re-renders with new poll in list
-```
-
-### Fix 2: RR All-at-Once Completion
-
-```
-Teacher clicks a matchup result (win/tie/loss) -- FINAL matchup
-  -> recordResult({ matchupId, bracketId, winnerId }) server action
-  -> recordRoundRobinResult(matchupId, winnerId, teacherId) DAL
-      -> UPDATE matchup SET status='decided', winnerId=...
-      -> broadcastBracketUpdate(bracketId, 'winner_selected', ...) [existing]
-  -> isRoundRobinComplete(bracketId) DAL
-      -> SELECT all matchups -- all now 'decided'
-      -> Returns top-ranked entrantId
-  -> UPDATE bracket SET status='completed'
-  -> broadcastBracketUpdate(bracketId, 'bracket_completed', ...) [existing]
-  -> broadcastActivityUpdate(sessionId) [NEW: add this]
-
-Student browser receives 'bracket_completed' on bracket:{id}:
-  -> useRealtimeBracket: setBracketCompleted(true)
-  -> fetchBracketState() -> updates currentMatchups
-  -> LiveDashboard useEffect fires (bracketCompleted && isRoundRobin)
-  -> setTimeout 2000ms -> setRevealState -> WinnerReveal -> CelebrationScreen
-```
-
-### Fix 3: SE Final Round Real-Time (Verify Path)
-
-```
-Teacher advances final matchup winner
-  -> advanceMatchup({ bracketId, matchupId, winnerId }) server action
-  -> advanceMatchupWinner() DAL
-  -> broadcastBracketUpdate(bracketId, 'winner_selected', ...) [existing]
-  -> isBracketComplete(bracketId) -> true (final round)
-  -> broadcastBracketUpdate(bracketId, 'bracket_completed', ...) [existing]
-
-Student browser receives 'winner_selected':
-  -> useRealtimeBracket: fetchBracketState()
-  -> GET /api/brackets/{id}/state
-      [VERIFY: no Next.js caching on this route]
-  -> setMatchups(data.matchups) -- final matchup now 'decided'
-  -> currentMatchups updated -> UI re-renders
-```
-
-### Fix 4: Student Dynamic Removal
-
-```
-Teacher clicks "Remove" on student row
-  -> StudentManagement component -> removeStudent(participantId)
-  -> class-session.ts: removeStudent server action
-      -> Prisma: find participant -> get sessionId [NEW lookup]
-      -> removeParticipantDAL(participantId)
-      -> broadcastMessage({
-           topic: 'activities:{sessionId}',
-           event: 'participant_removed',
-           payload: { participantId }
-         }) [NEW]
-  -> onAction() callback -> router.refresh() [existing -- updates teacher roster]
-
-Student browser receives 'participant_removed':
-  -> useRealtimeActivities: payload.participantId === myParticipantId
-  -> setRemoved(true)
-  -> ActivityGrid renders <RemovedState /> [NEW component/branch]
-  -> Student sees: "You've been removed from this session"
-```
-
-### Fix 5: Sign-Out Button Feedback
-
-```
-Teacher clicks "Sign Out"
-  -> <form action={signOut}> submits
-  -> useFormStatus() in inner component: pending = true
-  -> Button renders "Signing out..." + disabled
-  -> signOut() server action: supabase.auth.signOut()
-  -> redirect('/login') -- page navigation clears pending state
-```
-
----
-
-## Component Map: Modified vs New
-
-| Component | Status | Fix | Change Summary |
-|-----------|--------|-----|----------------|
-| `src/components/poll/poll-card-menu.tsx` | **NEW** | Fix 1 | Three-dot dropdown with duplicate + delete |
-| `src/app/(dashboard)/polls/page.tsx` | **MODIFY** | Fix 1 | Add relative wrapper + PollCardMenu overlay |
-| `src/actions/round-robin.ts` | **MODIFY** | Fix 2 | Add `broadcastActivityUpdate` after RR completion |
-| `src/app/api/brackets/[bracketId]/state/route.ts` | **INVESTIGATE** | Fix 3 | Add `cache: 'no-store'` if needed |
-| `src/actions/class-session.ts` | **MODIFY** | Fix 4 | `removeStudent` + `banStudent` broadcast `participant_removed` |
-| `src/lib/realtime/broadcast.ts` | **MODIFY** | Fix 4 | Add `broadcastParticipantRemoved()` helper |
-| `src/hooks/use-realtime-activities.ts` | **MODIFY** | Fix 4 | Listen for `participant_removed`, return `removed` state |
-| `src/components/student/activity-grid.tsx` | **MODIFY** | Fix 4 | Render removed state when `removed === true` |
-| `src/components/auth/signout-button.tsx` | **MODIFY** | Fix 5 | Add `useFormStatus` inner component for pending state |
-
-**Total new files:** 1 (`poll-card-menu.tsx`)
-**Total modified files:** 7-8 depending on Fix 3 investigation
-
----
-
-## New Broadcast Events
-
-| Event Name | Channel | Direction | Payload | When Sent |
-|------------|---------|-----------|---------|-----------|
-| `participant_removed` | `activities:{sessionId}` | Server -> Client | `{ participantId: string }` | Teacher removes or bans a student |
-
-All other existing events (`bracket_completed`, `winner_selected`, `activity_update`) are reused without change.
-
----
-
-## Architectural Patterns to Follow
-
-### Pattern 1: Context Menu Overlay on Card
-
-**What:** Absolute-positioned three-dot button overlaid on a linked card. `e.stopPropagation()` on trigger click prevents card navigation.
-
-**When:** Any list page where cards navigate on click but also need secondary actions.
-
-**Example:**
-```tsx
-<div className="relative">
-  <Link href={href}>
-    <Card>...</Card>
-  </Link>
-  <div className="absolute right-3 top-3 z-10">
-    <PollCardMenu pollId={...} />
-  </div>
-</div>
-```
-
-### Pattern 2: Session-Wide Channel for Non-Activity Events
-
-**What:** Use `activities:{sessionId}` for student-affecting events beyond activity list changes. The student is already subscribed; no new connection needed.
-
-**When:** An action by the teacher should immediately change the student's view (removal, session end, etc.).
-
-**Example:**
-```typescript
-// Server action:
-broadcastMessage({
-  topic: `activities:${sessionId}`,
-  event: 'participant_removed',
-  payload: { participantId },
-})
-
-// Client hook (use-realtime-activities.ts):
-.on('broadcast', { event: 'participant_removed' }, (msg) => {
-  if (msg.payload.participantId === myParticipantId) setRemoved(true)
-})
-```
-
-### Pattern 3: useFormStatus for Server Action Pending State
-
-**What:** Use `useFormStatus` from `react-dom` in a child component of `<form action={serverAction}>` to get the `pending` boolean without converting to client-only imperative code.
-
-**When:** Any form that uses `<form action={serverAction}>` but needs loading/disabled state.
-
-**Example:**
-```tsx
-function InnerButton() {
-  const { pending } = useFormStatus()
-  return <Button disabled={pending}>{pending ? 'Loading...' : 'Submit'}</Button>
-}
-export function MyForm() {
-  return <form action={myAction}><InnerButton /></form>
-}
-```
-
----
-
-## Build Order
-
-Dependencies between fixes are minimal. The recommended order:
-
-```
-Step 1: Fix 5 (Sign-out feedback) -- 15 min, zero risk, no dependencies
-  Files: signout-button.tsx only
-
-Step 2: Fix 1 (Poll context menu) -- 45 min, zero realtime impact
-  Files: poll-card-menu.tsx (new), polls/page.tsx
-
-Step 3: Fix 4 (Student dynamic removal) -- 60 min, new broadcast event
-  Files: class-session.ts, broadcast.ts, use-realtime-activities.ts, activity-grid.tsx
-  Note: Do Fix 4 before Fix 2/3 so the broadcast infrastructure is well-exercised
-
-Step 4: Fix 3 (SE final round realtime) -- 30 min investigation + fix
-  Files: api/brackets/[bracketId]/state/route.ts (if needed)
-  Note: Read the route file first; fix may be trivially adding cache: 'no-store'
-
-Step 5: Fix 2 (RR all-at-once completion) -- 30 min
-  Files: actions/round-robin.ts
-  Note: Add broadcastActivityUpdate after bracket_completed; then manually test
-        with an RR bracket in all_at_once mode to confirm celebration fires
-```
-
-**Rationale:**
-- Fix 5 is lowest risk, builds confidence.
-- Fix 1 has no realtime surface area.
-- Fix 4 introduces the only new broadcast event -- do it in isolation so any issues are attributable to it alone.
-- Fix 3 requires investigation before code change -- read the route first.
-- Fix 2 adds a one-liner to an existing broadcast pattern -- lowest risk final step.
+**Rationale for ordering:**
+1. Status infrastructure is foundation -- must come first since pause/resume, reopen all depend on transition map changes
+2. Pause/Resume is highest teacher value and tests the status infrastructure
+3. Reopen is a small incremental step after pause/resume
+4. Undo round is more complex engine work, benefits from stable status layer
+5-6. Quick Create features are fully independent -- can be built in parallel
+7. Settings editing is independent but benefits from having live dashboards stable
+8. Green dots are enhancement-only, no blocking dependency
+9. Bug fixes are independent and can be interspersed
 
 ---
 
 ## Anti-Patterns to Avoid
 
-### Anti-Pattern 1: New Channel for Student Removal
+### Anti-Pattern 1: Adding Schema Migration for Status Values
 
-**What:** Creating a new `session:{sessionId}` or `participant:{participantId}` channel for removal events.
+**What people do:** Create a Prisma enum for bracket/poll status, requiring a migration for each new value.
+**Why it's wrong:** The project intentionally uses `String` type for status fields (same rationale as `role` column). Adding `paused` requires NO migration.
+**Do this instead:** Keep String type. Validate in DAL transition maps. Document valid values in code comments.
 
-**Why bad:** Requires students to subscribe to an additional channel (more WebSocket overhead). The `activities:{sessionId}` channel is already open; adding an event type is O(0) overhead.
+### Anti-Pattern 2: Complex Undo State Machine
 
-### Anti-Pattern 2: Polling for Removal Detection
+**What people do:** Build a full event-sourcing system or undo stack to support arbitrary undo depth.
+**Why it's wrong:** Classroom brackets are ephemeral. Teachers need "undo last round" not "undo to any point."
+**Do this instead:** Simple batch undo for current round with cascading guard (block if next round has votes). Single-level undo only.
 
-**What:** Student page polls `/api/participant/status` every few seconds to check if still active.
+### Anti-Pattern 3: Separate Pause State vs Status Field
 
-**Why bad:** O(n*t) server load (n students, t poll frequency). The broadcast pattern is O(1) regardless of class size.
+**What people do:** Add a `isPaused` boolean alongside `status` field, creating two sources of truth.
+**Why it's wrong:** The status transition map becomes ambiguous. Is `active + isPaused` the same as `paused`?
+**Do this instead:** Use `paused` as a first-class status value in the existing status field. One source of truth.
 
-### Anti-Pattern 3: `router.refresh()` Instead of Broadcast for Student Removal
+### Anti-Pattern 4: Broadcasting Full State on Settings Change
 
-**What:** After `removeStudent`, calling `broadcastActivityUpdate` with the existing `activity_update` event.
+**What people do:** Send the entire bracket/poll object in the broadcast payload when settings change.
+**Why it's wrong:** Broadcast payloads should be small. Students refetch on structural changes.
+**Do this instead:** Send a `settings_changed` event with just the changed fields. Client-side hook does a targeted refetch.
 
-**Why bad:** `activity_update` triggers `fetchActivities()` which re-fetches the activity list. It does NOT tell the student they were removed -- they just see the same activity list (the removed participant is no longer tracked server-side, but the UI doesn't know it's the current student). The targeted `participant_removed` event with `participantId` in the payload is necessary for the student-self-detection logic.
+### Anti-Pattern 5: Quick Create as Separate Route/Action
 
-### Anti-Pattern 4: Modifying `useRealtimeBracket` for SE Final Round Fix
-
-**What:** Adding special-case logic to the hook for the final round of SE brackets.
-
-**Why bad:** The broadcast path is already correct for all rounds. The bug is likely in the API route (caching) or in the student bracket page's initial fetch (stale data on navigation). The hook should not need modification.
+**What people do:** Create new server actions and DAL functions for quick-created brackets.
+**Why it's wrong:** Quick create produces the same bracket structure. Duplicating logic causes drift.
+**Do this instead:** Quick Create component calls the SAME `createBracket` server action. The component just pre-fills arguments from topic data.
 
 ---
 
-## Verification Checklist
+## Scalability Considerations
 
-For each fix, what to verify manually:
+| Concern | Current (classroom scale) | At scale (100+ concurrent sessions) |
+|---------|--------------------------|--------------------------------------|
+| Vote indicators (green dots) | Fetch voter IDs per matchup on demand | Add Redis caching or aggregate at broadcast time |
+| Pause/resume broadcast | Single REST call per channel | No concern -- one broadcast per action |
+| Batch undo transaction | Prisma $transaction, fine for 4-16 matchups | Transaction timeout at 30s handles large brackets |
+| Quick Create | Same creation path, no new concerns | N/A |
+| Settings broadcast | One broadcast per settings change | No concern -- infrequent action |
 
-| Fix | Verification |
-|-----|-------------|
-| Fix 1 (Poll menu) | Click "..." on a poll card -- menu opens without navigating. Duplicate creates a copy. Delete with confirm removes the poll. Card click still navigates to poll detail. |
-| Fix 2 (RR all-at-once) | Create an RR bracket with `all_at_once` pacing. Start it. Record all results. Verify `CelebrationScreen` appears on teacher view. Verify student view also shows celebration. |
-| Fix 3 (SE final round) | Create SE bracket. Open student view in a second browser. Teacher advances all rounds. Verify final matchup status update appears in student view without manual refresh. |
-| Fix 4 (Student removal) | Open student session in one browser. Teacher removes student from roster. Verify student browser shows removal message without manual refresh. Verify other students are unaffected. |
-| Fix 5 (Sign-out) | Click sign out. Verify button shows "Signing out..." and is disabled during server action. Verify redirect to /login completes normally. |
+For classroom-scale usage (30 students, 1-5 teachers), none of these features introduce scalability bottlenecks. The existing transport fallback (WebSocket → HTTP polling) handles school network variability.
+
+---
+
+## Integration Points
+
+### External Services
+
+| Service | Integration | Impact from v2.0 |
+|---------|-------------|------------------|
+| Supabase Realtime | Broadcast API (REST) | 5 new event types, same broadcast pattern |
+| Supabase PostgreSQL | Prisma queries | No schema changes, just new DAL functions |
+| Stripe | Feature gates | Quick Create must respect same tier limits |
+| Vercel | Deployment | No infrastructure changes |
+
+### Internal Boundaries
+
+| Boundary | Communication | v2.0 Impact |
+|----------|---------------|-------------|
+| Teacher UI ↔ Server Actions | Direct function calls (use server) | 2-3 new server actions |
+| Server Actions ↔ DAL | Direct function imports | 3-5 new DAL functions |
+| Server ↔ Client (realtime) | Supabase Broadcast | 5 new event types |
+| Server ↔ Client (polling) | REST API routes | 1 new endpoint, existing routes unchanged |
+| Bracket Engine ↔ DAL | Direct imports | 1 new function (batchUndoRound) |
 
 ---
 
 ## Sources
 
-- **Codebase analysis:** Direct examination of all referenced source files -- HIGH confidence
-  - `src/actions/class-session.ts`, `src/actions/round-robin.ts`, `src/actions/bracket-advance.ts`
-  - `src/lib/realtime/broadcast.ts`
-  - `src/hooks/use-realtime-activities.ts`, `src/hooks/use-realtime-bracket.ts`, `src/hooks/use-realtime-poll.ts`
-  - `src/components/teacher/live-dashboard.tsx` (lines 97-870)
-  - `src/components/teacher/session-card-menu.tsx`
-  - `src/components/teacher/student-management.tsx`
-  - `src/components/auth/signout-button.tsx`
-  - `src/app/(dashboard)/polls/page.tsx`
-  - `src/app/(student)/session/[sessionId]/bracket/[bracketId]/page.tsx`
-  - `src/lib/dal/round-robin.ts`
-- **React docs:** `useFormStatus` for form pending state -- HIGH confidence
-- **Pattern reference:** `SessionCardMenu` component -- HIGH confidence (direct codebase)
+- Direct codebase analysis of 564 files, 80,750 LOC TypeScript
+- `src/lib/dal/bracket.ts` -- bracket DAL with VALID_TRANSITIONS (lines 604-609)
+- `src/lib/dal/poll.ts` -- poll DAL with VALID_POLL_TRANSITIONS (lines 4-9)
+- `src/lib/realtime/broadcast.ts` -- broadcast infrastructure (185 lines)
+- `src/lib/bracket/advancement.ts` -- undo engine (129 lines)
+- `src/actions/bracket-advance.ts` -- server actions for advancement (333 lines)
+- `src/components/teacher/participation-sidebar.tsx` -- student activity panel (175 lines)
+- `src/components/teacher/live-dashboard.tsx` -- teacher live dashboard (~1200 lines)
+- `src/components/bracket/bracket-form.tsx` -- creation wizard (step-by-step flow)
+- `src/components/bracket/topic-picker.tsx` -- curated topic selection (187 lines)
+- `prisma/schema.prisma` -- data model (286 lines, String status fields)
 
 ---
-*Architecture research for: SparkVotEDU v1.3 Bug Fixes & UX Parity*
-*Researched: 2026-02-24*
+*Architecture research for: SparkVotEDU v2.0 Teacher Power-Ups*
+*Researched: 2026-02-28*

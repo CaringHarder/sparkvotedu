@@ -1,195 +1,178 @@
 # Project Research Summary
 
-**Project:** SparkVotEDU v1.3 — Bug Fixes & UX Parity
-**Domain:** EdTech classroom voting platform — targeted bug fixes and UI consistency sprint
-**Researched:** 2026-02-24
+**Project:** SparkVotEDU v2.0 Teacher Power-Ups
+**Domain:** EdTech classroom voting platform -- teacher activity controls, quick-create UX, real-time indicators
+**Researched:** 2026-02-28
 **Confidence:** HIGH
 
 ## Executive Summary
 
-SparkVotEDU v1.3 is a tightly scoped sprint of five targeted fixes to an existing Next.js 16 / React 19 / Supabase Realtime platform. Every fix operates against the established stack and architecture — zero new npm packages are required. The overarching theme across all five items is **React state lifecycle management**: specifically, understanding when `useRef` guards must be set inside vs. outside `setTimeout` callbacks, when React effect cleanup cancels timers, and how to propagate deletions and participant changes through an existing dual-channel Supabase broadcast architecture. The `hasShownRevealRef` pattern established and validated in Phase 24 is the canonical solution for all timer-race issues.
+SparkVotEDU v2.0 adds teacher control features (pause/resume, undo round, reopen completed activities, edit settings) and creation UX improvements (quick-create brackets and polls) to an existing 80K LOC Next.js classroom voting platform. The research confirms that every v2.0 feature integrates cleanly into the existing architecture: the layered Server Action -> DAL -> Broadcast -> Refetch pattern extends to all new mutations, and the dual-channel Supabase Realtime broadcast system handles all new event types without structural changes. Only two new Radix UI packages (switch, tabs) and one optional package (sonner for toasts) are needed; no framework upgrades required.
 
-The recommended implementation approach is to proceed in ascending-risk order: sign-out button feedback first (purely additive, no realtime surface), poll context menu second (UI-only, clear reference pattern in `session-card-menu.tsx`), student dynamic activity removal third (adds `broadcastActivityUpdate` call to delete actions), SE bracket final round realtime fourth (investigation-first, likely a `cache: 'no-store'` fix), and RR all-at-once completion last (requires verification of `isRoundRobinComplete` query scope and possible celebration guard additions in `RRLiveView`). Features 1 and 4 compound positively — the new context menu's Delete action will immediately trigger the broadcast removal on student dashboards once both fixes are in place.
+The recommended approach is to treat pause/resume as the foundational feature -- it touches the status transition maps, broadcast event types, and student-side vote guards that all other control features (undo, reopen, settings edit) depend on. Quick-create brackets and simplified poll creation are fully independent of the control features and can be built in parallel. The critical architectural decision is how to model pause state: STACK.md recommends a `pausedAt` timestamp column (orthogonal to status), while ARCHITECTURE.md recommends a `paused` status value in the existing String status field. Both approaches are viable but the `paused` status value approach is simpler -- it reuses the existing `VALID_TRANSITIONS` maps, requires zero schema migration (status is already a String), and ensures the `castVote` check (`status !== 'voting'`) automatically rejects paused votes. **Recommendation: use `paused` as a status value**, not a separate column.
 
-The primary risks in this milestone are the two investigation-required bugs (SE final round, RR all-at-once): both touch the celebration trigger chain established in Phase 24. The key mitigation is to apply the Pitfall 1 pattern everywhere (ref inside timer, not before it), verify `RRLiveView` has a `hasShownRevealRef` guard matching `DEVotingView`, and ensure any new Supabase channel subscriptions added for student removal are paired with `removeChannel` in cleanup. None of these risks are novel — Phase 24 already solved the canonical versions; v1.3 is applying known solutions to remaining locations.
-
----
+The top risks are: (1) undo round advancement leaving stale votes in downstream matchups, especially in double-elimination brackets where loser placement must also be reversed; (2) quick-create bypassing session assignment, creating invisible brackets; and (3) vote indicator queries causing N+1 query storms if voter IDs are fetched on every broadcast instead of accumulated client-side. All three have clear prevention strategies documented in the pitfalls research and should be addressed during their respective implementation phases.
 
 ## Key Findings
 
 ### Recommended Stack
 
-All five v1.3 features are achievable with the already-installed package set. No new dependencies are needed. React 19.2.3 provides `useFormStatus` (stable, from `react-dom`) and `useTransition` for server action pending states. The `@radix-ui/react-dropdown-menu` package is already installed as a shadcn/ui primitive and provides keyboard navigation, Escape-to-close, and focus management for the poll context menu at no extra cost. Supabase JS 2.93.3's broadcast REST API (used via service_role key in `src/lib/realtime/broadcast.ts`) is the established transport for all realtime events and is simply extended with two new call sites.
+The existing stack (Next.js 16, React 19, Prisma 7, Supabase, Tailwind v4) handles all v2.0 requirements without upgrades. Two new Radix UI packages and one optional toast library are the only additions.
 
-The critical pattern reference across all timer-related fixes is the `hasShownRevealRef` guard: set inside the `setTimeout` callback, not before it. This pattern is already validated in Phase 24-05 (`DEVotingView`, teacher live-dashboard) and must be verified and applied to `RRLiveView` and any other celebration effects that lack it.
+**New packages:**
+- `@radix-ui/react-switch@^1.2.6`: Toggle controls for bracket/poll display settings -- correct semantic control for boolean toggles with ARIA support
+- `@radix-ui/react-tabs@^1.1.13`: Quick Create / Step-by-Step mode switching -- provides tablist/tab/tabpanel ARIA roles and keyboard navigation
+- `sonner@^2.0.7` (optional, recommended): Toast feedback for rapid teacher actions (pause, undo, settings save) -- shadcn/ui has a first-class wrapper
 
-**Core technologies (unchanged):**
-- **Next.js 16.1.6:** Server actions, `revalidatePath`, API routes — no changes to the framework layer
-- **React 19.2.3:** `useRef`, `useFormStatus` (stable in React 19), `useTransition` — existing hooks cover all five fixes
-- **@radix-ui/react-dropdown-menu ^2.1.16:** Already installed; wrapped by `src/components/ui/dropdown-menu.tsx`; provides accessible context menu for poll cards
-- **@supabase/supabase-js ^2.93.3:** Broadcast REST API for activity deletion events; existing `broadcastActivityUpdate` needs to be called from two additional sites
-- **Prisma ^7.3.0:** DAL layer; `deletePoll`/`deleteBracket` need to return `sessionId` before delete to enable broadcast
-- **lucide-react ^0.563.0:** `MoreVertical`, `Trash2` already imported in `bracket-card.tsx`; same icons reused for poll menu
+**What does NOT need new packages:** Pause/resume (database state + broadcast + button swap), undo round (extends existing `undoMatchupAdvancement` engine), reopen (status transition), quick-create brackets (existing `TopicPicker` + `CURATED_TOPICS` data + `createBracket` action), vote indicators (extends existing `ParticipationSidebar`).
+
+**No schema migration needed.** The `status` field on Bracket and Poll is already a plain String type. Adding `paused` as a valid status value requires only updating the transition validation maps in the DAL.
 
 ### Expected Features
 
-Research confirmed five features scoped for v1.3, all at LOW-to-MEDIUM implementation complexity. Prioritized by user impact and implementation risk:
+**Must have (table stakes):**
+- Pause/Resume activities -- every major competitor (Mentimeter, Poll Everywhere, Slido) supports this; teachers interrupt for discussion constantly
+- Edit display settings after creation -- Poll Everywhere and Mentimeter allow it; teachers realize wrong setting only after seeing students interact
+- "Go Live" terminology -- industry standard; "View Live" sounds read-only
+- Three bug fixes (duplicate poll options, 2-option centering, duplicate name flow) -- data integrity and basic correctness
 
-**Must have (table stakes — ship in v1.3):**
-- **Poll card triple-dot context menu** — brackets have it; UX inconsistency is immediately noticeable to teachers
-- **Student dashboard removes deleted activities** — activation appears live; deletion should too; without this, deleted activities linger on student screens during live class sessions
-- **Sign-out button pending feedback** — any server action button that takes 200ms-2s with no feedback looks broken; leads to double-click confusion
+**Should have (differentiators):**
+- Undo round advancement / reopen voting -- Challonge supports this but most classroom tools do NOT; highest-value teacher fix
+- Reopen completed activities -- saves teachers from re-creating; Challonge has it, Mentimeter/Slido do not
+- Quick Create brackets (topic chips + entrant count) -- no competitor combines curated educational topics with 2-click creation
+- Real-time per-student vote indicators -- competitors show aggregate counts; SparkVotEDU shows per-student status
+- Simplified poll Quick Create -- refinement of existing poll creation flow
+- Playful "needs to cook" paused message -- brand differentiator, turns frustrating pause into delightful moment
 
-**Should have (correctness bugs — ship in v1.3):**
-- **RR all-at-once bracket correct completion** — broken pacing mode is a correctness bug, not cosmetic; teachers who use all-at-once RR cannot complete brackets
-- **SE bracket final round realtime updates** — live vote watching to the last matchup is core teacher UX; final round currently goes dark on student views
-
-**Defer to v1.4:**
-- Poll archiving — requires schema changes; no DB model exists
-- Student notification message on deletion — complexity without proportionate value; EmptyState handles zero-activity gracefully
-- Spinner icon on sign-out — inconsistent with established text-pending pattern ("Deleting...", "Ending...")
+**Defer (v2.x+):**
+- Undo for round-robin and predictive brackets -- more complex pacing models
+- Quick Create for DE/RR/Predictive -- SE is sufficient for quick create
+- Settings presets/templates -- "save my preferred settings"
+- Full audit log / undo-to-any-point -- 95% of mistakes covered by single-level undo
 
 ### Architecture Approach
 
-SparkVotEDU uses a dual-channel Supabase Realtime broadcast architecture. Teacher server actions write to Prisma (via Prisma bypassrls) and broadcast via REST API to either activity-specific channels (`bracket:{id}`, `poll:{id}`) or the session-wide channel (`activities:{sessionId}`). All five v1.3 fixes are either (a) pure UI changes with no realtime impact, (b) additions of `broadcastActivityUpdate` call sites to existing delete server actions, or (c) verification and correction of React effect guard patterns in existing hooks and page components. One new broadcast event type (`participant_removed`) is added to the `activities:{sessionId}` channel for the student dynamic removal fix. One new file is created (`src/components/poll/poll-card-menu.tsx`); seven to eight existing files are modified.
+All v2.0 features integrate into the existing layered architecture: Teacher UI -> Server Actions (auth -> validate -> DAL -> broadcast -> revalidate) -> Prisma -> PostgreSQL, with Supabase Realtime broadcast for student-side updates. Five new broadcast event types (`bracket_paused`, `bracket_resumed`, `poll_paused`, `poll_resumed`, `settings_changed`) follow the existing fire-and-forget pattern. No new channels, no new subscription hooks. The existing `useRealtimeBracket`/`useRealtimePoll` hooks already trigger full refetch on any structural event.
 
-**Major components touched:**
-1. `src/components/poll/poll-card-menu.tsx` — NEW; mirrors `session-card-menu.tsx` Radix DropdownMenu pattern
-2. `src/actions/poll.ts` and `src/actions/bracket.ts` — MODIFY; add `broadcastActivityUpdate(sessionId)` on delete
-3. `src/actions/class-session.ts` — MODIFY; add `participant_removed` broadcast to `removeStudent`/`banStudent`
-4. `src/hooks/use-realtime-activities.ts` — MODIFY; add `participant_removed` listener, return `removed` state
-5. `src/components/student/activity-grid.tsx` — MODIFY; render `RemovedState` when `removed === true`
-6. `src/app/api/brackets/[bracketId]/state/route.ts` — INVESTIGATE; likely add `cache: 'no-store'`
-7. `src/components/auth/signout-button.tsx` — MODIFY; add `useFormStatus` inner component
+**Major new components:**
+1. `PausedOverlay` -- student-facing pause message, auto-dismisses on resume broadcast
+2. `BracketQuickCreate` -- single-panel creation: topic chips + size picker, calls existing `createBracket` action
+3. `PollQuickCreate` -- question + options only, calls existing `createPoll` action
+4. `BracketSettingsPanel` / `PollSettingsPanel` -- slide-out panels with Switch toggles for display settings
+
+**Key modified components:**
+- `ParticipationSidebar` -- new `activityVoterIds` prop for activity-level green dots
+- `RoundAdvancementControls` -- "Undo Round" button for batch undo
+- `LiveDashboard` + `PollLiveClient` -- Pause/Resume buttons, Settings gear icons
 
 ### Critical Pitfalls
 
-1. **hasShownRevealRef set before setTimeout (Pitfall 1)** — when two rapid broadcasts (`winner_selected` + `bracket_completed`) fire in succession, the second triggers a dependency re-run that cancels the timer, but the ref is already `true`, permanently blocking rescheduling. Fix: move `hasShownRevealRef.current = true` inside the `setTimeout` callback. This pattern is confirmed as the root cause in Phase 24 debug files and the fix is validated in `DEVotingView`. Apply to all remaining celebration effects.
+1. **Pause desynchronizes optimistic vote state.** Students with in-flight votes see confusing reverts and technical errors. **Avoid by:** broadcasting specific `voting_paused` events, disabling vote buttons based on matchup status from realtime hook, returning a distinct `PAUSED` error code from `castVote`.
 
-2. **Missing hasShownRevealRef guard causing infinite loop (Pitfall 2)** — `RRLiveView` in `bracket/[bracketId]/page.tsx` has no `hasShownRevealRef` guard. After `CelebrationScreen` auto-dismisses (12 seconds), `bracketCompleted` is still `true` and all other conditions reset to `false`, causing the effect to re-fire and loop infinitely. Fix: add `const hasShownRevealRef = useRef(false)` and `!hasShownRevealRef.current` to the effect condition in `RRLiveView`, mirroring `DEVotingView`.
+2. **Undo round cascading failure with stale votes.** Undoing a matchup clears the winner but leaves stale votes in the next-round matchup. When re-advanced with a different winner, old votes produce wrong results. In DE brackets, loser placement is not reversed. **Avoid by:** deleting downstream matchup votes in the undo transaction, implementing DE-aware undo that clears loser bracket placement, blocking undo if downstream matchups have already been advanced.
 
-3. **Dual-channel deletion broadcast missing (Pitfall 5)** — broadcasting only to `activities:{sessionId}` updates the activity grid but leaves students already inside a deleted bracket/poll page on a stale view. Fix: after confirming the activity-grid broadcast works, also send a deletion event to the activity's own channel so students on the activity page are redirected back to `/session/{sessionId}`.
+3. **Quick-create skips session assignment.** Brackets without a session are invisible to students. Teacher activates, students see nothing. **Avoid by:** making session selection mandatory in quick-create (auto-assign if only one active session), validating `sessionId` at activation time.
 
-4. **Supabase channel not in cleanup causing subscription leak (Pitfall 6)** — any new channel subscription added without a paired `supabase.removeChannel()` in the cleanup causes channel count growth. In React StrictMode the effect runs twice, surfacing the leak immediately. Fix: count `.channel(...).subscribe()` calls and match them with `removeChannel` calls in every `useEffect` cleanup.
+4. **Settings edit allows structural changes on active brackets.** Changing bracket size or type on an active bracket corrupts all matchup and vote state. **Avoid by:** hard-partitioning display vs. structural settings with separate server actions and Zod schemas.
 
-5. **e.stopPropagation missing on context menu trigger (Pitfall 8)** — the DropdownMenuTrigger button sits inside a `<Link>` wrapper. Without `e.stopPropagation()` + `e.preventDefault()` on the trigger button's `onClick`, clicking the menu also navigates the card. Fix: copy the pattern from `session-card-menu.tsx` lines 33-35 exactly.
-
----
+5. **Vote indicators cause N+1 query storms.** Fetching per-student voter IDs on every vote broadcast causes `participantCount * matchupCount / batchInterval` queries per second. **Avoid by:** including voter participant ID in broadcast payloads, accumulating client-side, full refetch only on structural changes.
 
 ## Implications for Roadmap
 
-Research points to a clear 5-phase structure matching the five scoped features, ordered by ascending risk and dependency. No feature requires another to ship first, but grouping the two realtime-investigation bugs after the simpler additive work reduces noise during root-cause tracing.
+Based on research, suggested phase structure:
 
-### Phase 1: Sign-Out Button Pending Feedback
+### Phase 1: Status Infrastructure + Pause/Resume
+**Rationale:** Pause/resume is the foundation for undo, reopen, and settings edit workflows. It touches the status transition maps and broadcast event types that all other control features depend on. Highest teacher value, validates the entire broadcast-refetch pattern for new status values.
+**Delivers:** Pause/Resume for brackets and polls, student-facing PausedOverlay, server-side vote guard, "Go Live" label change
+**Addresses:** Table-stakes pause/resume feature, "Go Live" terminology (trivial, bundle here)
+**Avoids:** Pitfall 1 (pause desync) by implementing broadcast + client status check together; Pitfall 8 (pause not persisted) by using database status value
 
-**Rationale:** Purely additive; zero realtime surface area; no risk of regression; builds confidence before touching shared code. Single-file change. Pattern already established in `useTransition` throughout the codebase.
-**Delivers:** Teachers see "Signing out..." label + disabled state immediately on click; no double-submit possible.
-**Addresses:** Feature 5 (FEATURES.md); table stakes UX polish.
-**Avoids:** Sign-out double-submit (security/UX).
+### Phase 2: Undo Round Advancement
+**Rationale:** Most requested teacher fix. Depends on stable status infrastructure from Phase 1. Extends existing `undoMatchupAdvancement` engine to batch operations. The cascade logic for stale votes and DE loser placement is the most complex engineering work in v2.0.
+**Delivers:** Batch undo for entire rounds, cascading vote cleanup, DE-aware loser placement reversal
+**Addresses:** Differentiator undo feature, existing undo enhancement
+**Avoids:** Pitfall 2 (cascading failure) and Pitfall 10 (DE loser placement) by handling vote cleanup and LB reversal in the core implementation
 
-### Phase 2: Poll Context Menu
+### Phase 3: Reopen Completed Activities
+**Rationale:** Small incremental step after Phase 1 status infrastructure. Adds `completed -> active` transition for brackets and `closed -> active` for polls. Must reset client-side completion state and celebration refs.
+**Delivers:** Reopen buttons on completed bracket/poll detail pages, broadcast-driven client state reset
+**Addresses:** Differentiator reopen feature
+**Avoids:** Pitfall 6 (stale celebration) by extending `BracketUpdateType` with `bracket_reopened` and resetting `hasShownRevealRef` in the realtime hook
 
-**Rationale:** UI-only change; no data mutations change; no realtime events; clear reference implementation in `session-card-menu.tsx`. Establishing the context menu now means the student deletion broadcast (Feature 4) immediately surfaces in the menu UX without a second pass.
-**Delivers:** Poll list shows triple-dot menu with Edit, Duplicate, Delete matching bracket card UX; keyboard-accessible via Radix.
-**Addresses:** Feature 1 (FEATURES.md); table stakes UX consistency.
-**Avoids:** Event bubbling from context menu trigger (Pitfall 8); must include `e.stopPropagation()`.
+### Phase 4: Quick Create Brackets
+**Rationale:** Independent of control features. High teacher value -- reduces bracket creation from 4+ steps to 2 clicks. Uses existing `CURATED_TOPICS` data and `createBracket` action. Needs new `@radix-ui/react-tabs` package.
+**Delivers:** `BracketQuickCreate` component with topic chip grid + size picker, tab toggle on `/brackets/new`
+**Addresses:** Differentiator quick-create feature
+**Avoids:** Pitfall 4 (session assignment) by making session mandatory; Pitfall 7 (feature gate bypass) by calling existing `createBracket` action
 
-### Phase 3: Student Dynamic Activity Removal
+### Phase 5: Settings Editing
+**Rationale:** Enhances the pause workflow (pause -> edit settings -> resume) but not required for pause to function. Uses new `@radix-ui/react-switch` package. Server action for bracket display settings already exists (`updateBracketVotingSettings`); polls need a new one.
+**Delivers:** `BracketSettingsPanel` and `PollSettingsPanel` with toggle switches, settings change broadcast for live sync
+**Addresses:** Table-stakes settings editing feature
+**Avoids:** Pitfall 3 (structural settings corruption) by hard-partitioning display vs. structural settings with separate actions and schemas
 
-**Rationale:** Extends the existing broadcast architecture with two new call sites and one new event type. Should be done before the investigation-required bugs so the broadcast infrastructure is well-exercised and any issues are isolated. Feature 1 (poll context menu) enhances this — the new Delete action in the menu will immediately trigger the student broadcast once this phase is in place.
-**Delivers:** Deleted brackets and polls disappear from student session dashboards within ~2 seconds; removed students see a "You've been removed" state rather than stale UI.
-**Addresses:** Feature 4 (FEATURES.md); table stakes live-session UX.
-**Avoids:** Single-channel broadcast omission (Pitfall 5); channel subscription leak (Pitfall 6); missing sessionId lookup before delete.
-
-### Phase 4: SE Bracket Final Round Realtime Fix
-
-**Rationale:** Investigation-first bug; likely a trivial `cache: 'no-store'` addition to the bracket state API route. By doing this before the RR all-at-once fix, if the SE and RR bugs share a root cause (premature `status: 'completed'` in API response), that is discovered here first and informs Phase 5.
-**Delivers:** SE bracket final round vote counts update in real time on student views without manual refresh.
-**Addresses:** Feature 3 (FEATURES.md); differentiator: live vote dashboard to the last vote.
-**Avoids:** Premature `bracketCompleted` signal; ref-outside-timer race (Pitfall 1); reconnect fallback gap (Pitfall 7).
-
-### Phase 5: RR All-at-Once Bracket Completion Fix
-
-**Rationale:** Most investigation-heavy fix; touches the most code paths (celebration chain, bracket activation, `isRoundRobinComplete` query). Doing this last means lessons from Phase 4's investigation are available, and the broadcast infrastructure from Phase 3 is proven. Phase 24-06 (`calculateRoundRobinStandings`) must be preserved as a non-regression throughout.
-**Delivers:** RR all-at-once brackets complete correctly when all matchups are decided; celebration fires on teacher and student views; `RRLiveView` celebration guard added to prevent infinite loop.
-**Addresses:** Feature 2 (FEATURES.md); differentiator: flexible classroom pacing with auto-completion.
-**Avoids:** Ref-outside-timer blocking celebration (Pitfall 1); missing ref guard causing infinite loop (Pitfall 2); `bracketDone` broken for RR type (Pitfall 4); content bleed-through behind celebration overlay (UX Pitfalls).
+### Phase 6: Vote Indicators + Poll Quick Create + Polish
+**Rationale:** Final enhancement phase. Vote indicators extend existing `ParticipationSidebar`. Poll quick-create is a small refinement. Bundle with bug fixes and visual polish.
+**Delivers:** Activity-level green dots across all types, simplified poll creation, poll image style alignment, three bug fixes (duplicate poll options, 2-option centering, duplicate name flow)
+**Addresses:** Vote indicator differentiator, poll quick-create refinement, all bug fixes
+**Avoids:** Pitfall 5 (N+1 queries) by designing broadcast payload to include voter IDs before building the UI; Pitfall 9 (poll no-options) by including inline option fields with min-2 enforcement
 
 ### Phase Ordering Rationale
 
-- Phases 1-2 are zero-risk additive work: doing them first builds confidence and surfaces any environment issues before touching shared realtime infrastructure.
-- Phase 3 introduces the only net-new broadcast event type (`participant_removed`); isolating it on its own makes any subscription or cleanup issues immediately attributable.
-- Phases 4-5 require investigation before implementation; ordering them last keeps investigation windows clean and avoids conflating root causes.
-- Features 1 and 4 compound: poll context menu Delete action triggers the student broadcast from Phase 3. This is a natural sequencing bonus, not a hard dependency.
-- Phase 24's `hasShownRevealRef` and `calculateRoundRobinStandings` work must be treated as non-regressions throughout Phase 5.
+- **Status infrastructure must come first** because pause/resume, undo, and reopen all depend on expanded transition maps and new broadcast event types. Building these features without the foundation leads to fragmented, hard-to-integrate implementations.
+- **Undo before reopen** because undo is more complex (cascade logic, DE awareness) and reopen is a simpler status transition. Getting undo right validates the entire undo/reopen pattern.
+- **Quick create is independent** and can be built in parallel with Phases 2-3 if resources allow. It touches creation flows only, with zero overlap with live activity controls.
+- **Settings editing after pause/resume** because the ideal workflow is pause -> edit -> resume. The settings UI and partitioning decisions are cleaner once pause is stable.
+- **Vote indicators and polish last** because they are enhancement-only features that add value but do not enable new teacher workflows. Bug fixes can be interspersed across phases if convenient.
 
 ### Research Flags
 
-Needs investigation during planning/execution:
-- **Phase 4:** Read `src/app/api/brackets/[bracketId]/state/route.ts` before writing code — root cause is unconfirmed but highly likely to be Next.js route caching. Approximately 15 minutes of investigation.
-- **Phase 5:** Read `src/actions/bracket.ts` + `src/lib/dal/bracket.ts` activation path and `bracket/[bracketId]/page.tsx` `RRLiveView` celebration effect before writing code. Approximately 30 minutes of investigation.
-- **Phase 3 (minor):** Confirm `deletePoll` and `deleteBracket` DAL return values and whether `sessionId` is available pre-delete without an extra query. Approximately 5 minutes of reading.
+Phases likely needing deeper research during planning:
+- **Phase 2 (Undo Round):** The DE loser placement reversal and cascade logic is the most complex engineering work. Needs careful analysis of `advanceDoubleElimMatchup` to mirror its logic in reverse. Consider `/gsd:research-phase` to map all advancement paths.
+- **Phase 6 (Vote Indicators):** The data flow design (broadcast payload vs. API fetch) needs to be finalized before UI work. The existing `ParticipationSidebar` was designed for matchup-scoped display; activity-level aggregation is a different paradigm.
 
-Phases with standard patterns (skip research-phase):
-- **Phase 1:** `useFormStatus` is stable React 19; pattern is already in `session-detail.tsx` and `bracket-card.tsx`.
-- **Phase 2:** Context menu pattern is fully specified in `session-card-menu.tsx`; no unknowns.
-
----
+Phases with standard patterns (skip `/gsd:research-phase`):
+- **Phase 1 (Pause/Resume):** Well-documented status transition pattern already exists in the codebase. Broadcast + refetch pattern is established.
+- **Phase 3 (Reopen):** Simple status transition addition. Pattern identical to existing transitions.
+- **Phase 4 (Quick Create Brackets):** UI-only with existing data sources and server actions. Topic picker data and creation action already built.
+- **Phase 5 (Settings Editing):** Server action for bracket settings already exists. Pattern is established; extend to polls and add UI.
 
 ## Confidence Assessment
 
 | Area | Confidence | Notes |
 |------|------------|-------|
-| Stack | HIGH | All packages verified from `package.json`; all referenced source files read directly; zero new dependencies needed |
-| Features | HIGH | All five features traced to existing codebase, debug files, and Phase 24 UAT results; scope is well-defined |
-| Architecture | HIGH | All modified files identified by name; dual-channel broadcast pattern fully understood; one fix (SE final round) has an unconfirmed but highly probable root cause |
-| Pitfalls | HIGH | All critical pitfalls confirmed by direct debug file reads and codebase analysis, not inference; Phase 24 already encountered and solved the canonical versions |
+| Stack | HIGH | All recommendations verified against installed versions, package.json, and existing codebase patterns. Radix packages confirmed React 19 compatible. |
+| Features | HIGH | Feature landscape mapped against 6 competitors (Kahoot, Mentimeter, Poll Everywhere, Slido, Challonge, Vevox). Dependencies and MVP definition clearly delineated. |
+| Architecture | HIGH | Direct analysis of 564 files, 80,750 LOC. Every integration point mapped to specific files and line numbers. Status transition maps, broadcast types, and DAL patterns analyzed. |
+| Pitfalls | HIGH | All pitfalls grounded in specific codebase analysis -- actual state machines, broadcast patterns, vote action status checks, and undo engine logic. Recovery strategies documented. |
 
 **Overall confidence:** HIGH
 
+All four research files drew from the same codebase and cross-reference the same files, producing strong internal consistency. The main area of disagreement -- pause modeling (timestamp column vs. status value) -- has been resolved in this synthesis with a clear recommendation.
+
 ### Gaps to Address
 
-- **SE final round root cause (Phase 4):** The most likely cause is `cache: 'no-store'` missing from the bracket state API route, but this is not confirmed. Must read `src/app/api/brackets/[bracketId]/state/route.ts` before writing code. If the route is already `no-store`, investigation expands to the `useRealtimeBracket` hook's `fetchBracketState` call timing or the student bracket page's initial fetch on navigation.
-
-- **RR all-at-once activation path (Phase 5):** Whether the bug is in `isRoundRobinComplete`'s query scope or in the round-opening logic at activation time is not fully determined. ARCHITECTURE.md notes both possibilities. Must trace the activation code path from `updateBracketStatus` through the DAL to the round-opening step before writing fixes.
-
-- **Student removal navigation (Phase 3, lower priority):** ARCHITECTURE.md Fix 4 specifies that students already on a deleted bracket/poll page need to be redirected via a second broadcast to the activity's own channel. FEATURES.md marks this as acceptable to defer (404/notFound is acceptable for MVP), but PITFALLS.md Pitfall 5 flags it as a UX gap. Decision point: ship the session-grid removal (single-channel) first, then evaluate whether the per-activity-page redirect is needed in the same phase or can go to v1.4.
-
-- **Mobile nav sign-out (Phase 1):** FEATURES.md notes that `src/components/dashboard/mobile-nav.tsx` may also contain a sign-out trigger that needs the same pending state treatment. Must verify during Phase 1 implementation.
-
----
+- **Pause modeling disagreement:** STACK.md recommends `pausedAt` timestamp column. ARCHITECTURE.md recommends `paused` status value. This synthesis recommends the status value approach (simpler, no migration, reuses existing transition validation). Resolve during Phase 1 planning with a definitive decision.
+- **Round-robin undo complexity:** Pitfalls research notes RR undo is "simpler" but does not deeply analyze RR-specific edge cases (e.g., undoing a round in all-at-once pacing where multiple rounds may be open simultaneously). Address during Phase 2 if RR undo is in scope.
+- **Poll live dashboard sidebar:** The `PollLiveClient` currently has no `ParticipationSidebar`. Adding one requires fetching poll voter IDs, which may need a new endpoint or extension to the poll state API. Design during Phase 6 planning.
+- **Sonner integration:** Whether to add sonner (toast notifications) for teacher action feedback. Optional per STACK.md. Decide during Phase 1 execution -- if inline state changes feel sufficient, skip it.
 
 ## Sources
 
 ### Primary (HIGH confidence)
-- `package.json` — all installed versions verified directly
-- `src/components/bracket/bracket-card.tsx` — reference context menu implementation
-- `src/components/teacher/session-card-menu.tsx` — reference Radix DropdownMenu pattern
-- `src/hooks/use-realtime-activities.ts`, `use-realtime-bracket.ts`, `use-realtime-poll.ts` — realtime hook patterns and cleanup
-- `src/lib/realtime/broadcast.ts` — REST API broadcast pattern and dual-channel coordination
-- `src/actions/round-robin.ts`, `src/actions/bracket-advance.ts`, `src/actions/class-session.ts` — server action broadcast patterns
-- `src/lib/dal/round-robin.ts` — `isRoundRobinComplete`, `advanceRoundRobinRound`
-- `src/components/teacher/live-dashboard.tsx` — `bracketDone`, `rrAllDecided`, celebration trigger effects
-- `src/components/auth/signout-button.tsx` — current sign-out implementation
-- `.planning/debug/rr-bracket-completion-celebration.md` — confirmed celebration chain root causes
-- `.planning/debug/celebration-loops-infinitely.md` — confirmed missing `hasShownRevealRef` on `RRLiveView`
-- `.planning/debug/teacher-rr-celebration-not-triggering.md` — confirmed ref-outside-timer race condition
-- `.planning/debug/poll-student-no-celebration.md` — confirmed early-return blocking poll student celebration
-- `.planning/debug/rr-tiebreaker-declares-winner-in-tie.md` — confirmed `calculateRoundRobinStandings` is the correct function
-- `.planning/phases/24-bracket-poll-ux-consistency/24-VERIFICATION.md` — Phase 24 Plan 05/06 patterns validated in production
-- `.planning/phases/24-bracket-poll-ux-consistency/24-UAT.md` — Phase 24 passed UAT
+- **Codebase analysis** -- 564 files, 80,750 LOC TypeScript. Key files: `src/lib/dal/bracket.ts` (VALID_TRANSITIONS), `src/lib/dal/poll.ts` (VALID_POLL_TRANSITIONS), `src/lib/realtime/broadcast.ts` (event types), `src/lib/bracket/advancement.ts` (undo engine), `src/actions/bracket-advance.ts` (server actions), `src/components/teacher/participation-sidebar.tsx` (green dots), `src/hooks/use-realtime-bracket.ts` (lifecycle hooks), `prisma/schema.prisma` (data model)
+- **package.json** -- All installed versions verified directly
+- **Radix UI npm registry** -- @radix-ui/react-switch@1.2.6, @radix-ui/react-tabs@1.1.13 React 19 compatibility confirmed
+- **sonner npm registry** -- v2.0.7, React 18+ and Next.js App Router support confirmed
+- **shadcn/ui docs** -- Switch, Tabs, Sonner component wrappers documented
 
 ### Secondary (MEDIUM confidence)
-- React useFormStatus docs (https://react.dev/reference/react-dom/hooks/useFormStatus) — stable in React 19, must be child of form
-- React useTransition docs (https://react.dev/reference/react/useTransition) — alternative for event-handler patterns
-- shadcn/ui DropdownMenu docs (https://ui.shadcn.com/docs/components/dropdown-menu) — already installed via Radix
-- Supabase Broadcast docs (https://supabase.com/docs/guides/realtime/broadcast) — REST API pattern confirmed
-- Supabase TooManyChannels troubleshooting — cleanup requirements confirmed against codebase patterns
+- **Competitor feature analysis** -- Mentimeter, Poll Everywhere, Challonge, Kahoot, Vevox, BracketFights documentation and support articles
+- **shadcn/ui February 2026 changelog** -- unified radix-ui package for new-york style; individual packages remain supported
 
-### Tertiary (LOW confidence — needs validation during implementation)
-- SE bracket final round root cause: `cache: 'no-store'` hypothesis — inferred from architecture, not yet confirmed by reading the route file
-- RR all-at-once activation path: specific line in DAL where rounds are opened for all-at-once pacing — inferred from function names, requires code trace
+### Tertiary (LOW confidence)
+- **UX design patterns** -- Wizard Design Pattern (UX Planet), WebSocket Architecture Best Practices (Ably) -- general guidance, not SparkVotEDU-specific
 
 ---
-*Research completed: 2026-02-24*
+*Research completed: 2026-02-28*
 *Ready for roadmap: yes*
