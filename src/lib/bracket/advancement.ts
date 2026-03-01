@@ -558,3 +558,256 @@ export async function advanceDoubleElimMatchup(
     return { winnerId, status: 'decided' }
   })
 }
+
+// ---------------------------------------------------------------------------
+// Round-level undo engine functions
+// ---------------------------------------------------------------------------
+
+/**
+ * Determine the most recently advanced round that is eligible for undo.
+ *
+ * Rules per bracket type:
+ * - SE/Predictive: highest round where ALL matchups are 'decided' AND the next
+ *   round (if any) has no 'voting' or 'decided' matchups. Returns null when no
+ *   decided rounds exist or the next round has active voting.
+ * - RR: same logic but uses the `roundRobinRound` field instead of `round`.
+ * - DE: per-region detection. Returns `{ round, region }` for the most recently
+ *   advanced region-round. Priority: grand_finals > losers > winners.
+ *
+ * @returns `{ round, region? }` or null if no undo is available
+ */
+export async function getMostRecentAdvancedRound(
+  bracketId: string,
+  bracketType: string
+): Promise<{ round: number; region?: string } | null> {
+  const allMatchups = await prisma.matchup.findMany({
+    where: { bracketId },
+    select: {
+      id: true,
+      round: true,
+      position: true,
+      status: true,
+      bracketRegion: true,
+      roundRobinRound: true,
+      isBye: true,
+    },
+  })
+
+  if (allMatchups.length === 0) return null
+
+  if (bracketType === 'round_robin') {
+    // RR: use roundRobinRound field
+    const rrRounds = [...new Set(
+      allMatchups
+        .filter((m) => m.roundRobinRound != null)
+        .map((m) => m.roundRobinRound as number)
+    )].sort((a, b) => b - a) // descending
+
+    for (const rrRound of rrRounds) {
+      const roundMatchups = allMatchups.filter((m) => m.roundRobinRound === rrRound)
+      const allDecided = roundMatchups.every((m) => m.status === 'decided')
+      if (!allDecided) continue
+
+      // Check if the next RR round has any voting/decided matchups
+      const nextRrRound = rrRound + 1
+      const nextRoundMatchups = allMatchups.filter((m) => m.roundRobinRound === nextRrRound)
+      const nextRoundHasActive = nextRoundMatchups.some(
+        (m) => m.status === 'voting' || m.status === 'decided'
+      )
+      if (nextRoundHasActive) return null
+
+      return { round: rrRound }
+    }
+    return null
+  }
+
+  if (bracketType === 'double_elimination') {
+    // DE: per-region detection
+    const regions = ['grand_finals', 'losers', 'winners'] as const // priority order
+
+    for (const region of regions) {
+      const regionMatchups = allMatchups.filter((m) => m.bracketRegion === region)
+      if (regionMatchups.length === 0) continue
+
+      const regionRounds = [...new Set(regionMatchups.map((m) => m.round))].sort(
+        (a, b) => b - a
+      ) // descending
+
+      for (const round of regionRounds) {
+        const roundMatchups = regionMatchups.filter((m) => m.round === round)
+        const allDecided = roundMatchups.every((m) => m.status === 'decided')
+        if (!allDecided) continue
+
+        // Check if the next round in this region has any voting/decided matchups
+        const nextRound = round + 1
+        const nextRoundMatchups = regionMatchups.filter((m) => m.round === nextRound)
+        const nextRoundHasActive = nextRoundMatchups.some(
+          (m) => m.status === 'voting' || m.status === 'decided'
+        )
+        if (nextRoundHasActive) continue
+
+        return { round, region }
+      }
+    }
+    return null
+  }
+
+  // SE / Predictive: standard round-based detection
+  // Exclude bye matchups from round completeness checks
+  const nonByeMatchups = allMatchups.filter((m) => !m.isBye)
+  const rounds = [...new Set(nonByeMatchups.map((m) => m.round))].sort(
+    (a, b) => b - a
+  ) // descending
+
+  for (const round of rounds) {
+    const roundMatchups = nonByeMatchups.filter((m) => m.round === round)
+    const allDecided = roundMatchups.every((m) => m.status === 'decided')
+    if (!allDecided) continue
+
+    // Check if the next round has any voting/decided matchups
+    const nextRound = round + 1
+    const nextRoundMatchups = nonByeMatchups.filter((m) => m.round === nextRound)
+    const nextRoundHasActive = nextRoundMatchups.some(
+      (m) => m.status === 'voting' || m.status === 'decided'
+    )
+    if (nextRoundHasActive) return null
+
+    return { round }
+  }
+
+  return null
+}
+
+/**
+ * Undo a round of single-elimination advancement.
+ *
+ * Clears winners and votes in the target round, removes propagated entrants
+ * from the next round, and cascades to all downstream rounds (clearing
+ * entrants, winners, votes, and resetting status to 'pending').
+ *
+ * All mutations are atomic within a single Prisma $transaction.
+ */
+export async function undoRoundSE(
+  bracketId: string,
+  round: number
+): Promise<{ undoneMatchups: number; clearedVotes: number; cascadedMatchups: number }> {
+  return prisma.$transaction(
+    async (tx: TransactionClient) => {
+      // 1. Get all decided matchups in the target round
+      const roundMatchups = await tx.matchup.findMany({
+        where: { bracketId, round, status: 'decided' },
+      })
+
+      if (roundMatchups.length === 0) {
+        return { undoneMatchups: 0, clearedVotes: 0, cascadedMatchups: 0 }
+      }
+
+      const roundMatchupIds = roundMatchups.map((m) => m.id)
+
+      // 2. Delete all votes for these matchups
+      const voteResult = await tx.vote.deleteMany({
+        where: { matchupId: { in: roundMatchupIds } },
+      })
+
+      // 3. Clear winnerId and reset status to 'pending'
+      await tx.matchup.updateMany({
+        where: { id: { in: roundMatchupIds } },
+        data: { winnerId: null, status: 'pending' },
+      })
+
+      // 4. Clear propagated entrants in the next round via nextMatchupId
+      for (const matchup of roundMatchups) {
+        if (matchup.nextMatchupId) {
+          const slot = getSlotForPosition(matchup.position)
+          await tx.matchup.update({
+            where: { id: matchup.nextMatchupId },
+            data: { [slot]: null },
+          })
+        }
+      }
+
+      // 5. Cascade: clear all downstream rounds (round > target)
+      const downstreamMatchups = await tx.matchup.findMany({
+        where: { bracketId, round: { gt: round } },
+      })
+
+      let cascadedMatchups = 0
+      if (downstreamMatchups.length > 0) {
+        const downstreamIds = downstreamMatchups.map((m) => m.id)
+
+        // Delete all votes in downstream matchups
+        await tx.vote.deleteMany({
+          where: { matchupId: { in: downstreamIds } },
+        })
+
+        // Clear winners, entrants, and reset status on downstream matchups
+        await tx.matchup.updateMany({
+          where: { id: { in: downstreamIds } },
+          data: {
+            winnerId: null,
+            entrant1Id: null,
+            entrant2Id: null,
+            status: 'pending',
+          },
+        })
+
+        cascadedMatchups = downstreamMatchups.length
+      }
+
+      return {
+        undoneMatchups: roundMatchups.length,
+        clearedVotes: voteResult.count,
+        cascadedMatchups,
+      }
+    },
+    { timeout: 30000 }
+  )
+}
+
+/**
+ * Undo a round of round-robin advancement.
+ *
+ * Clears winners and votes for matchups in the specified `roundRobinRound`.
+ * No cascade is needed because RR matchups are independent -- there is no
+ * entrant propagation between rounds.
+ *
+ * All mutations are atomic within a single Prisma $transaction.
+ */
+export async function undoRoundRR(
+  bracketId: string,
+  roundRobinRound: number
+): Promise<{ undoneMatchups: number; clearedVotes: number }> {
+  return prisma.$transaction(
+    async (tx: TransactionClient) => {
+      // 1. Get all decided matchups for the target roundRobinRound
+      const roundMatchups = await tx.matchup.findMany({
+        where: { bracketId, roundRobinRound, status: 'decided' },
+      })
+
+      if (roundMatchups.length === 0) {
+        return { undoneMatchups: 0, clearedVotes: 0 }
+      }
+
+      const roundMatchupIds = roundMatchups.map((m) => m.id)
+
+      // 2. Delete all votes for these matchups
+      const voteResult = await tx.vote.deleteMany({
+        where: { matchupId: { in: roundMatchupIds } },
+      })
+
+      // 3. Clear winnerId and set status to 'pending'
+      await tx.matchup.updateMany({
+        where: { id: { in: roundMatchupIds } },
+        data: { winnerId: null, status: 'pending' },
+      })
+
+      // 4. No cascade needed -- RR matchups are independent (no nextMatchupId, no entrant propagation)
+
+      return {
+        undoneMatchups: roundMatchups.length,
+        clearedVotes: voteResult.count,
+      }
+    },
+    { timeout: 30000 }
+  )
+}
