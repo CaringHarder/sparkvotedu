@@ -162,7 +162,7 @@ export function BracketCard({ bracket, onRemoved }: BracketCardProps) {
               {renameValue}
             </h3>
           )}
-          <div className="flex items-center gap-1.5">
+          <div className="flex flex-wrap items-center gap-1.5">
             {BRACKET_TYPE_LABELS[bracket.bracketType] && (
               <span
                 className={`whitespace-nowrap rounded-full px-2 py-0.5 text-[10px] font-medium ${

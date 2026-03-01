@@ -160,7 +160,7 @@ export function ActivitiesList({ items, sessions = [] }: ActivitiesListProps) {
           </p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-4" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))' }}>
           {filtered.map((item) => (
             <ActivityItemCard key={`${item.type}-${item.id}`} item={item} />
           ))}

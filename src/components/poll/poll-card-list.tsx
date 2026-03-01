@@ -80,7 +80,7 @@ export function PollCardList({ polls, sessions = [] }: PollCardListProps) {
           </select>
         </div>
       )}
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+      <div className="grid gap-4" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))' }}>
         <AnimatePresence mode="popLayout">
           {filteredItems.map((poll) => (
             <motion.div
