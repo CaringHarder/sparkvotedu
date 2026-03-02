@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { getVoteCountsForMatchup } from '@/lib/dal/vote'
+import { getVoteCountsForMatchup, getVoterParticipantIds } from '@/lib/dal/vote'
 
 // Prevent Next.js from caching GET responses on this route.
 // Without this, the framework may serve stale bracket state after round advancement,
@@ -45,10 +45,13 @@ export async function GET(
       return NextResponse.json({ error: 'Bracket not found' }, { status: 404 })
     }
 
-    // Fetch vote counts for each matchup in parallel
+    // Fetch vote counts and voter IDs for each matchup in parallel
     const matchupsWithCounts = await Promise.all(
       bracket.matchups.map(async (matchup) => {
-        const voteCounts = await getVoteCountsForMatchup(matchup.id)
+        const [voteCounts, voterIds] = await Promise.all([
+          getVoteCountsForMatchup(matchup.id),
+          getVoterParticipantIds(matchup.id),
+        ])
         return {
           id: matchup.id,
           round: matchup.round,
@@ -61,6 +64,7 @@ export async function GET(
           entrant2: matchup.entrant2,
           winner: matchup.winner,
           voteCounts,
+          voterIds,
           bracketRegion: matchup.bracketRegion,
           isBye: matchup.isBye,
           roundRobinRound: matchup.roundRobinRound,

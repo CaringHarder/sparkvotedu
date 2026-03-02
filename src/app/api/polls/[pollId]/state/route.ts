@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { getSimplePollVoteCounts, getRankedPollVotes } from '@/lib/dal/poll'
+import { getSimplePollVoteCounts, getRankedPollVotes, getPollVoterParticipantIds } from '@/lib/dal/poll'
 import { computeBordaScores } from '@/lib/poll/borda'
 
 /**
@@ -45,6 +45,9 @@ export async function GET(
     let totalVotes = 0
     let bordaScores: { optionId: string; points: number }[] | undefined
 
+    // Fetch voter IDs for vote indicators (parallel with vote counts)
+    const voterIdsPromise = getPollVoterParticipantIds(pollId)
+
     if (poll.pollType === 'simple') {
       voteCounts = await getSimplePollVoteCounts(pollId)
       totalVotes = Object.values(voteCounts).reduce((sum, c) => sum + c, 0)
@@ -63,6 +66,8 @@ export async function GET(
       voteCounts = await getSimplePollVoteCounts(pollId)
     }
 
+    const voterIds = await voterIdsPromise
+
     return NextResponse.json({
       id: poll.id,
       question: poll.question,
@@ -75,6 +80,7 @@ export async function GET(
       voteCounts,
       totalVotes,
       participantCount,
+      voterIds,
       ...(bordaScores ? { bordaScores } : {}),
     })
   } catch {

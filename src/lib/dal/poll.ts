@@ -435,6 +435,22 @@ export async function deletePollPermanentlyDAL(
   return { success: true }
 }
 
+/**
+ * Get distinct participant IDs who have voted on a poll.
+ *
+ * Uses rank=1 filter to get one row per voter (works for both simple polls
+ * where rank is always 1, and ranked polls where each voter has a rank=1 entry).
+ * Used by the polling fallback API to provide voter indicators.
+ */
+export async function getPollVoterParticipantIds(pollId: string): Promise<string[]> {
+  const votes = await prisma.pollVote.findMany({
+    where: { pollId, rank: 1 },
+    select: { participantId: true },
+    distinct: ['participantId'],
+  })
+  return votes.map((v) => v.participantId)
+}
+
 // ---------------------------------------------------------------------------
 // Vote functions
 // ---------------------------------------------------------------------------
