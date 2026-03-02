@@ -18,6 +18,7 @@ interface PollStateResponse {
   totalVotes: number
   participantCount?: number
   bordaScores?: BordaScore[]
+  voterIds?: string[]
 }
 
 /**
@@ -44,11 +45,13 @@ export function useRealtimePoll(pollId: string, sessionId?: string | null, batch
   const [participantCount, setParticipantCount] = useState(0)
   const [allowVoteChange, setAllowVoteChange] = useState(false)
   const [showLiveResults, setShowLiveResults] = useState(false)
+  const [voterIds, setVoterIds] = useState<string[]>([])
   const [transport, setTransport] = useState<'websocket' | 'polling'>('websocket')
 
   // Ref for batching vote updates -- accumulates between flushes
   const pendingVoteCounts = useRef<Record<string, number>>({})
   const pendingTotalVotes = useRef<number | null>(null)
+  const pendingVoterIds = useRef<Set<string>>(new Set())
 
   // Fetch full poll state from polling API
   const fetchPollState = useCallback(async () => {
@@ -69,6 +72,10 @@ export function useRealtimePoll(pollId: string, sessionId?: string | null, batch
 
       if (data.bordaScores) {
         setBordaScores(data.bordaScores)
+      }
+
+      if (data.voterIds) {
+        setVoterIds(data.voterIds)
       }
     } catch {
       // Fetch failure is non-fatal -- will retry on next event or interval
@@ -94,20 +101,33 @@ export function useRealtimePoll(pollId: string, sessionId?: string | null, batch
         setTotalVotes(pendingTotalVotes.current)
         pendingTotalVotes.current = null
       }
+      if (pendingVoterIds.current.size > 0) {
+        const newIds = pendingVoterIds.current
+        setVoterIds(prev => {
+          const combined = new Set(prev)
+          for (const pid of newIds) combined.add(pid)
+          return [...combined]
+        })
+        pendingVoterIds.current = new Set()
+      }
     }, batchIntervalMs)
 
     // Subscribe to poll channel
     const channel = supabase
       .channel(`poll:${pollId}`)
       .on('broadcast', { event: 'poll_vote_update' }, (message) => {
-        const { voteCounts: counts, totalVotes: total } = message.payload as {
+        const { voteCounts: counts, totalVotes: total, participantId } = message.payload as {
           voteCounts: Record<string, number>
           totalVotes: number
+          participantId?: string
         }
 
         // Accumulate into pending (NOT direct setState) for batching
         pendingVoteCounts.current = { ...pendingVoteCounts.current, ...counts }
         pendingTotalVotes.current = total
+        if (participantId) {
+          pendingVoterIds.current.add(participantId)
+        }
       })
       .on('broadcast', { event: 'poll_update' }, (message) => {
         const { type } = message.payload as { type: string }
@@ -166,5 +186,5 @@ export function useRealtimePoll(pollId: string, sessionId?: string | null, batch
     }
   }, [pollId, sessionId, supabase, batchIntervalMs, fetchPollState])
 
-  return { voteCounts, totalVotes, pollStatus, bordaScores, allowVoteChange, showLiveResults, transport, participantCount, refetch: fetchPollState }
+  return { voteCounts, totalVotes, pollStatus, bordaScores, allowVoteChange, showLiveResults, voterIds, transport, participantCount, refetch: fetchPollState }
 }
