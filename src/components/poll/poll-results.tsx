@@ -1,8 +1,7 @@
 'use client'
 
-import { useState, useEffect, useCallback, useMemo } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { BarChart3, PieChart } from 'lucide-react'
-import { useRealtimePoll } from '@/hooks/use-realtime-poll'
 import { AnimatedBarChart } from '@/components/poll/bar-chart'
 import { DonutChart } from '@/components/poll/donut-chart'
 import { RankedLeaderboard } from '@/components/poll/ranked-leaderboard'
@@ -10,8 +9,8 @@ import { PresentationResults } from '@/components/poll/presentation-results'
 import { PresentationMode } from '@/components/poll/presentation-mode'
 import { PollReveal } from '@/components/poll/poll-reveal'
 import { WinnerReveal } from '@/components/bracket/winner-reveal'
-import type { PollWithOptions } from '@/lib/poll/types'
-import type { BordaLeaderboardEntry } from '@/lib/poll/borda'
+import type { PollWithOptions, PollStatus } from '@/lib/poll/types'
+import type { BordaLeaderboardEntry, BordaScore } from '@/lib/poll/borda'
 
 /** Color palette matching bar-chart / donut-chart */
 const COLORS = [
@@ -31,6 +30,13 @@ interface PollResultsProps {
   presenting?: boolean
   pollTitle?: string
   onExitPresentation?: () => void
+  /** Realtime data passed from parent (lifted from useRealtimePoll) */
+  realtimeVoteCounts?: Record<string, number>
+  realtimeTotalVotes?: number
+  realtimePollStatus?: PollStatus
+  realtimeBordaScores?: BordaScore[] | null
+  realtimeTransport?: 'websocket' | 'polling'
+  realtimeParticipantCount?: number
 }
 
 /**
@@ -50,9 +56,20 @@ export function PollResults({
   presenting,
   pollTitle,
   onExitPresentation,
+  realtimeVoteCounts,
+  realtimeTotalVotes,
+  realtimePollStatus,
+  realtimeBordaScores,
+  realtimeTransport,
+  realtimeParticipantCount,
 }: PollResultsProps) {
-  const { voteCounts, totalVotes, pollStatus, bordaScores, transport, participantCount } =
-    useRealtimePoll(poll.id, poll.sessionId)
+  // Use realtime data from parent (single subscription in PollLiveClient)
+  const voteCounts = realtimeVoteCounts ?? {}
+  const totalVotes = realtimeTotalVotes ?? 0
+  const pollStatus = realtimePollStatus ?? 'draft'
+  const bordaScores = realtimeBordaScores ?? null
+  const transport = realtimeTransport ?? 'websocket'
+  const participantCount = realtimeParticipantCount ?? 0
 
   const [chartType, setChartType] = useState<ChartType>('bar')
   const [showReveal, setShowReveal] = useState(false)

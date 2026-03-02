@@ -93,9 +93,18 @@ export function PollLiveClient({
     return ids
   }, [connectedStudents, participants])
 
-  // Get realtime voterIds -- PollResults has its own useRealtimePoll for vote counts.
-  // Dual subscription is safe: Supabase deduplicates at the channel/transport level.
-  const { voterIds: realtimeVoterIds } = useRealtimePoll(poll.id, sessionId)
+  // Single realtime subscription for all poll data (vote counts, voter IDs, status, etc.)
+  // Previously PollResults had its own useRealtimePoll; now we lift data here to avoid
+  // dual subscriptions and ensure a single source of truth for real-time updates.
+  const {
+    voteCounts: realtimeVoteCounts,
+    totalVotes: realtimeTotalVotes,
+    pollStatus: realtimePollStatus,
+    bordaScores: realtimeBordaScores,
+    transport: realtimeTransport,
+    participantCount: realtimeParticipantCount,
+    voterIds: realtimeVoterIds,
+  } = useRealtimePoll(poll.id, sessionId)
 
   // Merge initial + realtime voter IDs
   const mergedVoterIds = useMemo(() => {
@@ -197,6 +206,12 @@ export function PollLiveClient({
       presenting={presenting}
       pollTitle={poll.question}
       onExitPresentation={onExitPresentation}
+      realtimeVoteCounts={realtimeVoteCounts}
+      realtimeTotalVotes={realtimeTotalVotes}
+      realtimePollStatus={realtimePollStatus}
+      realtimeBordaScores={realtimeBordaScores}
+      realtimeTransport={realtimeTransport}
+      realtimeParticipantCount={realtimeParticipantCount}
     />
   )
 
