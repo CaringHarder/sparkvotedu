@@ -3,12 +3,12 @@ gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: Teacher Power-Ups
 status: in-progress
-last_updated: "2026-03-02T11:37:41Z"
+last_updated: "2026-03-02T11:43:12Z"
 progress:
   total_phases: 18
   completed_phases: 17
   total_plans: 55
-  completed_plans: 53
+  completed_plans: 54
 ---
 
 # Project State
@@ -23,9 +23,9 @@ See: .planning/PROJECT.md (updated 2026-02-28)
 ## Current Position
 
 Phase: 37 of 38 (User Profile & Admin Access) -- IN PROGRESS
-Plan: 1 of 3 complete
-Status: Completed Plan 37-01
-Last activity: 2026-03-02 - Completed 37-01: Backend foundation (mustChangePassword, profile actions, proxy intercept)
+Plan: 2 of 3 complete
+Status: Completed Plan 37-02
+Last activity: 2026-03-02 - Completed 37-02: Profile UI page, sidebar link, admin gear icon
 
 Progress: [##░░░░░░░░] 17% (v2.0)
 
@@ -115,6 +115,9 @@ Recent from research:
 - 37-01: Prisma column approach for mustChangePassword (no Supabase app_metadata needed)
 - 37-01: forceSetPassword clears flag before redirect to avoid proxy race condition
 - 37-01: /set-password is NOT in AUTH_PAGES -- special onboarding route for authenticated users
+- 37-02: Dashboard layout made async for getAuthenticatedTeacher role check (standard Next.js App Router practice)
+- 37-02: AdminGearButton positioned before ThemeToggle in header for visual grouping near sign out
+- 37-02: Password form uses formRef.reset() on success to clear sensitive fields
 
 ### Roadmap Evolution
 
@@ -178,8 +181,9 @@ None -- all v1.3 requirements shipped.
 ## Session Continuity
 
 Last session: 2026-03-02
-Stopped at: Completed 37-01: Backend foundation (mustChangePassword, profile actions, proxy intercept)
-Resume: Continue with 37-02 (UI pages)
+Stopped at: Completed 37-02: Profile UI page, sidebar link, admin gear icon
+Resume: Continue with 37-03 (set-password forced reset UI)
 | Phase 36 P01 | 3min | 2 tasks | 6 files |
 | Phase 36 P04 | 6min | 2 tasks | 3 files |
 | Phase 37 P01 | 2min | 2 tasks | 4 files |
+| Phase 37 P02 | 2min | 2 tasks | 7 files |
