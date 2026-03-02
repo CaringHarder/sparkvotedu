@@ -804,14 +804,25 @@ export function LiveDashboard({
       // Use the special 'predictions' key for prediction submitters
       return mergedVoterIds['predictions'] ?? []
     }
-    // SE/DE: single matchup
-    if (!selectedMatchupId) return []
-    return mergedVoterIds[selectedMatchupId] ?? []
+    // SE/DE: if a specific matchup is selected, use its voter IDs
+    if (selectedMatchupId) return mergedVoterIds[selectedMatchupId] ?? []
+    // No matchup selected -- union voter IDs across all voting matchups in current round
+    const votingMatchups = currentMatchups.filter(
+      (m) => m.status === 'voting' && m.round === currentRound
+    )
+    const allVoterIds = new Set<string>()
+    for (const m of votingMatchups) {
+      for (const id of (mergedVoterIds[m.id] ?? [])) {
+        allVoterIds.add(id)
+      }
+    }
+    return [...allVoterIds]
   }, [isRoundRobin, isPredictive, selectedMatchupId, currentMatchups,
-      currentRoundRobinRound, mergedVoterIds, participants])
+      currentRound, currentRoundRobinRound, mergedVoterIds, participants])
 
   // Whether there is an active voting context (for sidebar display)
-  const hasActiveVotingContext = isRoundRobin || isPredictive || selectedMatchupId !== null
+  const hasActiveVotingContext = isRoundRobin || isPredictive || selectedMatchupId !== null ||
+    currentMatchups.some((m) => m.status === 'voting')
 
   const handleRecordRoundRobinResult = useCallback((matchupId: string, winnerId: string | null) => {
     setError(null)
