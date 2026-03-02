@@ -13,6 +13,7 @@ model Teacher {
   name             String?
   role             String   @default("teacher")
   deactivatedAt    DateTime?  @map("deactivated_at")
+  mustChangePassword Boolean @default(false) @map("must_change_password")
   avatarUrl        String?  @map("avatar_url")
   subscriptionTier String   @default("free") @map("subscription_tier")
   stripeCustomerId String?  @map("stripe_customer_id")
