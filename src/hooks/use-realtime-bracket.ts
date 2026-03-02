@@ -20,6 +20,7 @@ interface MatchupState {
   entrant2: { id: string; name: string; seedPosition: number } | null
   winner: { id: string; name: string; seedPosition: number } | null
   voteCounts?: Record<string, number>
+  voterIds?: string[]
   bracketRegion?: string | null
   isBye?: boolean
   roundRobinRound?: number | null
@@ -57,6 +58,7 @@ interface BracketStateResponse {
 export function useRealtimeBracket(bracketId: string, batchIntervalMs = 2000) {
   const supabase = useMemo(() => createClient(), [])
   const [voteCounts, setVoteCounts] = useState<VoteCounts>({})
+  const [voterIds, setVoterIds] = useState<Record<string, string[]>>({})
   const [matchups, setMatchups] = useState<MatchupState[] | null>(null)
   const [bracketCompleted, setBracketCompleted] = useState(false)
   const [bracketStatus, setBracketStatus] = useState<string>('active')
@@ -68,6 +70,7 @@ export function useRealtimeBracket(bracketId: string, batchIntervalMs = 2000) {
 
   // Ref for batching vote updates -- accumulates between flushes
   const pendingUpdates = useRef<VoteCounts>({})
+  const pendingVoterUpdates = useRef<Record<string, Set<string>>>({})
 
   // Sequence counter to discard stale out-of-order fetch responses.
   // When multiple bracket_update events fire rapidly (e.g. winner_selected +
@@ -102,6 +105,20 @@ export function useRealtimeBracket(bracketId: string, batchIntervalMs = 2000) {
         }
       }
       setVoteCounts(counts)
+
+      // Extract voterIds per matchup from fetched state
+      const fetchedVoterIds: Record<string, string[]> = {}
+      for (const matchup of data.matchups) {
+        if (matchup.voterIds) {
+          fetchedVoterIds[matchup.id] = matchup.voterIds
+        }
+      }
+      // Preserve the 'predictions' key -- fetchBracketState only returns
+      // per-matchup vote data, not prediction submitter data
+      setVoterIds(prev => ({
+        ...fetchedVoterIds,
+        ...(prev['predictions'] ? { predictions: prev['predictions'] } : {}),
+      }))
 
       // Track bracket-level status (used for paused overlay on student pages)
       setBracketStatus(data.status)
@@ -148,16 +165,32 @@ export function useRealtimeBracket(bracketId: string, batchIntervalMs = 2000) {
       // Flush pending updates into state
       setVoteCounts((prev) => ({ ...prev, ...pending }))
       pendingUpdates.current = {}
+
+      // Flush pending voter ID updates into state
+      const voterUpdates = pendingVoterUpdates.current
+      if (Object.keys(voterUpdates).length > 0) {
+        setVoterIds(prev => {
+          const next = { ...prev }
+          for (const [mid, pids] of Object.entries(voterUpdates)) {
+            const existing = new Set(prev[mid] ?? [])
+            for (const pid of pids) existing.add(pid)
+            next[mid] = [...existing]
+          }
+          return next
+        })
+        pendingVoterUpdates.current = {}
+      }
     }, batchIntervalMs)
 
     // Subscribe to bracket channel
     const channel = supabase
       .channel(`bracket:${bracketId}`)
       .on('broadcast', { event: 'vote_update' }, (message) => {
-        const { matchupId, voteCounts: counts, totalVotes } = message.payload as {
+        const { matchupId, voteCounts: counts, totalVotes, participantId } = message.payload as {
           matchupId: string
           voteCounts: Record<string, number>
           totalVotes: number
+          participantId?: string
         }
 
         // Accumulate into pending (NOT direct setState) for batching
@@ -165,9 +198,34 @@ export function useRealtimeBracket(bracketId: string, batchIntervalMs = 2000) {
           ...counts,
           total: totalVotes,
         }
+
+        // Accumulate voter ID for per-student tracking
+        if (participantId) {
+          if (!pendingVoterUpdates.current[matchupId]) {
+            pendingVoterUpdates.current[matchupId] = new Set()
+          }
+          pendingVoterUpdates.current[matchupId].add(participantId)
+        }
       })
       .on('broadcast', { event: 'bracket_update' }, (message) => {
         const { type } = message.payload as { type: string }
+
+        // Clear pending voter updates on structural events that invalidate votes
+        if (type === 'round_advanced' || type === 'round_undone' || type === 'bracket_reopened') {
+          pendingVoterUpdates.current = {}
+          // voterIds will be reset by the fetchBracketState call that follows
+        }
+
+        // Accumulate prediction submitter voter ID
+        if (type === 'prediction_status_changed') {
+          const predPayload = message.payload as { type: string; participantId?: string }
+          if (predPayload.participantId) {
+            if (!pendingVoterUpdates.current['predictions']) {
+              pendingVoterUpdates.current['predictions'] = new Set()
+            }
+            pendingVoterUpdates.current['predictions'].add(predPayload.participantId)
+          }
+        }
 
         // Structural changes need immediate refetch
         if (
@@ -219,5 +277,5 @@ export function useRealtimeBracket(bracketId: string, batchIntervalMs = 2000) {
     }
   }, [bracketId, supabase, batchIntervalMs, fetchBracketState])
 
-  return { voteCounts, matchups, bracketCompleted, bracketStatus, predictionStatus, viewingMode, showVoteCounts, showSeedNumbers, transport, refetch: fetchBracketState }
+  return { voteCounts, voterIds, matchups, bracketCompleted, bracketStatus, predictionStatus, viewingMode, showVoteCounts, showSeedNumbers, transport, refetch: fetchBracketState }
 }
