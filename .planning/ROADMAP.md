@@ -230,6 +230,38 @@ Plans:
 - [ ] 36-04-PLAN.md -- Fix fullscreen auto-close + poll teacher dashboard realtime updates
 - [ ] 36-05-PLAN.md -- Fix bracket vote indicators for SE/DE + Go Live/Start flow
 
+### Phase 37: User Profile & Admin Access
+**Goal**: Teachers can manage their account from a profile page (edit name, change password), admins can access the admin panel directly from the sidebar, and accounts created with temporary passwords force an immediate password change on first login
+**Depends on**: Nothing (independent account management features)
+**Requirements**: PROFILE-01, PROFILE-02, PROFILE-03, ADMIN-01
+**Success Criteria** (what must be TRUE):
+  1. Teacher clicks "Profile" in the sidebar (below Billing) and sees a profile page where they can edit their display name and save it
+  2. Teacher can change their password from the profile page (current password + new password + confirm)
+  3. When an admin creates a teacher account via the admin panel with a temporary password, that teacher's first login forces them to set a new password before accessing the dashboard
+  4. Admin users see an "Admin" link in the sidebar that navigates directly to /admin -- no manual URL typing required
+**Plans:** 3 plans
+
+Plans:
+- [ ] 37-01-PLAN.md -- Backend foundation: Prisma migration (mustChangePassword), profile server actions, admin creation flag, proxy forced reset intercept
+- [ ] 37-02-PLAN.md -- Profile page UI (three card sections), sidebar Profile link, admin gear icon in header
+- [ ] 37-03-PLAN.md -- Forced password reset page (/set-password) with welcoming onboarding UX + human verification
+
+### Phase 38: Require Email Verification Before Login
+**Goal**: Email signup flow enforces verification before granting access -- teachers who sign up with email must click a verification link before they can log in; Google sign-in is unaffected (already verified by OAuth)
+**Depends on**: Nothing (independent auth enforcement)
+**Requirements**: AUTH-01
+**Success Criteria** (what must be TRUE):
+  1. Teacher signs up with email and receives a verification email with a working confirmation link
+  2. Teacher who has not verified their email is blocked from accessing the dashboard -- they see a "check your email" screen instead
+  3. Clicking the verification link in the email marks the account as verified and allows login/dashboard access
+  4. Teachers who sign in via Google OAuth bypass email verification entirely (Google already confirms email ownership)
+**Plans:** 3 plans
+
+Plans:
+- [ ] 38-01-PLAN.md -- Backend auth actions (signUp/signIn interception, resendVerification), proxy update, callback expired link handling
+- [ ] 38-02-PLAN.md -- Verify-email blocking page with resend/cooldown/Google/sign-out + signup/login form redirects
+- [ ] 38-03-PLAN.md -- Human verification of complete email verification flow
+
 ## Progress
 
 **Execution Order:**
@@ -274,35 +306,5 @@ Note: Phases 33-36 are independent of the control feature chain (29-32) and can 
 | 34. Poll Quick Create & Image Polish | 2/3 | Complete    | 2026-03-02 | - |
 | 35. Real-Time Vote Indicators | 3/4 | In Progress|  | - |
 | 36. Bug Fixes | 5/5 | Complete    | 2026-03-02 | - |
-| 37. User Profile & Admin Access | v2.0 | 0/TBD | Not started | - |
+| 37. User Profile & Admin Access | v2.0 | 0/3 | Not started | - |
 | 38. Require Email Verification Before Login | v2.0 | 0/3 | Not started | - |
-
-### Phase 37: User Profile & Admin Access
-**Goal**: Teachers can manage their account from a profile page (edit name, change password), admins can access the admin panel directly from the sidebar, and accounts created with temporary passwords force an immediate password change on first login
-**Depends on**: Nothing (independent account management features)
-**Requirements**: PROFILE-01, PROFILE-02, PROFILE-03, ADMIN-01
-**Success Criteria** (what must be TRUE):
-  1. Teacher clicks "Profile" in the sidebar (below Billing) and sees a profile page where they can edit their display name and save it
-  2. Teacher can change their password from the profile page (current password + new password + confirm)
-  3. When an admin creates a teacher account via the admin panel with a temporary password, that teacher's first login forces them to set a new password before accessing the dashboard
-  4. Admin users see an "Admin" link in the sidebar that navigates directly to /admin -- no manual URL typing required
-**Plans**: TBD
-
-Plans:
-- [ ] 37-01: TBD
-
-### Phase 38: Require Email Verification Before Login
-**Goal**: Email signup flow enforces verification before granting access -- teachers who sign up with email must click a verification link before they can log in; Google sign-in is unaffected (already verified by OAuth)
-**Depends on**: Nothing (independent auth enforcement)
-**Requirements**: AUTH-01
-**Success Criteria** (what must be TRUE):
-  1. Teacher signs up with email and receives a verification email with a working confirmation link
-  2. Teacher who has not verified their email is blocked from accessing the dashboard -- they see a "check your email" screen instead
-  3. Clicking the verification link in the email marks the account as verified and allows login/dashboard access
-  4. Teachers who sign in via Google OAuth bypass email verification entirely (Google already confirms email ownership)
-**Plans:** 3 plans
-
-Plans:
-- [ ] 38-01-PLAN.md -- Backend auth actions (signUp/signIn interception, resendVerification), proxy update, callback expired link handling
-- [ ] 38-02-PLAN.md -- Verify-email blocking page with resend/cooldown/Google/sign-out + signup/login form redirects
-- [ ] 38-03-PLAN.md -- Human verification of complete email verification flow
