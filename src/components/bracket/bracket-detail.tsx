@@ -15,6 +15,7 @@ import { DoubleElimDiagram } from '@/components/bracket/double-elim-diagram'
 import { BracketStatusBadge, BracketLifecycleControls } from '@/components/bracket/bracket-status'
 import { BracketMetadataBar } from '@/components/shared/activity-metadata-bar'
 import { QuickSettingsToggle } from '@/components/shared/quick-settings-toggle'
+import { ViewingModeToggle } from '@/components/shared/viewing-mode-toggle'
 import { DisplaySettingsSection } from '@/components/shared/display-settings-section'
 import { LockedSettingIndicator } from '@/components/shared/locked-setting-indicator'
 import { assignBracketToSession, updateBracketSettings } from '@/actions/bracket'
@@ -51,8 +52,7 @@ export function BracketDetail({ bracket, totalRounds, sessions, standings = [], 
   const [showVoteCounts, setShowVoteCounts] = useState(bracket.showVoteCounts ?? true)
   const [isUpdatingSettings, setIsUpdatingSettings] = useState(false)
 
-  async function handleViewingModeChange(checked: boolean) {
-    const newMode = checked ? 'advanced' : 'simple'
+  async function handleViewingModeChange(newMode: 'simple' | 'advanced') {
     setIsUpdatingSettings(true)
     setViewingMode(newMode)
     try {
@@ -254,10 +254,9 @@ export function BracketDetail({ bracket, totalRounds, sessions, standings = [], 
         <LockedSettingIndicator label="Size" value={`${bracket.entrants.length} entrants`} />
 
         {/* Editable display settings */}
-        <QuickSettingsToggle
-          label={viewingMode === 'advanced' ? 'Advanced Mode' : 'Simple Mode'}
-          checked={viewingMode === 'advanced'}
-          onCheckedChange={handleViewingModeChange}
+        <ViewingModeToggle
+          value={viewingMode as 'simple' | 'advanced'}
+          onValueChange={handleViewingModeChange}
           disabled={isUpdatingSettings}
           icon={<Eye className="h-4 w-4" />}
         />

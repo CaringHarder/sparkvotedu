@@ -23,6 +23,7 @@ import { PredictiveBracket } from '@/components/bracket/predictive-bracket'
 import { calculateRoundRobinStandings, type RoundRobinResult } from '@/lib/bracket/round-robin'
 import { BracketMetadataBar } from '@/components/shared/activity-metadata-bar'
 import { QuickSettingsToggle } from '@/components/shared/quick-settings-toggle'
+import { ViewingModeToggle } from '@/components/shared/viewing-mode-toggle'
 import { DisplaySettingsSection } from '@/components/shared/display-settings-section'
 import { LockedSettingIndicator } from '@/components/shared/locked-setting-indicator'
 import { Switch } from '@/components/ui/switch'
@@ -156,8 +157,7 @@ export function LiveDashboard({
   const [showVoteCounts, setShowVoteCounts] = useState(bracket.showVoteCounts ?? true)
   const [isUpdatingSettings, setIsUpdatingSettings] = useState(false)
 
-  const handleViewingModeChange = useCallback(async (checked: boolean) => {
-    const newMode = checked ? 'advanced' : 'simple'
+  const handleViewingModeChange = useCallback(async (newMode: 'simple' | 'advanced') => {
     setIsUpdatingSettings(true)
     setViewingMode(newMode)
     try {
@@ -1589,10 +1589,9 @@ export function LiveDashboard({
           <LockedSettingIndicator label="Type" value={getBracketTypeLabel(bracket.bracketType)} />
           <LockedSettingIndicator label="Size" value={`${bracket.entrants.length} entrants`} />
 
-          <QuickSettingsToggle
-            label={viewingMode === 'advanced' ? 'Advanced Mode' : 'Simple Mode'}
-            checked={viewingMode === 'advanced'}
-            onCheckedChange={handleViewingModeChange}
+          <ViewingModeToggle
+            value={viewingMode as 'simple' | 'advanced'}
+            onValueChange={handleViewingModeChange}
             disabled={isUpdatingSettings}
             icon={<Eye className="h-4 w-4" />}
           />
