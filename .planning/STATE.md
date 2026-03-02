@@ -102,6 +102,7 @@ Recent from research:
 ### Roadmap Evolution
 
 - Phase 31.1 inserted after Phase 31: Activity Card Layout Fix & Quick Settings Toggle (URGENT)
+- Phase 37 added: User Profile & Admin Access (profile page, password change, forced temp password reset, admin sidebar link)
 
 ### Pending Todos
 
