@@ -1,16 +1,24 @@
-import { BracketForm } from '@/components/bracket/bracket-form'
+import { redirect } from 'next/navigation'
+import { getAuthenticatedTeacher } from '@/lib/dal/auth'
+import { prisma } from '@/lib/prisma'
+import { BracketCreationPage } from '@/components/bracket/bracket-creation-page'
 
-export default function CreateBracketPage() {
-  return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold">Create Bracket</h1>
-        <p className="text-muted-foreground">
-          Set up a new bracket for your class to vote on.
-        </p>
-      </div>
+export default async function CreateBracketPage() {
+  const teacher = await getAuthenticatedTeacher()
+  if (!teacher) redirect('/login')
 
-      <BracketForm />
-    </div>
-  )
+  const sessions = await prisma.classSession.findMany({
+    where: { teacherId: teacher.id, status: 'active' },
+    select: { id: true, code: true, name: true, createdAt: true },
+    orderBy: { createdAt: 'desc' },
+  })
+
+  const serializedSessions = sessions.map((s) => ({
+    id: s.id,
+    code: s.code,
+    name: s.name,
+    createdAt: s.createdAt.toISOString(),
+  }))
+
+  return <BracketCreationPage sessions={serializedSessions} />
 }
