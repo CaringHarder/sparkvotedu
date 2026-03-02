@@ -109,7 +109,7 @@ export default function StudentPollVotingPage() {
   }, [sessionId, pollId, state.type, router])
 
   // Real-time subscription -- called unconditionally (React rules of hooks)
-  const { pollStatus, voteCounts, bordaScores, allowVoteChange, showLiveResults } = useRealtimePoll(pollId)
+  const { pollStatus, voteCounts, totalVotes: realtimeTotalVotes, bordaScores, allowVoteChange, showLiveResults } = useRealtimePoll(pollId)
 
   // Reveal animation state
   const [showReveal, setShowReveal] = useState(false)
@@ -393,6 +393,9 @@ export default function StudentPollVotingPage() {
               poll={effectivePoll!}
               participantId={participantId}
               existingVotes={existingVotes}
+              voteCounts={voteCounts}
+              totalVotes={realtimeTotalVotes}
+              showLiveResults={showLiveResults}
             />
           )}
         </div>
