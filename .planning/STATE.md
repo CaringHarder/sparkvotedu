@@ -103,6 +103,7 @@ Recent from research:
 
 - Phase 31.1 inserted after Phase 31: Activity Card Layout Fix & Quick Settings Toggle (URGENT)
 - Phase 37 added: User Profile & Admin Access (profile page, password change, forced temp password reset, admin sidebar link)
+- Phase 38 added: Require Email Verification Before Login (enforce email verification link before dashboard access; Google OAuth bypass)
 
 ### Pending Todos
 
