@@ -72,9 +72,9 @@
 - [x] **Phase 32: Settings Editing** - Teachers can adjust display settings on brackets and polls after creation, even while live (completed 2026-03-01)
 - [x] **Phase 33: Bracket Quick Create** - Teachers can create a bracket in two clicks using curated topic chips and an entrant count picker (completed 2026-03-02)
 - [x] **Phase 34: Poll Quick Create & Image Polish** - Teachers can create polls with just a question and options, with image previews matching bracket style (completed 2026-03-02)
-- [ ] **Phase 35: Real-Time Vote Indicators** - Teachers see per-student green dot indicators as students vote, updating live across all activity types
+- [x] **Phase 35: Real-Time Vote Indicators** - Teachers see per-student green dot indicators as students vote, updating live across all activity types (completed 2026-03-02)
 - [x] **Phase 36: Bug Fixes** - Fix nine bugs: duplicate poll options, 2-option centering, duplicate name prompt, poll quick create session selector, show live results, fullscreen auto-close, poll realtime updates, bracket vote indicators, Go Live/Start flow (completed 2026-03-02)
-- [ ] **Phase 37: User Profile & Admin Access** - User profile page with name editing and password change, forced password reset on first login with temporary password, and streamlined admin panel access from sidebar
+- [x] **Phase 37: User Profile & Admin Access** - User profile page with name editing and password change, forced password reset on first login with temporary password, and streamlined admin panel access from sidebar (completed 2026-03-02)
 - [ ] **Phase 38: Require Email Verification Before Login** - Email signup requires clicking verification link before dashboard access; Google OAuth unaffected
 
 ## Phase Details
@@ -239,12 +239,12 @@ Plans:
   2. Teacher can change their password from the profile page (current password + new password + confirm)
   3. When an admin creates a teacher account via the admin panel with a temporary password, that teacher's first login forces them to set a new password before accessing the dashboard
   4. Admin users see an "Admin" link in the sidebar that navigates directly to /admin -- no manual URL typing required
-**Plans:** 2/3 plans executed
+**Plans:** 3/3 plans complete
 
 Plans:
-- [ ] 37-01-PLAN.md -- Backend foundation: Prisma migration (mustChangePassword), profile server actions, admin creation flag, proxy forced reset intercept
-- [ ] 37-02-PLAN.md -- Profile page UI (three card sections), sidebar Profile link, admin gear icon in header
-- [ ] 37-03-PLAN.md -- Forced password reset page (/set-password) with welcoming onboarding UX + human verification
+- [x] 37-01-PLAN.md -- Backend foundation: Prisma migration (mustChangePassword), profile server actions, admin creation flag, proxy forced reset intercept
+- [x] 37-02-PLAN.md -- Profile page UI (three card sections), sidebar Profile link, admin gear icon in header
+- [x] 37-03-PLAN.md -- Forced password reset page (/set-password) with welcoming onboarding UX + human verification
 
 ### Phase 38: Require Email Verification Before Login
 **Goal**: Email signup flow enforces verification before granting access -- teachers who sign up with email must click a verification link before they can log in; Google sign-in is unaffected (already verified by OAuth)
@@ -304,7 +304,7 @@ Note: Phases 33-36 are independent of the control feature chain (29-32) and can 
 | 32. Settings Editing | 5/5 | Complete    | 2026-03-01 | - |
 | 33. Bracket Quick Create | 1/2 | Complete    | 2026-03-02 | - |
 | 34. Poll Quick Create & Image Polish | 2/3 | Complete    | 2026-03-02 | - |
-| 35. Real-Time Vote Indicators | 3/4 | In Progress|  | - |
+| 35. Real-Time Vote Indicators | 4/4 | Complete    | 2026-03-02 | - |
 | 36. Bug Fixes | 5/5 | Complete    | 2026-03-02 | - |
-| 37. User Profile & Admin Access | 2/3 | In Progress|  | - |
+| 37. User Profile & Admin Access | 3/3 | Complete    | 2026-03-02 | - |
 | 38. Require Email Verification Before Login | 2/3 | In Progress|  | - |
