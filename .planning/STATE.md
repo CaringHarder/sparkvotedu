@@ -2,13 +2,13 @@
 gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: Teacher Power-Ups
-status: unknown
-last_updated: "2026-03-01T22:34:29.459Z"
+status: in-progress
+last_updated: "2026-03-02T00:43:09Z"
 progress:
   total_phases: 15
   completed_phases: 15
-  total_plans: 47
-  completed_plans: 47
+  total_plans: 48
+  completed_plans: 48
 ---
 
 # Project State
@@ -18,14 +18,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-02-28)
 
 **Core value:** Teachers can instantly engage any classroom through voting -- on any topic, in any format -- and see participation happen in real time.
-**Current focus:** v2.0 Teacher Power-Ups -- Phase 31.1: Activity Card Layout Fix & Quick Settings Toggle
+**Current focus:** v2.0 Teacher Power-Ups -- Phase 33: Bracket Quick Create
 
 ## Current Position
 
-Phase: 32 of 36 (Settings Editing) -- COMPLETE
-Plan: 5 of 5 complete
-Status: Phase Complete
-Last activity: 2026-03-01 -- Completed quick task 19: Reduce display settings vertical space on teacher live pages
+Phase: 33 of 36 (Bracket Quick Create) -- IN PROGRESS
+Plan: 1 of 2 complete
+Status: Executing Plan 33-01
+Last activity: 2026-03-02 -- Completed 33-01: Bracket Quick Create UI with tab toggle and instant creation
 
 Progress: [##░░░░░░░░] 17% (v2.0)
 
@@ -79,6 +79,9 @@ Recent from research:
 - 32-04: RR isSimpleMode purely from realtime viewingMode (no roundRobinVotingStyle fallback)
 - 32-04: effectiveBracket pattern: useMemo merging realtime showSeedNumbers/showVoteCounts into bracket prop
 - 32-05: effectivePoll pattern mirrors effectiveBracket from 32-04 for consistency across student views
+- 33-01: Step-by-Step is default tab (wizard shows first, matching user decision)
+- 33-01: Fisher-Yates shuffle called per-create for fresh random entrants each time
+- 33-01: SUBJECT_COLORS duplicated locally in bracket-quick-create for component independence
 
 ### Roadmap Evolution
 
@@ -126,9 +129,10 @@ None -- all v1.3 requirements shipped.
 | Phase 32 P03 | 2min | 2 tasks | 2 files |
 | Phase 32 P04 | 5min | 2 tasks | 3 files |
 | Phase 32 P05 | 1min | 1 tasks | 1 files |
+| Phase 33 P01 | 2min | 2 tasks | 3 files |
 
 ## Session Continuity
 
-Last session: 2026-03-01
-Stopped at: Completed Quick Task 19 (reduce display settings vertical space)
-Resume: `/gsd:execute-phase` to continue with Phase 33
+Last session: 2026-03-02
+Stopped at: Completed 33-01-PLAN.md (Bracket Quick Create UI)
+Resume: `/gsd:execute-plan` to continue with 33-02-PLAN.md
