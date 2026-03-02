@@ -6,7 +6,7 @@
 - ✅ **v1.1 Production Readiness & Deploy** -- Phases 14-18 (shipped 2026-02-21) | [Archive](milestones/v1.1-ROADMAP.md)
 - ✅ **v1.2 Classroom Hardening** -- Phases 19-24 (shipped 2026-02-24) | [Archive](milestones/v1.2-ROADMAP.md)
 - ✅ **v1.3 Bug Fixes & UX Parity** -- Phases 25-28 (shipped 2026-02-26) | [Archive](milestones/v1.3-ROADMAP.md)
-- 🚧 **v2.0 Teacher Power-Ups** -- Phases 29-36 (in progress)
+- 🚧 **v2.0 Teacher Power-Ups** -- Phases 29-37 (in progress)
 
 ## Phases
 
@@ -73,7 +73,8 @@
 - [x] **Phase 33: Bracket Quick Create** - Teachers can create a bracket in two clicks using curated topic chips and an entrant count picker (completed 2026-03-02)
 - [x] **Phase 34: Poll Quick Create & Image Polish** - Teachers can create polls with just a question and options, with image previews matching bracket style (completed 2026-03-02)
 - [ ] **Phase 35: Real-Time Vote Indicators** - Teachers see per-student green dot indicators as students vote, updating live across all activity types
-- [ ] **Phase 36: Bug Fixes** - Fix duplicate poll option retention, 2-option centering, and duplicate name flow clarity
+- [ ] **Phase 36: Bug Fixes** - Fix nine bugs: duplicate poll options, 2-option centering, duplicate name prompt, poll quick create session selector, show live results, fullscreen auto-close, poll realtime updates, bracket vote indicators, Go Live/Start flow
+- [ ] **Phase 37: User Profile & Admin Access** - User profile page with name editing and password change, forced password reset on first login with temporary password, and streamlined admin panel access from sidebar
 
 ## Phase Details
 
@@ -206,13 +207,19 @@ Plans:
 - [ ] 35-04-PLAN.md -- Human verification across all activity types
 
 ### Phase 36: Bug Fixes
-**Goal**: Fix three known bugs affecting poll duplication, poll layout, and the duplicate name enrollment flow
+**Goal**: Fix nine known bugs affecting poll duplication, poll layout, duplicate name flow, poll quick create parity, live results display, fullscreen mode, poll realtime updates, bracket vote indicators, and Go Live/Start flow
 **Depends on**: Nothing (independent fixes)
-**Requirements**: FIX-01, FIX-02, FIX-03
+**Requirements**: FIX-01, FIX-02, FIX-03, FIX-04, FIX-05, FIX-06, FIX-07, FIX-08, FIX-09
 **Success Criteria** (what must be TRUE):
   1. Teacher duplicates a poll, removes some options, saves -- the duplicated poll correctly shows only the remaining options (no ghost options from the original)
-  2. Student viewing a poll with exactly 2 options sees them centered on screen (no off-center layout)
-  3. When a student enters a name already taken in the session, the duplicate name prompt suggests adding a last initial (e.g., "Try David R.") with the input pre-filled
+  2. Student viewing a poll with exactly 2 options sees them as side-by-side larger cards, centered on screen (stacking vertically on mobile)
+  3. When a student enters a name already taken in the session, the duplicate name prompt says "Name taken. Add your last initial to join." with the original name kept in the input
+  4. Poll Quick Create includes an "Assign to session" dropdown matching the bracket Quick Create layout exactly
+  5. When "Show Live Results" is toggled ON for a poll, students see the same results display the teacher dashboard shows (vote counts + bars) in real time
+  6. Fullscreen mode on the teacher live dashboard stays open until Esc or F is pressed -- no auto-close
+  7. Poll teacher live dashboard updates in real time as students vote (no manual refresh needed)
+  8. Bracket vote indicators (blue/green dots) update correctly when students vote -- green dot + sort to bottom, matching poll behavior
+  9. Go Live button is hidden on bracket/poll detail pages until after Start is clicked; clicking Start activates and auto-navigates to the live dashboard
 **Plans**: TBD
 
 Plans:
@@ -221,7 +228,7 @@ Plans:
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 29 -> 30 -> 31 -> 31.1 -> 32 -> 33 -> 34 -> 35 -> 36
+Phases execute in numeric order: 29 -> 30 -> 31 -> 31.1 -> 32 -> 33 -> 34 -> 35 -> 36 -> 37
 Note: Phases 33-36 are independent of the control feature chain (29-32) and can be parallelized if convenient.
 
 | Phase | Milestone | Plans | Status | Completed |
@@ -262,3 +269,18 @@ Note: Phases 33-36 are independent of the control feature chain (29-32) and can 
 | 34. Poll Quick Create & Image Polish | 2/3 | Complete    | 2026-03-02 | - |
 | 35. Real-Time Vote Indicators | 3/4 | In Progress|  | - |
 | 36. Bug Fixes | v2.0 | 0/TBD | Not started | - |
+| 37. User Profile & Admin Access | v2.0 | 0/TBD | Not started | - |
+
+### Phase 37: User Profile & Admin Access
+**Goal**: Teachers can manage their account from a profile page (edit name, change password), admins can access the admin panel directly from the sidebar, and accounts created with temporary passwords force an immediate password change on first login
+**Depends on**: Nothing (independent account management features)
+**Requirements**: PROFILE-01, PROFILE-02, PROFILE-03, ADMIN-01
+**Success Criteria** (what must be TRUE):
+  1. Teacher clicks "Profile" in the sidebar (below Billing) and sees a profile page where they can edit their display name and save it
+  2. Teacher can change their password from the profile page (current password + new password + confirm)
+  3. When an admin creates a teacher account via the admin panel with a temporary password, that teacher's first login forces them to set a new password before accessing the dashboard
+  4. Admin users see an "Admin" link in the sidebar that navigates directly to /admin -- no manual URL typing required
+**Plans**: TBD
+
+Plans:
+- [ ] 37-01: TBD
