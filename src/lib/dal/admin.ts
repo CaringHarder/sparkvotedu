@@ -426,13 +426,14 @@ export async function createTeacherWithTempPassword(data: {
     throw new Error(authError?.message ?? 'Failed to create auth user')
   }
 
-  // Create Prisma Teacher record
+  // Create Prisma Teacher record (mustChangePassword forces password reset on first login)
   const teacher = await prisma.teacher.create({
     data: {
       supabaseAuthId: authData.user.id,
       email: data.email,
       name: data.name,
       subscriptionTier: data.tier,
+      mustChangePassword: true,
     },
   })
 

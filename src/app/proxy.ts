@@ -57,6 +57,28 @@ export async function proxy(request: NextRequest) {
   const claims = data?.claims ?? null
   const pathname = request.nextUrl.pathname
 
+  // Handle /set-password route (forced password reset for admin-created accounts)
+  if (pathname === '/set-password') {
+    if (!claims) {
+      const url = request.nextUrl.clone()
+      url.pathname = '/login'
+      return NextResponse.redirect(url)
+    }
+    // Authenticated user -- check if they actually need to set password
+    const teacher = await prisma.teacher.findUnique({
+      where: { supabaseAuthId: claims.sub },
+      select: { mustChangePassword: true },
+    })
+    if (!teacher?.mustChangePassword) {
+      // No forced reset needed -- send to dashboard
+      const url = request.nextUrl.clone()
+      url.pathname = '/dashboard'
+      return NextResponse.redirect(url)
+    }
+    // User needs to set password -- allow access to /set-password
+    return supabaseResponse
+  }
+
   // Redirect unauthenticated users to login (except auth and public pages)
   if ((error || !claims) && !isAuthPage(pathname) && !isPublicPage(pathname)) {
     const url = request.nextUrl.clone()
@@ -91,16 +113,23 @@ export async function proxy(request: NextRequest) {
     }
   }
 
-  // Dashboard route protection: block deactivated teachers (belt-and-suspenders)
+  // Dashboard route protection: block deactivated teachers + force password reset
   if (claims && pathname.startsWith('/dashboard')) {
     const teacher = await prisma.teacher.findUnique({
       where: { supabaseAuthId: claims.sub },
-      select: { deactivatedAt: true },
+      select: { deactivatedAt: true, mustChangePassword: true },
     })
 
     if (teacher?.deactivatedAt) {
       const url = request.nextUrl.clone()
       url.pathname = '/login'
+      return NextResponse.redirect(url)
+    }
+
+    // Force password reset for admin-created accounts with temporary password
+    if (teacher?.mustChangePassword) {
+      const url = request.nextUrl.clone()
+      url.pathname = '/set-password'
       return NextResponse.redirect(url)
     }
   }
