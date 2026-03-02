@@ -71,7 +71,7 @@
 - [x] **Phase 31.1: Activity Card Layout Fix & Quick Settings Toggle** - Fix card title truncation at mid-width viewports and add inline simple/advanced toggle (INSERTED) (completed 2026-03-01)
 - [x] **Phase 32: Settings Editing** - Teachers can adjust display settings on brackets and polls after creation, even while live (completed 2026-03-01)
 - [x] **Phase 33: Bracket Quick Create** - Teachers can create a bracket in two clicks using curated topic chips and an entrant count picker (completed 2026-03-02)
-- [ ] **Phase 34: Poll Quick Create & Image Polish** - Teachers can create polls with just a question and options, with image previews matching bracket style
+- [x] **Phase 34: Poll Quick Create & Image Polish** - Teachers can create polls with just a question and options, with image previews matching bracket style (completed 2026-03-02)
 - [ ] **Phase 35: Real-Time Vote Indicators** - Teachers see per-student green dot indicators as students vote, updating live across all activity types
 - [ ] **Phase 36: Bug Fixes** - Fix duplicate poll option retention, 2-option centering, and duplicate name flow clarity
 
@@ -182,7 +182,7 @@ Plans:
   1. Poll Quick Create shows only a question field and option inputs -- no settings toggles visible (allow vote change, show live results are hidden)
   2. Poll settings (allow vote change, show live results) are available only when the teacher uses Step-by-Step creation mode
   3. Poll option images preview in the same card/thumbnail style as bracket entrant images before creation (consistent visual language)
-**Plans:** 2/3 plans executed
+**Plans:** 3/3 plans complete
 
 Plans:
 - [ ] 34-01-PLAN.md -- Poll creation page restructure + PollForm Quick Create mode + template chip grid
@@ -256,6 +256,6 @@ Note: Phases 33-36 are independent of the control feature chain (29-32) and can 
 | 31.1 Activity Card Layout Fix & Quick Settings Toggle | 3/3 | Complete    | 2026-03-01 | - |
 | 32. Settings Editing | 5/5 | Complete    | 2026-03-01 | - |
 | 33. Bracket Quick Create | 1/2 | Complete    | 2026-03-02 | - |
-| 34. Poll Quick Create & Image Polish | 2/3 | In Progress|  | - |
+| 34. Poll Quick Create & Image Polish | 2/3 | Complete    | 2026-03-02 | - |
 | 35. Real-Time Vote Indicators | v2.0 | 0/TBD | Not started | - |
 | 36. Bug Fixes | v2.0 | 0/TBD | Not started | - |
