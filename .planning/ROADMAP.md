@@ -273,7 +273,7 @@ Note: Phases 33-36 are independent of the control feature chain (29-32) and can 
 | 33. Bracket Quick Create | 1/2 | Complete    | 2026-03-02 | - |
 | 34. Poll Quick Create & Image Polish | 2/3 | Complete    | 2026-03-02 | - |
 | 35. Real-Time Vote Indicators | 3/4 | In Progress|  | - |
-| 36. Bug Fixes | 5/5 | Complete   | 2026-03-02 | - |
+| 36. Bug Fixes | 5/5 | Complete    | 2026-03-02 | - |
 | 37. User Profile & Admin Access | v2.0 | 0/TBD | Not started | - |
 | 38. Require Email Verification Before Login | v2.0 | 0/3 | Not started | - |
 
