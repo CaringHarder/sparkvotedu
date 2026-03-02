@@ -169,7 +169,22 @@ export async function updatePollOptionsDAL(
     return null
   }
 
+  // Collect IDs of options that should remain
+  const optionIds = options.map((o) => o.id)
+
   return prisma.$transaction(async (tx) => {
+    // Delete options no longer in the provided list FIRST
+    // (before position updates to avoid @@unique([pollId, position]) violations)
+    if (optionIds.length > 0) {
+      await tx.pollOption.deleteMany({
+        where: {
+          pollId,
+          id: { notIn: optionIds },
+        },
+      })
+    }
+
+    // Update remaining options
     for (const option of options) {
       await tx.pollOption.updateMany({
         where: { id: option.id, pollId },
