@@ -18,14 +18,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-02-28)
 
 **Core value:** Teachers can instantly engage any classroom through voting -- on any topic, in any format -- and see participation happen in real time.
-**Current focus:** v2.0 Teacher Power-Ups -- Phase 33: Bracket Quick Create
+**Current focus:** v2.0 Teacher Power-Ups -- Phase 34: Poll Quick Create & Image Polish
 
 ## Current Position
 
-Phase: 33 of 36 (Bracket Quick Create) -- IN PROGRESS
-Plan: 1 of 2 complete
-Status: Executing Plan 33-01
-Last activity: 2026-03-02 -- Completed 33-01: Bracket Quick Create UI with tab toggle and instant creation
+Phase: 34 of 36 (Poll Quick Create & Image Polish) -- IN PROGRESS
+Plan: 2 of 3 complete
+Status: Executing Plan 34-02
+Last activity: 2026-03-02 -- Completed 34-02: Option image upload polish with draft pattern and layout reorder
 
 Progress: [##░░░░░░░░] 17% (v2.0)
 
@@ -82,6 +82,9 @@ Recent from research:
 - 33-01: Step-by-Step is default tab (wizard shows first, matching user decision)
 - 33-01: Fisher-Yates shuffle called per-create for fresh random entrants each time
 - 33-01: SUBJECT_COLORS duplicated locally in bracket-quick-create for component independence
+- 34-02: Draft fallback pattern mirrors EntrantImageUpload: pollId ?? 'draft' for creation mode
+- 34-02: Square aspect ratio enforced via aspectRatio={1} on ImageUploadModal
+- 34-02: Camera icon always visible when not disabled (no pollId gate)
 
 ### Roadmap Evolution
 
@@ -130,9 +133,10 @@ None -- all v1.3 requirements shipped.
 | Phase 32 P04 | 5min | 2 tasks | 3 files |
 | Phase 32 P05 | 1min | 1 tasks | 1 files |
 | Phase 33 P01 | 2min | 2 tasks | 3 files |
+| Phase 34 P02 | 2min | 2 tasks | 2 files |
 
 ## Session Continuity
 
-Last session: 2026-03-01
-Stopped at: Phase 34 context gathered
-Resume: `/gsd:plan-phase 34` to create plans
+Last session: 2026-03-02
+Stopped at: Completed 34-02: Option image upload polish
+Resume: `/gsd:execute-phase 34` to continue with plan 34-03
