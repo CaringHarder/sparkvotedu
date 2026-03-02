@@ -3,12 +3,12 @@ gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: Teacher Power-Ups
 status: in-progress
-last_updated: "2026-03-02T11:43:12Z"
+last_updated: "2026-03-02T12:16:33Z"
 progress:
   total_phases: 18
   completed_phases: 17
   total_plans: 55
-  completed_plans: 54
+  completed_plans: 55
 ---
 
 # Project State
@@ -18,14 +18,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-02-28)
 
 **Core value:** Teachers can instantly engage any classroom through voting -- on any topic, in any format -- and see participation happen in real time.
-**Current focus:** v2.0 Teacher Power-Ups -- Phase 37: User Profile & Admin Access
+**Current focus:** v2.0 Teacher Power-Ups -- Phase 38: Require Email Verification Before Login
 
 ## Current Position
 
-Phase: 37 of 38 (User Profile & Admin Access) -- IN PROGRESS
-Plan: 2 of 3 complete
-Status: Completed Plan 37-02
-Last activity: 2026-03-02 - Completed 37-02: Profile UI page, sidebar link, admin gear icon
+Phase: 38 of 38 (Require Email Verification Before Login) -- IN PROGRESS
+Plan: 1 of 3 complete
+Status: Completed Plan 38-01
+Last activity: 2026-03-02 - Completed 38-01: Server-side auth actions and routing for email verification
 
 Progress: [##░░░░░░░░] 17% (v2.0)
 
@@ -118,6 +118,9 @@ Recent from research:
 - 37-02: Dashboard layout made async for getAuthenticatedTeacher role check (standard Next.js App Router practice)
 - 37-02: AdminGearButton positioned before ThemeToggle in header for visual grouping near sign out
 - 37-02: Password form uses formRef.reset() on success to clear sensitive fields
+- 38-01: Explicit SignUpState/SignInState return types prevent TypeScript narrowing issues with useActionState consumers
+- 38-01: Case-insensitive email_not_confirmed check handles potential Supabase message variations
+- 38-01: All code exchange failures redirect to /verify-email?expired=true (safe default for expired/invalid links)
 
 ### Roadmap Evolution
 
@@ -181,8 +184,8 @@ None -- all v1.3 requirements shipped.
 ## Session Continuity
 
 Last session: 2026-03-02
-Stopped at: Completed 37-02: Profile UI page, sidebar link, admin gear icon
-Resume: Continue with 37-03 (set-password forced reset UI)
+Stopped at: Completed 38-01: Server-side auth actions and routing for email verification
+Resume: Continue with 38-02 (verify-email page UI)
 | Phase 36 P01 | 3min | 2 tasks | 6 files |
 | Phase 36 P04 | 6min | 2 tasks | 3 files |
 | Phase 37 P01 | 2min | 2 tasks | 4 files |

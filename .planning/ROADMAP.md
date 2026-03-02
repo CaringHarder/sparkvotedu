@@ -255,7 +255,7 @@ Plans:
   2. Teacher who has not verified their email is blocked from accessing the dashboard -- they see a "check your email" screen instead
   3. Clicking the verification link in the email marks the account as verified and allows login/dashboard access
   4. Teachers who sign in via Google OAuth bypass email verification entirely (Google already confirms email ownership)
-**Plans:** 3 plans
+**Plans:** 1/3 plans executed
 
 Plans:
 - [ ] 38-01-PLAN.md -- Backend auth actions (signUp/signIn interception, resendVerification), proxy update, callback expired link handling
@@ -307,4 +307,4 @@ Note: Phases 33-36 are independent of the control feature chain (29-32) and can 
 | 35. Real-Time Vote Indicators | 3/4 | In Progress|  | - |
 | 36. Bug Fixes | 5/5 | Complete    | 2026-03-02 | - |
 | 37. User Profile & Admin Access | 2/3 | In Progress|  | - |
-| 38. Require Email Verification Before Login | v2.0 | 0/3 | Not started | - |
+| 38. Require Email Verification Before Login | 1/3 | In Progress|  | - |
