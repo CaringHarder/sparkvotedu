@@ -18,18 +18,20 @@ Simplify the poll Quick Create form by hiding settings (they belong in Step-by-S
 - Poll type toggle (Simple/Ranked) is HIDDEN in Quick Create — Quick Create always creates Simple polls
 - Ranked polls require Step-by-Step wizard
 - Settings section (Allow vote change, Show live results) is HIDDEN in Quick Create
-- Quick Create defaults: `allowVoteChange: true`, `showLiveResults: false` (matching current defaults)
+- Quick Create defaults: `allowVoteChange: false`, `showLiveResults: false`
 
 ### Template browsing
-- Keep existing category-based layout (category chips at top, template cards expand below)
-- Template browser stays ABOVE the Quick Create / Step-by-Step toggle (current position)
-- Selected template stays visually highlighted after selection (current behavior)
-- Template auto-fills into Quick Create mode when selected (current behavior)
-- Step-by-Step wizard keeps its own "From Template" button inside Options step (both access points remain)
+- Flat chip grid layout (like bracket topic chips) — all templates shown as chips, NOT category-based tabs
+- Template browser lives INSIDE Quick Create tab only (not above the mode toggle)
+- Selected template stays visually highlighted after selection
+- Template auto-fills question + options into the Quick Create form
+- Remove the "From Template" button from the Step-by-Step wizard — templates are a Quick Create feature only
 
 ### Image preview styling
 - Poll option images enforce square (1:1) aspect ratio crop, matching bracket entrant images
-- Exact thumbnail sizing and container style is Claude's discretion (standardize visual treatment between brackets and polls)
+- Image upload camera icon positioned on the LEFT — after position badge, before text input (matching bracket entrant row layout exactly)
+- Camera icon appears as a dashed-border square (same style as bracket entrants) visible immediately when an option is added — not hidden behind an "Add Image" text button
+- Layout order per option row: drag handle → position badge → camera icon → text input → remove button
 
 ### Image upload during creation
 - Enable image upload during poll creation (before pollId exists), matching bracket's "draft" pattern
@@ -38,8 +40,6 @@ Simplify the poll Quick Create form by hiding settings (they belong in Step-by-S
 - Upload endpoint implementation details are Claude's discretion
 
 ### Claude's Discretion
-- Image thumbnail sizing (standardize between bracket 32px and poll 48px as appropriate)
-- Image preview container style (thumbnail-only vs card-style)
 - Draft upload endpoint approach (matching bracket pattern or alternative)
 - Loading skeleton design
 - Error state handling
@@ -52,6 +52,7 @@ Simplify the poll Quick Create form by hiding settings (they belong in Step-by-S
 - Bracket entrants use `'draft'` as bracketId fallback for upload URL endpoint during creation — poll should follow same pattern
 - Bracket image cropping uses `aspectRatio={1}` in ImageUploadModal — poll should match
 - Current PollForm component also handles edit mode (existingPoll prop) — changes should preserve edit functionality
+- Reference screenshot: bracket entrant row shows [grip dots] [1] [camera icon] [name] — poll option rows should mirror this layout
 
 </specifics>
 
