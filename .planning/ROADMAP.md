@@ -73,7 +73,7 @@
 - [x] **Phase 33: Bracket Quick Create** - Teachers can create a bracket in two clicks using curated topic chips and an entrant count picker (completed 2026-03-02)
 - [x] **Phase 34: Poll Quick Create & Image Polish** - Teachers can create polls with just a question and options, with image previews matching bracket style (completed 2026-03-02)
 - [ ] **Phase 35: Real-Time Vote Indicators** - Teachers see per-student green dot indicators as students vote, updating live across all activity types
-- [ ] **Phase 36: Bug Fixes** - Fix nine bugs: duplicate poll options, 2-option centering, duplicate name prompt, poll quick create session selector, show live results, fullscreen auto-close, poll realtime updates, bracket vote indicators, Go Live/Start flow
+- [x] **Phase 36: Bug Fixes** - Fix nine bugs: duplicate poll options, 2-option centering, duplicate name prompt, poll quick create session selector, show live results, fullscreen auto-close, poll realtime updates, bracket vote indicators, Go Live/Start flow (completed 2026-03-02)
 - [ ] **Phase 37: User Profile & Admin Access** - User profile page with name editing and password change, forced password reset on first login with temporary password, and streamlined admin panel access from sidebar
 - [ ] **Phase 38: Require Email Verification Before Login** - Email signup requires clicking verification link before dashboard access; Google OAuth unaffected
 
@@ -221,7 +221,7 @@ Plans:
   7. Poll teacher live dashboard updates in real time as students vote (no manual refresh needed)
   8. Bracket vote indicators (blue/green dots) update correctly when students vote -- green dot + sort to bottom, matching poll behavior
   9. Go Live button is hidden on bracket/poll detail pages until after Start is clicked; clicking Start activates and auto-navigates to the live dashboard
-**Plans:** 4/5 plans executed
+**Plans:** 5/5 plans complete
 
 Plans:
 - [ ] 36-01-PLAN.md -- Fix ghost options on poll duplication + add session dropdown to Poll Quick Create
@@ -273,7 +273,7 @@ Note: Phases 33-36 are independent of the control feature chain (29-32) and can 
 | 33. Bracket Quick Create | 1/2 | Complete    | 2026-03-02 | - |
 | 34. Poll Quick Create & Image Polish | 2/3 | Complete    | 2026-03-02 | - |
 | 35. Real-Time Vote Indicators | 3/4 | In Progress|  | - |
-| 36. Bug Fixes | 4/5 | In Progress|  | - |
+| 36. Bug Fixes | 5/5 | Complete   | 2026-03-02 | - |
 | 37. User Profile & Admin Access | v2.0 | 0/TBD | Not started | - |
 | 38. Require Email Verification Before Login | v2.0 | 0/3 | Not started | - |
 

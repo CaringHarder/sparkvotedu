@@ -3,7 +3,7 @@ gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: Teacher Power-Ups
 status: unknown
-last_updated: "2026-03-02T11:06:36Z"
+last_updated: "2026-03-02T11:09:37Z"
 progress:
   total_phases: 17
   completed_phases: 17
@@ -109,6 +109,9 @@ Recent from research:
 - 36-02: CSS transition for student live results bars instead of framer-motion (lighter for student devices)
 - 36-02: OPTION_COLORS duplicated locally in simple-poll-vote.tsx for component independence
 - 36-02: is2Options layout pattern: flex-col/flex-row for 2 options, grid for 3+
+- 36-04: Fullscreen overlay decoupled from Fullscreen API; onExitRef pattern prevents re-render cycles
+- 36-04: Eliminated dual useRealtimePoll subscription; PollLiveClient owns single subscription, passes data to PollResults
+- 36-04: Parent F key handler only enters presentation; PresentationMode handles exit internally
 
 ### Roadmap Evolution
 
@@ -172,6 +175,7 @@ None -- all v1.3 requirements shipped.
 ## Session Continuity
 
 Last session: 2026-03-02
-Stopped at: Completed 36-01: FIX-01 ghost options + FIX-04 session dropdown
+Stopped at: Completed 36-04: FIX-06 fullscreen auto-close + FIX-07 poll realtime dashboard
 Resume: All phase 36 plans complete
 | Phase 36 P01 | 3min | 2 tasks | 6 files |
+| Phase 36 P04 | 6min | 2 tasks | 3 files |
