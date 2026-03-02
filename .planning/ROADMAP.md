@@ -70,7 +70,7 @@
 - [x] **Phase 31: Reopen Completed Activities** - Teachers can bring completed brackets and closed polls back to life for additional voting (completed 2026-03-01)
 - [x] **Phase 31.1: Activity Card Layout Fix & Quick Settings Toggle** - Fix card title truncation at mid-width viewports and add inline simple/advanced toggle (INSERTED) (completed 2026-03-01)
 - [x] **Phase 32: Settings Editing** - Teachers can adjust display settings on brackets and polls after creation, even while live (completed 2026-03-01)
-- [ ] **Phase 33: Bracket Quick Create** - Teachers can create a bracket in two clicks using curated topic chips and an entrant count picker
+- [x] **Phase 33: Bracket Quick Create** - Teachers can create a bracket in two clicks using curated topic chips and an entrant count picker (completed 2026-03-02)
 - [ ] **Phase 34: Poll Quick Create & Image Polish** - Teachers can create polls with just a question and options, with image previews matching bracket style
 - [ ] **Phase 35: Real-Time Vote Indicators** - Teachers see per-student green dot indicators as students vote, updating live across all activity types
 - [ ] **Phase 36: Bug Fixes** - Fix duplicate poll option retention, 2-option centering, and duplicate name flow clarity
@@ -168,7 +168,7 @@ Plans:
   1. Bracket creation page shows a Quick Create mode with topic list chips (matching the existing poll quick-create pattern)
   2. Teacher picks a topic chip and selects an entrant count (4/8/16), clicks create, and a bracket is created with SE type, simple display mode, no seeds as defaults -- no other fields required
   3. The created bracket appears in the teacher's bracket list assigned to the correct session, ready to activate
-**Plans:** 1/2 plans executed
+**Plans:** 2/2 plans complete
 
 Plans:
 - [ ] 33-01-PLAN.md -- Page restructure with tab toggle + BracketQuickCreate component (topic chips, count picker, session dropdown, instant create)
@@ -253,7 +253,7 @@ Note: Phases 33-36 are independent of the control feature chain (29-32) and can 
 | 31. Reopen Completed Activities | 2/2 | Complete    | 2026-03-01 | - |
 | 31.1 Activity Card Layout Fix & Quick Settings Toggle | 3/3 | Complete    | 2026-03-01 | - |
 | 32. Settings Editing | 5/5 | Complete    | 2026-03-01 | - |
-| 33. Bracket Quick Create | 1/2 | In Progress|  | - |
+| 33. Bracket Quick Create | 1/2 | Complete    | 2026-03-02 | - |
 | 34. Poll Quick Create & Image Polish | v2.0 | 0/TBD | Not started | - |
 | 35. Real-Time Vote Indicators | v2.0 | 0/TBD | Not started | - |
 | 36. Bug Fixes | v2.0 | 0/TBD | Not started | - |
