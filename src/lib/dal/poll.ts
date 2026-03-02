@@ -30,6 +30,7 @@ export async function createPollDAL(
     allowVoteChange?: boolean
     showLiveResults?: boolean
     rankingDepth?: number | null
+    sessionId?: string
   },
   options: { text: string; imageUrl?: string | null; position: number }[]
 ) {
@@ -44,6 +45,7 @@ export async function createPollDAL(
         rankingDepth: data.rankingDepth ?? null,
         status: 'draft',
         teacherId,
+        ...(data.sessionId ? { sessionId: data.sessionId } : {}),
       },
     })
 

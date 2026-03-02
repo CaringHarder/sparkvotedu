@@ -228,6 +228,7 @@ export const createPollSchema = z.object({
   allowVoteChange: z.boolean().optional(),
   showLiveResults: z.boolean().optional(),
   rankingDepth: z.number().int().positive().nullable().optional(),
+  sessionId: z.string().uuid().optional(),
 })
 
 export const pollOptionSchema = z.object({

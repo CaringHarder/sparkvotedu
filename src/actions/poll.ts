@@ -75,6 +75,17 @@ export async function createPoll(input: unknown) {
     return { error: optionCheck.reason }
   }
 
+  // Verify session ownership if sessionId provided
+  if (pollData.sessionId) {
+    const session = await prisma.classSession.findFirst({
+      where: { id: pollData.sessionId, teacherId: teacher.id },
+      select: { id: true },
+    })
+    if (!session) {
+      return { error: 'Session not found or not owned by you' }
+    }
+  }
+
   try {
     const result = await createPollDAL(teacher.id, pollData, options)
     revalidatePath('/activities')

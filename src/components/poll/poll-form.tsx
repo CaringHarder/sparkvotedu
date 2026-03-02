@@ -37,9 +37,11 @@ interface PollFormProps {
     rankingDepth: number | null
     options: { id: string; text: string; imageUrl: string | null; position: number }[]
   } | null
+  /** Active sessions for session dropdown (Quick Create only) */
+  sessions?: { id: string; code: string; name: string | null; createdAt: string }[]
 }
 
-export function PollForm({ mode = 'edit', existingPoll }: PollFormProps) {
+export function PollForm({ mode = 'edit', existingPoll, sessions = [] }: PollFormProps) {
   const router = useRouter()
   const isEditing = !!existingPoll
   const isQuickCreate = mode === 'quick'
@@ -79,6 +81,9 @@ export function PollForm({ mode = 'edit', existingPoll }: PollFormProps) {
   const [rankingDepth, setRankingDepth] = useState<number | null>(
     existingPoll?.rankingDepth ?? null
   )
+
+  // Session selection (Quick Create only)
+  const [selectedSessionId, setSelectedSessionId] = useState<string | null>(null)
 
   // Submit state
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -164,6 +169,7 @@ export function PollForm({ mode = 'edit', existingPoll }: PollFormProps) {
             allowVoteChange,
             showLiveResults,
             rankingDepth: pollType === 'ranked' ? rankingDepth : null,
+            ...(selectedSessionId ? { sessionId: selectedSessionId } : {}),
           },
           options: validOptions,
         })
@@ -191,6 +197,7 @@ export function PollForm({ mode = 'edit', existingPoll }: PollFormProps) {
     allowVoteChange,
     showLiveResults,
     rankingDepth,
+    selectedSessionId,
     isEditing,
     existingPoll,
     router,
@@ -260,6 +267,27 @@ export function PollForm({ mode = 'edit', existingPoll }: PollFormProps) {
             maxLength={1000}
           />
         </div>
+
+        {/* Session dropdown (Quick Create only) */}
+        {isQuickCreate && (
+          <div className="space-y-2">
+            <h2 className="text-sm font-medium text-muted-foreground">
+              Assign to session (optional)
+            </h2>
+            <select
+              value={selectedSessionId ?? ''}
+              onChange={(e) => setSelectedSessionId(e.target.value || null)}
+              className="w-full rounded-md border bg-background px-2 py-1.5 text-sm"
+            >
+              <option value="">No session (assign later)</option>
+              {sessions.map((s) => (
+                <option key={s.id} value={s.id}>
+                  {s.name ? `${s.name} (${s.code})` : `Unnamed Session (${s.code})`}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
 
         {/* Poll Type Toggle -- hidden in Quick Create */}
         {!isQuickCreate && (
