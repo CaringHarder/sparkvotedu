@@ -19,7 +19,7 @@ interface OptionListProps {
   maxOptions?: number
   minOptions?: number
   disabled?: boolean
-  /** When provided, enables image upload for each option (requires existing poll for signed URL) */
+  /** Poll ID for image upload URL scoping (null/undefined during creation uses 'draft' fallback) */
   pollId?: string
 }
 
@@ -162,6 +162,16 @@ export function OptionList({
               {index + 1}
             </span>
 
+            {/* Camera icon / image upload (always visible when not disabled) */}
+            {!disabled && (
+              <OptionImageUpload
+                pollId={pollId}
+                existingImageUrl={option.imageUrl ?? null}
+                onImageUrl={(url) => updateOptionImage(option.id, url)}
+                onRemove={() => removeOptionImage(option.id)}
+              />
+            )}
+
             {/* Option text input */}
             <Input
               value={option.text}
@@ -171,16 +181,6 @@ export function OptionList({
               maxLength={200}
               disabled={disabled}
             />
-
-            {/* Image upload (only in edit mode when pollId exists) */}
-            {pollId && !disabled && (
-              <OptionImageUpload
-                pollId={pollId}
-                existingImageUrl={option.imageUrl ?? null}
-                onImageUrl={(url) => updateOptionImage(option.id, url)}
-                onRemove={() => removeOptionImage(option.id)}
-              />
-            )}
 
             {/* Remove button */}
             {!disabled && (
