@@ -11,12 +11,11 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { OptionList } from '@/components/poll/option-list'
 import type { OptionItem } from '@/components/poll/option-list'
 import { createPoll, updatePoll, updatePollOptions } from '@/actions/poll'
-import type { PollTemplate } from '@/lib/poll/templates'
 import type { PollType } from '@/lib/poll/types'
 
 interface PollFormProps {
-  /** Pre-fill from template */
-  template?: PollTemplate | null
+  /** Creation mode: 'quick' hides poll type/settings/ranking depth */
+  mode?: 'quick' | 'edit'
   /** Existing poll data for edit mode */
   existingPoll?: {
     id: string
@@ -30,17 +29,18 @@ interface PollFormProps {
   } | null
 }
 
-export function PollForm({ template, existingPoll }: PollFormProps) {
+export function PollForm({ mode = 'edit', existingPoll }: PollFormProps) {
   const router = useRouter()
   const isEditing = !!existingPoll
+  const isQuickCreate = mode === 'quick'
 
   // Form state
   const [question, setQuestion] = useState(
-    existingPoll?.question ?? template?.question ?? ''
+    existingPoll?.question ?? ''
   )
   const [description, setDescription] = useState(existingPoll?.description ?? '')
   const [pollType, setPollType] = useState<PollType>(
-    (existingPoll?.pollType as PollType) ?? template?.pollType ?? 'simple'
+    isQuickCreate ? 'simple' : (existingPoll?.pollType as PollType) ?? 'simple'
   )
   const [options, setOptions] = useState<OptionItem[]>(() => {
     if (existingPoll) {
@@ -50,9 +50,6 @@ export function PollForm({ template, existingPoll }: PollFormProps) {
         imageUrl: o.imageUrl ?? undefined,
       }))
     }
-    if (template) {
-      return template.options.map((text) => ({ id: nanoid(), text }))
-    }
     return [
       { id: nanoid(), text: '' },
       { id: nanoid(), text: '' },
@@ -61,10 +58,10 @@ export function PollForm({ template, existingPoll }: PollFormProps) {
 
   // Settings
   const [allowVoteChange, setAllowVoteChange] = useState(
-    existingPoll?.allowVoteChange ?? true
+    isQuickCreate ? false : (existingPoll?.allowVoteChange ?? true)
   )
   const [showLiveResults, setShowLiveResults] = useState(
-    existingPoll?.showLiveResults ?? false
+    isQuickCreate ? false : (existingPoll?.showLiveResults ?? false)
   )
   const [rankingDepth, setRankingDepth] = useState<number | null>(
     existingPoll?.rankingDepth ?? null
@@ -212,39 +209,41 @@ export function PollForm({ template, existingPoll }: PollFormProps) {
           />
         </div>
 
-        {/* Poll Type Toggle */}
-        <div className="space-y-2">
-          <Label>Poll Type</Label>
-          <div className="flex gap-1 rounded-lg bg-muted p-1">
-            <button
-              type="button"
-              onClick={() => setPollType('simple')}
-              className={`flex flex-1 items-center justify-center gap-1.5 rounded-md px-3 py-2 text-sm font-medium transition-colors ${
-                pollType === 'simple'
-                  ? 'bg-background text-foreground shadow-sm'
-                  : 'text-muted-foreground hover:text-foreground'
-              }`}
-            >
-              <BarChart3 className="h-4 w-4" />
-              Simple
-            </button>
-            <button
-              type="button"
-              onClick={() => setPollType('ranked')}
-              className={`flex flex-1 items-center justify-center gap-1.5 rounded-md px-3 py-2 text-sm font-medium transition-colors ${
-                pollType === 'ranked'
-                  ? 'bg-background text-foreground shadow-sm'
-                  : 'text-muted-foreground hover:text-foreground'
-              }`}
-            >
-              <ListOrdered className="h-4 w-4" />
-              Ranked
-            </button>
+        {/* Poll Type Toggle -- hidden in Quick Create */}
+        {!isQuickCreate && (
+          <div className="space-y-2">
+            <Label>Poll Type</Label>
+            <div className="flex gap-1 rounded-lg bg-muted p-1">
+              <button
+                type="button"
+                onClick={() => setPollType('simple')}
+                className={`flex flex-1 items-center justify-center gap-1.5 rounded-md px-3 py-2 text-sm font-medium transition-colors ${
+                  pollType === 'simple'
+                    ? 'bg-background text-foreground shadow-sm'
+                    : 'text-muted-foreground hover:text-foreground'
+                }`}
+              >
+                <BarChart3 className="h-4 w-4" />
+                Simple
+              </button>
+              <button
+                type="button"
+                onClick={() => setPollType('ranked')}
+                className={`flex flex-1 items-center justify-center gap-1.5 rounded-md px-3 py-2 text-sm font-medium transition-colors ${
+                  pollType === 'ranked'
+                    ? 'bg-background text-foreground shadow-sm'
+                    : 'text-muted-foreground hover:text-foreground'
+                }`}
+              >
+                <ListOrdered className="h-4 w-4" />
+                Ranked
+              </button>
+            </div>
           </div>
-        </div>
+        )}
 
-        {/* Ranking depth (for ranked polls) */}
-        {pollType === 'ranked' && (
+        {/* Ranking depth (for ranked polls) -- hidden in Quick Create */}
+        {!isQuickCreate && pollType === 'ranked' && (
           <div className="space-y-2">
             <Label htmlFor="ranking-depth">Ranking Depth</Label>
             <select
@@ -271,30 +270,32 @@ export function PollForm({ template, existingPoll }: PollFormProps) {
           <OptionList options={options} onChange={setOptions} pollId={existingPoll?.id} />
         </div>
 
-        {/* Settings */}
-        <div className="space-y-3 rounded-lg border p-3">
-          <h4 className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-            Settings
-          </h4>
-          <label className="flex items-center justify-between gap-3">
-            <span className="text-sm">Allow students to change their vote</span>
-            <input
-              type="checkbox"
-              checked={allowVoteChange}
-              onChange={(e) => setAllowVoteChange(e.target.checked)}
-              className="h-4 w-4 rounded border-input"
-            />
-          </label>
-          <label className="flex items-center justify-between gap-3">
-            <span className="text-sm">Show live results to students</span>
-            <input
-              type="checkbox"
-              checked={showLiveResults}
-              onChange={(e) => setShowLiveResults(e.target.checked)}
-              className="h-4 w-4 rounded border-input"
-            />
-          </label>
-        </div>
+        {/* Settings -- hidden in Quick Create */}
+        {!isQuickCreate && (
+          <div className="space-y-3 rounded-lg border p-3">
+            <h4 className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+              Settings
+            </h4>
+            <label className="flex items-center justify-between gap-3">
+              <span className="text-sm">Allow students to change their vote</span>
+              <input
+                type="checkbox"
+                checked={allowVoteChange}
+                onChange={(e) => setAllowVoteChange(e.target.checked)}
+                className="h-4 w-4 rounded border-input"
+              />
+            </label>
+            <label className="flex items-center justify-between gap-3">
+              <span className="text-sm">Show live results to students</span>
+              <input
+                type="checkbox"
+                checked={showLiveResults}
+                onChange={(e) => setShowLiveResults(e.target.checked)}
+                className="h-4 w-4 rounded border-input"
+              />
+            </label>
+          </div>
+        )}
 
         {/* Error */}
         {error && (
