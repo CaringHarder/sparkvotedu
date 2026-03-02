@@ -3,7 +3,7 @@ gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: Teacher Power-Ups
 status: unknown
-last_updated: "2026-03-02T04:35:12Z"
+last_updated: "2026-03-02T11:06:36Z"
 progress:
   total_phases: 17
   completed_phases: 17
@@ -98,6 +98,10 @@ Recent from research:
 - [Phase 35]: hasActiveVotingContext prop defaults true for backward compat with poll live page
 - [Phase 35]: RR intersection: student must vote on ALL round matchups for green dot
 - [Phase 35]: Removed realtimeExcess heuristic -- replaced with accurate mergedVoterIds union
+- 36-01: Delete-first in updatePollOptionsDAL transaction to avoid @@unique constraint violations
+- 36-01: Guard deleteMany with optionIds.length > 0 to prevent accidental deletion of all options
+- 36-01: Session ownership verified in createPoll action before passing sessionId to DAL
+- 36-01: PollCreationPage wrapper mirrors BracketCreationPage pattern exactly
 - 36-05: Union (not intersection) for SE/DE voter IDs -- green dot if voted on ANY matchup in current round
 - 36-05: hasActiveVotingContext also checks for any voting matchups, not just selectedMatchupId
 - 36-03: Direct "Name taken" prompt replaces candidate list; returning student flow via secondary "Returning student? Tap here" link
@@ -168,5 +172,6 @@ None -- all v1.3 requirements shipped.
 ## Session Continuity
 
 Last session: 2026-03-02
-Stopped at: Completed 36-03: FIX-03 duplicate name prompt fix
-Resume: Continue phase 36 remaining plans
+Stopped at: Completed 36-01: FIX-01 ghost options + FIX-04 session dropdown
+Resume: All phase 36 plans complete
+| Phase 36 P01 | 3min | 2 tasks | 6 files |
