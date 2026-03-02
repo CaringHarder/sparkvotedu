@@ -25,7 +25,7 @@ See: .planning/PROJECT.md (updated 2026-02-28)
 Phase: 35 of 36 (Real-Time Vote Indicators) -- IN PROGRESS
 Plan: 3 of 4 complete
 Status: Executing Plan 35-04
-Last activity: 2026-03-02 -- Completed 35-03: Poll live dashboard ParticipationSidebar with real-time vote indicators
+Last activity: 2026-03-02 - Completed quick task 20: Replace viewing mode on/off switch with Simple/Advanced segmented control
 
 Progress: [##░░░░░░░░] 17% (v2.0)
 
