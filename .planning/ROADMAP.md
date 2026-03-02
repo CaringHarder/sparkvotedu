@@ -75,6 +75,7 @@
 - [ ] **Phase 35: Real-Time Vote Indicators** - Teachers see per-student green dot indicators as students vote, updating live across all activity types
 - [ ] **Phase 36: Bug Fixes** - Fix nine bugs: duplicate poll options, 2-option centering, duplicate name prompt, poll quick create session selector, show live results, fullscreen auto-close, poll realtime updates, bracket vote indicators, Go Live/Start flow
 - [ ] **Phase 37: User Profile & Admin Access** - User profile page with name editing and password change, forced password reset on first login with temporary password, and streamlined admin panel access from sidebar
+- [ ] **Phase 38: Require Email Verification Before Login** - Email signup requires clicking verification link before dashboard access; Google OAuth unaffected
 
 ## Phase Details
 
@@ -220,15 +221,19 @@ Plans:
   7. Poll teacher live dashboard updates in real time as students vote (no manual refresh needed)
   8. Bracket vote indicators (blue/green dots) update correctly when students vote -- green dot + sort to bottom, matching poll behavior
   9. Go Live button is hidden on bracket/poll detail pages until after Start is clicked; clicking Start activates and auto-navigates to the live dashboard
-**Plans**: TBD
+**Plans:** 5 plans
 
 Plans:
-- [ ] 36-01: TBD
+- [ ] 36-01-PLAN.md -- Fix ghost options on poll duplication + add session dropdown to Poll Quick Create
+- [ ] 36-02-PLAN.md -- Fix 2-option poll centering + student live results display
+- [ ] 36-03-PLAN.md -- Fix duplicate name prompt to direct "Name taken" message
+- [ ] 36-04-PLAN.md -- Fix fullscreen auto-close + poll teacher dashboard realtime updates
+- [ ] 36-05-PLAN.md -- Fix bracket vote indicators for SE/DE + Go Live/Start flow
 
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 29 -> 30 -> 31 -> 31.1 -> 32 -> 33 -> 34 -> 35 -> 36 -> 37
+Phases execute in numeric order: 29 -> 30 -> 31 -> 31.1 -> 32 -> 33 -> 34 -> 35 -> 36 -> 37 -> 38
 Note: Phases 33-36 are independent of the control feature chain (29-32) and can be parallelized if convenient.
 
 | Phase | Milestone | Plans | Status | Completed |
@@ -268,8 +273,9 @@ Note: Phases 33-36 are independent of the control feature chain (29-32) and can 
 | 33. Bracket Quick Create | 1/2 | Complete    | 2026-03-02 | - |
 | 34. Poll Quick Create & Image Polish | 2/3 | Complete    | 2026-03-02 | - |
 | 35. Real-Time Vote Indicators | 3/4 | In Progress|  | - |
-| 36. Bug Fixes | v2.0 | 0/TBD | Not started | - |
+| 36. Bug Fixes | v2.0 | 0/5 | Not started | - |
 | 37. User Profile & Admin Access | v2.0 | 0/TBD | Not started | - |
+| 38. Require Email Verification Before Login | v2.0 | 0/TBD | Not started | - |
 
 ### Phase 37: User Profile & Admin Access
 **Goal**: Teachers can manage their account from a profile page (edit name, change password), admins can access the admin panel directly from the sidebar, and accounts created with temporary passwords force an immediate password change on first login
@@ -284,3 +290,17 @@ Note: Phases 33-36 are independent of the control feature chain (29-32) and can 
 
 Plans:
 - [ ] 37-01: TBD
+
+### Phase 38: Require Email Verification Before Login
+**Goal**: Email signup flow enforces verification before granting access -- teachers who sign up with email must click a verification link before they can log in; Google sign-in is unaffected (already verified by OAuth)
+**Depends on**: Nothing (independent auth enforcement)
+**Requirements**: AUTH-01
+**Success Criteria** (what must be TRUE):
+  1. Teacher signs up with email and receives a verification email with a working confirmation link
+  2. Teacher who has not verified their email is blocked from accessing the dashboard -- they see a "check your email" screen instead
+  3. Clicking the verification link in the email marks the account as verified and allows login/dashboard access
+  4. Teachers who sign in via Google OAuth bypass email verification entirely (Google already confirms email ownership)
+**Plans**: TBD
+
+Plans:
+- [ ] 38-01: TBD
