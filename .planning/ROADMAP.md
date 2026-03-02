@@ -275,7 +275,7 @@ Note: Phases 33-36 are independent of the control feature chain (29-32) and can 
 | 35. Real-Time Vote Indicators | 3/4 | In Progress|  | - |
 | 36. Bug Fixes | v2.0 | 0/5 | Not started | - |
 | 37. User Profile & Admin Access | v2.0 | 0/TBD | Not started | - |
-| 38. Require Email Verification Before Login | v2.0 | 0/TBD | Not started | - |
+| 38. Require Email Verification Before Login | v2.0 | 0/3 | Not started | - |
 
 ### Phase 37: User Profile & Admin Access
 **Goal**: Teachers can manage their account from a profile page (edit name, change password), admins can access the admin panel directly from the sidebar, and accounts created with temporary passwords force an immediate password change on first login
@@ -300,7 +300,9 @@ Plans:
   2. Teacher who has not verified their email is blocked from accessing the dashboard -- they see a "check your email" screen instead
   3. Clicking the verification link in the email marks the account as verified and allows login/dashboard access
   4. Teachers who sign in via Google OAuth bypass email verification entirely (Google already confirms email ownership)
-**Plans**: TBD
+**Plans:** 3 plans
 
 Plans:
-- [ ] 38-01: TBD
+- [ ] 38-01-PLAN.md -- Backend auth actions (signUp/signIn interception, resendVerification), proxy update, callback expired link handling
+- [ ] 38-02-PLAN.md -- Verify-email blocking page with resend/cooldown/Google/sign-out + signup/login form redirects
+- [ ] 38-03-PLAN.md -- Human verification of complete email verification flow
