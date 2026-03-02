@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useTransition, useMemo } from 'react'
+import { useState, useEffect, useTransition, useMemo, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { ArrowLeft, Maximize, XCircle, RotateCcw, Eye, RefreshCw } from 'lucide-react'
@@ -74,6 +74,9 @@ export function PollLiveClient({
   const [allowVoteChange, setAllowVoteChange] = useState(poll.allowVoteChange)
   const [isUpdatingSettings, setIsUpdatingSettings] = useState(false)
 
+  // Stable callback for exiting presentation mode
+  const onExitPresentation = useCallback(() => setPresenting(false), [])
+
   // Sidebar state
   const [sidebarOpen, setSidebarOpen] = useState(true)
 
@@ -145,9 +148,11 @@ export function PollLiveClient({
     })
   }
 
-  // Keyboard shortcut: F key toggles presentation mode
+  // Keyboard shortcut: F key enters presentation mode (only when not already presenting)
+  // When presenting, PresentationMode handles its own F/Esc key to exit.
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
+      if (presenting) return // PresentationMode handles exit keys internally
       if (
         e.key === 'f' &&
         !e.ctrlKey &&
@@ -157,13 +162,13 @@ export function PollLiveClient({
         !(e.target instanceof HTMLTextAreaElement)
       ) {
         e.preventDefault()
-        setPresenting((p) => !p)
+        setPresenting(true)
       }
     }
 
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [])
+  }, [presenting])
 
   function handleStatusChange(newStatus: PollStatus) {
     setError(null)
@@ -191,7 +196,7 @@ export function PollLiveClient({
       onRevealDismissed={() => setForceReveal(false)}
       presenting={presenting}
       pollTitle={poll.question}
-      onExitPresentation={() => setPresenting(false)}
+      onExitPresentation={onExitPresentation}
     />
   )
 

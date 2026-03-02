@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import { BarChart3, PieChart } from 'lucide-react'
 import { useRealtimePoll } from '@/hooks/use-realtime-poll'
 import { AnimatedBarChart } from '@/components/poll/bar-chart'
@@ -105,6 +105,11 @@ export function PollResults({
     const opt = poll.options.find((o) => o.id === winnerId)
     return opt?.text ?? 'No votes'
   })()
+
+  // Stable callback for exiting presentation mode
+  const handleExitPresentation = useCallback(() => {
+    onExitPresentation?.()
+  }, [onExitPresentation])
 
   // Participation rate
   const participationPct =
@@ -235,7 +240,7 @@ export function PollResults({
       {presenting && (
         <PresentationMode
           title={pollTitle ?? ''}
-          onExit={() => onExitPresentation?.()}
+          onExit={handleExitPresentation}
         >
           {poll.pollType === 'ranked' ? (
             <PresentationResults
