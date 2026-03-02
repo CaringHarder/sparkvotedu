@@ -7,6 +7,7 @@ import { getSessionParticipant } from '@/lib/student/session-store'
 import { SimplePollVote } from '@/components/student/simple-poll-vote'
 import { RankedPollVote } from '@/components/student/ranked-poll-vote'
 import { useRealtimePoll } from '@/hooks/use-realtime-poll'
+import { useSessionPresence } from '@/hooks/use-student-session'
 import { createClient } from '@/lib/supabase/client'
 import { PollReveal } from '@/components/poll/poll-reveal'
 import { WinnerReveal } from '@/components/bracket/winner-reveal'
@@ -68,6 +69,10 @@ export default function StudentPollVotingPage() {
   const [state, setState] = useState<PageState>({ type: 'loading' })
   const [showDeletionToast, setShowDeletionToast] = useState(false)
   const router = useRouter()
+
+  // Track student presence on the session channel so teacher sees green/blue dots
+  const storedParticipant = getSessionParticipant(sessionId)
+  useSessionPresence(sessionId, storedParticipant?.funName ?? '')
 
   // Redirect to session dashboard when poll is not found
   useEffect(() => {

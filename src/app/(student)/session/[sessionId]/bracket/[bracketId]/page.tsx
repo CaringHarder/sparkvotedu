@@ -20,6 +20,7 @@ import { WinnerReveal } from '@/components/bracket/winner-reveal'
 import { CelebrationScreen } from '@/components/bracket/celebration-screen'
 import { PausedOverlay } from '@/components/student/paused-overlay'
 import { useRealtimeBracket } from '@/hooks/use-realtime-bracket'
+import { useSessionPresence } from '@/hooks/use-student-session'
 import { castVote } from '@/actions/vote'
 import { calculateRoundRobinStandings } from '@/lib/bracket/round-robin'
 import type { RoundRobinResult } from '@/lib/bracket/round-robin'
@@ -104,6 +105,10 @@ export default function StudentBracketVotingPage() {
   const [state, setState] = useState<PageState>({ type: 'loading' })
   const [showDeletionToast, setShowDeletionToast] = useState(false)
   const router = useRouter()
+
+  // Track student presence on the session channel so teacher sees green/blue dots
+  const storedParticipant = getSessionParticipant(sessionId)
+  useSessionPresence(sessionId, storedParticipant?.funName ?? '')
 
   // Redirect to session dashboard when bracket is not found or wrong session
   useEffect(() => {
