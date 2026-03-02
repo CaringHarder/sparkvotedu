@@ -482,7 +482,7 @@ export async function castPollVote(input: unknown) {
     if (poll.pollType === 'simple') {
       const voteCounts = await getSimplePollVoteCounts(pollId)
       const totalVotes = Object.values(voteCounts).reduce((sum, c) => sum + c, 0)
-      broadcastPollVoteUpdate(pollId, voteCounts, totalVotes).catch(console.error)
+      broadcastPollVoteUpdate(pollId, voteCounts, totalVotes, participantId).catch(console.error)
     } else {
       // For ranked polls, broadcast Borda scores as vote counts
       const { votes, totalUniqueVoters } = await getRankedPollVotes(pollId)
@@ -495,7 +495,7 @@ export async function castPollVote(input: unknown) {
       for (const score of bordaScores) {
         scoreCounts[score.optionId] = score.points
       }
-      broadcastPollVoteUpdate(pollId, scoreCounts, totalUniqueVoters).catch(
+      broadcastPollVoteUpdate(pollId, scoreCounts, totalUniqueVoters, participantId).catch(
         console.error
       )
     }

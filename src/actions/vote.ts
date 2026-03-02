@@ -70,7 +70,7 @@ export async function castVote(input: unknown) {
     const totalVotes = Object.values(voteCounts).reduce((sum, c) => sum + c, 0)
 
     // Broadcast updated counts (non-blocking, errors logged not thrown)
-    broadcastVoteUpdate(matchup.bracketId, matchupId, voteCounts, totalVotes).catch(
+    broadcastVoteUpdate(matchup.bracketId, matchupId, voteCounts, totalVotes, participantId).catch(
       console.error
     )
 

@@ -67,12 +67,13 @@ export async function broadcastVoteUpdate(
   bracketId: string,
   matchupId: string,
   voteCounts: Record<string, number>,
-  totalVotes: number
+  totalVotes: number,
+  participantId?: string
 ): Promise<void> {
   await broadcastMessage({
     topic: `bracket:${bracketId}`,
     event: 'vote_update',
-    payload: { matchupId, voteCounts, totalVotes },
+    payload: { matchupId, voteCounts, totalVotes, ...(participantId ? { participantId } : {}) },
   })
 }
 
@@ -159,12 +160,13 @@ export async function broadcastParticipantJoined(
 export async function broadcastPollVoteUpdate(
   pollId: string,
   voteCounts: Record<string, number>,
-  totalVotes: number
+  totalVotes: number,
+  participantId?: string
 ): Promise<void> {
   await broadcastMessage({
     topic: `poll:${pollId}`,
     event: 'poll_vote_update',
-    payload: { voteCounts, totalVotes },
+    payload: { voteCounts, totalVotes, ...(participantId ? { participantId } : {}) },
   })
 }
 
