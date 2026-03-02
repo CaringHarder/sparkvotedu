@@ -162,10 +162,11 @@ None -- all v1.3 requirements shipped.
 | Phase 35 P03 | 3min | 2 tasks | 3 files |
 | Phase 35 P02 | 5min | 2 tasks | 3 files |
 | Phase 36 P02 | 2min | 1 tasks | 2 files |
+| Phase 36 P03 | 2min | 1 tasks | 2 files |
 | Phase 36 P05 | 2min | 2 tasks | 4 files |
 
 ## Session Continuity
 
 Last session: 2026-03-02
-Stopped at: Completed 36-05: FIX-08 bracket vote indicators + FIX-09 Go Live/Start flow
-Resume: Phase 36 plan 05 complete
+Stopped at: Completed 36-03: FIX-03 duplicate name prompt fix
+Resume: Continue phase 36 remaining plans
