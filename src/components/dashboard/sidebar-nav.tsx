@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { LayoutDashboard, Users, Archive, Zap, Trophy, BarChart3, CreditCard, LineChart } from 'lucide-react'
+import { LayoutDashboard, Users, Archive, Zap, Trophy, BarChart3, CreditCard, LineChart, User } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 
 interface NavItem {
@@ -43,6 +43,7 @@ const activitiesSection: NavSection = {
 const bottomNavItems: NavItem[] = [
   { label: 'Analytics', href: '/analytics', icon: LineChart },
   { label: 'Billing', href: '/billing', icon: CreditCard },
+  { label: 'Profile', href: '/profile', icon: User },
 ]
 
 export function SidebarNav() {

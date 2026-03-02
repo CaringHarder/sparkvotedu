@@ -1,15 +1,20 @@
 import Image from 'next/image'
+import { getAuthenticatedTeacher } from '@/lib/dal/auth'
 import { SignOutButton } from '@/components/auth/signout-button'
 import { SidebarNav } from '@/components/dashboard/sidebar-nav'
 import { MobileNav } from '@/components/dashboard/mobile-nav'
+import { AdminGearButton } from '@/components/dashboard/admin-gear-button'
 import { ThemeToggle } from '@/components/theme-toggle'
 import { UpgradeBanner } from '@/components/dashboard/upgrade-banner'
 
-export default function DashboardLayout({
+export default async function DashboardLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
+  const teacher = await getAuthenticatedTeacher()
+  const isAdmin = teacher?.role === 'admin'
+
   return (
     <div className="flex min-h-screen flex-col">
       {/* Branded header with logo, theme toggle, and sign out */}
@@ -33,8 +38,9 @@ export default function DashboardLayout({
           </span>
         </div>
 
-        {/* Desktop: theme toggle + sign out; hidden on mobile (available in drawer) */}
+        {/* Desktop: admin gear + theme toggle + sign out; hidden on mobile (available in drawer) */}
         <div className="hidden items-center gap-2 md:flex">
+          <AdminGearButton isAdmin={isAdmin} />
           <ThemeToggle />
           <SignOutButton />
         </div>
