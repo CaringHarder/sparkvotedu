@@ -100,6 +100,11 @@ Recent from research:
 - [Phase 35]: Removed realtimeExcess heuristic -- replaced with accurate mergedVoterIds union
 - 36-05: Union (not intersection) for SE/DE voter IDs -- green dot if voted on ANY matchup in current round
 - 36-05: hasActiveVotingContext also checks for any voting matchups, not just selectedMatchupId
+- 36-03: Direct "Name taken" prompt replaces candidate list; returning student flow via secondary "Returning student? Tap here" link
+- 36-03: Client-side exact-same-name blocking with case-insensitive check (no server round-trip needed)
+- 36-02: CSS transition for student live results bars instead of framer-motion (lighter for student devices)
+- 36-02: OPTION_COLORS duplicated locally in simple-poll-vote.tsx for component independence
+- 36-02: is2Options layout pattern: flex-col/flex-row for 2 options, grid for 3+
 
 ### Roadmap Evolution
 
@@ -156,6 +161,7 @@ None -- all v1.3 requirements shipped.
 | Phase 35 P01 | 2min | 2 tasks | 6 files |
 | Phase 35 P03 | 3min | 2 tasks | 3 files |
 | Phase 35 P02 | 5min | 2 tasks | 3 files |
+| Phase 36 P02 | 2min | 1 tasks | 2 files |
 | Phase 36 P05 | 2min | 2 tasks | 4 files |
 
 ## Session Continuity
