@@ -82,6 +82,9 @@ Recent from research:
 - 33-01: Step-by-Step is default tab (wizard shows first, matching user decision)
 - 33-01: Fisher-Yates shuffle called per-create for fresh random entrants each time
 - 33-01: SUBJECT_COLORS duplicated locally in bracket-quick-create for component independence
+- 34-01: CATEGORY_COLORS duplicated locally in poll-form.tsx for component independence (matching bracket-quick-create pattern)
+- 34-01: Quick Create hardcodes simple poll type, allowVoteChange=false, showLiveResults=false
+- 34-01: Template prop kept on PollWizard interface for backward compat
 - 34-02: Draft fallback pattern mirrors EntrantImageUpload: pollId ?? 'draft' for creation mode
 - 34-02: Square aspect ratio enforced via aspectRatio={1} on ImageUploadModal
 - 34-02: Camera icon always visible when not disabled (no pollId gate)
@@ -133,10 +136,11 @@ None -- all v1.3 requirements shipped.
 | Phase 32 P04 | 5min | 2 tasks | 3 files |
 | Phase 32 P05 | 1min | 1 tasks | 1 files |
 | Phase 33 P01 | 2min | 2 tasks | 3 files |
+| Phase 34 P01 | 3min | 2 tasks | 3 files |
 | Phase 34 P02 | 2min | 2 tasks | 2 files |
 
 ## Session Continuity
 
 Last session: 2026-03-02
-Stopped at: Completed 34-02: Option image upload polish
+Stopped at: Completed 34-01: Poll Quick Create simplification with template chip grid
 Resume: `/gsd:execute-phase 34` to continue with plan 34-03
