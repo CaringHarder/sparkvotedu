@@ -3,7 +3,7 @@ gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: Teacher Power-Ups
 status: in-progress
-last_updated: "2026-03-02T12:16:33Z"
+last_updated: "2026-03-02T12:20:45Z"
 progress:
   total_phases: 18
   completed_phases: 17
@@ -23,9 +23,9 @@ See: .planning/PROJECT.md (updated 2026-02-28)
 ## Current Position
 
 Phase: 38 of 38 (Require Email Verification Before Login) -- IN PROGRESS
-Plan: 1 of 3 complete
-Status: Completed Plan 38-01
-Last activity: 2026-03-02 - Completed 38-01: Server-side auth actions and routing for email verification
+Plan: 2 of 3 complete
+Status: Completed Plan 38-02
+Last activity: 2026-03-02 - Completed 38-02: Verify-email page UI and form redirects
 
 Progress: [##░░░░░░░░] 17% (v2.0)
 
@@ -121,6 +121,9 @@ Recent from research:
 - 38-01: Explicit SignUpState/SignInState return types prevent TypeScript narrowing issues with useActionState consumers
 - 38-01: Case-insensitive email_not_confirmed check handles potential Supabase message variations
 - 38-01: All code exchange failures redirect to /verify-email?expired=true (safe default for expired/invalid links)
+- 38-02: window.location.href redirect (not router.push) ensures clean navigation clearing form state
+- 38-02: Inline SVG icons for mail and Google (no external icon library dependency)
+- 38-02: signOut called directly from button onClick (server action invocation from client)
 
 ### Roadmap Evolution
 
@@ -184,9 +187,11 @@ None -- all v1.3 requirements shipped.
 ## Session Continuity
 
 Last session: 2026-03-02
-Stopped at: Completed 38-01: Server-side auth actions and routing for email verification
-Resume: Continue with 38-02 (verify-email page UI)
+Stopped at: Completed 38-02: Verify-email page UI and form redirects
+Resume: Continue with 38-03 (end-to-end testing/confirmation)
 | Phase 36 P01 | 3min | 2 tasks | 6 files |
 | Phase 36 P04 | 6min | 2 tasks | 3 files |
 | Phase 37 P01 | 2min | 2 tasks | 4 files |
 | Phase 37 P02 | 2min | 2 tasks | 7 files |
+| Phase 38 P01 | 2min | 2 tasks | 3 files |
+| Phase 38 P02 | 2min | 2 tasks | 4 files |
