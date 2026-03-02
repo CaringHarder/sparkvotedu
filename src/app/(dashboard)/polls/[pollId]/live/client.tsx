@@ -1,18 +1,21 @@
 'use client'
 
-import { useState, useEffect, useTransition } from 'react'
+import { useState, useEffect, useTransition, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { ArrowLeft, Maximize, XCircle, RotateCcw, Eye, RefreshCw } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { PollResults } from '@/components/poll/poll-results'
 import { QRCodeDisplay } from '@/components/teacher/qr-code-display'
+import { ParticipationSidebar } from '@/components/teacher/participation-sidebar'
 import { updatePoll, updatePollStatus, reopenPoll } from '@/actions/poll'
 import { PollMetadataBar } from '@/components/shared/activity-metadata-bar'
 import { QuickSettingsToggle } from '@/components/shared/quick-settings-toggle'
 import { DisplaySettingsSection } from '@/components/shared/display-settings-section'
 import { LockedSettingIndicator } from '@/components/shared/locked-setting-indicator'
 import { Switch } from '@/components/ui/switch'
+import { useRealtimePoll } from '@/hooks/use-realtime-poll'
+import { useSessionPresence } from '@/hooks/use-student-session'
 import type { PollWithOptions, PollStatus } from '@/lib/poll/types'
 
 function getPollTypeLabel(type: string): string {
@@ -31,6 +34,9 @@ interface PollLiveClientProps {
   sessionCode: string | null
   initialParticipantCount: number
   sessionName?: string | null
+  participants: Array<{ id: string; funName: string; firstName?: string; lastSeenAt: string }>
+  initialVoterIds: string[]
+  sessionId: string | null
 }
 
 /**
@@ -49,6 +55,9 @@ export function PollLiveClient({
   sessionCode,
   initialParticipantCount,
   sessionName,
+  participants,
+  initialVoterIds,
+  sessionId,
 }: PollLiveClientProps) {
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
@@ -64,6 +73,33 @@ export function PollLiveClient({
   const [showLiveResults, setShowLiveResults] = useState(poll.showLiveResults)
   const [allowVoteChange, setAllowVoteChange] = useState(poll.allowVoteChange)
   const [isUpdatingSettings, setIsUpdatingSettings] = useState(false)
+
+  // Sidebar state
+  const [sidebarOpen, setSidebarOpen] = useState(true)
+
+  // Session presence for connected status
+  const { connectedStudents } = useSessionPresence(sessionId ?? '__no_session__', '__teacher__')
+
+  // Derive connected participant IDs from presence data (matches bracket live-dashboard pattern)
+  const connectedIds = useMemo(() => {
+    const names = new Set(connectedStudents.map((s) => s.funName))
+    const ids = new Set<string>()
+    for (const p of participants) {
+      if (names.has(p.funName)) ids.add(p.id)
+    }
+    return ids
+  }, [connectedStudents, participants])
+
+  // Get realtime voterIds -- PollResults has its own useRealtimePoll for vote counts.
+  // Dual subscription is safe: Supabase deduplicates at the channel/transport level.
+  const { voterIds: realtimeVoterIds } = useRealtimePoll(poll.id, sessionId)
+
+  // Merge initial + realtime voter IDs
+  const mergedVoterIds = useMemo(() => {
+    const combined = new Set(initialVoterIds)
+    for (const pid of realtimeVoterIds) combined.add(pid)
+    return [...combined]
+  }, [initialVoterIds, realtimeVoterIds])
 
   async function handleShowLiveResultsChange(checked: boolean) {
     setIsUpdatingSettings(true)
@@ -160,134 +196,146 @@ export function PollLiveClient({
   )
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-wrap items-center gap-3">
-        <Link
-          href={`/polls/${poll.id}`}
-          className="inline-flex items-center gap-1 text-sm text-muted-foreground transition-colors hover:text-foreground"
-        >
-          <ArrowLeft className="h-3.5 w-3.5" />
-          Back
-        </Link>
+    <div className="flex gap-4">
+      <div className="flex-1 min-w-0 space-y-6">
+        {/* Header */}
+        <div className="flex flex-wrap items-center gap-3">
+          <Link
+            href={`/polls/${poll.id}`}
+            className="inline-flex items-center gap-1 text-sm text-muted-foreground transition-colors hover:text-foreground"
+          >
+            <ArrowLeft className="h-3.5 w-3.5" />
+            Back
+          </Link>
 
-        <h1 className="text-lg font-bold tracking-tight">{poll.question}</h1>
+          <h1 className="text-lg font-bold tracking-tight">{poll.question}</h1>
 
-        {/* Pause/Resume toggle -- only shown for active or paused polls */}
-        {(currentStatus === 'active' || currentStatus === 'paused') && (
-          <div className="flex items-center gap-2">
-            <Switch checked={!isPaused} onCheckedChange={handlePauseToggle} disabled={isPending} />
-            <span className="text-xs font-medium">{isPaused ? 'Paused' : 'Active'}</span>
+          {/* Pause/Resume toggle -- only shown for active or paused polls */}
+          {(currentStatus === 'active' || currentStatus === 'paused') && (
+            <div className="flex items-center gap-2">
+              <Switch checked={!isPaused} onCheckedChange={handlePauseToggle} disabled={isPending} />
+              <span className="text-xs font-medium">{isPaused ? 'Paused' : 'Active'}</span>
+            </div>
+          )}
+
+          <div className="flex-1" />
+
+          {/* QR Code chip */}
+          {sessionCode && <QRCodeDisplay code={sessionCode} />}
+        </div>
+
+        <DisplaySettingsSection disabled={currentStatus === 'closed' || currentStatus === 'archived'}>
+          <LockedSettingIndicator label="Type" value={getPollTypeLabel(poll.pollType)} />
+          {poll.pollType === 'ranked' && poll.rankingDepth && (
+            <LockedSettingIndicator
+              label="Ranking Depth"
+              value={`Top ${poll.rankingDepth}`}
+            />
+          )}
+
+          <QuickSettingsToggle
+            label="Show Live Results"
+            checked={showLiveResults}
+            onCheckedChange={handleShowLiveResultsChange}
+            disabled={isUpdatingSettings}
+            icon={<Eye className="h-4 w-4" />}
+          />
+          <QuickSettingsToggle
+            label="Allow Vote Change"
+            checked={allowVoteChange}
+            onCheckedChange={handleAllowVoteChangeChange}
+            disabled={isUpdatingSettings}
+            icon={<RefreshCw className="h-4 w-4" />}
+          />
+        </DisplaySettingsSection>
+
+        <PollMetadataBar
+          pollType={poll.pollType}
+          sessionName={sessionName}
+          optionCount={poll.options.length}
+          createdAt={typeof poll.createdAt === 'string' ? poll.createdAt : new Date(poll.createdAt).toISOString()}
+        />
+
+        {/* Amber banner when activity is paused */}
+        {isPaused && (
+          <div className="rounded-lg bg-amber-100 px-4 py-2 text-center text-sm font-medium text-amber-800 dark:bg-amber-900/30 dark:text-amber-300">
+            Activity Paused -- Students cannot vote
           </div>
         )}
 
-        <div className="flex-1" />
-
-        {/* QR Code chip */}
-        {sessionCode && <QRCodeDisplay code={sessionCode} />}
-      </div>
-
-      <DisplaySettingsSection disabled={currentStatus === 'closed' || currentStatus === 'archived'}>
-        <LockedSettingIndicator label="Type" value={getPollTypeLabel(poll.pollType)} />
-        {poll.pollType === 'ranked' && poll.rankingDepth && (
-          <LockedSettingIndicator
-            label="Ranking Depth"
-            value={`Top ${poll.rankingDepth}`}
-          />
+        {/* Error */}
+        {error && (
+          <div className="rounded-md border border-destructive bg-destructive/10 p-3 text-sm text-destructive">
+            {error}
+          </div>
         )}
 
-        <QuickSettingsToggle
-          label="Show Live Results"
-          checked={showLiveResults}
-          onCheckedChange={handleShowLiveResultsChange}
-          disabled={isUpdatingSettings}
-          icon={<Eye className="h-4 w-4" />}
-        />
-        <QuickSettingsToggle
-          label="Allow Vote Change"
-          checked={allowVoteChange}
-          onCheckedChange={handleAllowVoteChangeChange}
-          disabled={isUpdatingSettings}
-          icon={<RefreshCw className="h-4 w-4" />}
-        />
-      </DisplaySettingsSection>
+        {/* Results */}
+        {resultsContent}
 
-      <PollMetadataBar
-        pollType={poll.pollType}
-        sessionName={sessionName}
-        optionCount={poll.options.length}
-        createdAt={typeof poll.createdAt === 'string' ? poll.createdAt : new Date(poll.createdAt).toISOString()}
-      />
+        {/* Control bar */}
+        <div className="flex flex-wrap items-center gap-2 border-t pt-4">
+          {(currentStatus === 'active' || currentStatus === 'paused') && (
+            <Button
+              variant="destructive"
+              size="sm"
+              onClick={() => handleStatusChange('closed')}
+              disabled={isPending}
+              className="gap-1.5"
+            >
+              <XCircle className="h-4 w-4" />
+              {isPending ? 'Ending...' : 'End Poll'}
+            </Button>
+          )}
 
-      {/* Amber banner when activity is paused */}
-      {isPaused && (
-        <div className="rounded-lg bg-amber-100 px-4 py-2 text-center text-sm font-medium text-amber-800 dark:bg-amber-900/30 dark:text-amber-300">
-          Activity Paused -- Students cannot vote
-        </div>
-      )}
+          {currentStatus === 'closed' && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                startTransition(async () => {
+                  const result = await reopenPoll({ pollId: poll.id })
+                  if ('success' in result && result.success) {
+                    setCurrentStatus('paused')
+                    setIsPaused(true)
+                  }
+                })
+              }}
+              disabled={isPending}
+              className="gap-1.5"
+            >
+              <RotateCcw className="h-4 w-4" />
+              {isPending ? 'Reopening...' : 'Reopen'}
+            </Button>
+          )}
 
-      {/* Error */}
-      {error && (
-        <div className="rounded-md border border-destructive bg-destructive/10 p-3 text-sm text-destructive">
-          {error}
-        </div>
-      )}
+          <div className="flex-1" />
 
-      {/* Results */}
-      {resultsContent}
-
-      {/* Control bar */}
-      <div className="flex flex-wrap items-center gap-2 border-t pt-4">
-        {(currentStatus === 'active' || currentStatus === 'paused') && (
-          <Button
-            variant="destructive"
-            size="sm"
-            onClick={() => handleStatusChange('closed')}
-            disabled={isPending}
-            className="gap-1.5"
-          >
-            <XCircle className="h-4 w-4" />
-            {isPending ? 'Ending...' : 'End Poll'}
-          </Button>
-        )}
-
-        {currentStatus === 'closed' && (
           <Button
             variant="outline"
             size="sm"
-            onClick={() => {
-              startTransition(async () => {
-                const result = await reopenPoll({ pollId: poll.id })
-                if ('success' in result && result.success) {
-                  setCurrentStatus('paused')
-                  setIsPaused(true)
-                }
-              })
-            }}
-            disabled={isPending}
+            onClick={() => setPresenting(true)}
             className="gap-1.5"
           >
-            <RotateCcw className="h-4 w-4" />
-            {isPending ? 'Reopening...' : 'Reopen'}
+            <Maximize className="h-4 w-4" />
+            Present
+            <kbd className="ml-1 hidden rounded border bg-muted px-1 py-0.5 text-[10px] font-mono md:inline">
+              F
+            </kbd>
           </Button>
-        )}
-
-        <div className="flex-1" />
-
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => setPresenting(true)}
-          className="gap-1.5"
-        >
-          <Maximize className="h-4 w-4" />
-          Present
-          <kbd className="ml-1 hidden rounded border bg-muted px-1 py-0.5 text-[10px] font-mono md:inline">
-            F
-          </kbd>
-        </Button>
+        </div>
       </div>
 
+      {participants.length > 0 && (
+        <ParticipationSidebar
+          participants={participants}
+          connectedIds={connectedIds}
+          voterIds={mergedVoterIds}
+          selectedMatchupId={poll.id}
+          onToggle={() => setSidebarOpen(!sidebarOpen)}
+          isOpen={sidebarOpen}
+        />
+      )}
     </div>
   )
 }

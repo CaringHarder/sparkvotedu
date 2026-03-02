@@ -1,6 +1,6 @@
 import { redirect } from 'next/navigation'
 import { getAuthenticatedTeacher } from '@/lib/dal/auth'
-import { getPollByIdDAL, getSimplePollVoteCounts } from '@/lib/dal/poll'
+import { getPollByIdDAL, getSimplePollVoteCounts, getPollVoterParticipantIds } from '@/lib/dal/poll'
 import { prisma } from '@/lib/prisma'
 import type { PollStatus, PollWithOptions } from '@/lib/poll/types'
 import { PollLiveClient } from './client'
@@ -40,14 +40,31 @@ export default async function PollLivePage({
   let sessionCode: string | null = null
   let sessionName: string | null = null
   let participantCount = 0
+  let participants: Array<{ id: string; funName: string; firstName?: string; lastSeenAt: string }> = []
+  let initialVoterIds: string[] = []
   if (poll.sessionId) {
-    const session = await prisma.classSession.findUnique({
-      where: { id: poll.sessionId },
-      select: { code: true, name: true, _count: { select: { participants: true } } },
-    })
+    const [session, sessionParticipants, voterPids] = await Promise.all([
+      prisma.classSession.findUnique({
+        where: { id: poll.sessionId },
+        select: { code: true, name: true, _count: { select: { participants: true } } },
+      }),
+      prisma.studentParticipant.findMany({
+        where: { sessionId: poll.sessionId, banned: false },
+        select: { id: true, funName: true, firstName: true, lastSeenAt: true },
+        orderBy: { funName: 'asc' },
+      }),
+      getPollVoterParticipantIds(pollId),
+    ])
     sessionCode = session?.code ?? null
     sessionName = session?.name ?? null
     participantCount = session?._count.participants ?? 0
+    participants = sessionParticipants.map(p => ({
+      id: p.id,
+      funName: p.funName,
+      firstName: p.firstName ?? undefined,
+      lastSeenAt: p.lastSeenAt.toISOString(),
+    }))
+    initialVoterIds = voterPids
   }
 
   // Serialize for client component
@@ -81,6 +98,9 @@ export default async function PollLivePage({
       sessionCode={sessionCode}
       initialParticipantCount={participantCount}
       sessionName={sessionName}
+      participants={participants}
+      initialVoterIds={initialVoterIds}
+      sessionId={poll.sessionId}
     />
   )
 }
