@@ -9,7 +9,6 @@ import {
   ChevronLeft,
   ChevronRight,
   Loader2,
-  Sparkles,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -18,11 +17,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { OptionList } from '@/components/poll/option-list'
 import type { OptionItem } from '@/components/poll/option-list'
 import { createPoll } from '@/actions/poll'
-import {
-  POLL_TEMPLATES,
-  POLL_TEMPLATE_CATEGORIES,
-  type PollTemplate,
-} from '@/lib/poll/templates'
+import type { PollTemplate } from '@/lib/poll/templates'
 import type { PollType } from '@/lib/poll/types'
 
 interface PollWizardProps {
@@ -54,10 +49,6 @@ export function PollWizard({ template }: PollWizardProps) {
       { id: nanoid(), text: '' },
     ]
   })
-  const [showTemplatePicker, setShowTemplatePicker] = useState(false)
-  const [templateCategory, setTemplateCategory] = useState<string>(
-    POLL_TEMPLATE_CATEGORIES[0]
-  )
 
   // Step 3: Settings
   const [allowVoteChange, setAllowVoteChange] = useState(true)
@@ -72,14 +63,6 @@ export function PollWizard({ template }: PollWizardProps) {
   const canProceedStep1 = question.trim().length >= 1
   const validOptionCount = options.filter((o) => o.text.trim().length > 0).length
   const canProceedStep2 = validOptionCount >= 2
-
-  // Template picker
-  const applyTemplate = useCallback((t: PollTemplate) => {
-    setQuestion(t.question)
-    setPollType(t.pollType)
-    setOptions(t.options.map((text) => ({ id: nanoid(), text })))
-    setShowTemplatePicker(false)
-  }, [])
 
   // Submit
   const handleSubmit = useCallback(async () => {
@@ -252,17 +235,6 @@ export function PollWizard({ template }: PollWizardProps) {
             </p>
           </CardHeader>
           <CardContent className="space-y-4">
-            {/* Template picker trigger */}
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={() => setShowTemplatePicker(true)}
-            >
-              <Sparkles className="mr-1.5 h-4 w-4" />
-              From Template
-            </Button>
-
             {/* Option list */}
             <OptionList options={options} onChange={setOptions} />
 
@@ -454,66 +426,6 @@ export function PollWizard({ template }: PollWizardProps) {
             </div>
           </CardContent>
         </Card>
-      )}
-
-      {/* Template picker modal */}
-      {showTemplatePicker && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-          <div className="mx-4 w-full max-w-lg rounded-lg border bg-card p-6 shadow-lg">
-            <h3 className="text-sm font-semibold">Choose a Template</h3>
-            <p className="mt-1 text-xs text-muted-foreground">
-              Select a template to pre-fill your poll question and options.
-            </p>
-
-            {/* Category tabs */}
-            <div className="mt-4 flex gap-1 overflow-x-auto rounded-lg bg-muted p-1">
-              {POLL_TEMPLATE_CATEGORIES.map((cat) => (
-                <button
-                  key={cat}
-                  type="button"
-                  onClick={() => setTemplateCategory(cat)}
-                  className={`shrink-0 rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
-                    templateCategory === cat
-                      ? 'bg-background text-foreground shadow-sm'
-                      : 'text-muted-foreground hover:text-foreground'
-                  }`}
-                >
-                  {cat}
-                </button>
-              ))}
-            </div>
-
-            {/* Template list */}
-            <div className="mt-3 max-h-64 space-y-2 overflow-y-auto">
-              {POLL_TEMPLATES.filter((t) => t.category === templateCategory).map(
-                (t) => (
-                  <button
-                    key={t.id}
-                    type="button"
-                    onClick={() => applyTemplate(t)}
-                    className="w-full rounded-lg border p-3 text-left transition-colors hover:border-primary hover:bg-primary/5"
-                  >
-                    <p className="text-sm font-medium">{t.question}</p>
-                    <p className="mt-1 text-xs text-muted-foreground">
-                      {t.options.length} options &middot;{' '}
-                      <span className="capitalize">{t.pollType}</span>
-                    </p>
-                  </button>
-                )
-              )}
-            </div>
-
-            <div className="mt-4 flex justify-end">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setShowTemplatePicker(false)}
-              >
-                Cancel
-              </Button>
-            </div>
-          </div>
-        </div>
       )}
     </div>
   )

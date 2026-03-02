@@ -11,7 +11,17 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { OptionList } from '@/components/poll/option-list'
 import type { OptionItem } from '@/components/poll/option-list'
 import { createPoll, updatePoll, updatePollOptions } from '@/actions/poll'
+import { POLL_TEMPLATES, type PollTemplate } from '@/lib/poll/templates'
+import { Badge } from '@/components/ui/badge'
 import type { PollType } from '@/lib/poll/types'
+
+const CATEGORY_COLORS: Record<string, string> = {
+  'Icebreakers': 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400',
+  'Classroom Decisions': 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400',
+  'Academic Debates': 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400',
+  'Fun & Trivia': 'bg-pink-100 text-pink-700 dark:bg-pink-900/30 dark:text-pink-400',
+  'Feedback': 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400',
+}
 
 interface PollFormProps {
   /** Creation mode: 'quick' hides poll type/settings/ranking depth */
@@ -33,6 +43,9 @@ export function PollForm({ mode = 'edit', existingPoll }: PollFormProps) {
   const router = useRouter()
   const isEditing = !!existingPoll
   const isQuickCreate = mode === 'quick'
+
+  // Template selection (Quick Create only)
+  const [selectedTemplate, setSelectedTemplate] = useState<PollTemplate | null>(null)
 
   // Form state
   const [question, setQuestion] = useState(
@@ -74,6 +87,17 @@ export function PollForm({ mode = 'edit', existingPoll }: PollFormProps) {
   const canSubmit =
     question.trim().length > 0 &&
     options.filter((o) => o.text.trim().length > 0).length >= 2
+
+  function handleTemplateSelect(template: PollTemplate | null) {
+    setSelectedTemplate(template)
+    if (template) {
+      setQuestion(template.question)
+      setOptions(template.options.map((text) => ({ id: nanoid(), text })))
+    } else {
+      setQuestion('')
+      setOptions([{ id: nanoid(), text: '' }, { id: nanoid(), text: '' }])
+    }
+  }
 
   const handleSubmit = useCallback(async () => {
     if (!canSubmit) return
@@ -181,6 +205,34 @@ export function PollForm({ mode = 'edit', existingPoll }: PollFormProps) {
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-5">
+        {/* Template chip grid (Quick Create only) */}
+        {isQuickCreate && (
+          <div className="space-y-2">
+            <h2 className="text-sm font-medium text-muted-foreground">Start from a template</h2>
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4">
+              {POLL_TEMPLATES.map((t) => {
+                const isSelected = selectedTemplate?.id === t.id
+                const colorClass = CATEGORY_COLORS[t.category] ?? 'bg-gray-100 text-gray-700 dark:bg-gray-900/30 dark:text-gray-400'
+                return (
+                  <button
+                    key={t.id}
+                    type="button"
+                    onClick={() => handleTemplateSelect(isSelected ? null : t)}
+                    className={`flex flex-col items-center gap-1.5 rounded-lg border-2 p-3 text-center transition-colors ${
+                      isSelected
+                        ? 'border-primary ring-1 ring-primary'
+                        : 'border-transparent hover:border-primary/30'
+                    }`}
+                  >
+                    <span className="text-xs font-medium line-clamp-2">{t.question}</span>
+                    <Badge variant="secondary" className={colorClass}>{t.category}</Badge>
+                  </button>
+                )
+              })}
+            </div>
+          </div>
+        )}
+
         {/* Question */}
         <div className="space-y-2">
           <Label htmlFor="poll-question">Question</Label>
