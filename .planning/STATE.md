@@ -2,13 +2,13 @@
 gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: Teacher Power-Ups
-status: unknown
-last_updated: "2026-03-02T11:09:37Z"
+status: in-progress
+last_updated: "2026-03-02T11:37:41Z"
 progress:
-  total_phases: 17
+  total_phases: 18
   completed_phases: 17
-  total_plans: 52
-  completed_plans: 52
+  total_plans: 55
+  completed_plans: 53
 ---
 
 # Project State
@@ -18,14 +18,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-02-28)
 
 **Core value:** Teachers can instantly engage any classroom through voting -- on any topic, in any format -- and see participation happen in real time.
-**Current focus:** v2.0 Teacher Power-Ups -- Phase 36: Bug Fixes
+**Current focus:** v2.0 Teacher Power-Ups -- Phase 37: User Profile & Admin Access
 
 ## Current Position
 
-Phase: 36 of 36 (Bug Fixes) -- IN PROGRESS
-Plan: 5 of 5 complete
-Status: Completed Plan 36-05
-Last activity: 2026-03-02 - Completed 36-05: FIX-08 bracket vote indicators + FIX-09 Go Live/Start flow
+Phase: 37 of 38 (User Profile & Admin Access) -- IN PROGRESS
+Plan: 1 of 3 complete
+Status: Completed Plan 37-01
+Last activity: 2026-03-02 - Completed 37-01: Backend foundation (mustChangePassword, profile actions, proxy intercept)
 
 Progress: [##░░░░░░░░] 17% (v2.0)
 
@@ -112,6 +112,9 @@ Recent from research:
 - 36-04: Fullscreen overlay decoupled from Fullscreen API; onExitRef pattern prevents re-render cycles
 - 36-04: Eliminated dual useRealtimePoll subscription; PollLiveClient owns single subscription, passes data to PollResults
 - 36-04: Parent F key handler only enters presentation; PresentationMode handles exit internally
+- 37-01: Prisma column approach for mustChangePassword (no Supabase app_metadata needed)
+- 37-01: forceSetPassword clears flag before redirect to avoid proxy race condition
+- 37-01: /set-password is NOT in AUTH_PAGES -- special onboarding route for authenticated users
 
 ### Roadmap Evolution
 
@@ -175,7 +178,8 @@ None -- all v1.3 requirements shipped.
 ## Session Continuity
 
 Last session: 2026-03-02
-Stopped at: Completed 36-04: FIX-06 fullscreen auto-close + FIX-07 poll realtime dashboard
-Resume: All phase 36 plans complete
+Stopped at: Completed 37-01: Backend foundation (mustChangePassword, profile actions, proxy intercept)
+Resume: Continue with 37-02 (UI pages)
 | Phase 36 P01 | 3min | 2 tasks | 6 files |
 | Phase 36 P04 | 6min | 2 tasks | 3 files |
+| Phase 37 P01 | 2min | 2 tasks | 4 files |

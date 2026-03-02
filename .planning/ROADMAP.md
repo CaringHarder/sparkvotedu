@@ -239,7 +239,7 @@ Plans:
   2. Teacher can change their password from the profile page (current password + new password + confirm)
   3. When an admin creates a teacher account via the admin panel with a temporary password, that teacher's first login forces them to set a new password before accessing the dashboard
   4. Admin users see an "Admin" link in the sidebar that navigates directly to /admin -- no manual URL typing required
-**Plans:** 3 plans
+**Plans:** 1/3 plans executed
 
 Plans:
 - [ ] 37-01-PLAN.md -- Backend foundation: Prisma migration (mustChangePassword), profile server actions, admin creation flag, proxy forced reset intercept
@@ -306,5 +306,5 @@ Note: Phases 33-36 are independent of the control feature chain (29-32) and can 
 | 34. Poll Quick Create & Image Polish | 2/3 | Complete    | 2026-03-02 | - |
 | 35. Real-Time Vote Indicators | 3/4 | In Progress|  | - |
 | 36. Bug Fixes | 5/5 | Complete    | 2026-03-02 | - |
-| 37. User Profile & Admin Access | v2.0 | 0/3 | Not started | - |
+| 37. User Profile & Admin Access | 1/3 | In Progress|  | - |
 | 38. Require Email Verification Before Login | v2.0 | 0/3 | Not started | - |
