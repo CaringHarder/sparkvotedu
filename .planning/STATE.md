@@ -18,14 +18,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-02-28)
 
 **Core value:** Teachers can instantly engage any classroom through voting -- on any topic, in any format -- and see participation happen in real time.
-**Current focus:** v2.0 Teacher Power-Ups -- Phase 35: Real-Time Vote Indicators
+**Current focus:** v2.0 Teacher Power-Ups -- Phase 36: Bug Fixes
 
 ## Current Position
 
-Phase: 35 of 36 (Real-Time Vote Indicators) -- IN PROGRESS
-Plan: 3 of 4 complete
-Status: Executing Plan 35-04
-Last activity: 2026-03-02 - Completed quick task 20: Replace viewing mode on/off switch with Simple/Advanced segmented control
+Phase: 36 of 36 (Bug Fixes) -- IN PROGRESS
+Plan: 5 of 5 complete
+Status: Completed Plan 36-05
+Last activity: 2026-03-02 - Completed 36-05: FIX-08 bracket vote indicators + FIX-09 Go Live/Start flow
 
 Progress: [##░░░░░░░░] 17% (v2.0)
 
@@ -98,6 +98,8 @@ Recent from research:
 - [Phase 35]: hasActiveVotingContext prop defaults true for backward compat with poll live page
 - [Phase 35]: RR intersection: student must vote on ALL round matchups for green dot
 - [Phase 35]: Removed realtimeExcess heuristic -- replaced with accurate mergedVoterIds union
+- 36-05: Union (not intersection) for SE/DE voter IDs -- green dot if voted on ANY matchup in current round
+- 36-05: hasActiveVotingContext also checks for any voting matchups, not just selectedMatchupId
 
 ### Roadmap Evolution
 
@@ -154,9 +156,10 @@ None -- all v1.3 requirements shipped.
 | Phase 35 P01 | 2min | 2 tasks | 6 files |
 | Phase 35 P03 | 3min | 2 tasks | 3 files |
 | Phase 35 P02 | 5min | 2 tasks | 3 files |
+| Phase 36 P05 | 2min | 2 tasks | 4 files |
 
 ## Session Continuity
 
 Last session: 2026-03-02
-Stopped at: Completed 35-03: Poll live dashboard ParticipationSidebar with real-time vote indicators
-Resume: `/gsd:execute-phase 35` to continue with plan 35-04
+Stopped at: Completed 36-05: FIX-08 bracket vote indicators + FIX-09 Go Live/Start flow
+Resume: Phase 36 plan 05 complete

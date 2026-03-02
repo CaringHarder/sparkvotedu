@@ -221,7 +221,7 @@ Plans:
   7. Poll teacher live dashboard updates in real time as students vote (no manual refresh needed)
   8. Bracket vote indicators (blue/green dots) update correctly when students vote -- green dot + sort to bottom, matching poll behavior
   9. Go Live button is hidden on bracket/poll detail pages until after Start is clicked; clicking Start activates and auto-navigates to the live dashboard
-**Plans:** 5 plans
+**Plans:** 3/5 plans executed
 
 Plans:
 - [ ] 36-01-PLAN.md -- Fix ghost options on poll duplication + add session dropdown to Poll Quick Create
@@ -273,7 +273,7 @@ Note: Phases 33-36 are independent of the control feature chain (29-32) and can 
 | 33. Bracket Quick Create | 1/2 | Complete    | 2026-03-02 | - |
 | 34. Poll Quick Create & Image Polish | 2/3 | Complete    | 2026-03-02 | - |
 | 35. Real-Time Vote Indicators | 3/4 | In Progress|  | - |
-| 36. Bug Fixes | v2.0 | 0/5 | Not started | - |
+| 36. Bug Fixes | 3/5 | In Progress|  | - |
 | 37. User Profile & Admin Access | v2.0 | 0/TBD | Not started | - |
 | 38. Require Email Verification Before Login | v2.0 | 0/3 | Not started | - |
 
