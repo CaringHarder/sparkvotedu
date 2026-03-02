@@ -3,7 +3,7 @@ gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: Teacher Power-Ups
 status: unknown
-last_updated: "2026-03-02T03:44:05.410Z"
+last_updated: "2026-03-02T04:30:00Z"
 progress:
   total_phases: 17
   completed_phases: 17
@@ -18,14 +18,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-02-28)
 
 **Core value:** Teachers can instantly engage any classroom through voting -- on any topic, in any format -- and see participation happen in real time.
-**Current focus:** v2.0 Teacher Power-Ups -- Phase 34: Poll Quick Create & Image Polish
+**Current focus:** v2.0 Teacher Power-Ups -- Phase 35: Real-Time Vote Indicators
 
 ## Current Position
 
-Phase: 34 of 36 (Poll Quick Create & Image Polish) -- IN PROGRESS
-Plan: 2 of 3 complete
-Status: Executing Plan 34-02
-Last activity: 2026-03-02 -- Completed 34-02: Option image upload polish with draft pattern and layout reorder
+Phase: 35 of 36 (Real-Time Vote Indicators) -- IN PROGRESS
+Plan: 1 of 4 complete
+Status: Executing Plan 35-02
+Last activity: 2026-03-02 -- Completed 35-01: Vote data plumbing (participantId in broadcasts, voterIds in APIs)
 
 Progress: [##░░░░░░░░] 17% (v2.0)
 
@@ -88,6 +88,9 @@ Recent from research:
 - 34-02: Draft fallback pattern mirrors EntrantImageUpload: pollId ?? 'draft' for creation mode
 - 34-02: Square aspect ratio enforced via aspectRatio={1} on ImageUploadModal
 - 34-02: Camera icon always visible when not disabled (no pollId gate)
+- 35-01: Optional spread for participantId in broadcast payloads keeps backward-compatible
+- 35-01: Poll voterIds uses rank=1 filter for one-row-per-voter across simple and ranked polls
+- 35-01: Bracket state API fetches voterIds in parallel with voteCounts via Promise.all
 
 ### Roadmap Evolution
 
@@ -138,9 +141,10 @@ None -- all v1.3 requirements shipped.
 | Phase 33 P01 | 2min | 2 tasks | 3 files |
 | Phase 34 P01 | 3min | 2 tasks | 3 files |
 | Phase 34 P02 | 2min | 2 tasks | 2 files |
+| Phase 35 P01 | 2min | 2 tasks | 6 files |
 
 ## Session Continuity
 
 Last session: 2026-03-02
-Stopped at: Completed 34-01: Poll Quick Create simplification with template chip grid
-Resume: `/gsd:execute-phase 34` to continue with plan 34-03
+Stopped at: Completed 35-01: Vote data plumbing (participantId in broadcasts, voterIds in APIs)
+Resume: `/gsd:execute-phase 35` to continue with plan 35-02

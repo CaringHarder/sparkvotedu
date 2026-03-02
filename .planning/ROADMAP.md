@@ -197,7 +197,7 @@ Plans:
   1. Student Activity panel on the live dashboard shows a green dot next to each student who has voted on the active round or poll
   2. When a student casts a vote, their green dot appears within seconds without the teacher refreshing the page
   3. Vote indicators work across all activity types: SE brackets, DE brackets, RR brackets, predictive brackets, and polls
-**Plans:** 4 plans
+**Plans:** 1/4 plans executed
 
 Plans:
 - [ ] 35-01-PLAN.md -- Server-side broadcast augmentation + polling fallback APIs with participantId
@@ -260,5 +260,5 @@ Note: Phases 33-36 are independent of the control feature chain (29-32) and can 
 | 32. Settings Editing | 5/5 | Complete    | 2026-03-01 | - |
 | 33. Bracket Quick Create | 1/2 | Complete    | 2026-03-02 | - |
 | 34. Poll Quick Create & Image Polish | 2/3 | Complete    | 2026-03-02 | - |
-| 35. Real-Time Vote Indicators | v2.0 | 0/TBD | Not started | - |
+| 35. Real-Time Vote Indicators | 1/4 | In Progress|  | - |
 | 36. Bug Fixes | v2.0 | 0/TBD | Not started | - |
