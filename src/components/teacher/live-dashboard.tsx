@@ -214,7 +214,7 @@ export function LiveDashboard({
   const hasShownRevealRef = useRef(false)
 
   // Real-time vote count updates via Supabase Broadcast
-  const { voteCounts: realtimeVoteCounts, matchups: realtimeMatchups, bracketCompleted } =
+  const { voteCounts: realtimeVoteCounts, voterIds: realtimeVoterIds, matchups: realtimeMatchups, bracketCompleted } =
     useRealtimeBracket(bracket.id)
 
   // Track connected students via Supabase Presence
@@ -501,11 +501,16 @@ export function LiveDashboard({
     }
   }, [bracketCompleted, revealState, isDoubleElim, isRoundRobin, currentMatchups, totalRounds])
 
-  // Get voter IDs for selected matchup
-  const currentVoterIds = useMemo(() => {
-    if (!selectedMatchupId) return []
-    return initialVoterIds[selectedMatchupId] ?? []
-  }, [selectedMatchupId, initialVoterIds])
+  // Merge initial and realtime voter IDs per matchup
+  const mergedVoterIds = useMemo(() => {
+    const merged: Record<string, string[]> = { ...initialVoterIds }
+    for (const [matchupId, pids] of Object.entries(realtimeVoterIds)) {
+      const existing = new Set(merged[matchupId] ?? [])
+      for (const pid of pids) existing.add(pid)
+      merged[matchupId] = [...existing]
+    }
+    return merged
+  }, [initialVoterIds, realtimeVoterIds])
 
   // Current round (SE/Predictive only -- DE uses region-based deCurrentDbRound)
   const currentRound = useMemo(() => {
@@ -778,6 +783,36 @@ export function LiveDashboard({
     return allDecided && nextRoundExists
   }, [isRoundRobin, currentMatchups, currentRoundRobinRound, bracket.roundRobinPacing])
 
+  // Compute current voter IDs based on bracket type
+  const currentVoterIds = useMemo(() => {
+    if (isRoundRobin) {
+      const roundMatchups = currentMatchups.filter(
+        (m) => m.roundRobinRound === currentRoundRobinRound &&
+               (m.status === 'voting' || m.status === 'decided')
+      )
+      if (roundMatchups.length === 0) return []
+      const matchupVoterSets = roundMatchups.map(m =>
+        new Set(mergedVoterIds[m.id] ?? [])
+      )
+      // Intersect: student must appear in ALL matchup voter sets
+      const allPids = new Set(participants.map(p => p.id))
+      return [...allPids].filter(pid =>
+        matchupVoterSets.every(set => set.has(pid))
+      )
+    }
+    if (isPredictive) {
+      // Use the special 'predictions' key for prediction submitters
+      return mergedVoterIds['predictions'] ?? []
+    }
+    // SE/DE: single matchup
+    if (!selectedMatchupId) return []
+    return mergedVoterIds[selectedMatchupId] ?? []
+  }, [isRoundRobin, isPredictive, selectedMatchupId, currentMatchups,
+      currentRoundRobinRound, mergedVoterIds, participants])
+
+  // Whether there is an active voting context (for sidebar display)
+  const hasActiveVotingContext = isRoundRobin || isPredictive || selectedMatchupId !== null
+
   const handleRecordRoundRobinResult = useCallback((matchupId: string, winnerId: string | null) => {
     setError(null)
     startTransition(async () => {
@@ -941,27 +976,15 @@ export function LiveDashboard({
       return { votedCount: 0, totalCount: participants.length, isVotingActive: false, roundLabel }
     }
 
-    // Union unique voter IDs across all voting matchups from initialVoterIds
+    // Union unique voter IDs across all voting matchups from mergedVoterIds
     const allVoterIds = new Set<string>()
     for (const m of votingMatchups) {
-      for (const id of (initialVoterIds[m.id] ?? [])) {
+      for (const id of (mergedVoterIds[m.id] ?? [])) {
         allVoterIds.add(id)
       }
     }
 
-    // Check realtime vote counts for any matchup -- if sum of entrant votes
-    // exceeds initialVoterIds length, real-time data has newer info
-    let realtimeExcess = 0
-    for (const m of votingMatchups) {
-      const counts = mergedVoteCounts[m.id] ?? {}
-      const matchupVoterCount = Object.values(counts).reduce((sum: number, v) => sum + v, 0)
-      const initialCount = (initialVoterIds[m.id] ?? []).length
-      if (matchupVoterCount > initialCount) {
-        realtimeExcess = Math.max(realtimeExcess, matchupVoterCount - initialCount)
-      }
-    }
-
-    const votedCount = allVoterIds.size + realtimeExcess
+    const votedCount = allVoterIds.size
 
     return {
       votedCount: Math.min(votedCount, participants.length),
@@ -973,7 +996,7 @@ export function LiveDashboard({
     isPredictiveAuto, isSports, isDoubleElim, isRoundRobin,
     deActiveRegionInfo, deActiveRegionMatchups, deCurrentDbRound, deRegion,
     currentMatchups, currentRoundRobinRound, currentRound, totalRounds,
-    participants.length, initialVoterIds, mergedVoteCounts,
+    participants.length, mergedVoterIds,
   ])
 
   // ---------------------------------------------------------------------------
@@ -1858,6 +1881,7 @@ export function LiveDashboard({
           connectedIds={connectedIds}
           voterIds={currentVoterIds}
           selectedMatchupId={selectedMatchupId}
+          hasActiveVotingContext={hasActiveVotingContext}
           onToggle={() => setSidebarOpen(!sidebarOpen)}
           isOpen={sidebarOpen}
         />

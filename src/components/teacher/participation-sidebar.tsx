@@ -7,6 +7,7 @@ interface ParticipationSidebarProps {
   connectedIds: Set<string>
   voterIds: string[]
   selectedMatchupId: string | null
+  hasActiveVotingContext?: boolean
   onToggle: () => void
   isOpen: boolean
 }
@@ -16,18 +17,17 @@ export function ParticipationSidebar({
   connectedIds,
   voterIds,
   selectedMatchupId,
+  hasActiveVotingContext = true,
   onToggle,
   isOpen,
 }: ParticipationSidebarProps) {
   const voterIdSet = useMemo(() => new Set(voterIds), [voterIds])
 
   const votedCount = useMemo(() => {
-    if (!selectedMatchupId) return 0
     return voterIds.length
-  }, [selectedMatchupId, voterIds])
+  }, [voterIds])
 
   const allVoted =
-    selectedMatchupId !== null &&
     participants.length > 0 &&
     votedCount >= participants.length
 
@@ -36,7 +36,7 @@ export function ParticipationSidebar({
     return [...participants].sort((a, b) => {
       const aVoted = voterIdSet.has(a.id) ? 1 : 0
       const bVoted = voterIdSet.has(b.id) ? 1 : 0
-      if (aVoted !== bVoted) return bVoted - aVoted
+      if (aVoted !== bVoted) return aVoted - bVoted
 
       const aConnected = connectedIds.has(a.id) ? 1 : 0
       const bConnected = connectedIds.has(b.id) ? 1 : 0
@@ -83,8 +83,8 @@ export function ParticipationSidebar({
             </p>
           </div>
 
-          {/* Vote summary for selected matchup */}
-          {selectedMatchupId && (
+          {/* Vote summary for active voting context */}
+          {hasActiveVotingContext && (
             <div className="mb-3 rounded-md bg-muted/50 p-2">
               <div className="flex items-center justify-between">
                 <span className="text-sm font-medium">
@@ -110,7 +110,7 @@ export function ParticipationSidebar({
             </div>
           )}
 
-          {!selectedMatchupId && (
+          {!hasActiveVotingContext && (
             <div className="mb-3 rounded-md bg-muted/50 p-2">
               <span className="text-xs text-muted-foreground">
                 Select a matchup to see voting status
@@ -131,7 +131,7 @@ export function ParticipationSidebar({
                     className={`rounded-md border px-2 py-2 text-xs transition-colors ${
                       !isConnected
                         ? 'border-muted bg-muted/30 text-muted-foreground opacity-50'
-                        : hasVoted && selectedMatchupId
+                        : hasVoted
                           ? 'border-green-300 bg-green-50 text-green-800'
                           : 'border-border bg-background text-foreground'
                     }`}
@@ -143,7 +143,7 @@ export function ParticipationSidebar({
                           className={`inline-block h-1.5 w-1.5 shrink-0 rounded-full ${
                             !isConnected
                               ? 'bg-gray-400'
-                              : hasVoted && selectedMatchupId
+                              : hasVoted
                                 ? 'bg-green-500'
                                 : 'bg-blue-500'
                           }`}
