@@ -10,6 +10,8 @@ allowed-tools:
   - Grep
   - AskUserQuestion
   - Task
+  - mcp__context7__resolve-library-id
+  - mcp__context7__query-docs
 ---
 
 <objective>
@@ -36,13 +38,17 @@ Context files are resolved in-workflow using `init phase-op` and roadmap/state t
 </context>
 
 <process>
+**CRITICAL: Do NOT call AskUserQuestion in your first response.** Present analysis as text, ask user to reply "ready", then start questions after they respond. See workflow file for full instructions.
+
 1. Validate phase number (error if missing or not in roadmap)
 2. Check if CONTEXT.md exists (offer update/view/skip if yes)
-3. **Analyze phase** — Identify domain and generate phase-specific gray areas
-4. **Present gray areas** — Multi-select: which to discuss? (NO skip option)
-5. **Deep-dive each area** — 4 questions per area, then offer more/next
-6. **Write CONTEXT.md** — Sections match areas discussed
-7. Offer next steps (research or plan)
+3. **Scout codebase** — Find reusable assets, patterns, and integration points
+4. **Analyze phase** — Identify domain and generate code-informed gray areas
+5. **STOP and wait for user reply** — Present gray areas as text, ask user to reply "ready"
+6. **Present gray areas** — Multi-select: which to discuss? (NO skip option)
+7. **Deep-dive each area** — 4 questions per area, code-informed options, Context7 for library choices
+8. **Write CONTEXT.md** — Sections match areas discussed + code_context section
+9. Offer next steps (research or plan)
 
 **CRITICAL: Scope guardrail**
 - Phase boundary from ROADMAP.md is FIXED
