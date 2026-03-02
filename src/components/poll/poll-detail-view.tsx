@@ -185,6 +185,8 @@ export function PollDetailView({ poll, sessions, sessionName }: PollDetailViewPr
       const result = await updatePollStatus({ pollId: poll.id, status: newStatus })
       if (result && 'error' in result) {
         setError(result.error as string)
+      } else if (newStatus === 'active') {
+        router.push(`/polls/${poll.id}/live`)
       } else {
         router.refresh()
       }
@@ -236,23 +238,25 @@ export function PollDetailView({ poll, sessions, sessionName }: PollDetailViewPr
 
         {/* Actions */}
         <div className="flex items-center gap-2">
-          <Link
-            href={`/polls/${poll.id}/live`}
-            className={cn(
-              'inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-colors',
-              poll.status === 'active' || poll.status === 'paused'
-                ? 'bg-green-600 text-white shadow-sm hover:bg-green-700'
-                : 'border text-muted-foreground hover:bg-accent hover:text-foreground'
-            )}
-          >
-            {(poll.status === 'active' || poll.status === 'paused') && (
-              <span className="relative flex h-2 w-2">
-                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-green-300 opacity-75" />
-                <span className="relative inline-flex h-2 w-2 rounded-full bg-green-400" />
-              </span>
-            )}
-            Go Live
-          </Link>
+          {poll.status !== 'draft' && (
+            <Link
+              href={`/polls/${poll.id}/live`}
+              className={cn(
+                'inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-colors',
+                poll.status === 'active' || poll.status === 'paused'
+                  ? 'bg-green-600 text-white shadow-sm hover:bg-green-700'
+                  : 'border text-muted-foreground hover:bg-accent hover:text-foreground'
+              )}
+            >
+              {(poll.status === 'active' || poll.status === 'paused') && (
+                <span className="relative flex h-2 w-2">
+                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-green-300 opacity-75" />
+                  <span className="relative inline-flex h-2 w-2 rounded-full bg-green-400" />
+                </span>
+              )}
+              Go Live
+            </Link>
+          )}
 
           {/* Status transition buttons */}
           {statusActions.map((action) => (

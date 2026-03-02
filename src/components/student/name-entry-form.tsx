@@ -119,15 +119,31 @@ export function NameEntryForm({ code, sessionInfo }: NameEntryFormProps) {
     }
   }
 
-  // If we have duplicates, show disambiguation UI
+  // If we have duplicates, show disambiguation UI (inline "Name taken" prompt)
   if (duplicates) {
     return (
-      <NameDisambiguation
-        duplicates={duplicates}
-        firstName={firstName}
-        code={code}
-        sessionInfo={sessionInfo}
-      />
+      <div className="flex flex-col items-center gap-5">
+        <p className="text-sm text-muted-foreground">
+          Joining{' '}
+          <span className="font-medium text-foreground">{sessionLabel}</span>
+        </p>
+
+        <NameDisambiguation
+          duplicates={duplicates}
+          firstName={firstName}
+          code={code}
+          sessionInfo={sessionInfo}
+          onNameChange={(name) => setFirstName(name)}
+        />
+
+        <button
+          type="button"
+          onClick={() => router.push('/join')}
+          className="text-sm text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
+        >
+          Back to code entry
+        </button>
+      </div>
     )
   }
 

@@ -54,6 +54,8 @@ export function BracketLifecycleControls({
       })
       if (result && 'error' in result) {
         setError(result.error as string)
+      } else if (newStatus === 'active') {
+        router.push(`/brackets/${bracketId}/live`)
       }
     })
   }

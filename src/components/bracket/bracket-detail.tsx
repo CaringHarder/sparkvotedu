@@ -198,7 +198,7 @@ export function BracketDetail({ bracket, totalRounds, sessions, standings = [], 
 
         {/* Actions */}
         <div className="flex items-center gap-2">
-          {!isPredictiveAuto && !(isPredictive && bracket.predictionStatus === 'predictions_open') && (
+          {bracket.status !== 'draft' && !isPredictiveAuto && !(isPredictive && bracket.predictionStatus === 'predictions_open') && (
             <Link
               href={`/brackets/${bracket.id}/live`}
               className={cn(
