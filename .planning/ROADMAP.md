@@ -182,10 +182,12 @@ Plans:
   1. Poll Quick Create shows only a question field and option inputs -- no settings toggles visible (allow vote change, show live results are hidden)
   2. Poll settings (allow vote change, show live results) are available only when the teacher uses Step-by-Step creation mode
   3. Poll option images preview in the same card/thumbnail style as bracket entrant images before creation (consistent visual language)
-**Plans**: TBD
+**Plans:** 3 plans
 
 Plans:
-- [ ] 34-01: TBD
+- [ ] 34-01-PLAN.md -- Poll creation page restructure + PollForm Quick Create mode + template chip grid
+- [ ] 34-02-PLAN.md -- Image upload draft pattern + dashed-border camera icon + option row reorder
+- [ ] 34-03-PLAN.md -- Human verification of complete Quick Create & Image Polish flow
 
 ### Phase 35: Real-Time Vote Indicators
 **Goal**: Teachers see at a glance which students have voted on the current round or poll, with green dot indicators that update live as votes come in
