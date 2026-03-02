@@ -94,10 +94,18 @@ export function VerifyEmailCard({ email, expired }: VerifyEmailCardProps) {
     return () => clearInterval(timer)
   }, [cooldown])
 
-  // Start cooldown after successful resend
+  // Start cooldown after successful resend or rate-limit error
   useEffect(() => {
-    if (state?.success) setCooldown(60)
-  }, [state?.success, state?.sentAt])
+    if (state?.success) {
+      setCooldown(60)
+    } else if (state?.error) {
+      // Parse seconds from Supabase rate-limit message like "...after 60 seconds"
+      const match = state.error.match(/after (\d+) second/)
+      if (match) {
+        setCooldown(parseInt(match[1], 10))
+      }
+    }
+  }, [state?.success, state?.error, state?.sentAt])
 
   async function handleGoogleSignIn() {
     setGoogleLoading(true)
@@ -159,8 +167,8 @@ export function VerifyEmailCard({ email, expired }: VerifyEmailCardProps) {
         </p>
       )}
 
-      {/* Error feedback */}
-      {state?.error && (
+      {/* Error feedback (hide when cooldown is active since button shows timer) */}
+      {state?.error && cooldown <= 0 && (
         <p className="text-center text-sm text-destructive">{state.error}</p>
       )}
 
