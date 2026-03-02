@@ -28,7 +28,7 @@ Email signup flow enforces verification before granting dashboard access. Teache
 
 ### Existing User Handling
 - Grandfather existing accounts — only NEW email signups require verification
-- Grandfathered users see a subtle, dismissible info banner: "Verify your email for account security" (non-blocking)
+- Grandfathered users see nothing different — completely invisible to them (no nudge banner)
 - Admin-created accounts (Phase 37 temp password flow) skip email verification — admin vouches for the email
 - Cutoff method for grandfathering: Claude's discretion based on Supabase auth schema
 
@@ -41,7 +41,7 @@ Email signup flow enforces verification before granting dashboard access. Teache
 - Email subject line, sender name, and body copy
 - Exact verification link expiration duration
 - Loading/transition states during verification flow
-- Banner dismissal persistence (localStorage vs server)
+- Verification link expiration handling details
 
 </decisions>
 
