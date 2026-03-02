@@ -3,7 +3,7 @@ status: complete
 phase: 36-bug-fixes
 source: 36-01-SUMMARY.md, 36-02-SUMMARY.md, 36-03-SUMMARY.md, 36-04-SUMMARY.md, 36-05-SUMMARY.md
 started: 2026-03-02T18:00:00Z
-updated: 2026-03-02T18:30:00Z
+updated: 2026-03-02T19:30:00Z
 ---
 
 ## Current Test
@@ -42,8 +42,7 @@ result: pass
 
 ### 8. Bracket Vote Indicators
 expected: Bracket vote indicators (green dots) update correctly when students vote -- green dot appears next to voted students in the participation sidebar
-result: skipped
-reason: Context limit reached; requires full bracket voting flow with multiple students
+result: pass
 
 ### 9. Go Live / Start Flow
 expected: Go Live button is hidden on bracket/poll detail pages while in draft status; clicking Start activates and auto-navigates to the live dashboard
@@ -52,10 +51,10 @@ result: pass
 ## Summary
 
 total: 9
-passed: 8
+passed: 9
 issues: 0
 pending: 0
-skipped: 1
+skipped: 0
 
 ## Gaps
 
