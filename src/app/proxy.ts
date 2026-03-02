@@ -2,7 +2,7 @@ import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 import { prisma } from '@/lib/prisma'
 
-const AUTH_PAGES = ['/login', '/signup', '/forgot-password', '/update-password', '/auth']
+const AUTH_PAGES = ['/login', '/signup', '/forgot-password', '/update-password', '/auth', '/verify-email']
 const PUBLIC_PAGES = ['/', '/join', '/pricing']
 
 function isAuthPage(pathname: string): boolean {

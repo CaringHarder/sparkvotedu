@@ -17,9 +17,17 @@ export async function GET(request: Request) {
 
       return NextResponse.redirect(`${origin}${next}`)
     }
+
+    // Code exchange failed -- likely expired or invalid verification link.
+    // Redirect to verify-email page with resend option instead of generic login error.
+    const email = searchParams.get('email') ?? ''
+    const verifyUrl = email
+      ? `${origin}/verify-email?expired=true&email=${encodeURIComponent(email)}`
+      : `${origin}/verify-email?expired=true`
+    return NextResponse.redirect(verifyUrl)
   }
 
-  // Return to login with error if code exchange fails or no code provided
+  // No code provided -- return to login with error
   return NextResponse.redirect(`${origin}/login?error=auth_callback_failed`)
 }
 
