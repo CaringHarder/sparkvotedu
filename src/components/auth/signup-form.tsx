@@ -1,6 +1,6 @@
 'use client'
 
-import { useActionState } from 'react'
+import { useActionState, useEffect } from 'react'
 import Link from 'next/link'
 import { signUp } from '@/actions/auth'
 import { Button } from '@/components/ui/button'
@@ -10,14 +10,14 @@ import { Label } from '@/components/ui/label'
 export function SignUpForm() {
   const [state, formAction, isPending] = useActionState(signUp, null)
 
+  useEffect(() => {
+    if (state?.redirectToVerify) {
+      window.location.href = `/verify-email?email=${encodeURIComponent(state.redirectToVerify)}`
+    }
+  }, [state?.redirectToVerify])
+
   return (
     <form action={formAction} className="flex flex-col gap-4">
-      {state?.success && (
-        <div className="rounded-md bg-muted p-3 text-sm text-foreground">
-          {state.success}
-        </div>
-      )}
-
       <div className="flex flex-col gap-2">
         <Label htmlFor="name">Name</Label>
         <Input
