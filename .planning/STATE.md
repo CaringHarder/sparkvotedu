@@ -94,6 +94,10 @@ Recent from research:
 - 35-03: Dual useRealtimePoll subscription is safe (Supabase channel-level dedup)
 - 35-03: Poll voterIds is flat array (not per-matchup) since polls have single voting context
 - 35-03: Pass poll.id as selectedMatchupId for stable truthy value in ParticipationSidebar
+- [Phase 35]: Not-voted students sort to top of sidebar (aVoted - bVoted comparator)
+- [Phase 35]: hasActiveVotingContext prop defaults true for backward compat with poll live page
+- [Phase 35]: RR intersection: student must vote on ALL round matchups for green dot
+- [Phase 35]: Removed realtimeExcess heuristic -- replaced with accurate mergedVoterIds union
 
 ### Roadmap Evolution
 
@@ -146,6 +150,7 @@ None -- all v1.3 requirements shipped.
 | Phase 34 P02 | 2min | 2 tasks | 2 files |
 | Phase 35 P01 | 2min | 2 tasks | 6 files |
 | Phase 35 P03 | 3min | 2 tasks | 3 files |
+| Phase 35 P02 | 5min | 2 tasks | 3 files |
 
 ## Session Continuity
 
