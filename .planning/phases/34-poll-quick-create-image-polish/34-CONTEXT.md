@@ -13,6 +13,10 @@ Simplify the poll Quick Create form by hiding settings (they belong in Step-by-S
 <decisions>
 ## Implementation Decisions
 
+### Default creation mode
+- Poll creation page defaults to Step-by-Step tab (currently defaults to Quick Create)
+- This matches bracket creation, which already defaults to Step-by-Step (set in Phase 33)
+
 ### Quick Create form fields
 - Quick Create shows ONLY: question, description (optional), and options
 - Poll type toggle (Simple/Ranked) is HIDDEN in Quick Create — Quick Create always creates Simple polls
