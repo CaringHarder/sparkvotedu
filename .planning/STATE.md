@@ -3,7 +3,7 @@ gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: Teacher Power-Ups
 status: unknown
-last_updated: "2026-03-02T04:30:00Z"
+last_updated: "2026-03-02T04:35:12Z"
 progress:
   total_phases: 17
   completed_phases: 17
@@ -23,9 +23,9 @@ See: .planning/PROJECT.md (updated 2026-02-28)
 ## Current Position
 
 Phase: 35 of 36 (Real-Time Vote Indicators) -- IN PROGRESS
-Plan: 1 of 4 complete
-Status: Executing Plan 35-02
-Last activity: 2026-03-02 -- Completed 35-01: Vote data plumbing (participantId in broadcasts, voterIds in APIs)
+Plan: 3 of 4 complete
+Status: Executing Plan 35-04
+Last activity: 2026-03-02 -- Completed 35-03: Poll live dashboard ParticipationSidebar with real-time vote indicators
 
 Progress: [##░░░░░░░░] 17% (v2.0)
 
@@ -91,6 +91,9 @@ Recent from research:
 - 35-01: Optional spread for participantId in broadcast payloads keeps backward-compatible
 - 35-01: Poll voterIds uses rank=1 filter for one-row-per-voter across simple and ranked polls
 - 35-01: Bracket state API fetches voterIds in parallel with voteCounts via Promise.all
+- 35-03: Dual useRealtimePoll subscription is safe (Supabase channel-level dedup)
+- 35-03: Poll voterIds is flat array (not per-matchup) since polls have single voting context
+- 35-03: Pass poll.id as selectedMatchupId for stable truthy value in ParticipationSidebar
 
 ### Roadmap Evolution
 
@@ -142,9 +145,10 @@ None -- all v1.3 requirements shipped.
 | Phase 34 P01 | 3min | 2 tasks | 3 files |
 | Phase 34 P02 | 2min | 2 tasks | 2 files |
 | Phase 35 P01 | 2min | 2 tasks | 6 files |
+| Phase 35 P03 | 3min | 2 tasks | 3 files |
 
 ## Session Continuity
 
 Last session: 2026-03-02
-Stopped at: Completed 35-01: Vote data plumbing (participantId in broadcasts, voterIds in APIs)
-Resume: `/gsd:execute-phase 35` to continue with plan 35-02
+Stopped at: Completed 35-03: Poll live dashboard ParticipationSidebar with real-time vote indicators
+Resume: `/gsd:execute-phase 35` to continue with plan 35-04
