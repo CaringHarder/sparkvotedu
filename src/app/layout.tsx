@@ -17,6 +17,10 @@ export const metadata: Metadata = {
   title: "SparkVotEDU - Ignite Student Voice Through Voting",
   description:
     "Interactive brackets and polls that spark student engagement in any classroom. Create tournaments, polls, and predictions — students join with a simple code.",
+  icons: {
+    icon: "/favicon.ico",
+    apple: "/apple-icon.png",
+  },
   openGraph: {
     title: "SparkVotEDU - Ignite Student Voice Through Voting",
     description:
