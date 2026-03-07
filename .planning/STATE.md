@@ -25,7 +25,7 @@ See: .planning/PROJECT.md (updated 2026-02-28)
 Phase: 38 of 38 (Require Email Verification Before Login) -- IN PROGRESS
 Plan: 2 of 3 complete
 Status: Completed Plan 38-02
-Last activity: 2026-03-07 - Completed quick task 21: Make bigger cards/buttons for simple modes in polling and brackets
+Last activity: 2026-03-07 - Completed quick task 22: Make submit vote button green and obvious for younger students
 
 Progress: [##░░░░░░░░] 17% (v2.0)
 
@@ -165,6 +165,7 @@ None -- all v1.3 requirements shipped.
 | 19 | Reduce display settings vertical space with horizontal flex-wrap layout | 2026-03-01 | 1fae2c1 | Verified | [19-reduce-display-settings-vertical-space-o](./quick/19-reduce-display-settings-vertical-space-o/) |
 | 20 | Replace viewing mode on/off switch with Simple/Advanced segmented control | 2026-03-02 | 9e9d283 | Verified | [20-fix-simple-advanced-viewing-mode-toggle-](./quick/20-fix-simple-advanced-viewing-mode-toggle-/) |
 | 21 | Make bigger cards/buttons for simple mode (brackets and polls) | 2026-03-07 | 8b45d68 | Verified | [21-make-bigger-cards-buttons-for-simple-mod](./quick/21-make-bigger-cards-buttons-for-simple-mod/) |
+| 22 | Make submit vote button green and obvious for younger students | 2026-03-07 | 4a79a1d | | [22-make-submit-vote-button-green-and-obviou](./quick/22-make-submit-vote-button-green-and-obviou/) |
 | Phase 31 P01 | 3min | 2 tasks | 10 files |
 | Phase 31 P02 | 5min | 3 tasks | 4 files |
 | Phase 31.1 P01 | 2min | 2 tasks | 5 files |
