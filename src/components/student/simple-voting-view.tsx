@@ -145,7 +145,7 @@ export function SimpleVotingView({
     const allDecided = allMatchups.every((m) => m.status === 'decided')
 
     return (
-      <div className="mx-auto max-w-2xl px-4 py-12 text-center">
+      <div className="mx-auto max-w-3xl px-4 py-12 text-center">
         {winnerRevealOverlay}
         {celebrationOverlay}
         <h1 className="mb-6 text-2xl font-bold">{bracketName}</h1>
@@ -187,15 +187,15 @@ export function SimpleVotingView({
   const allVoted = currentIndex >= votableMatchups.length
 
   return (
-    <div className="mx-auto max-w-2xl px-4 py-4 sm:px-6 sm:py-6">
+    <div className="mx-auto max-w-3xl px-4 py-4 sm:px-6 sm:py-6">
       <PausedOverlay visible={bracketStatus === 'paused'} />
       {winnerRevealOverlay}
       {celebrationOverlay}
-      <h1 className="mb-4 text-center text-2xl font-bold sm:mb-6 sm:text-3xl">{bracketName}</h1>
+      <h1 className="mb-4 text-center text-3xl font-bold sm:mb-6 sm:text-4xl">{bracketName}</h1>
 
       {/* Progress indicator (hidden once all voted) */}
       {!allVoted && !showConfirmation && (
-        <p className="mb-4 text-center text-sm text-muted-foreground">
+        <p className="mb-4 text-center text-base text-muted-foreground sm:text-lg">
           Matchup {safeIndex + 1} of {votableMatchups.length}
         </p>
       )}

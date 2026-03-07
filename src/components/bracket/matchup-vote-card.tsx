@@ -77,8 +77,8 @@ const MatchupVoteCardInner = React.memo(function MatchupVoteCardInner({
   ) {
     if (!entrant || !entrantId) {
       return (
-        <div className="flex min-h-20 flex-1 flex-col items-center justify-center rounded-xl border-2 border-dashed border-muted-foreground/30 bg-muted/50 px-6 py-6">
-          <span className="text-2xl font-medium text-muted-foreground italic sm:text-3xl">TBD</span>
+        <div className="flex min-h-32 flex-1 flex-col items-center justify-center rounded-xl border-2 border-dashed border-muted-foreground/30 bg-muted/50 px-6 py-8 sm:min-h-40 sm:py-10">
+          <span className="text-3xl font-medium text-muted-foreground italic sm:text-4xl">TBD</span>
         </div>
       )
     }
@@ -94,7 +94,7 @@ const MatchupVoteCardInner = React.memo(function MatchupVoteCardInner({
         onClick={() => handleVote(entrantId)}
         disabled={!isInteractive}
         className={`
-          relative flex min-h-20 flex-1 flex-col items-center justify-center rounded-xl border-2 px-6 py-6
+          relative flex min-h-32 flex-1 flex-col items-center justify-center rounded-xl border-2 px-6 py-8 sm:min-h-40 sm:py-10
           transition-all duration-200
           ${isInteractive ? 'cursor-pointer hover:scale-105 active:scale-95' : 'cursor-default'}
           ${isVoted
@@ -109,21 +109,21 @@ const MatchupVoteCardInner = React.memo(function MatchupVoteCardInner({
       >
         {entrant.logoUrl && (
           // eslint-disable-next-line @next/next/no-img-element
-          <div className="mb-2 h-28 w-28 overflow-hidden rounded-lg sm:h-36 sm:w-36">
+          <div className="mb-3 h-36 w-36 overflow-hidden rounded-lg sm:h-44 sm:w-44">
             <img src={entrant.logoUrl} alt={entrant.name} className="h-full w-full object-cover" />
           </div>
         )}
-        <span className={`text-center text-2xl font-semibold sm:text-3xl ${isNotChosen ? 'text-muted-foreground' : ''}`}>
+        <span className={`text-center text-3xl font-semibold sm:text-4xl ${isNotChosen ? 'text-muted-foreground' : ''}`}>
           {entrant.name}
         </span>
 
         {/* Checkmark for voted entrant */}
         {isVoted && (
-          <span className="absolute right-2 top-2 flex h-6 w-6 items-center justify-center rounded-full bg-green-600 dark:bg-green-500 text-white text-xs">
+          <span className="absolute right-2 top-2 flex h-8 w-8 items-center justify-center rounded-full bg-green-600 dark:bg-green-500 text-white text-xs">
             {isPending ? (
               <span className="block h-3 w-3 animate-spin rounded-full border-2 border-white border-t-transparent" />
             ) : (
-              <svg viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4">
+              <svg viewBox="0 0 20 20" fill="currentColor" className="h-5 w-5">
                 <path
                   fillRule="evenodd"
                   d="M16.704 4.153a.75.75 0 01.143 1.052l-8 10.5a.75.75 0 01-1.127.075l-4.5-4.5a.75.75 0 011.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 011.05-.143z"
@@ -151,7 +151,7 @@ const MatchupVoteCardInner = React.memo(function MatchupVoteCardInner({
   }
 
   return (
-    <div className="w-full max-w-2xl rounded-xl border border-gray-300 dark:border-border bg-card p-6 shadow-sm">
+    <div className="w-full max-w-2xl rounded-xl border border-gray-300 dark:border-border bg-card p-6 shadow-sm sm:p-8">
       {/* Status badge */}
       <div className="mb-3 flex items-center justify-center">
         <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${statusBadge.className}`}>
@@ -163,7 +163,7 @@ const MatchupVoteCardInner = React.memo(function MatchupVoteCardInner({
       <div className="flex flex-col items-stretch gap-3 sm:flex-row sm:items-center">
         {renderEntrantButton(matchup.entrant1, matchup.entrant1Id)}
 
-        <span className="flex-shrink-0 text-center text-sm font-bold uppercase tracking-wider text-muted-foreground">
+        <span className="flex-shrink-0 text-center text-lg font-bold uppercase tracking-wider text-muted-foreground sm:text-xl">
           VS
         </span>
 
