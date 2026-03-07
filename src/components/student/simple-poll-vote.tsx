@@ -77,7 +77,7 @@ export function SimplePollVote({
     <div className="w-full space-y-6">
       {/* Poll question */}
       <div className="text-center">
-        <h2 className="text-xl font-bold sm:text-2xl">{poll.question}</h2>
+        <h2 className="text-2xl font-bold sm:text-3xl">{poll.question}</h2>
         {poll.description && (
           <p className="mt-2 text-sm text-muted-foreground">
             {poll.description}
@@ -114,8 +114,8 @@ export function SimplePollVote({
       <div
         className={
           is2Options
-            ? 'flex flex-col items-center gap-4 sm:flex-row sm:justify-center sm:gap-6'
-            : 'grid grid-cols-2 gap-3 sm:grid-cols-3'
+            ? 'flex flex-col items-center gap-5 sm:flex-row sm:justify-center sm:gap-8'
+            : 'grid grid-cols-2 gap-4 sm:grid-cols-3 sm:gap-5'
         }
       >
         {sortedOptions.map((option) => {
@@ -126,7 +126,7 @@ export function SimplePollVote({
             <Card
               key={option.id}
               className={`cursor-pointer transition-all ${
-                is2Options ? 'w-full sm:w-64 md:w-72' : ''
+                is2Options ? 'w-full sm:w-72 md:w-80' : ''
               } ${
                 isSelected
                   ? 'border-primary bg-primary/10 ring-2 ring-primary/30'
@@ -137,10 +137,10 @@ export function SimplePollVote({
               }}
             >
               <CardContent
-                className={`flex flex-col items-center justify-center gap-2 px-3 py-4 ${
+                className={`flex flex-col items-center justify-center gap-2 ${
                   is2Options
-                    ? 'min-h-[120px] sm:min-h-[140px]'
-                    : 'min-h-[80px]'
+                    ? 'min-h-[160px] px-3 py-4 sm:min-h-[200px]'
+                    : 'min-h-[120px] px-4 py-6 sm:min-h-[140px]'
                 }`}
               >
                 {/* Image thumbnail if present */}
@@ -148,8 +148,8 @@ export function SimplePollVote({
                   <div
                     className={
                       is2Options
-                        ? 'h-16 w-16 overflow-hidden rounded-md'
-                        : 'h-12 w-12 overflow-hidden rounded-md'
+                        ? 'h-20 w-20 overflow-hidden rounded-md sm:h-24 sm:w-24'
+                        : 'h-16 w-16 overflow-hidden rounded-md sm:h-20 sm:w-20'
                     }
                   >
                     <img
@@ -164,8 +164,8 @@ export function SimplePollVote({
                 <span
                   className={`text-center font-medium leading-tight ${
                     is2Options
-                      ? 'text-base sm:text-lg'
-                      : 'text-sm sm:text-base'
+                      ? 'text-lg sm:text-xl'
+                      : 'text-base sm:text-lg'
                   }`}
                 >
                   {option.text}
@@ -173,11 +173,11 @@ export function SimplePollVote({
 
                 {/* Selection check */}
                 {isSelected && (
-                  <div className="flex h-6 w-6 items-center justify-center rounded-full bg-primary">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary">
                     <svg
                       xmlns="http://www.w3.org/2000/svg"
-                      width="14"
-                      height="14"
+                      width="18"
+                      height="18"
                       viewBox="0 0 24 24"
                       fill="none"
                       stroke="currentColor"
@@ -208,14 +208,14 @@ export function SimplePollVote({
             size="lg"
             onClick={submitVote}
             disabled={!selectedOptionId || submitting}
-            className="min-w-[160px]"
+            className="min-w-[200px] text-lg py-6"
           >
             {submitting ? 'Submitting...' : 'Submit Vote'}
           </Button>
         )}
 
         {submitted && canChangeVote && (
-          <Button variant="outline" size="lg" onClick={enableChangeVote}>
+          <Button variant="outline" size="lg" className="text-lg py-6" onClick={enableChangeVote}>
             Change Vote
           </Button>
         )}
