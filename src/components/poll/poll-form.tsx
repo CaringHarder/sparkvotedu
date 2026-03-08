@@ -11,17 +11,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { OptionList } from '@/components/poll/option-list'
 import type { OptionItem } from '@/components/poll/option-list'
 import { createPoll, updatePoll, updatePollOptions } from '@/actions/poll'
-import { POLL_TEMPLATES, type PollTemplate } from '@/lib/poll/templates'
-import { Badge } from '@/components/ui/badge'
+import { POLL_TEMPLATES, POLL_TEMPLATE_CATEGORIES, type PollTemplate } from '@/lib/poll/templates'
 import type { PollType } from '@/lib/poll/types'
-
-const CATEGORY_COLORS: Record<string, string> = {
-  'Icebreakers': 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400',
-  'Classroom Decisions': 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400',
-  'Academic Debates': 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400',
-  'Fun & Trivia': 'bg-pink-100 text-pink-700 dark:bg-pink-900/30 dark:text-pink-400',
-  'Feedback': 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400',
-}
 
 interface PollFormProps {
   /** Creation mode: 'quick' hides poll type/settings/ranking depth */
@@ -212,31 +203,28 @@ export function PollForm({ mode = 'edit', existingPoll, sessions = [] }: PollFor
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-5">
-        {/* Template chip grid (Quick Create only) */}
+        {/* Template dropdown (Quick Create only) */}
         {isQuickCreate && (
           <div className="space-y-2">
-            <h2 className="text-sm font-medium text-muted-foreground">Start from a template</h2>
-            <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4">
-              {POLL_TEMPLATES.map((t) => {
-                const isSelected = selectedTemplate?.id === t.id
-                const colorClass = CATEGORY_COLORS[t.category] ?? 'bg-gray-100 text-gray-700 dark:bg-gray-900/30 dark:text-gray-400'
-                return (
-                  <button
-                    key={t.id}
-                    type="button"
-                    onClick={() => handleTemplateSelect(isSelected ? null : t)}
-                    className={`flex flex-col items-center gap-1.5 rounded-lg border-2 p-3 text-center transition-colors ${
-                      isSelected
-                        ? 'border-primary ring-1 ring-primary'
-                        : 'border-transparent hover:border-primary/30'
-                    }`}
-                  >
-                    <span className="text-xs font-medium line-clamp-2">{t.question}</span>
-                    <Badge variant="secondary" className={colorClass}>{t.category}</Badge>
-                  </button>
-                )
-              })}
-            </div>
+            <Label htmlFor="template-select">Start from a template</Label>
+            <select
+              id="template-select"
+              value={selectedTemplate?.id ?? ''}
+              onChange={(e) => {
+                const tmpl = POLL_TEMPLATES.find((t) => t.id === e.target.value) ?? null
+                handleTemplateSelect(tmpl)
+              }}
+              className="w-full rounded-md border bg-background px-2 py-1.5 text-sm"
+            >
+              <option value="">Choose a template...</option>
+              {POLL_TEMPLATE_CATEGORIES.map((cat) => (
+                <optgroup key={cat} label={cat}>
+                  {POLL_TEMPLATES.filter((t) => t.category === cat).map((t) => (
+                    <option key={t.id} value={t.id}>{t.question}</option>
+                  ))}
+                </optgroup>
+              ))}
+            </select>
           </div>
         )}
 
