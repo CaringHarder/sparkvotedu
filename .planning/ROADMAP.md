@@ -101,7 +101,9 @@
   2. Existing participants are unaffected -- all current data remains intact with null emoji and lastInitial values
   3. A curated emoji pool module exports a list of 20-30 K-12-safe emoji shortcodes with a `pickEmoji()` function that attempts session-uniqueness
   4. An `EmojiAvatar` component renders any shortcode as its visual emoji character consistently across browsers
-**Plans**: TBD
+**Plans**: 1 plan
+Plans:
+- [ ] 39-01-PLAN.md -- Schema migration + emoji pool module + EmojiAvatar component
 
 ### Phase 40: Server Actions + DAL
 **Goal**: The backend can create participants with emoji and lastInitial, look up returning students by name+initial, and handle ambiguous matches -- enabling both new join and cross-device reclaim flows
@@ -112,7 +114,9 @@
   2. A `lookupStudent` action finds returning students by firstName + lastInitial within a session, returning their fun name and emoji for confirmation
   3. When multiple participants match a name+initial query, the action returns all matches with fun names and emojis so the student can pick their identity
   4. The join flow server actions work identically for brand-new sessions and sessions with existing participants
-**Plans**: TBD
+**Plans**: 1 plan
+Plans:
+- [ ] 39-01-PLAN.md -- Schema migration + emoji pool module + EmojiAvatar component
 
 ### Phase 41: Join Wizard UI
 **Goal**: Students entering a session see an instant fun name assignment followed by a guided 3-step wizard to enter their real name, pick an emoji, and see a welcome confirmation -- replacing the old single-input name form
@@ -123,7 +127,9 @@
   2. Student completes a 3-step wizard: first name (auto-focused input, green button appears on keystroke) then last initial (max 2 chars, animates in) then emoji picker (4x4 grid of 16 curated emojis)
   3. After completing the wizard, student sees a welcome screen showing their fun name + chosen emoji before entering the session
   4. Returning students who match by name+initial see a disambiguation screen with fun names and emojis to pick from (not auto-claimed)
-**Plans**: TBD
+**Plans**: 1 plan
+Plans:
+- [ ] 39-01-PLAN.md -- Schema migration + emoji pool module + EmojiAvatar component
 
 ### Phase 42: localStorage Persistence + Auto-Rejoin
 **Goal**: Students returning on the same device skip the join wizard entirely -- localStorage remembers their identity across all sessions they have joined, and re-entering a class code auto-rejoins silently
@@ -134,7 +140,9 @@
   2. localStorage stores identities for all sessions the student has joined (not just the most recent), keyed by sessionId
   3. When localStorage is unavailable (ephemeral Chromebook mode, private browsing), the join wizard runs normally with no errors or warnings -- name-based server-side reclaim is the fallback
   4. Stored identities older than 30 days are automatically pruned from localStorage
-**Plans**: TBD
+**Plans**: 1 plan
+Plans:
+- [ ] 39-01-PLAN.md -- Schema migration + emoji pool module + EmojiAvatar component
 
 ### Phase 43: FingerprintJS Removal
 **Goal**: All FingerprintJS code, dependencies, and database columns are removed from the codebase, reducing the client bundle by ~150KB and eliminating dead code across application, schema, and package layers
@@ -145,7 +153,9 @@
   2. All fingerprint-related application code (fingerprint.ts, use-device-identity.ts references, server action fingerprint parameters) is removed
   3. Device fingerprint database columns are dropped via a separate Prisma migration
   4. Client bundle size is reduced by approximately 150KB compared to pre-removal baseline
-**Plans**: TBD
+**Plans**: 1 plan
+Plans:
+- [ ] 39-01-PLAN.md -- Schema migration + emoji pool module + EmojiAvatar component
 
 ### Phase 44: Teacher Sidebar + Emoji Display
 **Goal**: Teachers can toggle between fun name and real name views in the participation sidebar, edit student display names, and students can self-edit their name and emoji -- with emoji + fun name displayed consistently throughout all session UI
@@ -157,7 +167,9 @@
   3. Teacher can click on any student in the sidebar and edit their display name
   4. Student sees a gear icon in the session header that opens an editor to change their display name and emoji
   5. Existing participants who rejoin without an emoji are prompted once to pick an emoji (one-time migration experience)
-**Plans**: TBD
+**Plans**: 1 plan
+Plans:
+- [ ] 39-01-PLAN.md -- Schema migration + emoji pool module + EmojiAvatar component
 
 ## Progress
 
