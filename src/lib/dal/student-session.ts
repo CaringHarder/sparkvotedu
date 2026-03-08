@@ -53,12 +53,15 @@ export async function findParticipantByRecoveryCode(recoveryCode: string) {
  * Create a new participant in a session with a unique alliterative fun name.
  * Fetches existing names in the session to ensure uniqueness.
  * deviceId accepts null for name-based join flow (no device fingerprinting).
+ * lastInitial and emoji are optional for backward compatibility.
  */
 export async function createParticipant(
   sessionId: string,
   deviceId: string | null,
   fingerprint?: string,
-  firstName: string = ''
+  firstName: string = '',
+  lastInitial: string | null = null,
+  emoji: string | null = null
 ) {
   // Fetch existing fun names for this session
   const existing = await prisma.studentParticipant.findMany({
@@ -76,6 +79,8 @@ export async function createParticipant(
       firstName,
       deviceId,
       fingerprint: fingerprint ?? null,
+      lastInitial,
+      emoji,
     },
   })
 }
@@ -219,5 +224,76 @@ export async function updateLastSeen(participantId: string) {
   return prisma.studentParticipant.update({
     where: { id: participantId },
     data: { lastSeenAt: new Date() },
+  })
+}
+
+/**
+ * Find returning students by firstName + lastInitial across ALL of a teacher's
+ * non-archived sessions. Used for cross-device identity reclaim.
+ *
+ * Returns matches ordered by lastSeenAt desc (most recent first) so the
+ * "latest emoji wins" for auto-reclaim on single match.
+ */
+export async function findReturningStudent(
+  teacherId: string,
+  firstName: string,
+  lastInitial: string
+) {
+  return prisma.studentParticipant.findMany({
+    where: {
+      firstName: { equals: firstName, mode: 'insensitive' },
+      lastInitial: { equals: lastInitial, mode: 'insensitive' },
+      banned: false,
+      session: {
+        teacherId,
+        archivedAt: null,
+      },
+    },
+    select: {
+      id: true,
+      funName: true,
+      emoji: true,
+      sessionId: true,
+      lastSeenAt: true,
+    },
+    orderBy: { lastSeenAt: 'desc' },
+  })
+}
+
+/**
+ * Create a returning participant in a target session, copying the identity
+ * (funName + emoji) from a previous session's participant.
+ *
+ * Handles funName collision within the target session by generating a new name.
+ */
+export async function createReturningParticipant(
+  sessionId: string,
+  source: { funName: string; emoji: string | null },
+  firstName: string,
+  lastInitial: string,
+  deviceId: string | null
+) {
+  // Fetch existing fun names for this session to check collision
+  const existing = await prisma.studentParticipant.findMany({
+    where: { sessionId },
+    select: { funName: true },
+  })
+  const existingNames = new Set(existing.map((p) => p.funName))
+
+  // Use original funName if available, generate new if collision
+  const funName = existingNames.has(source.funName)
+    ? generateFunName(existingNames)
+    : source.funName
+
+  return prisma.studentParticipant.create({
+    data: {
+      sessionId,
+      funName,
+      firstName,
+      lastInitial,
+      emoji: source.emoji,
+      deviceId,
+      fingerprint: null,
+    },
   })
 }

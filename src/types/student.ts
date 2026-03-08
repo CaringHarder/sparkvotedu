@@ -42,3 +42,14 @@ export interface JoinResult {
   duplicates?: DuplicateCandidate[]
   error?: string
 }
+
+/** Result of a cross-session student lookup for identity reclaim */
+export interface LookupResult {
+  participant?: StudentParticipantData
+  session?: ClassSessionData
+  returning?: boolean
+  candidates?: DuplicateCandidate[]
+  isNew?: boolean
+  allowNew?: boolean // true when candidates shown, enables "None of these" escape
+  error?: string
+}
