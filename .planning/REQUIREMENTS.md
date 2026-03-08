@@ -1,124 +1,96 @@
-# Requirements: SparkVotEDU
+# Requirements: SparkVotEDU v3.0
 
-**Defined:** 2026-02-28
+**Defined:** 2026-03-08
 **Core Value:** Teachers can instantly engage any classroom through voting -- on any topic, in any format -- and see participation happen in real time.
 
-## v2.0 Requirements
+## v3.0 Requirements
 
-Requirements for v2.0 Teacher Power-Ups. Each maps to roadmap phases.
+Requirements for the Student Join Overhaul + Cleanup milestone.
+
+### Join Flow
+
+- [ ] **JOIN-01**: Student joins session (via class code entry or direct link) and instantly receives a unique fun name
+- [ ] **JOIN-02**: Student completes 3-step wizard: first name (auto-focused, green button on keystroke) → last initial (max 2 chars, animates in) → emoji picker (4x4 grid of 16 curated K-12-safe emojis)
+- [ ] **JOIN-03**: Student sees welcome screen with their fun name + chosen emoji before entering session
+- [ ] **JOIN-04**: Student's emoji + fun name display throughout the session (header, sidebar, voting UI, results)
+
+### Persistence
+
+- [ ] **PERS-01**: Same-device returning student auto-rejoins silently via localStorage (zero clicks beyond entering class code or visiting direct link)
+- [ ] **PERS-02**: localStorage remembers all sessions the student has joined (not just the most recent)
+- [ ] **PERS-03**: Cross-device returning student can reclaim identity by typing first name + last initial
+- [ ] **PERS-04**: When cross-device name match is ambiguous, system shows fun names + emojis for student to pick from
 
 ### Teacher Controls
 
-- [ ] **CTRL-01**: Teacher can pause an active bracket, stopping all student voting
-- [ ] **CTRL-02**: Teacher can pause an active poll, stopping all student voting
-- [ ] **CTRL-03**: Teacher can resume a paused bracket, re-enabling student voting
-- [ ] **CTRL-04**: Teacher can resume a paused poll, re-enabling student voting
-- [ ] **CTRL-05**: Student sees playful "needs to cook" themed overlay when activity is paused
-- [ ] **CTRL-06**: Server rejects vote attempts on paused activities (server-side enforcement)
-- [ ] **CTRL-07**: Teacher can undo the most recent round advancement in SE brackets (clears winners, reopens voting)
-- [ ] **CTRL-08**: Teacher can undo the most recent round advancement in DE brackets (reverses losers bracket placement)
-- [ ] **CTRL-09**: Teacher can undo the most recent round advancement in RR brackets
-- [ ] **CTRL-10**: Teacher can undo the most recent round in predictive brackets
-- [ ] **CTRL-11**: Undo cascades to clear dependent matchups in later rounds that used undone winners
-- [ ] **CTRL-12**: Teacher can reopen a completed bracket (lands in paused state for review)
-- [ ] **CTRL-13**: Teacher can reopen a closed poll (preserves all existing votes)
-- [ ] **CTRL-14**: Teacher can edit display settings (simple/advanced, show seeds, show vote counts, timer) on a bracket after creation
-- [ ] **CTRL-15**: Teacher can edit display settings (show live results, allow vote change) on a poll after creation
-- [x] **CTRL-16**: Display settings changes broadcast to student views in real time
-- [ ] **CTRL-17**: Structural settings (bracket type, size, poll type) are locked after creation with clear indicator
+- [ ] **TCHR-01**: Teacher can toggle participation sidebar between fun name view and real name view
+- [ ] **TCHR-02**: Toggle has a global default (saved to teacher profile) with per-session override
+- [ ] **TCHR-03**: Teacher can edit any student's display name from the participation sidebar
+- [ ] **TCHR-04**: Student can edit their own display name and emoji via gear icon in session header
 
-### Creation UX
+### Migration
 
-- [ ] **CREATE-01**: Bracket creation page has Quick Create mode with topic list chips (matching poll pattern)
-- [ ] **CREATE-02**: Teacher picks a topic and entrant count (4/8/16), bracket creates with SE/simple/no seeds defaults
-- [ ] **CREATE-03**: Poll Quick Create shows only question and options fields (settings hidden)
-- [ ] **CREATE-04**: Poll settings (allow vote change, show live results) available only in Step-by-Step mode
-- [ ] **CREATE-05**: Poll option images preview in same style as bracket entrant images before creation
-
-### Live Dashboard
-
-- [ ] **LIVE-01**: Student Activity panel shows green dot indicator when a student has voted on the active round/poll
-- [ ] **LIVE-02**: Vote indicators update in real time as students vote (no refresh needed)
-- [ ] **LIVE-03**: Vote indicators work across all 4 bracket types and polls
-- [ ] **LIVE-04**: All "View Live" labels changed to "Go Live" throughout the app
-
-### Bug Fixes
-
-- [ ] **FIX-01**: Duplicating a poll and removing options correctly removes them after update
-- [ ] **FIX-02**: Student poll view with 2 options displays centered
-- [ ] **FIX-03**: Duplicate name flow suggests adding last initial (e.g., "Try David R.") with pre-filled input
-
-## Future Requirements
-
-Deferred to future release. Tracked but not in current roadmap.
-
-### Undo Edge Cases
-
-- **UNDO-01**: Undo for predictive brackets with scored leaderboard recalculation
-- **UNDO-02**: Bulk undo across multiple rounds in one action
-
-### Advanced Creation
-
-- **ACREATE-01**: Quick Create for DE and RR bracket types
-- **ACREATE-02**: Settings presets/templates ("save my preferred settings")
+- [ ] **MIGR-01**: Schema adds emoji and lastInitial columns to StudentParticipant (nullable, zero-downtime)
+- [ ] **MIGR-02**: Existing participants get emoji prompt on next rejoin (one-time migration experience)
+- [ ] **MIGR-03**: New join flow works for both new and existing sessions seamlessly
 
 ### Cleanup
 
-- **CLEAN-01**: Remove FingerprintJS package from dependencies
-- **CLEAN-02**: Remove device fingerprint columns from database schema
+- [ ] **CLEN-01**: FingerprintJS package and all fingerprint-related application code removed
+- [ ] **CLEN-02**: Device fingerprint database columns removed via separate migration
+- [ ] **CLEN-03**: Bundle size reduced by removing unused fingerprinting dependencies (~150KB)
+
+## Future Requirements
+
+Deferred to v3.x or later.
+
+### Enhanced Identity
+
+- **IDEN-01**: Custom emoji set per teacher (teacher curates which emojis are available)
+- **IDEN-02**: Student avatar drawing canvas (draw instead of pick emoji)
+- **IDEN-03**: QR code auto-fill for mobile join (scan to join, no typing)
 
 ## Out of Scope
 
 | Feature | Reason |
 |---------|--------|
-| Full audit log / history for undo | Massive DB complexity; single-level undo covers 95% of teacher mistakes |
-| Edit entrants/options while live | Changing entrants mid-vote invalidates existing votes; allow rename only |
-| Auto-pause when all voted | Removes teacher control over pacing; "All voted!" badge is sufficient |
-| Student-facing vote timer auto-close | Conflicts with deliberative voting model; optional timer display exists |
-| Per-student pause (mute one student) | Really per-student ban; existing `banned` field handles disruption |
-| Undo to arbitrary point in history | Cascading multi-round undo too risky for data integrity |
+| Full emoji keyboard picker | 80KB+ libraries, age-inappropriate content, overwhelming for K-5 students |
+| Account-based student identity | COPPA burden, kills "code and go" UX, adds massive friction |
+| FingerprintJS or browser fingerprinting | Privacy concerns, unreliable on managed Chromebooks, already proven broken |
+| Persistent cross-session student profiles | Creates de facto account system, FERPA/privacy concerns |
+| Real-time localStorage sync across devices | Heavyweight infrastructure for rare case; manual reclaim is simpler |
+| Custom free-text fun names | Inappropriate name risk, moderation burden, loses fairness of random assignment |
+| BroadcastChannel multi-tab sync | Inconsistent browser support, unnecessary — localStorage is already tab-shared |
+| Cookie-based identity fallback | Adds complexity; localStorage + name-matching covers all cases |
 
 ## Traceability
 
-Which phases cover which requirements. Updated during roadmap creation.
-
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| CTRL-01 | Phase 29 | Pending |
-| CTRL-02 | Phase 29 | Pending |
-| CTRL-03 | Phase 29 | Pending |
-| CTRL-04 | Phase 29 | Pending |
-| CTRL-05 | Phase 29 | Pending |
-| CTRL-06 | Phase 29 | Pending |
-| CTRL-07 | Phase 30 | Pending |
-| CTRL-08 | Phase 30 | Pending |
-| CTRL-09 | Phase 30 | Pending |
-| CTRL-10 | Phase 30 | Pending |
-| CTRL-11 | Phase 30 | Pending |
-| CTRL-12 | Phase 31 | Pending |
-| CTRL-13 | Phase 31 | Pending |
-| CTRL-14 | Phase 32 | Pending |
-| CTRL-15 | Phase 32 | Pending |
-| CTRL-16 | Phase 32 | Complete |
-| CTRL-17 | Phase 32 | Pending |
-| CREATE-01 | Phase 33 | Pending |
-| CREATE-02 | Phase 33 | Pending |
-| CREATE-03 | Phase 34 | Pending |
-| CREATE-04 | Phase 34 | Pending |
-| CREATE-05 | Phase 34 | Pending |
-| LIVE-01 | Phase 35 | Pending |
-| LIVE-02 | Phase 35 | Pending |
-| LIVE-03 | Phase 35 | Pending |
-| LIVE-04 | Phase 29 | Pending |
-| FIX-01 | Phase 36 | Pending |
-| FIX-02 | Phase 36 | Pending |
-| FIX-03 | Phase 36 | Pending |
+| JOIN-01 | — | Pending |
+| JOIN-02 | — | Pending |
+| JOIN-03 | — | Pending |
+| JOIN-04 | — | Pending |
+| PERS-01 | — | Pending |
+| PERS-02 | — | Pending |
+| PERS-03 | — | Pending |
+| PERS-04 | — | Pending |
+| TCHR-01 | — | Pending |
+| TCHR-02 | — | Pending |
+| TCHR-03 | — | Pending |
+| TCHR-04 | — | Pending |
+| MIGR-01 | — | Pending |
+| MIGR-02 | — | Pending |
+| MIGR-03 | — | Pending |
+| CLEN-01 | — | Pending |
+| CLEN-02 | — | Pending |
+| CLEN-03 | — | Pending |
 
 **Coverage:**
-- v2.0 requirements: 29 total
-- Mapped to phases: 29
-- Unmapped: 0
+- v3.0 requirements: 18 total
+- Mapped to phases: 0
+- Unmapped: 18 ⚠️
 
 ---
-*Requirements defined: 2026-02-28*
-*Last updated: 2026-02-28 after roadmap creation*
+*Requirements defined: 2026-03-08*
+*Last updated: 2026-03-08 after initial definition*
