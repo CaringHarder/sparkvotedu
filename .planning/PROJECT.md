@@ -58,36 +58,26 @@ Teachers can instantly engage any classroom through voting -- on any topic, in a
 - ✓ Archive views for brackets and polls with recover and permanent delete -- v1.3
 - ✓ Optimistic inline rename display (no stale name flash) -- v1.3
 
-## Current Milestone: v2.0 Teacher Power-Ups
-
-**Goal:** Give teachers full control over their activities (pause, undo, reopen, edit settings), streamline creation with quick-create brackets, and polish student-facing UX.
-
-**Target features:**
-- Pause/resume brackets and polls (playful student-facing "needs to cook" message)
-- Undo round advancement and reopen voting
-- Reopen completed brackets/polls
-- Edit bracket/poll settings after creation (display settings even while live)
-- Quick Create for brackets (topic list chips, pick # of entrants, two clicks)
-- Simplified poll Quick Create (question + options only, settings in Step-by-Step)
-- Real-time student vote indicators in Student Activity panel (green dots)
-- Poll image options match bracket preview style
-- "View Live" → "Go Live" terminology
-- Bug fixes: duplicate poll retains removed options, 2-option poll centering, duplicate name flow clarity
+- ✓ Pause/resume any bracket or poll with playful student-facing overlay -- v2.0
+- ✓ Undo round advancement across all bracket types (SE, DE, RR, Predictive) -- v2.0
+- ✓ Reopen completed brackets and polls for additional voting -- v2.0
+- ✓ Edit bracket/poll display settings live with real-time student sync -- v2.0
+- ✓ Quick Create for brackets (topic chips, count picker) and polls (template chips) -- v2.0
+- ✓ Real-time student vote indicators (green dots) in participation sidebar -- v2.0
+- ✓ Poll image options preview matching bracket style -- v2.0
+- ✓ "View Live" → "Go Live" terminology -- v2.0
+- ✓ Bug fixes: ghost poll options, 2-option centering, duplicate name flow -- v2.0
+- ✓ User profile page with password change and admin sidebar link -- v2.0
+- ✓ Email verification enforcement before dashboard access -- v2.0
+- ✓ Safari OAuth compatibility (requestIdleCallback polyfill) -- v2.0
 
 ### Active
 
-- Pause/resume any bracket or poll with playful student-facing message
-- Undo round advancement and reopen voting on that round
-- Reopen a completed bracket or poll for more voting
-- Edit bracket/poll settings after creation (display settings changeable during live)
-- Quick Create for brackets with topic list chips and entrant count picker
-- Simplified poll Quick Create (question + options only)
-- Real-time student vote indicators (green dots) in Student Activity panel across all types
-- Poll image options preview matching bracket image style before creation
-- "View Live" → "Go Live" label change everywhere
-- Fix: duplicated poll retains removed options after update
-- Fix: student 2-option poll layout off-center
-- Fix: duplicate name flow suggests adding last initial
+(None — planning next milestone)
+
+### Future
+
+- Permanent teacher account deletion from admin panel (identified during v2.0 UAT)
 
 ### Out of Scope
 
@@ -153,4 +143,4 @@ Teachers can instantly engage any classroom through voting -- on any topic, in a
 | Default roundRobinPacing to round_by_round when null | Existing brackets without pacing set behave as before | ✓ Good -- backward compatible |
 
 ---
-*Last updated: 2026-02-28 after v2.0 milestone start*
+*Last updated: 2026-03-08 after v2.0 milestone complete*

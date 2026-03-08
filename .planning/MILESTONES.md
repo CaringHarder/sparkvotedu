@@ -68,3 +68,24 @@
 
 ---
 
+
+## v2.0 Teacher Power-Ups (Shipped: 2026-03-08)
+
+**Phases completed:** 11 phases (29-38 + 31.1), 36 plans
+
+**Key accomplishments:**
+- Pause/resume any bracket or poll with playful student-facing overlay and instant toggle
+- Undo round advancement across all 4 bracket types (SE, DE, RR, Predictive) with cascade handling
+- Reopen completed brackets and polls for additional voting
+- Edit bracket/poll display settings live (viewing mode, vote counts, seed numbers) with real-time student sync
+- Quick Create for brackets (topic chips, count picker) and polls (template chips, simplified form)
+- Real-time student vote indicators (green/blue/gray dots) in participation sidebar across all activity types
+- Bug fixes: ghost poll options, 2-option centering, duplicate name flow, student live results
+- User profile page with password change, admin sidebar link, forced temp password reset
+- Email verification enforcement before dashboard access (Google OAuth bypass, branded verify page)
+- Safari OAuth compatibility fix (requestIdleCallback polyfill)
+
+**Stats:** 200 commits (93 feat/fix), 55,141 LOC TypeScript, 9 days (2026-02-28 to 2026-03-08)
+
+---
+
