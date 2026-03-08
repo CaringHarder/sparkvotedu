@@ -25,7 +25,7 @@ See: .planning/PROJECT.md (updated 2026-02-28)
 Phase: 38 of 38 (Require Email Verification Before Login) -- IN PROGRESS
 Plan: 2 of 3 complete
 Status: Completed Plan 38-02
-Last activity: 2026-03-07 - Completed quick task 23: Change submit vote button text to "VOTE"
+Last activity: 2026-03-08 - Completed quick task 24: Move VOTE button above option cards in simple poll
 
 Progress: [##░░░░░░░░] 17% (v2.0)
 
@@ -167,6 +167,7 @@ None -- all v1.3 requirements shipped.
 | 21 | Make bigger cards/buttons for simple mode (brackets and polls) | 2026-03-07 | 8b45d68 | Verified | [21-make-bigger-cards-buttons-for-simple-mod](./quick/21-make-bigger-cards-buttons-for-simple-mod/) |
 | 22 | Make submit vote button green and obvious for younger students | 2026-03-07 | 4a79a1d | | [22-make-submit-vote-button-green-and-obviou](./quick/22-make-submit-vote-button-green-and-obviou/) |
 | 23 | Change submit vote button text to "VOTE" | 2026-03-08 | 858236b | | [23-change-submit-vote-button-text-to-vote-i](./quick/23-change-submit-vote-button-text-to-vote-i/) |
+| 24 | Move VOTE button above option cards in simple poll | 2026-03-08 | a6d9699 | | [24-move-vote-button-above-choices-in-simple](./quick/24-move-vote-button-above-choices-in-simple/) |
 | Phase 31 P01 | 3min | 2 tasks | 10 files |
 | Phase 31 P02 | 5min | 3 tasks | 4 files |
 | Phase 31.1 P01 | 2min | 2 tasks | 5 files |
