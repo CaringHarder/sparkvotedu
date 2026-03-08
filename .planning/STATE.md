@@ -25,7 +25,7 @@ See: .planning/PROJECT.md (updated 2026-03-08)
 Phase: Not started (defining requirements)
 Plan: —
 Status: Defining requirements
-Last activity: 2026-03-08 — Milestone v3.0 started
+Last activity: 2026-03-08 - Completed quick task 28: Bar chart vote count contrasting badge
 
 ## Performance Metrics
 
@@ -55,6 +55,12 @@ None.
 
 - Microsoft and Apple OAuth held -- code complete, needs console config
 - FingerprintJS cleanup targeted for this milestone
+
+### Quick Tasks Completed
+
+| # | Description | Date | Commit | Directory |
+|---|-------------|------|--------|-----------|
+| 28 | Bar chart vote count high-contrast circular badge | 2026-03-08 | a1277ae | [28-bar-chart-larger-vote-count-badge](./quick/28-bar-chart-larger-vote-count-badge/) |
 
 ## Session Continuity
 
