@@ -216,7 +216,7 @@ export function SimplePollVote({
                   : 'bg-green-500 hover:bg-green-600 text-white border-0 shadow-lg shadow-green-500/30 ring-4 ring-green-300/50 animate-[pulse_2s_ease-in-out_infinite]'
             }`}
           >
-            {submitting ? 'Submitting...' : 'Submit Vote'}
+            {submitting ? 'Voting...' : 'VOTE'}
           </Button>
         )}
 
