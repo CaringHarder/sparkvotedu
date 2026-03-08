@@ -1,178 +1,174 @@
 # Project Research Summary
 
-**Project:** SparkVotEDU v2.0 Teacher Power-Ups
-**Domain:** EdTech classroom voting platform -- teacher activity controls, quick-create UX, real-time indicators
-**Researched:** 2026-02-28
+**Project:** Student Join Flow Overhaul (v3.0)
+**Domain:** K-12 classroom voting app -- student identity, join wizard, session persistence
+**Researched:** 2026-03-08
 **Confidence:** HIGH
 
 ## Executive Summary
 
-SparkVotEDU v2.0 adds teacher control features (pause/resume, undo round, reopen completed activities, edit settings) and creation UX improvements (quick-create brackets and polls) to an existing 80K LOC Next.js classroom voting platform. The research confirms that every v2.0 feature integrates cleanly into the existing architecture: the layered Server Action -> DAL -> Broadcast -> Refetch pattern extends to all new mutations, and the dual-channel Supabase Realtime broadcast system handles all new event types without structural changes. Only two new Radix UI packages (switch, tabs) and one optional package (sonner for toasts) are needed; no framework upgrades required.
+The student join flow overhaul is a UI/UX and data model change, not a technology change. The existing stack (Next.js 16, Prisma 7, Supabase, motion v12, profanity filter, fun name generator) already contains every library needed. Zero new npm dependencies are required. The work centers on three things: a schema migration adding `lastInitial` and `emoji` columns to `StudentParticipant`, a 3-step join wizard replacing the current single-input name form, and migrating identity persistence from per-tab sessionStorage to a localStorage multi-session map that survives tab close and browser restart.
 
-The recommended approach is to treat pause/resume as the foundational feature -- it touches the status transition maps, broadcast event types, and student-side vote guards that all other control features (undo, reopen, settings edit) depend on. Quick-create brackets and simplified poll creation are fully independent of the control features and can be built in parallel. The critical architectural decision is how to model pause state: STACK.md recommends a `pausedAt` timestamp column (orthogonal to status), while ARCHITECTURE.md recommends a `paused` status value in the existing String status field. Both approaches are viable but the `paused` status value approach is simpler -- it reuses the existing `VALID_TRANSITIONS` maps, requires zero schema migration (status is already a String), and ensures the `castVote` check (`status !== 'voting'`) automatically rejects paused votes. **Recommendation: use `paused` as a status value**, not a separate column.
+The recommended approach is to build in strict dependency order: schema and DAL first (everything depends on the data model), then server actions, then the join wizard UI, then localStorage persistence, and finally teacher-facing display changes. This order ensures each layer has a stable foundation before the next layer builds on it. The emoji system should use a curated grid of 20-30 classroom-safe emoji stored as shortcode strings (not raw Unicode) to avoid cross-platform rendering issues on school Chromebooks. FingerprintJS should be removed entirely -- it adds 150KB+ to the client bundle and is unreliable on managed school devices where all Chromebooks produce identical fingerprints.
 
-The top risks are: (1) undo round advancement leaving stale votes in downstream matchups, especially in double-elimination brackets where loser placement must also be reversed; (2) quick-create bypassing session assignment, creating invisible brackets; and (3) vote indicator queries causing N+1 query storms if voter IDs are fetched on every broadcast instead of accumulated client-side. All three have clear prevention strategies documented in the pitfalls research and should be addressed during their respective implementation phases.
+The primary risks are: (1) school Chromebooks running ephemeral mode silently destroy localStorage on every browser close, making client-side persistence unreliable as a sole identity mechanism -- name-based server-side reclaim must be the authoritative fallback; (2) schema migrations on a live Supabase database during school hours can cause brief join failures -- migrations must run off-hours and use nullable columns exclusively; (3) storing emoji as raw Unicode creates cross-platform rendering bugs and database encoding issues -- shortcode strings with a client-side mapping table eliminate this class of problems entirely.
 
 ## Key Findings
 
 ### Recommended Stack
 
-The existing stack (Next.js 16, React 19, Prisma 7, Supabase, Tailwind v4) handles all v2.0 requirements without upgrades. Two new Radix UI packages and one optional toast library are the only additions.
+No new packages are needed. The existing stack handles every requirement. See [STACK.md](./STACK.md) for full version compatibility matrix.
 
-**New packages:**
-- `@radix-ui/react-switch@^1.2.6`: Toggle controls for bracket/poll display settings -- correct semantic control for boolean toggles with ARIA support
-- `@radix-ui/react-tabs@^1.1.13`: Quick Create / Step-by-Step mode switching -- provides tablist/tab/tabpanel ARIA roles and keyboard navigation
-- `sonner@^2.0.7` (optional, recommended): Toast feedback for rapid teacher actions (pause, undo, settings save) -- shadcn/ui has a first-class wrapper
+**Core technologies (no changes):**
+- **motion v12.29.2:** AnimatePresence for wizard step transitions -- already used in 20+ components
+- **@2toad/profanity:** Name validation -- already wired in `firstNameSchema`
+- **Prisma 7 + Supabase:** Schema migration for 2 new columns -- standard additive migration
+- **Zod 4:** Validate emoji shortcode against curated allowlist, lastInitial format
+- **canvas-confetti:** Celebration effect on join confirmation -- already installed
+- **nanoid:** Recovery code generation -- already installed
 
-**What does NOT need new packages:** Pause/resume (database state + broadcast + button swap), undo round (extends existing `undoMatchupAdvancement` engine), reopen (status transition), quick-create brackets (existing `TopicPicker` + `CURATED_TOPICS` data + `createBracket` action), vote indicators (extends existing `ParticipationSidebar`).
-
-**No schema migration needed.** The `status` field on Bracket and Poll is already a plain String type. Adding `paused` as a valid status value requires only updating the transition validation maps in the DAL.
+**What NOT to install:** emoji-mart (200KB+, age-inappropriate), react-hook-form (3 simple inputs), react-step-wizard (15 lines of state), xstate (linear flow, no branching), idb/IndexedDB (20 JSON objects fit in localStorage).
 
 ### Expected Features
 
+See [FEATURES.md](./FEATURES.md) for complete feature landscape, dependency graph, and competitor analysis.
+
 **Must have (table stakes):**
-- Pause/Resume activities -- every major competitor (Mentimeter, Poll Everywhere, Slido) supports this; teachers interrupt for discussion constantly
-- Edit display settings after creation -- Poll Everywhere and Mentimeter allow it; teachers realize wrong setting only after seeing students interact
-- "Go Live" terminology -- industry standard; "View Live" sounds read-only
-- Three bug fixes (duplicate poll options, 2-option centering, duplicate name flow) -- data integrity and basic correctness
+- Schema migration: `lastInitial` (varchar 2, nullable) + `emoji` (varchar 20, nullable as shortcode) on StudentParticipant
+- 3-step join wizard replacing NameEntryForm (first name -> last initial -> emoji reveal)
+- localStorage multi-session map keyed by sessionId (replaces sessionStorage for persistence)
+- Same-device auto-rejoin: check localStorage on code entry, skip wizard if identity exists
+- Cross-device reclaim via firstName + lastInitial matching with fun name disambiguation
+- Emoji + fun name display in SessionHeader and WelcomeScreen
+- FingerprintJS removal (code, dependency, and eventually schema column)
 
 **Should have (differentiators):**
-- Undo round advancement / reopen voting -- Challonge supports this but most classroom tools do NOT; highest-value teacher fix
-- Reopen completed activities -- saves teachers from re-creating; Challonge has it, Mentimeter/Slido do not
-- Quick Create brackets (topic chips + entrant count) -- no competitor combines curated educational topics with 2-click creation
-- Real-time per-student vote indicators -- competitors show aggregate counts; SparkVotEDU shows per-student status
-- Simplified poll Quick Create -- refinement of existing poll creation flow
-- Playful "needs to cook" paused message -- brand differentiator, turns frustrating pause into delightful moment
+- Teacher sidebar name view toggle (fun name vs real name)
+- Teacher-initiated display name edit from sidebar
+- Existing participant emoji migration (prompt on rejoin if no emoji)
+- Emoji display across all voting UI components
 
-**Defer (v2.x+):**
-- Undo for round-robin and predictive brackets -- more complex pacing models
-- Quick Create for DE/RR/Predictive -- SE is sufficient for quick create
-- Settings presets/templates -- "save my preferred settings"
-- Full audit log / undo-to-any-point -- 95% of mistakes covered by single-level undo
+**Defer (v3.x+):**
+- Custom emoji set per teacher
+- Student avatar drawing canvas
+- QR code auto-fill for mobile join
 
 ### Architecture Approach
 
-All v2.0 features integrate into the existing layered architecture: Teacher UI -> Server Actions (auth -> validate -> DAL -> broadcast -> revalidate) -> Prisma -> PostgreSQL, with Supabase Realtime broadcast for student-side updates. Five new broadcast event types (`bracket_paused`, `bracket_resumed`, `poll_paused`, `poll_resumed`, `settings_changed`) follow the existing fire-and-forget pattern. No new channels, no new subscription hooks. The existing `useRealtimeBracket`/`useRealtimePoll` hooks already trigger full refetch on any structural event.
+The architecture extends the existing 3-layer pattern (Server Actions -> DAL -> Prisma/DB) with two additions: a client-side wizard state machine for the multi-step join flow, and a layered storage strategy (sessionStorage for active-tab identity, localStorage for cross-session persistence, server-side name matching as the durable fallback). The wizard is a single client component with internal step state -- not route-based -- because the flow is ephemeral (3 seconds), has no deep-linkable steps, and shares state between steps. See [ARCHITECTURE.md](./ARCHITECTURE.md) for component boundaries, data flow diagrams, and build order.
 
-**Major new components:**
-1. `PausedOverlay` -- student-facing pause message, auto-dismisses on resume broadcast
-2. `BracketQuickCreate` -- single-panel creation: topic chips + size picker, calls existing `createBracket` action
-3. `PollQuickCreate` -- question + options only, calls existing `createPoll` action
-4. `BracketSettingsPanel` / `PollSettingsPanel` -- slide-out panels with Switch toggles for display settings
-
-**Key modified components:**
-- `ParticipationSidebar` -- new `activityVoterIds` prop for activity-level green dots
-- `RoundAdvancementControls` -- "Undo Round" button for batch undo
-- `LiveDashboard` + `PollLiveClient` -- Pause/Resume buttons, Settings gear icons
+**Major components:**
+1. **JoinWizard** -- Multi-step container managing name entry, identity reveal, and welcome steps
+2. **Emoji pool module** -- Curated shortcode array with `pickEmoji()` that tries for session-uniqueness
+3. **localStorage session map** -- Multi-session persistence layer with 30-day TTL pruning
+4. **lookupStudent server action** -- New action for returning student detection before wizard
+5. **EmojiAvatar** -- Reusable display component for consistent emoji rendering from shortcodes
 
 ### Critical Pitfalls
 
-1. **Pause desynchronizes optimistic vote state.** Students with in-flight votes see confusing reverts and technical errors. **Avoid by:** broadcasting specific `voting_paused` events, disabling vote buttons based on matchup status from realtime hook, returning a distinct `PAUSED` error code from `castVote`.
+See [PITFALLS.md](./PITFALLS.md) for the full list of 9 pitfalls with detailed prevention strategies.
 
-2. **Undo round cascading failure with stale votes.** Undoing a matchup clears the winner but leaves stale votes in the next-round matchup. When re-advanced with a different winner, old votes produce wrong results. In DE brackets, loser placement is not reversed. **Avoid by:** deleting downstream matchup votes in the undo transaction, implementing DE-aware undo that clears loser bracket placement, blocking undo if downstream matchups have already been advanced.
-
-3. **Quick-create skips session assignment.** Brackets without a session are invisible to students. Teacher activates, students see nothing. **Avoid by:** making session selection mandatory in quick-create (auto-assign if only one active session), validating `sessionId` at activation time.
-
-4. **Settings edit allows structural changes on active brackets.** Changing bracket size or type on an active bracket corrupts all matchup and vote state. **Avoid by:** hard-partitioning display vs. structural settings with separate server actions and Zod schemas.
-
-5. **Vote indicators cause N+1 query storms.** Fetching per-student voter IDs on every vote broadcast causes `participantCount * matchupCount / batchInterval` queries per second. **Avoid by:** including voter participant ID in broadcast payloads, accumulating client-side, full refetch only on structural changes.
+1. **Ephemeral Chromebooks destroy localStorage** -- Treat localStorage as an unreliable cache. Server-side name+initial matching is the authoritative reclaim path. Never show "device not recognized" warnings.
+2. **Raw Unicode emoji causes cross-platform issues** -- Store emoji as shortcode strings ("rocket", "star"), not Unicode. Map to rendered characters client-side. Restrict to Unicode 13.0 (2020) for Chromebook compatibility.
+3. **NOT NULL migration on populated table** -- Use expand-and-contract: add columns as nullable, deploy code that handles nulls, run backfill script separately, then optionally add NOT NULL constraint later.
+4. **Name collisions create false identity claims** -- Never auto-claim on single match. Always show confirmation with fun name as primary identifier. Allow lastInitial to be optional in matching.
+5. **FingerprintJS removal leaves dead code across 3 layers** -- Remove in order: application code first (deploy), then schema column (separate migration), then npm uninstall. Verify with grep + npm ls.
 
 ## Implications for Roadmap
 
 Based on research, suggested phase structure:
 
-### Phase 1: Status Infrastructure + Pause/Resume
-**Rationale:** Pause/resume is the foundation for undo, reopen, and settings edit workflows. It touches the status transition maps and broadcast event types that all other control features depend on. Highest teacher value, validates the entire broadcast-refetch pattern for new status values.
-**Delivers:** Pause/Resume for brackets and polls, student-facing PausedOverlay, server-side vote guard, "Go Live" label change
-**Addresses:** Table-stakes pause/resume feature, "Go Live" terminology (trivial, bundle here)
-**Avoids:** Pitfall 1 (pause desync) by implementing broadcast + client status check together; Pitfall 8 (pause not persisted) by using database status value
+### Phase 1: Schema Migration + Data Foundation
+**Rationale:** Every feature depends on the data model. Emoji storage format and lastInitial column must exist before any UI or server action work.
+**Delivers:** Prisma migration adding `emoji` (varchar 20, nullable) and `lastInitial` (varchar 2, nullable) to StudentParticipant. New compound index on (sessionId, firstName, lastInitial). Emoji pool module with curated shortcode set and client-side mapping table. Updated TypeScript types.
+**Addresses:** Schema migration (P1), emoji storage design
+**Avoids:** NOT NULL migration failure (Pitfall 3), raw Unicode storage (Pitfall 2), fun name immutability (Pitfall 7)
 
-### Phase 2: Undo Round Advancement
-**Rationale:** Most requested teacher fix. Depends on stable status infrastructure from Phase 1. Extends existing `undoMatchupAdvancement` engine to batch operations. The cascade logic for stale votes and DE loser placement is the most complex engineering work in v2.0.
-**Delivers:** Batch undo for entire rounds, cascading vote cleanup, DE-aware loser placement reversal
-**Addresses:** Differentiator undo feature, existing undo enhancement
-**Avoids:** Pitfall 2 (cascading failure) and Pitfall 10 (DE loser placement) by handling vote cleanup and LB reversal in the core implementation
+### Phase 2: Server Actions + DAL
+**Rationale:** UI components need server actions to function. Business logic must be in place before the wizard can call it.
+**Delivers:** New `lookupStudent` action for returning student detection. Modified `createParticipant` to accept lastInitial and auto-assign emoji shortcode. New `findByNameAndInitial` DAL function. Updated `claimIdentity` to return emoji.
+**Addresses:** Cross-device reclaim update (P1), name disambiguation improvement
+**Avoids:** False identity claims (Pitfall 4) -- confirmation always required
 
-### Phase 3: Reopen Completed Activities
-**Rationale:** Small incremental step after Phase 1 status infrastructure. Adds `completed -> active` transition for brackets and `closed -> active` for polls. Must reset client-side completion state and celebration refs.
-**Delivers:** Reopen buttons on completed bracket/poll detail pages, broadcast-driven client state reset
-**Addresses:** Differentiator reopen feature
-**Avoids:** Pitfall 6 (stale celebration) by extending `BracketUpdateType` with `bracket_reopened` and resetting `hasShownRevealRef` in the realtime hook
+### Phase 3: Join Wizard UI
+**Rationale:** Depends on schema + actions being ready. This is the core student-facing deliverable.
+**Delivers:** JoinWizard component replacing NameEntryForm. NameStep (first name + last initial). IdentityStep (fun name + emoji reveal with reroll). Updated NameDisambiguation for name+initial matching.
+**Addresses:** 3-step join wizard (P1), emoji picker (P1), welcome screen update (P1)
+**Avoids:** Full emoji picker chaos (Pitfall 8), analysis paralysis (auto-assign emoji, optional change)
 
-### Phase 4: Quick Create Brackets
-**Rationale:** Independent of control features. High teacher value -- reduces bracket creation from 4+ steps to 2 clicks. Uses existing `CURATED_TOPICS` data and `createBracket` action. Needs new `@radix-ui/react-tabs` package.
-**Delivers:** `BracketQuickCreate` component with topic chip grid + size picker, tab toggle on `/brackets/new`
-**Addresses:** Differentiator quick-create feature
-**Avoids:** Pitfall 4 (session assignment) by making session mandatory; Pitfall 7 (feature gate bypass) by calling existing `createBracket` action
+### Phase 4: localStorage Persistence + Auto-Rejoin
+**Rationale:** Join wizard must work without persistence first. Persistence is an enhancement layer on top of a functioning wizard.
+**Delivers:** localStorage multi-session map keyed by sessionId. Auto-rejoin check before showing wizard. 30-day TTL pruning. Graceful fallback when localStorage is unavailable.
+**Addresses:** localStorage multi-session map (P1), same-device auto-rejoin (P1)
+**Avoids:** Ephemeral Chromebook data loss (Pitfall 1), sessionStorage tab-close duplicates (Pitfall 6)
 
-### Phase 5: Settings Editing
-**Rationale:** Enhances the pause workflow (pause -> edit settings -> resume) but not required for pause to function. Uses new `@radix-ui/react-switch` package. Server action for bracket display settings already exists (`updateBracketVotingSettings`); polls need a new one.
-**Delivers:** `BracketSettingsPanel` and `PollSettingsPanel` with toggle switches, settings change broadcast for live sync
-**Addresses:** Table-stakes settings editing feature
-**Avoids:** Pitfall 3 (structural settings corruption) by hard-partitioning display vs. structural settings with separate actions and schemas
+### Phase 5: FingerprintJS Removal
+**Rationale:** Independent of other phases. Can run in parallel with Phase 4 or after. Reduces bundle size by ~150KB.
+**Delivers:** Removal of fingerprint.ts, use-device-identity.ts cleanup, server action cleanup, npm uninstall. Schema column drop in separate migration.
+**Addresses:** FingerprintJS removal (P1)
+**Avoids:** Dead code across 3 layers (Pitfall 5)
 
-### Phase 6: Vote Indicators + Poll Quick Create + Polish
-**Rationale:** Final enhancement phase. Vote indicators extend existing `ParticipationSidebar`. Poll quick-create is a small refinement. Bundle with bug fixes and visual polish.
-**Delivers:** Activity-level green dots across all types, simplified poll creation, poll image style alignment, three bug fixes (duplicate poll options, 2-option centering, duplicate name flow)
-**Addresses:** Vote indicator differentiator, poll quick-create refinement, all bug fixes
-**Avoids:** Pitfall 5 (N+1 queries) by designing broadcast payload to include voter IDs before building the UI; Pitfall 9 (poll no-options) by including inline option fields with min-2 enforcement
+### Phase 6: Teacher Sidebar + Emoji Display Polish
+**Rationale:** Display-only changes with no data dependencies. Can be built in parallel with Phases 4-5. Last because it is teacher-facing polish, not student-facing core flow.
+**Delivers:** EmojiAvatar component. ParticipationSidebar name view toggle. Emoji in SessionHeader, WelcomeScreen, StudentRoster. Presence channel updated to track emoji.
+**Addresses:** Teacher sidebar toggle (P2), emoji display across UI (P3), existing participant emoji migration (P2)
+**Avoids:** Display mode persisted to DB (Architecture anti-pattern 4)
 
 ### Phase Ordering Rationale
 
-- **Status infrastructure must come first** because pause/resume, undo, and reopen all depend on expanded transition maps and new broadcast event types. Building these features without the foundation leads to fragmented, hard-to-integrate implementations.
-- **Undo before reopen** because undo is more complex (cascade logic, DE awareness) and reopen is a simpler status transition. Getting undo right validates the entire undo/reopen pattern.
-- **Quick create is independent** and can be built in parallel with Phases 2-3 if resources allow. It touches creation flows only, with zero overlap with live activity controls.
-- **Settings editing after pause/resume** because the ideal workflow is pause -> edit -> resume. The settings UI and partitioning decisions are cleaner once pause is stable.
-- **Vote indicators and polish last** because they are enhancement-only features that add value but do not enable new teacher workflows. Bug fixes can be interspersed across phases if convenient.
+- **Phases 1-3 are strictly sequential:** schema -> actions -> UI. Each depends on the previous.
+- **Phase 4 (persistence)** requires Phase 3 (wizard) to exist but adds behavior on top.
+- **Phase 5 (FingerprintJS removal)** is fully independent and can run alongside Phase 4.
+- **Phase 6 (teacher display)** is independent of student flow and can run alongside Phases 4-5.
+- This ordering front-loads the riskiest work (schema migration, identity matching logic) and defers the safest work (display changes) to the end.
 
 ### Research Flags
 
 Phases likely needing deeper research during planning:
-- **Phase 2 (Undo Round):** The DE loser placement reversal and cascade logic is the most complex engineering work. Needs careful analysis of `advanceDoubleElimMatchup` to mirror its logic in reverse. Consider `/gsd:research-phase` to map all advancement paths.
-- **Phase 6 (Vote Indicators):** The data flow design (broadcast payload vs. API fetch) needs to be finalized before UI work. The existing `ParticipationSidebar` was designed for matchup-scoped display; activity-level aggregation is a different paradigm.
+- **Phase 1 (Schema):** Emoji shortcode set curation needs finalization -- which 20-30 emoji to include, Unicode version compatibility verification across ChromeOS/iOS/Android/Windows.
+- **Phase 4 (localStorage):** Cookie-based fallback for server-readable identity (mentioned in PITFALLS.md) needs investigation if middleware-level auto-redirect is desired.
 
 Phases with standard patterns (skip `/gsd:research-phase`):
-- **Phase 1 (Pause/Resume):** Well-documented status transition pattern already exists in the codebase. Broadcast + refetch pattern is established.
-- **Phase 3 (Reopen):** Simple status transition addition. Pattern identical to existing transitions.
-- **Phase 4 (Quick Create Brackets):** UI-only with existing data sources and server actions. Topic picker data and creation action already built.
-- **Phase 5 (Settings Editing):** Server action for bracket settings already exists. Pattern is established; extend to polls and add UI.
+- **Phase 2 (Server Actions):** Well-established patterns in existing codebase. Extend existing DAL functions.
+- **Phase 3 (Join Wizard):** motion AnimatePresence is used in 20+ components. Wizard pattern is straightforward useState.
+- **Phase 5 (FingerprintJS):** Removal steps are well-documented in PITFALLS.md. Grep + delete.
+- **Phase 6 (Teacher Display):** Display toggle is component state. Emoji rendering is a lookup table.
 
 ## Confidence Assessment
 
 | Area | Confidence | Notes |
 |------|------------|-------|
-| Stack | HIGH | All recommendations verified against installed versions, package.json, and existing codebase patterns. Radix packages confirmed React 19 compatible. |
-| Features | HIGH | Feature landscape mapped against 6 competitors (Kahoot, Mentimeter, Poll Everywhere, Slido, Challonge, Vevox). Dependencies and MVP definition clearly delineated. |
-| Architecture | HIGH | Direct analysis of 564 files, 80,750 LOC. Every integration point mapped to specific files and line numbers. Status transition maps, broadcast types, and DAL patterns analyzed. |
-| Pitfalls | HIGH | All pitfalls grounded in specific codebase analysis -- actual state machines, broadcast patterns, vote action status checks, and undo engine logic. Recovery strategies documented. |
+| Stack | HIGH | All packages verified against package.json. Zero new dependencies. Version compatibility confirmed. |
+| Features | HIGH | Feature landscape derived from existing codebase + competitor analysis. Clear P1/P2/P3 prioritization. |
+| Architecture | HIGH | All 55K LOC analyzed. Every integration point verified against actual file paths. Data flow diagrams grounded in real code. |
+| Pitfalls | HIGH | All 9 pitfalls grounded in direct codebase analysis. School Chromebook ephemeral mode confirmed via Google Admin docs. Migration patterns from Prisma official docs. |
 
 **Overall confidence:** HIGH
 
-All four research files drew from the same codebase and cross-reference the same files, producing strong internal consistency. The main area of disagreement -- pause modeling (timestamp column vs. status value) -- has been resolved in this synthesis with a clear recommendation.
-
 ### Gaps to Address
 
-- **Pause modeling disagreement:** STACK.md recommends `pausedAt` timestamp column. ARCHITECTURE.md recommends `paused` status value. This synthesis recommends the status value approach (simpler, no migration, reuses existing transition validation). Resolve during Phase 1 planning with a definitive decision.
-- **Round-robin undo complexity:** Pitfalls research notes RR undo is "simpler" but does not deeply analyze RR-specific edge cases (e.g., undoing a round in all-at-once pacing where multiple rounds may be open simultaneously). Address during Phase 2 if RR undo is in scope.
-- **Poll live dashboard sidebar:** The `PollLiveClient` currently has no `ParticipationSidebar`. Adding one requires fetching poll voter IDs, which may need a new endpoint or extension to the poll state API. Design during Phase 6 planning.
-- **Sonner integration:** Whether to add sonner (toast notifications) for teacher action feedback. Optional per STACK.md. Decide during Phase 1 execution -- if inline state changes feel sufficient, skip it.
+- **Emoji shortcode set:** The exact curated set of 20-30 emoji needs finalization. STACK.md suggests ~48 raw Unicode, PITFALLS.md recommends shortcodes. The shortcode approach is correct but the mapping table needs to be built and tested cross-platform. Resolve during Phase 1 planning.
+- **Emoji auto-assign vs user-pick divergence:** STACK.md and FEATURES.md suggest a user-selectable emoji grid. ARCHITECTURE.md suggests auto-assignment from a pool. Recommendation: auto-assign with optional one-tap change (like fun name reroll). Resolve during Phase 3 planning.
+- **Cookie-based identity fallback:** PITFALLS.md mentions a short-lived cookie for server-readable identity (middleware auto-redirect). This is not covered in ARCHITECTURE.md. Evaluate during Phase 4 planning -- may not be needed if localStorage + name-matching covers all cases.
+- **lastInitial character limit:** FEATURES.md says max 2 chars (for "Mc", "De"). ARCHITECTURE.md says VARCHAR(1). PITFALLS.md says allow 2 chars for hyphenated names. Recommendation: VARCHAR(2), validate with `/^[a-zA-Z]{0,2}$/`. Resolve during Phase 1 schema design.
+- **Migration timing:** Supabase nullable column additions are instant (no table rewrite on PG 11+), but the fingerprint column drop requires exclusive lock. Must be scheduled off-hours. No staging environment mentioned -- consider testing against production snapshot.
 
 ## Sources
 
 ### Primary (HIGH confidence)
-- **Codebase analysis** -- 564 files, 80,750 LOC TypeScript. Key files: `src/lib/dal/bracket.ts` (VALID_TRANSITIONS), `src/lib/dal/poll.ts` (VALID_POLL_TRANSITIONS), `src/lib/realtime/broadcast.ts` (event types), `src/lib/bracket/advancement.ts` (undo engine), `src/actions/bracket-advance.ts` (server actions), `src/components/teacher/participation-sidebar.tsx` (green dots), `src/hooks/use-realtime-bracket.ts` (lifecycle hooks), `prisma/schema.prisma` (data model)
-- **package.json** -- All installed versions verified directly
-- **Radix UI npm registry** -- @radix-ui/react-switch@1.2.6, @radix-ui/react-tabs@1.1.13 React 19 compatibility confirmed
-- **sonner npm registry** -- v2.0.7, React 18+ and Next.js App Router support confirmed
-- **shadcn/ui docs** -- Switch, Tabs, Sonner component wrappers documented
+- Codebase analysis: package.json, prisma/schema.prisma, src/actions/student.ts, src/lib/student/*, src/components/student/*, src/hooks/*, src/types/student.ts
+- Prisma migration docs: expand-and-contract pattern, customizing migrations
 
 ### Secondary (MEDIUM confidence)
-- **Competitor feature analysis** -- Mentimeter, Poll Everywhere, Challonge, Kahoot, Vevox, BracketFights documentation and support articles
-- **shadcn/ui February 2026 changelog** -- unified radix-ui package for new-york style; individual packages remain supported
+- Google Chrome Enterprise: Ephemeral Mode, DeviceEphemeralUsersEnabled, BrowsingDataLifetime policies
+- Supabase Realtime: Presence channel limits (~200-500 concurrent trackers)
+- Unicode emoji rendering: cross-platform studies (ACM CSCW 2018), browser compatibility guides
+- Zero-downtime PostgreSQL migrations (Xata blog): nullable column additions are instant on PG 11+
 
 ### Tertiary (LOW confidence)
-- **UX design patterns** -- Wizard Design Pattern (UX Planet), WebSocket Architecture Best Practices (Ably) -- general guidance, not SparkVotEDU-specific
+- Name collision probability: estimated from US SSA baby name frequency data (approximations for 30-student classrooms)
+- localStorage limits: 5MB per origin (web platform standard, but school IT policies may further restrict)
 
 ---
-*Research completed: 2026-02-28*
+*Research completed: 2026-03-08*
 *Ready for roadmap: yes*

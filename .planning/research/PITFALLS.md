@@ -1,301 +1,298 @@
 # Pitfalls Research
 
-**Domain:** Teacher activity controls, quick-create, and UX polish for an existing 80K LOC classroom voting platform
-**Researched:** 2026-02-28
-**Confidence:** HIGH (all pitfalls grounded in codebase analysis of actual state machines, broadcast patterns, and data model)
+**Domain:** Student identity redesign -- fun name + emoji, localStorage persistence, cross-device reclaim, migration
+**Researched:** 2026-03-08
+**Confidence:** HIGH (all pitfalls grounded in direct codebase analysis of existing identity system, schema, and school device constraints)
 
 ---
 
 ## Critical Pitfalls
 
-### Pitfall 1: Pause/Resume Desynchronizes Optimistic Vote State on Student Devices
+### Pitfall 1: Ephemeral Mode Silently Destroys localStorage on School Chromebooks
 
 **What goes wrong:**
-When a teacher pauses voting on a matchup, students who have the `useVote` hook mounted with an in-flight optimistic vote see their UI in a corrupted state. The `useOptimistic` hook in `use-vote.ts` shows the optimistic selection immediately, but the server action `castVote` returns `{ error: 'Matchup is not open for voting' }` because the matchup status was changed to `paused` between the optimistic set and the server response. The `useOptimistic` hook reverts when the transition ends, but the error message ("Matchup is not open for voting") is confusing to students -- they see their vote disappear with a technical error, not a "voting paused" message.
+School IT admins enable Chrome's Ephemeral Mode (`DeviceEphemeralUsersEnabled`) or Managed Guest Sessions through the Google Admin console. When active, the Chrome profile is deleted when the browser closes. All localStorage, sessionStorage, cookies, and cached data are permanently wiped. The student reopens their Chromebook, enters the same session code, and is treated as a brand-new participant. Their fun name, emoji, vote history, and predictions are orphaned in the database under a now-unreachable deviceId.
 
-Worse: if the student's client is on the HTTP polling fallback (school WiFi blocking WebSockets), the status change broadcast is not received until the next 3-second poll interval. During that 3-second window, students can continue voting optimistically, accumulating multiple confusing reverts.
+This is not hypothetical. FCPS and many K-12 districts use ephemeral mode on shared Chromebook carts and testing devices. The current `getOrCreateDeviceId()` in `src/lib/student/session-identity.ts` generates a new UUID every time localStorage is empty, making the deviceId identity layer completely useless on those devices.
+
+Even without ephemeral mode, Chrome's "Clear browsing data on exit" setting (controllable via admin policy `BrowsingDataLifetime`) can wipe localStorage on a schedule. IT departments routinely configure this for compliance.
 
 **Why it happens:**
-Pause/resume changes the server-side matchup status but the client has no mechanism to preemptively block vote submission. The `castVote` action checks `matchup.status !== 'voting'` (line 42 of `actions/vote.ts`) which will reject votes when status is `paused`, but the client-side `useVote` hook has no awareness of the matchup status -- it only knows about the vote itself.
+Developers test on personal Chrome profiles where localStorage persists indefinitely. School-managed Chromebooks have policies invisible to web developers. There is no browser API to detect whether ephemeral mode is active or whether localStorage will survive a browser restart.
 
 **How to avoid:**
-1. Broadcast a `voting_paused` event on the `bracket:{bracketId}` channel when the teacher pauses. The `useRealtimeBracket` hook already handles `bracket_update` events and refetches state -- add `voting_paused` and `voting_resumed` to the event type union in `broadcast.ts` (line 80-89).
-2. In the student voting components (`MatchupVoteCard`, `SimpleVotingView`), disable the vote buttons when the matchup status is not `voting`. The realtime hook already provides matchup status in `matchups` state.
-3. Return a distinct error from `castVote` when status is `paused` (not `voting`): `{ error: 'Voting is currently paused', code: 'PAUSED' }`. The client can then show a friendly "Voting is paused by your teacher" message instead of a technical error.
-4. Do NOT try to buffer or queue votes during pause -- this creates expectation mismatch and race conditions on resume.
+- Treat localStorage as an unreliable convenience cache, never as a durable identity store. The current `session-store.ts` (sessionStorage-based, per-tab) is already correct in treating storage as ephemeral per-tab state. The new identity system must follow the same philosophy.
+- The primary identity reclaim mechanism must be server-side: first name + last initial matching against the `student_participants` table. This survives any client-side storage wipe.
+- When localStorage has a deviceId, use it as a fast-path shortcut (skip the name entry form, go straight to the session). When it does not, fall back gracefully to the name entry flow without any error message or "something went wrong" state.
+- Do not show a "device not recognized" warning. On ephemeral Chromebooks, this would appear every single session and train students to ignore it.
 
 **Warning signs:**
-- Students see "Matchup is not open for voting" immediately after clicking to vote.
-- Vote appears briefly then disappears (optimistic revert) with no explanation.
-- More reports on polling-fallback networks (school WiFi) because of the 3-second delay.
-- The `castVote` action's status check does not distinguish between `pending`, `paused`, and `decided` statuses.
+- QA testing only on personal Chrome profiles, never on a managed Chromebook
+- Identity reclaim tests that only cover "same device, same browser" scenarios
+- No test scenario for "student closes Chromebook lid, reopens 10 minutes later, localStorage is gone"
+- Error handling that treats missing localStorage as an exceptional case rather than a normal one
 
-**Phase to address:** Pause/Resume activity controls phase -- must implement broadcast + client status check together, not separately.
+**Phase to address:**
+Identity architecture phase (first phase). The entire storage strategy must assume localStorage is unreliable from day one. Every feature built on top inherits this assumption.
 
 ---
 
-### Pitfall 2: Undo Round Cascading Failure -- Clearing a Winner That Has Already Propagated Multiple Levels
+### Pitfall 2: Emoji Stored as Raw Unicode Creates Cross-Platform Rendering Inconsistencies and Database Issues
 
 **What goes wrong:**
-The existing `undoMatchupAdvancement` function in `advancement.ts` (line 79-129) correctly checks if the *next* matchup has votes before allowing undo. But it only checks ONE level ahead. Consider this scenario in an 8-team bracket:
+A student selects a rocket emoji on a Chromebook (Noto Color Emoji font). The database stores the raw Unicode `U+1F680`. A teacher views the participant list on an iPad (Apple Color Emoji) -- the rocket looks different but renders. An older Chromebook running ChromeOS 100 (2022) shows the rocket fine. But a student selects a newer emoji from Unicode 15.1 (2023) -- on older devices, it renders as a blank rectangle ("tofu").
 
-1. Teacher advances R1M1 winner (Alice) -> Alice placed in R2M1 entrant1
-2. Teacher advances R1M2 winner (Bob) -> Bob placed in R2M1 entrant2
-3. Teacher opens voting on R2M1, students vote, teacher advances R2M1 winner (Alice) -> Alice placed in R3M1 (final) entrant1
-4. Teacher wants to undo R1M1 (they realize Alice should not have won R1)
+Worse: some emoji are multi-codepoint sequences. Family emoji, flag sequences, and skin-tone variations consist of 2-7 Unicode codepoints joined by Zero-Width Joiners (ZWJ). In JavaScript, `"family_emoji".length` can return 7+ due to surrogate pairs. PostgreSQL's `VARCHAR(10)` counts characters differently than JavaScript's `.length`. The `@@unique([sessionId, funName])` constraint could fail or behave unexpectedly if emoji are concatenated into the fun name string.
 
-The undo check looks at R2M1's vote count. R2M1 has votes AND a winner AND the winner has already propagated to R3M1. The current code blocks the undo because `voteCount > 0` on the next matchup. This is correct behavior.
-
-BUT: if the teacher instead tries to undo R2M1 first (step 3), the code checks R3M1 (the final). If R3M1 has no votes yet (just entrants placed), the undo proceeds. It clears Alice from R3M1 entrant1 and resets R2M1 to `voting` status. Now the teacher undoes R1M1 -- but R2M1 still has Alice's old votes AND Bob is still in R2M1 entrant2 slot. If the teacher now replaces Alice with Charlie in R1 and advances Charlie, Charlie goes to R2M1 entrant1 -- but the old votes in R2M1 were for Alice vs Bob, not Charlie vs Bob. Those stale votes produce wrong results.
-
-For double-elimination brackets, this is exponentially worse because the loser from a WB matchup was also placed in a specific LB position. Undoing the WB matchup must also clear the loser placement in the LB, which may have already had its own advancement chain.
+Additionally, the same visible emoji can be encoded differently across platforms: base character vs. base + variation selector (U+FE0F). String equality checks fail even though the emoji looks identical to the user.
 
 **Why it happens:**
-The undo logic was designed for single-level reversal (undo the most recent action). Multi-level undo in a tree structure requires traversing and cleaning up the entire downstream subtree, not just the immediate next matchup. The check for "next matchup has votes" prevents the immediate cascade but does not address stale data left from partial undo sequences.
+Developers treat emoji as single characters. They pick emoji from their own device's picker, store whatever the browser gives them, and never test on a different platform. JavaScript string operations on emoji are notoriously unintuitive (`"star_emoji".length === 2`, not 1).
 
 **How to avoid:**
-1. When undoing a matchup, also delete all votes for the next matchup (since entrants are changing, votes for the old matchup are invalid). Add to the `$transaction`: `await tx.vote.deleteMany({ where: { matchupId: matchup.nextMatchupId } })` and reset next matchup status to `pending`.
-2. For double-elimination undo: if the undone matchup is in the winners bracket, also clear the loser's placement in the corresponding losers bracket matchup. Use `computeLoserPlacement` to find where the loser was placed and null that slot.
-3. Consider implementing "deep undo" that recursively clears the downstream tree: undo matchup -> delete votes on next -> if next has a winner, recursively undo next too. Gate this behind a confirmation dialog: "This will also undo Round 2 Match 1 and delete 15 votes. Continue?"
-4. At minimum, display a warning in the UI if undoing will invalidate votes in downstream matchups, even if you block the undo.
+- Store emoji as shortcodes or enum values (e.g., `"rocket"`, `"star"`, `"fox_face"`) in the database, not raw Unicode. Use a mapping table on the client to render: `EMOJI_MAP["rocket"] = "\u{1F680}"`.
+- Use a curated set of 30-50 emoji restricted to Unicode 13.0 (2020) or earlier. This guarantees rendering on ChromeOS 100+, iOS 15+, Android 12+, and Windows 10 21H2+. No ZWJ sequences, no skin tone modifiers, no flag sequences.
+- Store the emoji column as `@db.VarChar(20)` for the shortcode string, not raw Unicode.
+- Keep emoji separate from `funName` in the schema. The fun name remains "Daring Dragon" (text only). Emoji is a separate column. This preserves the existing `@@unique([sessionId, funName])` constraint without emoji encoding complications.
+- Test every emoji in the curated set on: ChromeOS (Noto Color Emoji), iOS/iPadOS (Apple Color Emoji), Android (Google Noto Emoji), Windows (Segoe UI Emoji), and Firefox on all platforms (uses platform fonts).
 
 **Warning signs:**
-- Teacher undoes a matchup, then the next round shows vote counts from the previous matchup pairing.
-- In DE brackets, a loser remains in a LB matchup after the WB matchup that placed them there was undone.
-- Vote totals in a matchup don't add up to the participant count because votes were cast for an entrant who is no longer in the matchup.
-- The `undoMatchupAdvancement` function clears `winnerId` and the next matchup's entrant slot, but does not touch `Vote` records.
+- Emoji stored as raw Unicode text in a `VARCHAR` column without normalization
+- Fun name uniqueness constraint that includes emoji in the concatenated string
+- No cross-platform rendering test matrix
+- Emoji picker showing the full Unicode 15.1 set instead of a curated subset
+- JavaScript `.length` checks on emoji strings
 
-**Phase to address:** Undo/Reopen phase -- must handle vote cleanup and DE loser placement reversal as part of the core undo implementation, not as a follow-up fix.
+**Phase to address:**
+Schema design phase (first implementation phase). The emoji storage format must be decided before any data is written. Changing storage format after the first migration requires a second migration.
 
 ---
 
-### Pitfall 3: Settings Edit Corrupts In-Progress Bracket State -- Changing Size or Type After Votes Exist
+### Pitfall 3: Migration Adds NOT NULL Columns and Fails on Live Database with Existing Participants
 
 **What goes wrong:**
-The existing `updateBracketEntrants` action (line 179-210 of `actions/bracket.ts`) allows replacing all entrants in a `draft` bracket. But "settings editing" for an active bracket opens a much more dangerous surface area:
+The current `student_participants` table has existing rows with `fun_name` (alliterative "Adjective Animal"), `first_name`, `device_id`, and `fingerprint`. The redesign adds new columns: `emoji` (shortcode), `last_initial`, and possibly `avatar_emoji`. If these are added as `NOT NULL` without defaults, `prisma migrate deploy` fails on the production database because existing rows have no value for these columns.
 
-1. **Changing bracket size** on an active bracket (e.g., 8 to 16) would require regenerating the entire matchup structure. All existing votes, advancement state, and entrant-matchup relationships become invalid.
-2. **Changing bracket type** (e.g., SE to DE) requires a completely different matchup graph (losers bracket, grand finals). Existing data cannot be migrated.
-3. **Changing viewingMode, showVoteCounts, votingTimerSeconds** on an active bracket is safe -- these are display preferences that don't affect state.
-4. **Changing roundRobinPacing** from `round_by_round` to `all_at_once` mid-tournament changes which matchups are votable, potentially stranding votes in unopened matchups.
+If added with `@default("")`, the migration succeeds but creates empty strings that break UI rendering. An empty emoji shortcode resolves to nothing in the mapping table. The teacher dashboard shows "Daring Dragon " with a trailing space where the emoji should be. The participant list looks broken for all existing students until they rejoin and select an emoji.
 
-The dangerous pattern: a developer implements settings editing with a single `prisma.bracket.update()` call that accepts all fields, including `size` and `bracketType`. Since the Prisma update call does not validate against the bracket's lifecycle state, a malformed request could change structural fields on an active bracket.
+The more insidious version: migration succeeds with defaults, but the application code assumes all participants have valid emoji. A `EMOJI_MAP[participant.emoji]` lookup on an empty string returns `undefined`, rendered as the literal string "undefined" in React.
 
 **Why it happens:**
-Display settings and structural settings live on the same database model (`Bracket`). A single "update settings" form or action that exposes all fields makes it easy to accidentally allow structural changes. The `updateBracketVotingSettings` action (line 275-333 of `bracket-advance.ts`) already demonstrates the correct pattern -- it only accepts `viewingMode`, `showVoteCounts`, `showSeedNumbers`, and `votingTimerSeconds`.
+The expand-and-contract migration pattern is well-documented but easy to skip under deadline pressure. Developers add `NOT NULL` columns with `@default("")` in Prisma, which satisfies the migration tool but creates data integrity problems. On Supabase PostgreSQL, `ALTER TABLE ADD COLUMN ... NOT NULL` without a server-side default also takes an exclusive table lock for the rewrite, blocking all writes during the migration.
 
 **How to avoid:**
-1. **Hard partition** settings into two categories with separate server actions:
-   - **Display settings** (safe to change anytime): `viewingMode`, `showVoteCounts`, `showSeedNumbers`, `votingTimerSeconds`, `roundRobinStandingsMode`, bracket `name`, `description`
-   - **Structural settings** (only changeable in `draft` status): `size`, `bracketType`, `roundRobinPacing`, `roundRobinVotingStyle`, `predictiveMode`, `predictiveResolutionMode`
-2. Add a status check at the top of the structural settings action: `if (bracket.status !== 'draft') return { error: 'Cannot change bracket structure after activation' }`.
-3. Use separate Zod schemas for each action -- do not create a single schema that accepts both display and structural fields.
-4. In the UI, gray out structural settings and show "Cannot be changed after bracket is started" tooltip for active/completed brackets.
-5. Broadcast display setting changes so student views update in real time (especially `showVoteCounts` toggle).
+- Use the expand-and-contract pattern per Prisma's official guidance:
+  1. Add columns as nullable (`String?`) with no default
+  2. Deploy code that writes new format for new participants, reads nullable columns gracefully
+  3. Run a backfill script that assigns emoji and last_initial to existing participants
+  4. Deploy code that treats columns as required
+  5. Add `NOT NULL` constraint in a final migration
+- For the `emoji` column: add as `@db.VarChar(20)` nullable. Backfill existing participants with a deterministic emoji (hash `participantId` to index into the curated emoji set). Then add `NOT NULL`.
+- For `lastInitial`: keep nullable permanently. Existing participants genuinely do not have a last initial. The app should handle null gracefully (show fun name only, prompt for last initial on next rejoin).
+- Run the backfill as a separate Node.js script using Prisma Client, not inside the Prisma migration SQL. Prisma migrations are DDL-only by convention; mixing DML risks transaction timeouts.
+- Test the migration against a snapshot of production data, not just an empty dev database.
+- Schedule migrations during low-usage windows (before 8am ET or after 3pm ET).
 
 **Warning signs:**
-- A single `updateBracketSettings` server action that accepts `size` or `bracketType` without a status check.
-- The edit form shows all fields as editable regardless of bracket status.
-- No Zod schema distinction between display and structural fields.
-- Teacher changes `showVoteCounts` on a live bracket but students don't see the change until they refresh.
+- `@default("")` on string columns intended for display
+- Schema migration PR without a corresponding data migration script
+- Tests that only run against a fresh database with no existing participants
+- `prisma migrate dev` succeeds locally but `prisma migrate deploy` has not been tested against production-like data
+- Migration and code deploy in the same Vercel build step without considering the "old code + new schema" transition window
 
-**Phase to address:** Settings editing phase -- define the partition first, then build the UI and action.
+**Phase to address:**
+Schema migration phase (must be the first implementation phase). Must deploy before any application code references the new columns.
 
 ---
 
-### Pitfall 4: Quick-Create Skips Session Assignment -- Bracket/Poll Created Without a Session Cannot Receive Student Votes
+### Pitfall 4: Cross-Device Name Matching Creates False Identity Claims in Common-Name Classrooms
 
 **What goes wrong:**
-The existing creation flow for brackets requires two steps: create the bracket, then assign it to a session via `assignBracketToSession`. Students can only vote on activities that belong to their session (the activity list API filters by `sessionId`). A "quick create" flow that streamlines creation could easily skip session assignment, creating a bracket that:
-1. Does not appear in any student's activity grid (filtered out by missing `sessionId`).
-2. Cannot receive votes because students are participants in a session, and the activity has no session link.
-3. Shows no error -- the bracket exists and the teacher can view it, but students never see it.
+The new identity reclaim uses first name + last initial to match a returning student. In a classroom of 30 students, name collisions are common: two students named "Emma S" are indistinguishable by name alone. The system either (a) auto-claims the wrong identity for one Emma, silently giving her the other Emma's vote history and fun name, or (b) shows both Emmas in a disambiguation list but they cannot tell which is theirs.
 
-The teacher then activates the bracket, shares the class code, and waits. Students join and see nothing. The teacher sees zero votes and assumes the system is broken.
+The current disambiguation in `name-disambiguation.tsx` shows fun names ("Daring Dragon") as identifiers -- this works because students remember their fun name. But if the redesign changes fun names during migration, students who remember "Daring Dragon" may not recognize their new identity in the list. The gap between "what the student remembers" and "what the system shows" causes confusion and wrong claims.
+
+Additionally, young students (K-2) may not know their last initial, or may type a random character when prompted. "Last initial" is an adult concept that does not translate well to a 6-year-old.
 
 **Why it happens:**
-The multi-step creation wizard has an explicit "Select Session" step. Quick-create by definition removes steps. If session assignment is treated as an optional step that can be deferred, the most common use case (teacher wants students to vote right now) is broken by default.
+First name + single last initial has low entropy. In a US classroom of 30, roughly 15-20% of sessions will have at least one collision (two students with same first name and last initial). Developers test with 5 unique names and never encounter this. The current codebase already handles name collisions via the disambiguation flow, but the new identity model must not regress this.
 
 **How to avoid:**
-1. Quick-create must require session selection as a mandatory field, not an optional step. The simplest approach: if the teacher has exactly one active session, auto-assign. If they have multiple, show a session picker as part of the quick-create form (not as a separate step).
-2. Validate at activation time: when `updateBracketStatus` transitions from `draft` to `active`, check if `sessionId` is set. If not, return `{ error: 'Assign this bracket to a class session before activating' }`.
-3. Show a prominent warning badge on the bracket detail page if `sessionId` is null: "Not assigned to a session -- students cannot participate."
-4. For quick-create, consider auto-creating a new session if none exists, with a generated code.
+- Never auto-claim identity on a single match. Even if there is exactly one "Emma S" in the session, show the confirmation screen. The current `claimIdentity` action requires explicit selection -- maintain this pattern.
+- Keep existing fun names immutable during migration. Do not change "Daring Dragon" to something else. Emoji is additive: "Daring Dragon + rocket_emoji" on rejoin. Students who remember "Daring Dragon" can still find themselves.
+- In the disambiguation UI, show the fun name as the primary identifier (large, bold), not the emoji. Emoji is secondary/decorative. Legacy participants without emoji show fun name only.
+- For the "last initial" prompt: label the field "First letter of your last name" not "Last initial." Use a single-character input (`maxLength={1}`), auto-uppercase. Show an example: "If your name is Emma Smith, type S." On mobile, use `inputMode="text"` with auto-capitalization.
+- Allow last initial to be optional in the matching. If a student enters just their first name (no last initial), show all matching participants for disambiguation. The last initial narrows the list but is not required.
+- Consider allowing 2 characters for last initial (to handle hyphenated last names like "Smith-Jones" -> "SJ") as mentioned in the project context.
 
 **Warning signs:**
-- Quick-create form has no session field or makes it optional.
-- Brackets created via quick-create have `sessionId: null` in the database.
-- Teacher activates a bracket but zero students see it in their activity grid.
-- The `useRealtimeActivities` hook returns an empty array even though the bracket is active.
+- Auto-claiming identity when first name + last initial has exactly one match (skipping confirmation)
+- Test data with no duplicate first names
+- Fun names changing during migration (breaking student memory)
+- Disambiguation UI that only shows emoji, not the alliterative fun name
+- "Last initial" input that accepts more than 2 characters or doesn't auto-uppercase
+- No test scenario with two students sharing the same first name and last initial
 
-**Phase to address:** Quick-create phase -- session assignment must be part of the creation flow, not a separate step.
+**Phase to address:**
+Join flow redesign phase. The matching logic and disambiguation UI are the core of the identity reclaim experience. Must be designed with collision cases as primary test scenarios, not edge cases.
 
 ---
 
-### Pitfall 5: Real-Time Vote Indicators Create N+1 Query Storm -- Per-Student Tracking at Broadcast Frequency
+### Pitfall 5: FingerprintJS Removal Leaves Dead Code Across Three Layers
 
 **What goes wrong:**
-Adding per-student vote indicators ("who has voted / who hasn't") to the teacher's live dashboard requires knowing which specific participants have voted on each matchup. The naive approach queries voter participant IDs on every vote broadcast:
+FingerprintJS (`@fingerprintjs/fingerprintjs@^5.0.1` in `package.json`) is woven through three application layers:
 
-```
-30 students x 4 open matchups x 1 vote broadcast/second = 120 queries/second
-```
+1. **Client hook:** `src/hooks/use-device-identity.ts` imports `getBrowserFingerprint` from `src/lib/student/fingerprint.ts`
+2. **Server actions:** `src/actions/student.ts` accepts `fingerprint` parameter in `joinSession`, passes to `createParticipant` and `findParticipantByFingerprint`
+3. **DAL:** `src/lib/dal/student-session.ts` has `findParticipantByFingerprint()` function and `createParticipant` writes `fingerprint` to DB
+4. **Schema:** `prisma/schema.prisma` has `fingerprint String?` column with `@@index([sessionId, fingerprint])`
+5. **Types:** `src/types/student.ts` has `DeviceIdentity.fingerprint` field
 
-The existing `getVoterParticipantIds` function (loaded in the live page server component, line 77-78 of `brackets/[bracketId]/live/page.tsx`) runs once at page load. But if vote indicator updates are triggered by every `vote_update` broadcast event, each update requires re-fetching voter IDs for all active matchups.
+Missing any one reference creates a build error (TypeScript import) or silent runtime waste (unused database column and index consuming write I/O). The `@@index([sessionId, fingerprint])` adds overhead to every `INSERT` and `UPDATE` on `student_participants` for zero benefit after removal.
 
-The `useRealtimeBracket` hook batches vote count updates every 2 seconds, but vote indicators need to show "StudentX just voted" in near-real-time for the teacher's awareness. If each indicator update triggers a full refetch from the API, the server handles `participantCount * activeMatchupCount / batchInterval` queries per batch.
+A grep for `fingerprint` across the codebase returns 44 files (including planning docs). The application code references are in 6 files, but the planning doc references will cause confusion if not cleaned up.
 
 **Why it happens:**
-Vote counts are aggregated (one row per matchup: `groupBy entrantId, count`). Vote indicators are disaggregated (one query per matchup to get participant IDs who voted). The existing architecture broadcasts aggregate counts but not disaggregate participant info.
+FingerprintJS was integrated as a "second layer" of identity (after localStorage UUID). It touches every layer of the identity stack. Developers remove the package and the obvious `fingerprint.ts` file but miss the DAL function, the schema column, the index, or the type definition. TypeScript catches import errors but not unused database columns or orphaned indexes.
 
 **How to avoid:**
-1. **Include voter info in the broadcast payload**, not just counts. Modify `broadcastVoteUpdate` to include the participant ID who just voted: `payload: { matchupId, voteCounts, totalVotes, voterId: participantId }`. The client accumulates voter IDs locally without re-fetching.
-2. **Maintain voter state client-side**: In `useRealtimeBracket`, add a `voterIds` state similar to `voteCounts`. When a `vote_update` arrives with a `voterId`, append it to the set for that matchup. On full refetch (structural change), replace with server data.
-3. **Do NOT query voter IDs on every vote count update**. The initial load in the server component already provides the starting set. Subsequent additions come from broadcast payloads.
-4. **Cap the indicator UI**: Show "15 of 30 voted" (count) not a full list of 30 avatar indicators. The count comes from `totalVotes` which is already broadcast. Only show individual indicators in the participation sidebar, not inline on every matchup card.
-5. If full per-student tracking is needed: use the existing `initialVoterIds` from the server component as the base, and append new voter IDs from broadcast events. Do not re-fetch the full list unless a structural change (undo, reopen) occurs.
+- Remove in a specific order to avoid the "old code + new schema" problem:
+  1. Remove application code first (safe because fingerprint is nullable and already fails gracefully): delete `fingerprint.ts`, update `use-device-identity.ts` to not call it, remove fingerprint parameter from server actions and DAL
+  2. Deploy the code change. The fingerprint column still exists but is never written to or read.
+  3. In a subsequent migration: drop the `fingerprint` column and `@@index([sessionId, fingerprint])`
+  4. `npm uninstall @fingerprintjs/fingerprintjs`
+  5. Verify: `npm ls @fingerprintjs/fingerprintjs` returns empty, `grep -r "fingerprint" src/` shows no application code hits
+- Update `DeviceIdentity` type in `src/types/student.ts` -- remove `fingerprint` field. Or replace the entire type if the hook is also being removed.
+- Check `package-lock.json` for transitive dependencies that might pull FingerprintJS back in.
 
 **Warning signs:**
-- Adding a fetch call inside the `vote_update` broadcast handler in `useRealtimeBracket`.
-- API response times increasing on the `/api/brackets/{id}/state` endpoint during active voting.
-- The live dashboard server component (which already queries `getVoterParticipantIds` for all matchups) running on every client-side refetch.
-- Teacher dashboard becoming sluggish during peak voting with 30+ students.
+- `npm ls @fingerprintjs/fingerprintjs` still shows the package after "removal"
+- `fingerprint` column still in `schema.prisma` after code changes
+- `findParticipantByFingerprint` function still exists in DAL
+- Build succeeds but the `getBrowserFingerprint()` function silently returns empty string and does nothing
+- Bundle size analysis still shows FingerprintJS (~150KB+ client-side)
 
-**Phase to address:** Real-time vote indicators phase -- design the data flow (broadcast payload vs. API fetch) before building the UI.
+**Phase to address:**
+Cleanup phase, before or alongside the schema migration. Application code removal can be combined with the first deploy. Column/index removal goes in the same migration that adds the new emoji/lastInitial columns.
 
 ---
 
-### Pitfall 6: Reopen a Completed Bracket Without Resetting the Completion Broadcast -- Students See Stale Celebration
+### Pitfall 6: sessionStorage Identity Lost on Tab Close Creates Duplicate Participants
 
 **What goes wrong:**
-If "reopen" means transitioning a `completed` bracket back to `active` (e.g., teacher wants to redo the final round), the `bracketCompleted` state in `useRealtimeBracket` (line 61) is already `true` on every connected student's device. Setting the bracket status back to `active` in the database does not clear this client-side state. Students who are still on the bracket page see the celebration screen or "bracket complete" UI. If they refresh, they get the active state -- but the realtime hook will never "un-complete" because there is no `bracket_uncompleted` event type.
+The current `session-store.ts` uses `sessionStorage` (per-tab, survives refresh, dies on tab close). If a student accidentally closes the tab, reopens the app, and navigates back to the session URL, their `sessionStorage` is gone. They enter their name, the system finds no match in `sessionStorage`, and routes them through the full join flow. If the student's name has no collision in the database, a new participant is created -- now there are two database records for the same physical student, one orphaned with the old fun name and one new.
 
-Additionally, `hasShownRevealRef.current` is already `true` from the previous completion. Even if the student receives a structural update and refetches, the ref guard permanently blocks any future celebration. When the bracket re-completes, no celebration fires.
+On iPads, Safari aggressively kills background tabs. The student switches to another app for 30 seconds, returns, and the tab has been unloaded. While `sessionStorage` survives soft tab unloads on most platforms, iOS Safari's behavior varies across versions, and teachers report students losing their session.
 
 **Why it happens:**
-The `bracketCompleted` state in `useRealtimeBracket` is a one-way flag (false -> true, never true -> false). The hook was designed for a one-directional lifecycle: draft -> active -> completed. Reopening introduces a lifecycle reversal that the hook does not model.
+`sessionStorage` was chosen to solve the multi-tab identity bleeding bug where `localStorage` caused all tabs to share the same student identity. The fix was correct for that bug but introduced fragility: tab close = identity loss = potential duplicate participant. The system has no way to connect "Emma S who was Daring Dragon" (old tab) with "Emma S who just joined as Mighty Moose" (new tab) unless the student remembers to use the disambiguation flow.
 
 **How to avoid:**
-1. Add a `bracket_reopened` event type to `BracketUpdateType` in `broadcast.ts`. When the teacher reopens, broadcast this event.
-2. In `useRealtimeBracket`, handle `bracket_reopened` by setting `setBracketCompleted(false)` and triggering a full state refetch.
-3. In the student voting components, reset `hasShownRevealRef.current = false` when a `bracket_reopened` event is detected. This allows the celebration to fire again when the bracket re-completes.
-4. Also reset `revealState` and `showCelebration` to their initial values on reopen.
-5. Consider whether "reopen" should clear all votes in the final round or preserve them. If votes are preserved but the winner is cleared, the teacher can re-evaluate. If votes are cleared, students need to re-vote -- broadcast `voting_opened` so the student voting UI re-enables.
+- Keep `sessionStorage` as the fast per-tab identity cache (solves multi-tab bleeding).
+- Add a `localStorage` fallback keyed by sessionId: when `sessionStorage` has no entry for a session, check `localStorage[sparkvotedu_identity_{sessionId}]` before showing the join form. Write to both on successful join. This is safe from the multi-tab bleeding bug because each tab reads `sessionStorage` first; `localStorage` is only checked when `sessionStorage` is empty (tab was closed).
+- On ephemeral Chromebooks where localStorage also gets wiped: the name-based reclaim flow handles this. The `localStorage` fallback only helps on non-ephemeral devices where the tab was closed but the browser stayed open.
+- In the join flow, when a student enters a name that matches an existing participant, show the disambiguation prompt immediately (current behavior via `name-disambiguation.tsx`). This catches the duplicate participant case even when storage-based shortcuts fail.
+- Consider writing a short-lived cookie (expires in 24 hours) with the participant's sessionId + participantId. Cookies survive tab close and can be read in Next.js middleware for auto-redirect.
 
 **Warning signs:**
-- `BracketUpdateType` union does not include `bracket_reopened`.
-- `useRealtimeBracket` has no handler for reversing `bracketCompleted`.
-- Student sees "bracket complete" screen after teacher reopens the bracket.
-- Second completion never triggers celebration because `hasShownRevealRef.current` is permanently `true`.
-- Testing only covers "complete once" flow, never "complete -> reopen -> complete again".
+- Test scenarios that only cover "same tab, refresh" and never "close tab, reopen"
+- iPad testing that keeps the app in foreground for the entire session
+- No `localStorage` fallback check in the session page load logic
+- Duplicate participant records in the database for the same physical student (same firstName, different funName, same sessionId)
 
-**Phase to address:** Reopen activity phase -- must extend the broadcast type union and the realtime hook lifecycle model before implementing the UI.
+**Phase to address:**
+Join flow redesign phase. The storage strategy (sessionStorage primary + localStorage fallback + cookie) must be decided as part of the identity architecture.
 
 ---
 
-### Pitfall 7: Quick-Create Bypasses Feature Gates -- Free-Tier Teacher Creates Pro-Only Bracket Type
+### Pitfall 7: Existing Fun Names Change During Migration, Breaking Student Recognition
 
 **What goes wrong:**
-The existing `createBracket` action (line 46-113 of `actions/bracket.ts`) performs multiple feature gate checks: total bracket limit, draft limit, bracket type gate, and entrant count gate. Quick-create introduces a new code path. If the quick-create action calls the DAL directly (bypassing the action layer) or creates a simplified action that omits the feature gate checks, a free-tier teacher could create a double-elimination or predictive bracket that should be gated to Pro/Pro Plus tiers.
+The redesign introduces fun name + emoji as the new identity format. A developer decides to regenerate fun names during migration to include emoji in the name itself (e.g., "Daring Dragon" becomes "Rocket Daring Dragon"). Now every existing student's identity anchor -- the fun name they remember from last class -- is gone. When "Emma S" rejoins and sees the disambiguation list, none of the fun names match what she remembers. She picks "I'm new" instead, creating a duplicate.
+
+Even a subtle change -- like normalizing capitalization, adding emoji prefix, or changing the name generator algorithm -- breaks recognition. Students in K-12 attach strongly to their fun names. "I'm Mighty Moose!" is part of the classroom experience.
 
 **Why it happens:**
-Quick-create is built as a "simpler path" which tempts developers to skip "boilerplate" validation steps. The feature gate checks look like boilerplate but enforce the business model.
+Developers treat fun names as data, not as identity anchors. During a schema redesign, it feels natural to "clean up" or "upgrade" existing data. But fun names are the one thing students remember across sessions (they do not remember UUIDs, device IDs, or recovery codes).
 
 **How to avoid:**
-1. Quick-create must reuse the existing `createBracket` server action, not create a parallel one. Pass the same schema-validated input, just with defaults pre-filled.
-2. If a dedicated quick-create action is needed for a streamlined schema, it MUST include the same feature gate block: `canCreateBracket`, `canCreateDraftBracket`, `canUseBracketType`, `canUseEntrantCount`.
-3. Add integration tests that verify quick-create with a free-tier teacher rejects DE and predictive bracket types.
-4. Consider having quick-create call `createBracket` internally rather than duplicating validation logic.
+- Existing fun names are immutable during and after migration. The migration must not modify the `fun_name` column for any existing participant.
+- Emoji is a separate column, additive to the fun name. Display format becomes "Daring Dragon [rocket_emoji]" not "[rocket_emoji] Daring Dragon" or a new combined name.
+- New participants created after the redesign get fun names from the same generator (alliterative "Adjective Animal" from `src/lib/student/fun-names.ts`). Do not change the generator algorithm unless you are sure no existing students will rejoin.
+- In the disambiguation UI, show the fun name as the primary text (large, bold) with emoji as a small decorative element beside it. Not the reverse.
+- If the fun name format is changing for new participants (e.g., adding emoji to the name itself), existing participants must retain their old format until they explicitly choose a new one.
 
 **Warning signs:**
-- A new `quickCreateBracket` server action that imports from `@/lib/dal/bracket` directly instead of calling `createBracket`.
-- No `canUseBracketType` call in the quick-create path.
-- Quick-create form shows bracket type options that should be gated for the current tier.
-- Free-tier teacher can create DE brackets through quick-create but not through the full wizard.
+- Migration script that includes `UPDATE student_participants SET fun_name = ...`
+- Fun name generator algorithm change that produces different names from the same seed
+- UI redesign that hides or de-emphasizes the alliterative fun name in favor of emoji
+- Test data created fresh (no legacy participants) during development
 
-**Phase to address:** Quick-create phase -- reuse existing action or copy all gate checks.
+**Phase to address:**
+Schema migration phase. The migration script must explicitly preserve existing `fun_name` values. Add a verification query: `SELECT COUNT(*) FROM student_participants WHERE fun_name != original_fun_name` should return 0.
 
 ---
 
-### Pitfall 8: Pause State Not Persisted -- Server Restart Loses Pause State, Votes Resume Silently
+### Pitfall 8: Emoji Picker Shows Full Unicode Set, Causing Classroom Chaos
 
 **What goes wrong:**
-If pause is implemented by setting a server-side in-memory flag or by only broadcasting a client-side event without persisting the state, a server restart (Vercel redeploy, edge function cold start) resets the pause state. The matchup remains in `voting` status in the database. When the server comes back:
-1. The `castVote` action's status check (`matchup.status !== 'voting'`) passes because the matchup is still `voting` in the DB.
-2. Students can vote again even though the teacher thinks voting is paused.
-3. The teacher's dashboard shows "paused" UI (from their local state) but votes are accumulating server-side.
+The developer implements an emoji picker that shows all available emoji (3,600+ in Unicode 15.1). Students spend 5 minutes scrolling through categories, searching for the "perfect" emoji. The teacher loses class time. Worse: students find emoji that are inappropriate for a classroom context (middle finger, eggplant, skull, alcohol-related emoji). Some emoji have ambiguous meanings that vary by culture and age group.
+
+On school Chromebooks, the OS-level emoji picker (`Win+.` on Windows, `Ctrl+Cmd+Space` on macOS) may not be available or may be disabled by IT policy. If the app relies on the OS picker instead of a custom one, students on locked-down Chromebooks cannot select emoji at all.
 
 **Why it happens:**
-The existing matchup statuses are `pending`, `voting`, and `decided` (line 145 of the Prisma schema, `status String @default("pending")`). There is no `paused` status. Developers may implement pause as a client-side or in-memory concern rather than adding a new database status.
+Building a custom emoji picker from scratch is tedious. Developers reach for a library (like `emoji-mart`) that shows the full Unicode set by default. Filtering requires explicit configuration. The "full picker" path is the path of least resistance.
 
 **How to avoid:**
-1. Add `paused` as a valid matchup status in the database. This may not require a schema migration if the `status` field is a plain `String` (which it is -- line 145 of schema.prisma uses `String @default("pending")`).
-2. Pause/resume transitions: `voting` -> `paused` (pause) and `paused` -> `voting` (resume). These are the only valid transitions for pause/resume.
-3. Update the `castVote` status check: `if (matchup.status !== 'voting')` already handles this correctly because `paused` is not `voting`. The error message should be made specific: map `paused` status to a user-friendly error.
-4. Add the status to the Zod validation schemas if matchup status is validated anywhere.
-5. Broadcast the pause/resume event AND persist the status change in a single server action, atomically.
+- Build a simple custom emoji grid, not a full picker. 20-30 curated, classroom-appropriate emoji displayed in a single flat grid. No categories, no search, no recents, no skin tones. One tap to select.
+- Curate the list manually: animals (cat, dog, fox, bear, penguin, octopus), space (rocket, star, moon, sun), nature (tree, flower, mushroom, rainbow), food (pizza, taco, cookie), objects (lightning, fire, sparkles, crown, gem). Avoid anything with cultural ambiguity.
+- Do not use the OS-level emoji picker. Many school Chromebooks have it disabled. A custom in-app grid ensures consistent behavior.
+- Make emoji selection optional at join time. Assign a random emoji from the curated set as default. Students can change it once (similar to the existing reroll mechanic for fun names). This prevents analysis paralysis and keeps the join flow fast.
+- Store selected emoji as a shortcode enum value server-side. The curated set IS the validation schema -- anything not in the set is rejected.
 
 **Warning signs:**
-- Pause implemented via a React state variable or an in-memory Map on the server.
-- No database write when the teacher clicks "Pause."
-- The `castVote` action does not reject votes for paused matchups after a server restart.
-- Matchup status in the database does not change when pause is toggled.
+- An `emoji-mart` or `emoji-picker-react` dependency in `package.json`
+- Emoji picker component with categories, search bar, or skin tone selector
+- No server-side validation of emoji input against a curated allowlist
+- Emoji selection blocking the join flow (student cannot proceed without choosing)
+- Reports of inappropriate emoji in the teacher's participant list
 
-**Phase to address:** Pause/Resume phase -- persistence must be the first implementation step, before broadcast or UI.
+**Phase to address:**
+Join flow redesign phase. The emoji picker UI and curated set are part of the join experience.
 
 ---
 
-### Pitfall 9: Poll Quick-Create Defaults Cause "No Options" Validation Error
+### Pitfall 9: Schema Migration Runs During Active Sessions, Causing Join Failures
 
 **What goes wrong:**
-Polls require at least 2 options (enforced by `z.array(pollOptionSchema).min(2)` in `actions/poll.ts` line 43). Quick-create for polls needs to provide a way to enter options inline. If the quick-create form submits before the user enters options, or if it tries to create a poll with zero options and add them later, the server action rejects with "Invalid poll data."
+`prisma migrate deploy` executes DDL statements on the production Supabase database. During the migration:
+- `ALTER TABLE student_participants ADD COLUMN emoji VARCHAR(20)` takes a brief exclusive lock
+- If a student is joining at that exact moment, the `createParticipant` INSERT fails with a lock timeout or "table definition has changed" error
+- On Vercel, the old application code continues serving requests during build+deploy. The migration runs as part of the build step, creating a window where old code hits the new schema
 
-Unlike brackets where entrants can be generated from curated topics, poll options are entirely user-defined. There is no "auto-generate" fallback for poll options.
-
-**Why it happens:**
-Quick-create prioritizes speed and minimal fields. Poll options are multi-input fields that resist simplification. Developers may defer option entry to an edit step, but the creation schema requires options at creation time.
-
-**How to avoid:**
-1. Quick-create for polls must include an inline option entry (minimum 2 fields, pre-populated with "Option 1" / "Option 2" placeholders).
-2. Keep the existing `createPollWithOptionsSchema` validation -- do not relax the `.min(2)` constraint.
-3. Consider a "Yes/No" quick-create template that pre-fills two options, and a "Custom" quick-create that requires the user to type at least 2 options.
-4. The poll quick-create form should show add/remove option buttons with a minimum of 2 enforced in the UI, not just server-side.
-
-**Warning signs:**
-- Quick-create form has a poll option but no option entry fields.
-- Poll creation fails on submit with "Invalid poll data" and the user sees no explanation.
-- Quick-create tries to create a poll first and add options via `updatePollOptions` afterward.
-
-**Phase to address:** Quick-create phase -- poll template must include inline options.
-
----
-
-### Pitfall 10: Undo on Double-Elimination Does Not Reverse Loser Placement in Losers Bracket
-
-**What goes wrong:**
-The current `undoMatchupAdvancement` function (line 79-129 of `advancement.ts`) clears the winner from the current matchup and removes the propagated winner from the next matchup's entrant slot. But in double-elimination, advancing a WB matchup does TWO things: (1) places the winner in the next WB matchup, and (2) places the loser in a specific LB position via `computeLoserPlacement`. The undo function only reverses (1). The loser remains in the LB matchup.
-
-If the teacher then advances a different winner, a different loser should go to that LB position. But the slot is already occupied by the previous loser. The new loser either fails to place (if there is a uniqueness constraint) or overwrites silently (if there isn't), leaving the old loser orphaned in the bracket.
+For dropping the `fingerprint` column: `ALTER TABLE student_participants DROP COLUMN fingerprint` also takes an exclusive lock and causes any in-flight query referencing `fingerprint` to fail.
 
 **Why it happens:**
-The `undoMatchupAdvancement` function uses `getSlotForPosition` to determine which slot to clear in the next matchup. But it does not know about the losers bracket placement. The losers bracket placement logic lives in `advanceDoubleElimMatchup` (line 332-560 of `advancement.ts`), not in the undo function.
+Prisma migrations are synchronous DDL. On small tables (< 10K rows) the lock is held for milliseconds. But SparkVotEDU has active sessions during school hours. Even a 100ms lock during peak usage (30 students simultaneously joining) can cause 2-3 failures. The students see "Something went wrong" and the teacher calls IT support.
 
 **How to avoid:**
-1. Create a dedicated `undoDoubleElimMatchup` function that mirrors the advancement logic:
-   - Clear winner and reset status (same as SE undo).
-   - Clear winner propagation to next WB matchup (same as SE undo).
-   - Determine where the loser was placed using `computeLoserPlacement` and clear that LB slot.
-   - If the LB matchup that received the loser has already been advanced, block the undo (or cascade).
-2. Route undo through bracket type detection, similar to `advanceMatchup` which routes to `advanceDoubleElimMatchup` for DE brackets.
-3. Check for votes in the LB destination matchup before allowing WB undo -- if students already voted on the LB matchup that includes the loser, the undo cascades further.
+- Schedule migrations during off-hours. SparkVotEDU's primary usage is 8am-3pm ET on school days. Run migrations before 7am ET or after 4pm ET, or on weekends.
+- Always add columns as nullable with server-side defaults. `ALTER TABLE ADD COLUMN ... DEFAULT NULL` does not rewrite the table on PostgreSQL 11+ (which Supabase uses). It is effectively instant.
+- Never combine additive migrations (add column) with destructive migrations (drop column, rename column) in the same migration file. Add first, deploy code, then drop in a later migration.
+- Deploy application code that handles both old and new schema BEFORE running the migration. The code must read nullable columns gracefully and not crash if a new column does not exist yet.
+- Use `prisma migrate diff` to preview the SQL before running `prisma migrate deploy`.
+- For the fingerprint column drop: deploy code that no longer reads `fingerprint` first. Wait 24 hours for all Vercel edge function instances to pick up the new code. Then drop the column.
 
 **Warning signs:**
-- After undoing a WB matchup, the loser is still visible in a LB matchup.
-- Re-advancing with a different winner causes two entrants in the same LB slot.
-- The `undoAdvancement` action in `bracket-advance.ts` does not check `bracket.bracketType` before calling `undoMatchupAdvancement`.
-- No LB matchup queries in the undo transaction.
+- Migration SQL contains `ALTER TABLE ... ADD COLUMN ... NOT NULL` without `DEFAULT`
+- Migration and code deploy in the same Vercel build step without a deployment gap
+- Migration run during school hours without checking for active sessions
+- Migration combines adding new columns and dropping old columns in one file
+- No staging environment test of the migration against production-like data volume
 
-**Phase to address:** Undo/Reopen phase -- DE-aware undo must be implemented alongside SE undo, not deferred.
+**Phase to address:**
+Schema migration phase (first implementation phase). Timing and ordering are as important as the SQL itself.
 
 ---
 
@@ -303,133 +300,117 @@ The `undoMatchupAdvancement` function uses `getSlotForPosition` to determine whi
 
 | Shortcut | Immediate Benefit | Long-term Cost | When Acceptable |
 |----------|-------------------|----------------|-----------------|
-| Single `updateSettings` action accepting all bracket fields | One action to maintain | Structural changes on active brackets corrupt state silently | Never -- split into display vs. structural actions |
-| Quick-create as a separate server action bypassing `createBracket` | Simpler schema, faster dev | Duplicated feature gate logic that drifts out of sync | Never -- call existing action or extract shared validation |
-| Pause as client-side state only (no DB persistence) | No migration needed | Server restart/redeploy silently unpauses all matchups | Never -- must persist to DB |
-| Undo that only reverses winner propagation without vote cleanup | Simpler transaction | Stale votes produce wrong results after re-advancement | Acceptable for MVP ONLY if undo also resets matchup to `pending` (not `voting`), requiring teacher to re-open voting |
-| Vote indicators via full API refetch on each broadcast | No broadcast schema changes | N+1 query storm at 30 students; dashboard becomes sluggish | Never at broadcast frequency -- acceptable for initial page load only |
-| Reopen without extending `BracketUpdateType` | Fewer broadcast changes | Students see stale completion state, celebrations never re-fire | Never -- the broadcast type union must be extended |
-
----
+| Store raw emoji Unicode in VARCHAR column | No mapping table needed | Inconsistent rendering, broken equality checks, potential uniqueness issues, requires migration to fix | Never -- use shortcodes from day one |
+| Keep FingerprintJS in `package.json` but stop calling it | Avoids package removal risk | ~150KB client bundle waste, security audit liability, confusing dead code | Only during a transitional deploy (max 1 week) |
+| Auto-claim identity on single name+initial match | Faster join for returning students | Students accidentally claim wrong identity in same-name scenarios; no undo | Never -- always show confirmation |
+| Default emoji to empty string `""` in migration | Migration succeeds without backfill script | Empty strings break emoji rendering, `EMOJI_MAP[""]` returns undefined, teacher sees broken UI | Never -- use null, not empty string |
+| Skip `lastInitial` column, match on firstName only | Fewer schema changes, simpler matching | Same collision rate as current system; name disambiguation flow handles it but more friction | Acceptable if disambiguation UX is strong enough; the current codebase already does this |
+| Use OS emoji picker instead of custom grid | No custom UI to build | Disabled on managed Chromebooks; inconsistent across platforms; no curation control | Never for primary flow -- OK as secondary "advanced" option |
+| Combine fingerprint removal and emoji addition in one migration | One migration instead of two | If either change causes issues, cannot roll back independently | Acceptable if thoroughly tested against production snapshot |
 
 ## Integration Gotchas
 
 | Integration | Common Mistake | Correct Approach |
 |-------------|----------------|------------------|
-| Supabase Broadcast for pause/resume | Broadcasting only a generic `bracket_update` with a payload flag | Add `voting_paused` and `voting_resumed` as explicit `BracketUpdateType` values so the realtime hook can react specifically |
-| Prisma matchup status for pause | Adding a `paused` boolean column instead of a status value | Use the existing `status` string field -- add `paused` as a valid value alongside `pending`, `voting`, `decided` |
-| `useVote` hook during pause | Trying to add pause awareness to `useVote` | Keep `useVote` unchanged -- disable the vote button at the component level based on matchup status from `useRealtimeBracket`, not inside the hook |
-| Quick-create + session assignment | Making session assignment a separate step | Quick-create must include session selection or auto-assignment inline; a bracket without a session is invisible to students |
-| Settings edit broadcast | Not broadcasting display setting changes | When teacher toggles `showVoteCounts` on a live bracket, broadcast a `settings_changed` event so student views update without refresh |
-| Undo votes cleanup | Using `deleteMany` outside the transaction | All undo mutations (clear winner, clear next slot, delete votes, clear LB slot for DE) must be in the same `prisma.$transaction` call |
-| Vote indicator broadcast payload | Adding `voterId` to broadcast but not updating `broadcastVoteUpdate` signature | Update both `broadcastVoteUpdate` in `broadcast.ts` AND the `vote_update` handler in `useRealtimeBracket` to expect the new field |
-
----
+| Supabase Realtime broadcast payloads | Broadcasting participant data with new `emoji` field but old subscriber code ignores it or crashes on unexpected field | Version the payload: add emoji as optional. Old clients render without it. Deploy subscriber code before broadcaster code. |
+| Prisma + Supabase PostgreSQL migration | Running `prisma migrate deploy` with `--force` flag or during school hours | Never use `--force` in production. Schedule during off-hours. Use `prisma migrate diff` to preview. |
+| Next.js middleware + identity storage | Trying to read localStorage/sessionStorage in `src/middleware.ts` for identity routing | Middleware runs in Edge runtime, cannot access browser storage. Use cookies for server-readable identity, or URL parameters. |
+| Supabase RLS + new columns | Worrying about RLS policies for new columns | Current RLS is deny-all with Prisma bypass via `service_role` key. New columns inherit deny-all. No RLS change needed as long as all access goes through Prisma. |
+| Fun name generator uniqueness | Adding emoji to the fun name string before checking uniqueness | Keep fun name and emoji as separate columns. Uniqueness check on fun name alone (existing `@@unique([sessionId, funName])` constraint). Emoji does not affect uniqueness. |
+| Backfill script + Prisma Client | Running backfill inside Prisma migration SQL (mixing DDL and DML) | Run backfill as a separate Node.js script using Prisma Client. Batch in chunks of 100-500 rows. |
 
 ## Performance Traps
 
 | Trap | Symptoms | Prevention | When It Breaks |
 |------|----------|------------|----------------|
-| Per-student vote indicator re-fetch on every broadcast | Dashboard lag, API response times spike | Include voter ID in broadcast payload; accumulate client-side; full refetch only on structural changes | 20+ students, 3+ active matchups |
-| Undo cascade checking every downstream matchup for votes | Undo takes 2-5 seconds on a 16-team bracket | Limit undo to one level; block if next matchup has been advanced; show clear error message | 16+ entrant brackets with 3+ completed rounds |
-| Quick-create form re-rendering on each entrant input | Keystroke lag when typing entrant names | Use uncontrolled inputs or debounce; do not validate on every keystroke | 8+ entrants in the quick-create form |
-| Pause/resume broadcasting to 30+ student channels simultaneously | Broadcast latency spikes; some students see pause 1-2 seconds late | Supabase broadcast is pub/sub -- one broadcast message, subscribers pull. Not a concern unless doing per-student broadcasts | Not a real concern with Supabase broadcast architecture |
-| Settings edit broadcasting `showVoteCounts` toggle on every click | Multiple rapid broadcasts if teacher toggles back and forth | Debounce settings broadcast (500ms); only broadcast final value | Teacher clicking toggle rapidly |
-
----
+| Emoji rendering measurement via canvas on every render | Jank in participant list; dropped frames when scrolling 30+ students | Pre-compute emoji support once on page load, cache per shortcode in module-level Map | 50+ participants |
+| Name collision query on every keystroke in join form | 200ms+ server action calls, laggy input | Only check on form submit (current design does this -- maintain it) | N/A if current pattern kept |
+| Backfill migration as single transaction | Database lock held for entire backfill; all writes blocked | Batch in chunks of 100-500 with `COMMIT` between batches | 10,000+ total participants across all sessions |
+| Loading full emoji font on page load | 500KB+ font download delays initial paint on slow school WiFi | Use system emoji fonts (Noto on Chrome, Apple on Safari). Do not bundle a custom emoji font. | Slow networks (<1 Mbps) |
+| Cross-platform emoji detection on every participant card | Re-checking if each emoji renders correctly on every render cycle | Build a static allowlist tested offline; serve only allowed emoji in the picker | Any scale -- this is a design-time concern, not runtime |
 
 ## Security Mistakes
 
 | Mistake | Risk | Prevention |
 |---------|------|------------|
-| Pause/resume without teacher ownership check | Any authenticated teacher could pause another teacher's bracket | Copy pattern from `advanceMatchup`: verify `bracket.teacherId === teacher.id` |
-| Quick-create accepting bracket type without feature gate | Free-tier teacher creates Pro-only bracket types | Reuse `canUseBracketType` gate check from existing `createBracket` action |
-| Settings edit without status validation | Student or script changes structural settings on an active bracket | Server-side check: `if (bracket.status !== 'draft' && hasStructuralChanges) reject` |
-| Undo without re-validating bracket ownership per operation | Crafted request could undo advancement on another teacher's bracket | Existing `undoAdvancement` action already checks ownership -- maintain this pattern |
-| Vote indicator exposing participant identity to other students | Students can see WHO voted for what | Only expose voter IDs to the teacher dashboard; student view shows aggregate counts only |
-
----
+| Trusting client-provided emoji input without validation | XSS via malformed Unicode; database encoding errors; display injection | Server-side validation: emoji must match a shortcode in the curated set. Reject any input not in the allowlist. Client sends shortcode string, server validates against enum. |
+| Exposing participant matching logic to brute force | Attacker iterates first names + last initials to enumerate all participants in a session and steal identities | Rate-limit `joinSessionByName` per IP per session (max 5 attempts per minute). Current design requires disambiguation confirmation -- maintain this. |
+| Recovery code as permanent identity token | Recovery codes (`nanoid(8)`) never expire. Anyone who sees a code can claim that identity forever. | If recovery codes are kept in the redesign: make them single-use (current behavior) and expire them after 24 hours. If removed: ensure no equivalent permanent token replaces them. |
+| `claimIdentity` accepts participantId without rate limiting | A malicious student could enumerate UUIDs to claim another student's identity | Current validation (participantId must belong to session matching sessionCode) is correct. Add rate limiting: max 3 claim attempts per IP per session per minute. |
+| Emoji shortcode injection into HTML | If shortcodes are rendered via `dangerouslySetInnerHTML` or similar | Always render emoji via the mapping table: `EMOJI_MAP[shortcode]` returns a Unicode string rendered as text content, never HTML. Never use `dangerouslySetInnerHTML` with user-provided emoji data. |
 
 ## UX Pitfalls
 
 | Pitfall | User Impact | Better Approach |
 |---------|-------------|-----------------|
-| Pause button with no visual indicator on student devices | Students tap to vote, nothing happens, they think the app is broken | Show a prominent "Voting is paused" overlay on student voting cards; animate pause icon |
-| Undo confirmation dialog that lists technical details | Teacher sees "Clear winnerId on matchup abc-123?" | Show human-readable confirmation: "Undo: Alice winning against Bob in Round 1 Match 1? This will delete 12 votes on the next matchup." |
-| Quick-create form that requires too many fields | Teacher abandons quick-create and uses the full wizard, defeating the purpose | Maximum 4 fields: name, bracket type, entrants (textarea or preset), session. Everything else gets sensible defaults |
-| Settings edit form that shows all settings for all bracket types | Teacher sees `roundRobinPacing` settings on an SE bracket | Conditionally show settings relevant to the current bracket type only |
-| Reopen button available on a bracket with no session | Teacher reopens a bracket that has no students attached | Gray out reopen if `sessionId` is null; show tooltip "Assign to a session first" |
-| Real-time vote indicators showing exact student names | Privacy concern in some classroom contexts | Show counts ("15/30 voted") by default; expand to names only when teacher clicks |
-
----
+| Full emoji picker with 3,600+ emoji | Students waste 5+ minutes browsing; inappropriate emoji selected; class time lost | Curated grid of 20-30 classroom-safe emoji. One tap. No categories. No search. |
+| Fun names change during migration | "I was Daring Dragon!" -- student cannot find themselves in disambiguation list | Fun names are immutable. Emoji is additive. "Daring Dragon + rocket_emoji" not a new name. |
+| "Last initial" label on the input | K-2 students do not know what "last initial" means | Label: "First letter of your last name." Single-char input. Auto-uppercase. Show example. |
+| Emoji renders as blank box on older Chromebooks | Student selects emoji, sees it on their device, teacher's projector shows a box | Restrict to Unicode 13.0 (2020). Test on ChromeOS 100+, iOS 15+, Android 12+, Windows 10+. |
+| Disambiguation shows emoji but student joined before emoji existed | Returning legacy student sees fun names with emoji they never selected; "none of these are me" | Show fun name as primary, emoji as secondary. Legacy participants without emoji show fun name only. No placeholder emoji. |
+| Emoji selection required at join time | Blocks the fast join flow; adds friction to a 10-second process | Make emoji optional. Auto-assign random emoji from curated set. Student can change once (like reroll). |
+| Join flow requires too many steps after redesign | Code -> name -> last initial -> emoji -> confirm = 5 steps; students lose patience | Merge: Code -> name + last initial (one input: "Emma S") -> auto-assign emoji -> welcome screen with emoji display and optional change. 3 steps max. |
 
 ## "Looks Done But Isn't" Checklist
 
-- [ ] **Pause persists to DB:** Clicking "Pause" changes `matchup.status` to `paused` in the database, not just in client state. Verify: restart the dev server, matchup is still paused.
-- [ ] **Pause broadcasts to students:** `voting_paused` event is broadcast on `bracket:{bracketId}` channel AND student voting components disable vote buttons when status is `paused`.
-- [ ] **Undo clears downstream votes:** After undoing R1M1, votes for R2M1 are deleted. Verify: query `Vote` table for `matchupId = R2M1.id` returns zero rows.
-- [ ] **Undo in DE clears LB placement:** After undoing a WB matchup, the loser is no longer in the corresponding LB matchup slot. Verify: LB matchup has `null` in the slot that was previously filled.
-- [ ] **Settings edit partitioned:** Structural settings (size, type, pacing) are rejected for non-draft brackets. Verify: `POST` with `{ bracketId, size: 16 }` on an active bracket returns error.
-- [ ] **Settings change broadcasts:** Changing `showVoteCounts` on a live bracket causes student views to update without refresh. Verify: toggle on teacher dashboard, student view changes within 3 seconds.
-- [ ] **Quick-create assigns session:** Bracket created via quick-create has a non-null `sessionId`. Verify: check DB row after quick-create.
-- [ ] **Quick-create checks feature gates:** Free-tier teacher cannot quick-create a DE bracket. Verify: attempt returns error.
-- [ ] **Vote indicators don't re-fetch:** Vote indicator updates come from broadcast payload, not API calls. Verify: no `/api/brackets/{id}/state` fetch on vote_update events in the network tab.
-- [ ] **Reopen resets client state:** After teacher reopens a completed bracket, students on the page see the active voting UI, not the celebration screen. Verify: student is on bracket page, teacher reopens, student sees matchup cards.
-- [ ] **Reopen resets reveal ref:** `hasShownRevealRef.current` is reset to `false` on reopen. Verify: bracket completes again, celebration fires.
-- [ ] **Poll quick-create has options:** Poll quick-create form includes at least 2 option fields. Verify: submit with 0 options is impossible from the UI.
-
----
+- [ ] **Emoji storage:** Emoji stored as shortcode string, not raw Unicode -- verify with `SELECT emoji FROM student_participants LIMIT 5` showing values like "rocket", "star"
+- [ ] **Migration backfill:** All existing participants have non-null emoji after backfill -- verify with `SELECT COUNT(*) FROM student_participants WHERE emoji IS NULL` returning 0
+- [ ] **FingerprintJS removal:** `npm ls @fingerprintjs/fingerprintjs` returns empty; `grep -r "fingerprint" src/` shows zero application code hits (planning docs OK)
+- [ ] **Cross-platform emoji:** Every emoji in the curated set renders correctly on ChromeOS, iOS, Android, Windows -- verify with screenshot comparison on 4 devices
+- [ ] **Name collision:** Two students with identical first name + last initial can both join and correctly disambiguate via fun name selection -- verify with test scenario
+- [ ] **Tab close recovery:** Student closes tab, reopens session URL, can rejoin without full re-entry -- verify with manual test on Chrome and Safari
+- [ ] **Ephemeral mode survival:** Student on ephemeral Chromebook rejoins after browser restart using name + last initial -- verify by clearing all storage before rejoin
+- [ ] **Broadcast compatibility:** Pre-deploy client code handles broadcast payloads with new emoji field without crashing -- verify by running old client against new server
+- [ ] **Migration on populated database:** `prisma migrate deploy` succeeds against a database with existing participants, votes, and predictions -- verify against production snapshot
+- [ ] **Fun name immutability:** No existing participant's fun_name was modified by migration -- verify with `SELECT id FROM student_participants WHERE fun_name != old_fun_name` (requires pre-migration snapshot)
+- [ ] **Fun name uniqueness constraint:** `@@unique([sessionId, funName])` still works correctly with emoji as a separate column -- verify by attempting duplicate fun name insert
+- [ ] **Emoji validation:** Submitting an emoji shortcode not in the curated set is rejected by the server action -- verify with curl/fetch to the join endpoint with `emoji: "middle_finger"`
 
 ## Recovery Strategies
 
 | Pitfall | Recovery Cost | Recovery Steps |
 |---------|---------------|----------------|
-| Pause not persisted -- votes accumulated during "paused" state | MEDIUM | Query votes created during the pause window (between pause timestamp and resume timestamp); delete them; recount vote totals; rebroadcast |
-| Undo left stale votes in downstream matchup | LOW | Delete votes for the affected matchup via DAL; reset matchup status to `pending`; rebroadcast state |
-| Settings edit changed structural field on active bracket | HIGH | If caught early: restore from backup or manually rebuild matchup structure. If not caught: data corruption requires bracket recreation |
-| Quick-create without session -- teacher activated bracket, no students can see it | LOW | Assign session via `assignBracketToSession` action; broadcast `activity_update` to the session; students see the bracket immediately |
-| Vote indicators causing query storm | LOW | Revert to count-only display; add voter ID to broadcast payload; redeploy |
-| Reopen with stale celebration state | LOW | Add `bracket_reopened` event handler to `useRealtimeBracket`; deploy; students who refresh see correct state immediately |
-| Quick-create bypassed feature gates | MEDIUM | Audit brackets created via quick-create; archive any that violate tier limits; add gate checks and deploy |
-| DE undo left orphaned loser in LB | MEDIUM | Manually null the loser's entrant slot in the LB matchup via DB query; delete any votes on that LB matchup; broadcast state update |
-
----
+| Emoji stored as raw Unicode, rendering breaks on some platforms | HIGH | Create new shortcode column, write migration to map existing Unicode to shortcodes (requires manual mapping table), update all application code, redeploy |
+| Migration failed mid-deploy, students cannot join | MEDIUM | Roll back migration with `prisma migrate resolve --rolled-back`, redeploy previous application version from Vercel |
+| FingerprintJS references remain in code after "removal" | LOW | `grep -r "fingerprint" src/`, fix each reference, rebuild and redeploy |
+| Students claimed wrong identities during rollout | HIGH | No automated fix. Teacher must review participant list, identify mismatches, remove/recreate affected participants. Add "release identity" action for future use. |
+| Backfill assigned duplicate emoji within a session | LOW | Run deduplication: for each session, find participants with same emoji, reassign with different shortcodes. No uniqueness constraint on emoji, so this is cosmetic not blocking. |
+| Tab close creates duplicate participants | MEDIUM | Merge duplicates server-side: identify participants with same firstName + sessionId but different funName, combine vote history to the older record, delete the newer one. Add localStorage fallback to prevent recurrence. |
+| Fun names accidentally modified during migration | HIGH | Restore from pre-migration backup. If no backup: participants must rejoin and reclaim via disambiguation (fun names are now unfamiliar). Prevent by making fun_name immutable in migration script. |
+| Old Chromebooks show tofu for selected emoji | LOW | Replace problematic emoji in curated set with Unicode 12.0 (2019) alternatives. Run backfill to reassign affected participants. No data loss. |
 
 ## Pitfall-to-Phase Mapping
 
 | Pitfall | Prevention Phase | Verification |
 |---------|------------------|--------------|
-| Pause desync with optimistic votes | Pause/Resume | Teacher pauses; student sees "Voting Paused" overlay; vote buttons disabled; no optimistic vote possible |
-| Undo cascading failure (stale votes) | Undo/Reopen | Undo R1M1; R2M1 vote count is zero; R2M1 status is `pending` or `voting` with no stale entrant |
-| Undo in DE not clearing LB | Undo/Reopen | Undo WB R1M1 in a DE bracket; LB R1 slot that had the loser is now null |
-| Settings edit structural on active | Settings Editing | Attempt to change bracket type on active bracket; server returns error; UI grays out structural fields |
-| Settings edit display broadcast | Settings Editing | Toggle `showVoteCounts` on live bracket; student view updates within 3 seconds without refresh |
-| Quick-create without session | Quick-Create | Every bracket created via quick-create has `sessionId` set; students see it in activity grid |
-| Quick-create without gates | Quick-Create | Free-tier teacher quick-create with DE type; action returns tier-limit error |
-| Poll quick-create no options | Quick-Create | Poll quick-create form enforces minimum 2 options in UI and server validation |
-| Vote indicator query storm | Vote Indicators | Network tab shows zero API fetches on `vote_update` events; voter data arrives via broadcast |
-| Pause not persisted to DB | Pause/Resume | Restart dev server; matchup still in `paused` status; votes rejected |
-| Reopen stale celebration | Undo/Reopen | Teacher reopens completed bracket; student page shows active voting, not celebration |
-
----
+| Ephemeral mode destroys localStorage | Identity architecture (first phase) | Join flow works after clearing all browser storage; reclaim via name + last initial succeeds |
+| Emoji codepoint inconsistency | Schema design (emoji storage format) | Cross-platform rendering test on 4+ device types; database contains shortcodes not Unicode |
+| Migration NOT NULL failure | Schema migration (expand-and-contract) | `prisma migrate deploy` succeeds on production snapshot; no empty string defaults |
+| Migration orphans participants | Schema migration + backfill script | `SELECT COUNT(*) WHERE emoji IS NULL` returns 0 after backfill; existing fun names unchanged |
+| False identity claims (name collision) | Join flow redesign | Two "Emma S" students both join successfully; disambiguation shows correct fun names; neither auto-claimed |
+| FingerprintJS dead code | Cleanup (before or during schema migration) | `npm ls` clean; bundle size reduced; no fingerprint references in src/ |
+| sessionStorage tab close | Join flow redesign (storage strategy) | Close tab, reopen URL, student auto-recovers or sees 1-step rejoin |
+| Fun names change during migration | Schema migration (immutability constraint) | Pre/post migration fun_name comparison shows zero changes |
+| Full emoji picker | Join flow redesign (UI) | Emoji grid shows exactly 20-30 items; no categories, no search; server rejects non-allowlisted values |
+| Schema migration during active sessions | Schema migration (scheduling) | Migration run during off-hours; no join failures during migration window |
 
 ## Sources
 
-- Codebase: `src/actions/vote.ts` -- `castVote` status check at line 42 rejects non-`voting` matchups; no `paused`-specific handling
-- Codebase: `src/lib/bracket/advancement.ts` -- `undoMatchupAdvancement` at line 79-129 only checks one level ahead; no LB cleanup for DE
-- Codebase: `src/lib/bracket/advancement.ts` -- `advanceDoubleElimMatchup` at line 332-560 places losers via `computeLoserPlacement`; undo does not reverse this
-- Codebase: `src/actions/bracket.ts` -- `createBracket` at line 46-113 performs all feature gate checks; quick-create must replicate
-- Codebase: `src/actions/bracket-advance.ts` -- `updateBracketVotingSettings` at line 275-333 demonstrates correct display-only settings partition
-- Codebase: `src/lib/realtime/broadcast.ts` -- `BracketUpdateType` union at line 80-89 does not include pause/resume/reopen events
-- Codebase: `src/hooks/use-realtime-bracket.ts` -- `bracketCompleted` is a one-way flag at line 61; no reversal mechanism for reopen
-- Codebase: `src/hooks/use-vote.ts` -- `useOptimistic` hook at line 24 has no matchup status awareness
-- Codebase: `prisma/schema.prisma` -- Matchup `status` field is a plain `String` at line 145; accepts any value including `paused`
-- Codebase: `src/app/(dashboard)/brackets/[bracketId]/live/page.tsx` -- `getVoterParticipantIds` at line 77 runs once at server render, not on every vote
-- [Supabase Broadcast Docs](https://supabase.com/docs/guides/realtime/broadcast) -- broadcast is pub/sub, one message to channel, all subscribers receive
-- [Supabase Realtime Concepts](https://supabase.com/docs/guides/realtime/concepts) -- message delivery is best-effort, not guaranteed
-- [Wizard Design Pattern (UX Planet)](https://uxplanet.org/wizard-design-pattern-8c86e14f2a38) -- quick-create should be 4 fields max; avoid wizard anti-pattern of too many steps
-- [WebSocket Architecture Best Practices (Ably)](https://ably.com/topic/websocket-architecture-best-practices) -- state must be persisted server-side, not in WebSocket connection state
+### Primary (HIGH confidence)
+- **Codebase analysis:** Direct examination of `prisma/schema.prisma` (StudentParticipant model, columns, constraints, indexes), `src/lib/student/session-store.ts` (sessionStorage per-tab), `src/lib/student/session-identity.ts` (localStorage UUID), `src/lib/student/fingerprint.ts` (FingerprintJS integration), `src/hooks/use-device-identity.ts` (combined identity hook), `src/actions/student.ts` (joinSession, joinSessionByName, claimIdentity, recoverIdentity), `src/lib/dal/student-session.ts` (all participant DAL functions), `src/components/student/name-entry-form.tsx` (join UI), `src/components/student/name-disambiguation.tsx` (duplicate name resolution), `src/lib/student/fun-names.ts` (alliterative name generator), `src/types/student.ts` (DeviceIdentity, JoinResult types), `package.json` (@fingerprintjs/fingerprintjs@^5.0.1)
+- **Prisma migration docs (HIGH):** [Expand and contract pattern](https://www.prisma.io/docs/guides/data-migration), [Customizing migrations](https://www.prisma.io/docs/orm/prisma-migrate/workflows/customizing-migrations)
+
+### Secondary (MEDIUM confidence)
+- **Chrome Ephemeral Mode:** [Google Chrome Enterprise Help](https://support.google.com/chrome/a/answer/3538894?hl=en) -- confirms profile deletion on session end, all local data wiped
+- **Chrome Device Policies:** [Set ChromeOS device policies](https://support.google.com/chrome/a/answer/1375678?hl=en) -- admin console controls for BrowsingDataLifetime, ForceEphemeralProfiles
+- **Emoji rendering:** [Solving the Emoji Rendering Issue - DEV Community](https://dev.to/nixx/solving-the-emoji-rendering-issue-a-comprehensive-guide-jn2) -- emoji support depends on OS, not browser
+- **Cross-platform emoji study:** [What I See is What You Don't Get - ACM CSCW 2018](https://dl.acm.org/doi/10.1145/3274393) -- academic study confirming emoji render differently across platforms
+- **Emoji browser compatibility:** [Emoji Compatibility With Browsers - TestMu](https://www.testmu.ai/blog/emoji-compatibility-with-browsers/) -- older devices show tofu for newer Unicode versions
+- **Zero-downtime PostgreSQL migrations:** [Xata blog](https://xata.io/blog/zero-downtime-schema-migrations-postgresql) -- exclusive locks, nullable column additions are instant on PG 11+
+
+### Tertiary (LOW confidence)
+- **Name collision probability:** Estimated from US Social Security Administration baby name frequency data. Exact collision rates in a 30-student classroom are approximations.
 
 ---
-*Pitfalls research for: SparkVotEDU v1.4 teacher controls, quick-create, and UX polish*
-*Researched: 2026-02-28*
+*Pitfalls research for: Student identity redesign in SparkVotEDU*
+*Researched: 2026-03-08*

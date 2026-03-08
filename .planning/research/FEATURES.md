@@ -1,293 +1,252 @@
-# Feature Research
+# Feature Research: Student Join Flow Overhaul
 
-**Domain:** Classroom voting platform -- teacher activity controls, creation UX, real-time indicators
-**Researched:** 2026-02-28
+**Domain:** Classroom voting app -- student identity, join flow, session persistence
+**Researched:** 2026-03-08
 **Confidence:** HIGH
 
 ## Feature Landscape
 
 ### Table Stakes (Users Expect These)
 
-Features teachers expect from any live classroom activity tool once it supports basic creation and voting.
+Features users assume exist. Missing these = product feels incomplete.
 
 | Feature | Why Expected | Complexity | Notes |
 |---------|--------------|------------|-------|
-| Pause/Resume activities | Every major competitor (Mentimeter, Poll Everywhere, Slido) supports toggling participation on/off. Teachers interrupt activities for discussion constantly. Kahoot community has requested this for years -- it is the #1 teacher control expectation. | MEDIUM | Requires new `isPaused` column on Bracket + Poll, a broadcast event for student-facing overlay, and gating vote submission server-side. The playful "needs to cook" student message is a differentiator on top of table-stakes pause functionality. |
-| Edit display settings after creation | Poll Everywhere, Vevox, and Mentimeter all let presenters change display/behavior settings after creation. Teachers realize they picked the wrong setting only after seeing students interact. | MEDIUM | Bracket already has `bracket-edit-form.tsx` for entrants. Settings editing (viewingMode, showVoteCounts, showSeedNumbers, votingTimerSeconds, showLiveResults, allowVoteChange) needs a separate settings panel. Safe to allow even while live since these are display-only. |
-| "Go Live" terminology | Industry standard across Kahoot, Mentimeter, Slido. "View Live" is ambiguous -- sounds read-only. Teachers expect an action verb. | LOW | Pure label change. Grep for "View Live" and replace. No logic changes. |
-| Bug fix: duplicated poll retains removed options | Data integrity issue. Users who duplicate and edit expect a clean copy. This is a basic correctness expectation. | LOW | Server action `duplicatePollDAL` likely copies options snapshot including any that were soft-removed. Fix in the duplication logic. |
-| Bug fix: 2-option poll centering | Visual polish. A 2-option poll with off-center layout looks broken. | LOW | CSS fix in the student poll vote component grid layout. |
-| Bug fix: duplicate name flow clarity | UX clarity. When a student enters a name already in use, the disambiguation flow should suggest "add last initial" rather than feel like an error. | LOW | Copy change in `name-disambiguation.tsx` or `name-entry-form.tsx`. |
+| Instant join via class code | Every competitor (Kahoot, Mentimeter, Poll Everywhere) uses code-to-join. Students expect zero friction. | LOW | **Already built.** 6-digit code entry exists at `/join`. No changes needed to this step. |
+| Auto-assigned fun name on join | Students expect immediate identity without choosing a username. Current flow already does this. | LOW | **Already built.** `generateFunName()` creates alliterative "Adjective Animal" names. Must fire immediately after code validation (before wizard), so student sees their fun name throughout the wizard steps. |
+| First name entry | Teachers need to know who students are. Students expect to type their real name once. | LOW | **Already built.** `NameEntryForm` collects firstName. Becomes Step 1 of wizard instead of standalone page. |
+| Last initial for disambiguation | When two "Emma"s join, the system needs a differentiator. Last initial (max 2 chars) is the natural K-12 pattern. | LOW | **New field.** Add `lastInitial` to `StudentParticipant` schema. Teachers see "Emma S." vs "Emma T." -- standard classroom convention. Max 2 characters handles "Mc", "De", compound initials. |
+| Name disambiguation on duplicate | When "Emma S." already exists and another "Emma S." joins, system must handle gracefully. | MEDIUM | **Partially built.** Current `NameDisambiguation` component handles first-name collisions via fun name display. Needs update to match on firstName + lastInitial combo instead of firstName alone. |
+| Same-device auto-rejoin | Student refreshes page or returns next class -- should silently land back in session without re-entering code or name. | MEDIUM | **Partially built.** Current `sessionStorage` approach loses identity on tab close (by design, to fix multi-tab bleeding). Must migrate to `localStorage` with multi-session map keyed by sessionId. The v2 sessionStorage approach was a reaction to a multi-tab bug; v3 requirement explicitly asks for persistence across browser restarts. |
+| Student self-edit display name | Students who mistype should be able to fix their name without teacher intervention. | LOW | **Already built.** `EditNameDialog` in session header gear menu. Needs update to also allow editing lastInitial. |
+| Emoji identity picker | Young students (K-5) need a visual identity element. A 4x4 grid of 16 preselected emojis is the right scope -- not a full emoji keyboard. | MEDIUM | **New.** 16 curated emojis in a grid (animals, faces, objects). Displayed next to fun name in sidebar. Stored as single Unicode codepoint string in DB. No external library needed -- inline a static grid of hardcoded emoji characters. |
+| Fun name reroll (one-time) | Students who dislike their assigned name can change it once. Prevents endless rerolling. | LOW | **Already built.** `RerollButton` with `rerollUsed` boolean flag. No changes needed. |
+| Welcome screen with identity reveal | After joining, students see their fun name with brief animation before entering session. Builds excitement. | LOW | **Already built.** `WelcomeScreen` component with motion animations and 3-second countdown. Needs update to also display chosen emoji. |
 
 ### Differentiators (Competitive Advantage)
 
-Features that set SparkVotEDU apart from Kahoot, Mentimeter, and tournament bracket tools.
+Features that set the product apart. Not required, but valued.
 
 | Feature | Value Proposition | Complexity | Notes |
 |---------|-------------------|------------|-------|
-| Undo round advancement / reopen voting | Challonge supports editing match results and reopening tournaments, but most classroom tools do NOT offer undo. Teachers make mistakes -- advancing the wrong winner is stressful. SparkVotEDU already has `undoAdvancement` for individual matchups; extending to "reopen voting on a round" is the differentiator. | MEDIUM | Existing `undoMatchupAdvancement` in `bracket-advance.ts` handles single matchup undo. "Reopen voting" means setting decided matchups back to `voting` status, clearing winnerId, and broadcasting. Must cascade: if matchup in round N was undone, dependent matchups in round N+1 that used this winner as entrant must also be cleared (Challonge warns about this). For polls: reopen = status `closed` -> `active`, no vote data lost. |
-| Reopen completed brackets/polls | Challonge has "Reopen Tournament" under Advanced Options. Most classroom polling tools (Mentimeter, Slido) do NOT support reopening closed activities -- you create a new one. This saves teachers from re-creating. | MEDIUM | For polls: `closed` -> `active` status change. Existing `updatePollStatus` action already handles `active`/`closed` transitions; adding `completed` -> `active` is straightforward. For brackets: need to clear the bracket completion state, set the final matchup back to `voting`, and broadcast. Must confirm this does not destroy vote history. |
-| Real-time student vote indicators (green dots) across all activity types | Existing `ParticipationSidebar` already shows green dots for bracket matchup voters, but ONLY when a specific matchup is selected. The differentiator: show "has voted on the current active matchup/poll" as a persistent green dot without requiring matchup selection, and extend to polls (which currently have NO student activity panel on their live dashboard). | MEDIUM | Bracket sidebar already has the UI pattern (green dot, sorted by voted status). For polls: need to add `ParticipationSidebar` to `PollLiveClient` and pipe voter IDs from the poll vote realtime channel. The "across all types" unification is what competitors lack -- most show participation as a number, not per-student status. |
-| Quick Create for brackets (topic chips + entrant count) | BracketFights and similar tools offer "fill in names and go" but none combine curated educational topic lists with a size picker as a 2-click flow. SparkVotEDU already has `TopicPicker` with curated topics (planets, presidents, etc.) and `CURATED_TOPICS` data. Quick Create wraps this: pick a topic list -> pick # of entrants (4/8/16) -> create. | MEDIUM | Existing `TopicPicker` component + `CURATED_TOPICS` data + `createBracket` action are all built. Quick Create is a new UI wrapper: topic chip grid -> size selector -> auto-submit. The bracket-form.tsx wizard has 4+ steps; Quick Create collapses to 2 interactions. Needs a new page or mode toggle similar to how polls already have Quick Create vs Step-by-Step. |
-| Simplified poll Quick Create (question + options only) | Polls already have Quick Create (`PollForm`) and Step-by-Step (`PollWizard`). The simplification: Quick Create should be question + options ONLY with smart defaults (simple type, allow vote change = true, show live results = false). Settings belong in Step-by-Step only. | LOW | `PollForm` already renders all fields including settings toggles. Simplification means hiding settings controls in Quick Create mode and using defaults. Could be a prop (`showSettings={false}`) or a layout restructure. Minimal backend change. |
-| Playful "needs to cook" paused message | No competitor shows a fun, themed paused state to students. Kahoot just blocks input. Mentimeter shows generic "Voting closed." SparkVotEDU's brand is playful engagement -- a cooking/fire themed pause screen fits the "Spark" brand and turns a frustrating moment into a delightful one. | LOW | Pure frontend: overlay component on student views when `isPaused` is true. Could reuse the `countdown-overlay.tsx` pattern (fullscreen overlay with animation). Framer Motion for a fun entrance animation. |
-| Poll image options matching bracket preview style | Visual consistency. Bracket entrants with images show a polished preview during creation. Poll options with images look different. Unifying the preview style makes the product feel cohesive. | LOW | CSS/component alignment. The bracket entrant image upload uses `EntrantImageUpload`. Poll uses `OptionImageUpload`. Aligning the preview card layout. |
+| 3-step join wizard | Guided experience reduces confusion for young students. Step 1: first name. Step 2: last initial (max 2 chars). Step 3: emoji picker (4x4 grid). Progress dots show position. Competitors dump everything on one screen or skip identity entirely. | MEDIUM | Replace current `NameEntryForm` single-input page with a stepped component. Each step has its own validation and large touch targets. Progress indicator (3 dots) at top. Back button on steps 2-3. Auto-advance on step 2 when 2 chars entered (natural completion). Step 3 is a tap-to-select grid with "Skip" option. |
+| Cross-device identity reclaim | Student switches from Chromebook to iPad mid-class. Types name + initial, system matches existing participant, shows fun names + emojis for visual confirmation. No recovery codes needed for the common case. | MEDIUM | **Partially built.** Current disambiguation flow already does name-based matching and shows fun names. Needs refinement: match on firstName + lastInitial combo, show emoji alongside fun name for visual confirmation during claim. The `claimIdentity` server action already handles the server-side logic. Recovery codes remain as a fallback but are no longer the primary cross-device mechanism. |
+| Teacher sidebar name view toggle | Teacher can switch between fun name view ("Daring Dragon") and real name view ("Emma S.") globally. Per-session override available. Competitors show one or the other, not both. | MEDIUM | Current `ParticipationSidebar` shows funName as primary with firstName as tiny subtitle. New: toggle button in sidebar header swaps primary/secondary display. Global preference stored in teacher settings (new field on Teacher model), per-session override stored in component state (not persisted -- resets on page load, which is fine). |
+| Multi-session localStorage map | Remember ALL sessions a student has joined, not just the last one. When student visits `/join` and enters a code they have used before, skip the wizard entirely and auto-rejoin silently. | MEDIUM | Current implementation stores `sparkvotedu_last_session_code` in localStorage (just the code) and identity in sessionStorage (lost on tab close). New: localStorage map `sparkvotedu_sessions` = `{ [sessionId]: { participantId, firstName, lastInitial, funName, emoji } }`. On code entry, resolve sessionId from code, check if sessionId exists in map. If yes, call `claimIdentity` silently and skip wizard. |
+| Existing participant emoji migration | Students who joined before v3 get fun names auto-assigned (already done) but need emoji prompt on next rejoin. Smooth upgrade path, not a forced migration. | LOW | On rejoin, if participant record has no emoji in DB, show emoji picker step only (skip name entry steps). One-time migration experience. If student skips, they have no emoji -- fine, it is nullable. |
+| Teacher-initiated display name edit | Teacher can correct a student's displayed name from the sidebar without the student doing anything. Useful when student enters "asdfgh" as their name. | LOW | Add edit action to teacher sidebar tile context menu. Calls same `updateParticipantName` action but needs no auth check since teacher actions are already gated by session ownership. |
+| Emoji display in voting UI | Student's chosen emoji appears next to their fun name in vote confirmations, bracket predictions, poll results. Visual identity carried through the entire experience. | LOW | Render emoji character before funName in all student-facing components. Small per-component change but touches many files: `SessionHeader`, `ParticipationSidebar`, `WelcomeScreen`, `PollResults`, bracket components. |
 
 ### Anti-Features (Commonly Requested, Often Problematic)
 
 | Feature | Why Requested | Why Problematic | Alternative |
 |---------|---------------|-----------------|-------------|
-| Full activity history / audit log for undo | "Let me see every change and revert to any point" | Massively increases DB complexity. Every matchup advancement, vote, and status change would need an event log. Undo-to-any-point conflicts with real-time broadcast (which students already saw). | Single-level undo (revert last round / reopen last close) covers 95% of teacher mistakes without audit trail complexity. |
-| Edit entrants/options while activity is live | "I need to fix a typo in an entrant name during voting" | Changing entrants mid-vote invalidates existing votes. Renaming is safe; adding/removing breaks vote integrity. Students who already voted on "Option A" would have their vote reference a changed entity. | Allow rename of entrants/options while live (cosmetic). Block add/remove while live. For structural changes: pause -> edit -> resume. |
-| Bulk undo (revert multiple rounds at once) | "I messed up round 2 and want to go back to round 1" | Cascading undo across multiple rounds requires clearing all dependent matchups, votes, and advancement state. Risk of data loss. Complex state management with realtime sync. | Undo one round at a time. If teacher needs to go back further, they can undo sequentially. Each undo is atomic and safe. |
-| Auto-pause when all students voted | "Pause automatically when 100% participation reached" | Removes teacher control over pacing. Some teachers want to wait for latecomers; others want to advance immediately. Auto-behavior is unpredictable in classroom context (students leave, rejoin). | Show "All voted!" badge prominently (already exists in ParticipationSidebar). Let teacher decide when to advance. |
-| Student-facing vote timer with auto-close | "Give students exactly 30 seconds to vote" | Timer pressure works in quiz games (Kahoot) but conflicts with SparkVotEDU's deliberative voting model. Brackets involve discussion and debate. Timed voting reduces thoughtfulness. | Optional timer display (already exists as `votingTimerSeconds` + `matchup-timer.tsx`). Keep it optional, never auto-close. Teacher manually advances. |
-| Granular per-student pause (pause one student) | "This student is being disruptive, pause just them" | Per-student pause is really per-student ban. Creates moderation complexity, potential for misuse, and COPPA concerns. Requires tracking which students are "muted." | Existing `banned` field on StudentParticipant handles true disruption. Pause is activity-wide, which is the appropriate classroom tool. |
+| Full emoji keyboard picker | "Let students pick any emoji!" | Full picker libraries are 80KB+ (emoji-mart, emoji-picker-react). Overwhelming for K-5 students with thousands of options. Opens door to inappropriate emoji use (eggplant, middle finger on newer Unicode). Accessibility nightmare for screen readers. Overkill for a visual identifier. | Curated 4x4 grid of 16 pre-approved emojis. Inline Unicode characters, zero library dependency, impossible to misuse, accessible via aria-labels, renders in under 1ms. |
+| Account-based student identity | "Students should log in so we always know who they are" | K-12 students under 13 require COPPA compliance, parent consent, password management. Adds massive friction to a flow that must complete in under 10 seconds. Kills the "code and go" UX that matches Kahoot/Mentimeter. | Name + initial + fun name + emoji provides sufficient identity. localStorage persistence handles same-device return. Cross-device reclaim via name matching handles the rest. No accounts, no passwords, no COPPA burden. |
+| FingerprintJS or browser fingerprinting | "Silently identify returning students without any input" | Privacy concerns in K-12 context. COPPA gray area for unique identifiers. Unreliable on managed Chromebooks where all devices have identical fingerprints. Adds 30KB+ dependency. Already proven unreliable in v2 -- the fingerprint fallback path was rarely triggered successfully. | Remove FingerprintJS entirely (explicit v3 goal). Replace with name-based identity + localStorage persistence. Simpler, more reliable, more private, smaller bundle. |
+| Persistent student profiles across sessions | "Remember students across all of a teacher's sessions forever" | Creates a de facto account system without the UX of one. Students are anonymous per-session by design. Cross-session tracking raises FERPA/privacy concerns in education context. Teachers who want persistent rosters should use an LMS. | Per-session identity via localStorage map. Each session entry is independent. Student provides name + initial once per session, auto-rejoins on same device thereafter. Teacher sees the same student with the same name across sessions because humans reuse their own name. |
+| Real-time sync of localStorage across devices | "Auto-sync identity between Chromebook and iPad without student doing anything" | Requires a sync server or service worker with push capability. Adds latency, creates conflict resolution problems (which device is authoritative?), increases infrastructure cost. Solves a rare case (mid-class device switch) with heavyweight infrastructure. | Manual cross-device reclaim: type name + initial, pick your fun name from the list. Takes 5 seconds. Simple, reliable, zero infrastructure. |
+| Customizable fun name (student picks free text) | "Let students choose their own fun name" | Inappropriate names, moderation burden on teacher, name collisions with other students' fun names, loses the charm and fairness of random assignment. | Auto-assigned alliterative fun names with one-time reroll. Students get randomness plus one chance to change. Already built and working well. |
+| Multi-tab identity sharing via BroadcastChannel | "If I join in one tab, other tabs should know" | Adds complexity for a scenario that barely exists in K-12 (students do not open multiple tabs to the same voting session). BroadcastChannel API has inconsistent support on older browsers/WebViews. | V3 uses localStorage keyed by sessionId. If a student opens two tabs to the same session, both tabs read from the same localStorage entry and share identity naturally. No BroadcastChannel needed -- localStorage is already tab-shared. |
 
 ## Feature Dependencies
 
 ```
-Pause/Resume
+[Class Code Entry] (already built, no changes)
     |
-    +-- requires --> isPaused column on Bracket + Poll (schema migration)
-    +-- requires --> Broadcast pause/resume event type
-    +-- requires --> Student-facing paused overlay component
-    +-- enhances --> Undo Round (pause first, then undo, then resume)
-    +-- enhances --> Edit Settings (pause, edit, resume)
+    v
+[Fun Name Auto-Assignment] (already built, move earlier in flow)
+    |
+    v
+[3-Step Join Wizard] (NEW)
+    |-- Step 1: First Name (existing validation, new UI)
+    |-- Step 2: Last Initial (NEW -- max 2 chars)
+    |-- Step 3: Emoji Picker (NEW -- 4x4 grid)
+    |
+    v
+[Welcome Screen] (update to show emoji)
+    |
+    v
+[Session View] (header shows emoji + fun name + gear icon)
 
-Undo Round Advancement
+[Schema Migration: lastInitial + emoji columns]
     |
-    +-- requires --> Existing undoMatchupAdvancement engine (already built)
-    +-- requires --> Cascade logic for dependent matchups
-    +-- enhances --> Reopen Completed (undo final round = reopen)
+    +-- required by --> [3-Step Join Wizard]
+    +-- required by --> [Cross-Device Identity Reclaim]
+    +-- required by --> [Teacher Sidebar Name Toggle]
+    +-- required by --> [Multi-Session localStorage Map]
 
-Reopen Completed Activity
+[localStorage Multi-Session Map] (NEW)
     |
-    +-- requires --> Status transition: completed -> active (brackets) / closed -> active (polls)
-    +-- requires --> Broadcast reopen event
-    +-- depends-on --> Pause/Resume (reopen should land in paused state so teacher can review first)
+    +-- enables --> [Same-Device Auto-Rejoin]
+    +-- requires --> [Schema migration] (stores emoji + lastInitial locally)
 
-Quick Create Brackets
+[Cross-Device Identity Reclaim]
     |
-    +-- requires --> Existing TopicPicker + CURATED_TOPICS (already built)
-    +-- requires --> Existing createBracket action (already built)
-    +-- independent of --> All other v2.0 features
+    +-- requires --> [Name Disambiguation update] (match on firstName + lastInitial)
+    +-- enhanced by --> [Emoji Display] (visual confirmation during claim)
+    +-- uses --> [claimIdentity server action] (already built)
 
-Simplified Poll Quick Create
+[Teacher Sidebar Name Toggle]
     |
-    +-- requires --> Existing PollForm component (already built)
-    +-- independent of --> All other v2.0 features
+    +-- requires --> [Schema migration] (lastInitial for "Emma S." display)
+    +-- independent of --> [Student join flow changes]
 
-Real-time Vote Indicators
+[Existing Participant Emoji Migration]
     |
-    +-- requires --> Existing ParticipationSidebar pattern (already built for brackets)
-    +-- requires --> Poll live dashboard to add ParticipationSidebar
-    +-- requires --> Realtime voter ID tracking for polls
-    +-- independent of --> Pause/Resume (indicators work regardless)
+    +-- requires --> [Emoji Picker Component]
+    +-- requires --> [Schema: emoji field]
+    +-- triggered by --> [Same-Device Auto-Rejoin] (detect null emoji)
 
-Edit Settings After Creation
-    |
-    +-- requires --> Settings panel UI (new component)
-    +-- requires --> Update actions for bracket settings + poll settings
-    +-- enhances --> Pause/Resume (edit while paused)
+[FingerprintJS Removal]
+    +-- independent of all above
+    +-- removes --> [deviceId/fingerprint identity matching in joinSession action]
+    +-- removes --> [fingerprint schema column usage]
+    +-- removes --> [FingerprintJS dependency from package.json]
 
-"Go Live" Terminology
-    |
-    +-- independent of --> Everything. Pure label sweep.
-
-Bug Fixes (3)
-    |
-    +-- independent of --> Everything. Can ship in any order.
+[Emoji Display Across UI]
+    +-- requires --> [Schema: emoji field]
+    +-- independent of join flow (can be done incrementally)
 ```
 
 ### Dependency Notes
 
-- **Pause/Resume is the foundation** for Undo Round and Reopen Completed. Teachers should pause before undoing to avoid students seeing intermediate states. Build pause first.
-- **Undo Round requires cascade logic** that validates dependent matchups. If round 2 matchup A was decided using round 1 matchup B's winner, undoing matchup B must also clear matchup A. The existing `undoMatchupAdvancement` handles single matchups; the new feature needs a "revert entire round" batch operation.
-- **Reopen Completed should land in paused state.** When a teacher reopens a completed bracket, it should start paused so they can review and decide which round to reopen voting on, rather than immediately exposing students to a "back from the dead" bracket.
-- **Quick Create Brackets and Simplified Poll Quick Create are independent.** They touch creation flows only and have zero overlap with live activity controls.
-- **Real-time Vote Indicators are independent** but share the `ParticipationSidebar` component with the bracket live dashboard. Poll live dashboard needs its own sidebar instance.
+- **Schema migration is the critical foundation.** `lastInitial` (varchar 2, nullable) and `emoji` (varchar 4, nullable) on `StudentParticipant` must be added before any feature work. Both nullable so existing participants are unaffected.
+- **3-Step Wizard depends on schema migration** to store the new fields. Fun name assignment must move to happen immediately after code validation (before wizard starts) so the fun name appears in the wizard header.
+- **Same-Device Auto-Rejoin depends on localStorage migration** from sessionStorage. This is a breaking change for v2 sessions -- students who had sessionStorage identity will need to go through the wizard once on their first v3 visit. This is acceptable.
+- **Cross-Device Reclaim is enhanced by lastInitial** in the disambiguation query. Current `findParticipantsByFirstName` matches on firstName alone. Adding lastInitial to the match reduces false positives (two "Emma"s become "Emma S." and "Emma T." -- unique match, no disambiguation needed in most cases).
+- **FingerprintJS Removal is fully independent.** The `joinSession` action (device-based flow) can be deleted once `joinSessionByName` is the sole entry point. Schema columns `deviceId` and `fingerprint` are already nullable and can be left in place (no migration needed to remove them -- just stop writing to them).
+- **Teacher Sidebar Toggle is independent** of student flow. Can be built in parallel. Only changes how existing data is displayed.
 
 ## MVP Definition
 
-### Must Ship (v2.0 Core)
+### Launch With (v3.0 Core)
 
-These define the milestone. Missing any of these means the "Teacher Power-Ups" milestone is incomplete.
+Minimum viable set for the join flow overhaul. These define the milestone.
 
-- [x] Pause/Resume brackets and polls -- foundation for teacher control
-- [x] Undo round advancement -- most requested teacher fix
-- [x] Reopen completed activities -- prevents re-creation frustration
-- [x] Quick Create for brackets -- reduces creation friction from 4+ steps to 2 clicks
-- [x] Real-time vote indicators across all types -- unifies the live dashboard experience
-- [x] "Go Live" terminology -- consistency fix
-- [x] All 3 bug fixes -- data integrity and visual polish
+- [ ] **Schema migration** -- Add `lastInitial` (varchar 2, nullable) and `emoji` (varchar 4, nullable) to `StudentParticipant`
+- [ ] **3-step join wizard** -- Replace `NameEntryForm` with stepped component (first name -> last initial -> emoji grid)
+- [ ] **localStorage multi-session map** -- Replace sessionStorage with localStorage keyed by sessionId
+- [ ] **Same-device auto-rejoin** -- Check localStorage on code entry, skip wizard if identity exists for that session
+- [ ] **Cross-device reclaim update** -- Update disambiguation to match on firstName + lastInitial combo
+- [ ] **Emoji + fun name display in header** -- Show emoji next to fun name in `SessionHeader`
+- [ ] **Welcome screen update** -- Show chosen emoji alongside fun name reveal
+- [ ] **FingerprintJS removal** -- Delete fingerprint code, remove `joinSession` action, remove FingerprintJS dependency
 
-### Should Ship (v2.0 Complete)
+### Add After Validation (v3.x)
 
-These complete the milestone but could be deferred to a fast-follow if time is tight.
+Features to add once core flow is stable and deployed.
 
-- [ ] Edit settings after creation -- valuable but not blocking any workflow
-- [ ] Simplified poll Quick Create -- polls already have Quick Create; this is a refinement
-- [ ] Poll image options matching bracket style -- visual consistency, not functional
-- [ ] Playful "needs to cook" student message -- delightful but basic "Voting paused" works too
+- [ ] **Teacher sidebar name view toggle** -- Requires teacher preference storage, orthogonal to student flow
+- [ ] **Teacher-initiated name edit** -- Teachers can ask students to self-edit for now
+- [ ] **Existing participant emoji migration** -- Only relevant after v3 has been live long enough for v2 students to return
+- [ ] **Emoji display across all voting UI** -- Many components to update, do incrementally per activity type
+- [ ] **Edit name dialog update** -- Allow editing lastInitial in addition to firstName
 
-### Future Consideration (v2.x+)
+### Future Consideration (v3.x+)
 
-- [ ] Undo for round-robin (revert a round-robin round) -- more complex pacing model
-- [ ] Undo for predictive brackets -- predictions-as-votes adds complexity to revert
-- [ ] Quick Create for double-elimination and round-robin -- SE is sufficient for quick create
-- [ ] Settings presets / templates -- "save my preferred settings for next time"
+Features to defer until join flow is proven in classrooms.
+
+- [ ] **Custom emoji set per teacher** -- Per-teacher emoji palette configuration. Low demand, high complexity.
+- [ ] **Student avatar (drawn)** -- Drawing canvas instead of emoji. Fun but significant scope increase.
+- [ ] **QR code auto-fill** -- QR code encodes session code, scanned on phone pre-fills the code. Existing QR display exists but does not encode for mobile auto-fill.
 
 ## Feature Prioritization Matrix
 
-| Feature | User Value | Implementation Cost | Priority | Phase Order Rationale |
-|---------|------------|---------------------|----------|----------------------|
-| Pause/Resume | HIGH | MEDIUM | P1 | Foundation for undo/reopen. Build first. |
-| Undo Round Advancement | HIGH | MEDIUM | P1 | Depends on pause. Build second. |
-| Reopen Completed | HIGH | LOW-MEDIUM | P1 | Depends on pause + undo concepts. Build third. |
-| Quick Create Brackets | HIGH | MEDIUM | P1 | Independent. Can parallelize with controls work. |
-| Real-time Vote Indicators | MEDIUM | MEDIUM | P1 | Independent. Enhances live dashboard. |
-| "Go Live" Terminology | MEDIUM | LOW | P1 | Trivial. Bundle with any phase. |
-| Bug: duplicate poll options | MEDIUM | LOW | P1 | Data integrity. Fix early. |
-| Bug: 2-option centering | LOW | LOW | P2 | Visual only. Bundle with polish phase. |
-| Bug: duplicate name flow | LOW | LOW | P2 | UX copy. Bundle with polish phase. |
-| Edit Settings After Creation | MEDIUM | MEDIUM | P2 | Enhances pause workflow but not required for it. |
-| Simplified Poll Quick Create | LOW | LOW | P2 | Refinement of existing feature. |
-| Poll Image Options Style | LOW | LOW | P3 | Visual consistency. Defer to polish. |
-| Playful Paused Message | MEDIUM | LOW | P2 | Brand differentiator but basic pause works without it. |
+| Feature | User Value | Implementation Cost | Priority |
+|---------|------------|---------------------|----------|
+| Schema migration (lastInitial + emoji) | HIGH | LOW | P1 |
+| 3-step join wizard | HIGH | MEDIUM | P1 |
+| localStorage multi-session map | HIGH | MEDIUM | P1 |
+| Same-device auto-rejoin | HIGH | LOW | P1 |
+| Cross-device reclaim update | HIGH | LOW | P1 |
+| FingerprintJS removal | MEDIUM | LOW | P1 |
+| Emoji + fun name in header | MEDIUM | LOW | P1 |
+| Welcome screen emoji update | MEDIUM | LOW | P1 |
+| Teacher sidebar name toggle | MEDIUM | MEDIUM | P2 |
+| Existing participant emoji migration | MEDIUM | LOW | P2 |
+| Teacher-initiated name edit | LOW | LOW | P2 |
+| Edit name dialog lastInitial support | LOW | LOW | P2 |
+| Emoji display in all voting UI | LOW | MEDIUM | P3 |
 
 **Priority key:**
-- P1: Must have -- defines the v2.0 milestone
-- P2: Should have -- completes the milestone, ship if time allows
-- P3: Nice to have -- polish for a fast-follow
+- P1: Must have for v3 launch -- defines the join flow overhaul
+- P2: Should have, add in fast follow after core is stable
+- P3: Nice to have, future consideration
 
 ## Competitor Feature Analysis
 
-| Feature | Kahoot | Mentimeter | Poll Everywhere | Challonge | SparkVotEDU v2.0 |
-|---------|--------|------------|-----------------|-----------|-------------------|
-| Pause/Resume | No native pause (frequently requested). Teacher controls pacing by advancing questions. | Yes. Toggle via Presentation Menu or "C" keyboard shortcut. "Turn off responses" / "Turn on responses." | Yes. "Lock" button stops responses. "Unlock" resumes. Distinct from deactivation. | N/A (not a live voting tool) | Pause/Resume with playful student-facing message. Both brackets and polls. |
-| Undo/Revert | No. Questions are one-way. | No. Slides are one-way during presentation. | No. Cannot revert a closed poll to open with original data. | Yes. Edit match results, reopen matches, reopen completed tournaments. Warns about dependent match impact. | Undo single matchup (already exists). New: undo entire round with cascade. |
-| Reopen Completed | No. | No. | Can "Reopen" a closed poll -- previous responses remain, new responses allowed. | Yes. Settings > Advanced > Reopen. All scores preserved, become editable. | Reopen brackets (completed -> paused) and polls (closed -> active). Vote data preserved. |
-| Quick Create | Template library. Pick a Kahoot, play it. No custom quick-create. | Template gallery for slide types. | Template library for activity types. | N/A | Topic chip grid -> size picker -> create bracket in 2 clicks. Educational topics curated for K-12. |
-| Vote Indicators | Shows "X of Y answered" as number. No per-student breakdown during live. | Shows response count. No per-student identification (anonymous by design). | Shows response count bar. No per-student view. | N/A | Green dot per student in sidebar. Shows who voted, who is connected, who is absent. Sorted by status. Already built for brackets; extending to polls. |
-| Edit Settings Live | Settings locked after question starts. | Can toggle responses on/off. Cannot change question type or options while live. | Can lock/unlock. Cannot change question structure. Settings like "anonymous" cannot be toggled after responses exist. | Can edit match scores anytime. Cannot change tournament format. | Display settings (show vote counts, viewing mode, timer) editable anytime. Structural settings (bracket type, entrant count) locked after creation. |
+| Feature | Kahoot | Mentimeter | Poll Everywhere | SparkVotEDU v3 |
+|---------|--------|------------|-----------------|----------------|
+| Join method | Game PIN + nickname | Code, anonymous | Code or link | Code + 3-step wizard (name, initial, emoji) |
+| Student identity | Nickname (free text) | Anonymous (no identity) | Optional name | First name + last initial + auto-assigned fun name + emoji |
+| Session persistence | None (game is one-shot) | None (poll is one-shot) | Cookie-based (limited) | localStorage multi-session map (persists across restarts) |
+| Cross-device return | Re-enter PIN + new nickname | Re-enter code (anonymous) | None | Name + initial matching with visual fun name confirmation |
+| Visual identity | Random color avatar | None | None | Chosen emoji + alliterative fun name |
+| Teacher name visibility | Nicknames only | Anonymous only | Optional toggle | Toggle between fun name view and real name view |
+| Self-edit name | No | N/A (anonymous) | No | Yes, via gear menu in session header |
+| Time to join | ~5 seconds (PIN + nickname) | ~3 seconds (code only, anonymous) | ~5 seconds (code + optional name) | ~15 seconds first time (code + 3-step wizard), ~2 seconds returning (auto-rejoin) |
 
-## Implementation Notes by Feature
+## Edge Cases and Expected Behaviors
 
-### Pause/Resume -- Expected Behavior
+### Join Flow Edge Cases
 
-**Teacher side:**
-1. Teacher clicks "Pause" button on live dashboard toolbar
-2. Button changes to "Resume" with visual state change (amber/yellow indicator)
-3. Vote progress bar shows "Paused" state
-4. All incoming vote attempts return a "paused" error from server action
-5. Realtime broadcast: `{ event: 'activity_paused', payload: { isPaused: true } }`
+| Scenario | Expected Behavior |
+|----------|-------------------|
+| Student enters code for expired/ended session | Show results view directly if participant exists in localStorage, otherwise show "This session has ended" with join form. Already handled by `sessionEnded` flag in `joinSessionByName`. |
+| Student enters code for archived session | Error: "This session is no longer available." Already handled in `/join/[code]/page.tsx`. |
+| Two students with identical firstName + lastInitial | Show disambiguation with fun names + emojis. Student picks their identity ("That's me!") or joins as new participant. Existing `NameDisambiguation` component handles this pattern. |
+| Student leaves lastInitial blank (skips step 2) | Allow it. lastInitial is nullable. Disambiguation triggers more often (matches on firstName alone) but still works via fun name display. Student can add initial later via edit dialog. |
+| Student skips emoji picker (taps "Skip" on step 3) | Allow it. Emoji is nullable. Display shows fun name without emoji prefix. Student can add emoji later if migration prompt is built. |
+| Student on managed Chromebook with localStorage disabled/restricted | Fall back gracefully. Join works normally via full wizard every time. No auto-rejoin. No crash -- all localStorage calls are wrapped in try/catch (existing pattern in codebase). |
+| Student joins from incognito/private browsing | localStorage may be cleared on window close. Join works normally, persistence lasts only for the browsing session. Expected and acceptable. |
+| Student has v2 sessionStorage identity, visits with v3 code | sessionStorage identity is not checked by v3 flow. Student goes through wizard once, new localStorage entry created. Old sessionStorage data is harmless (never read by v3 code). |
+| Student's firstName contains emoji or special characters | Existing `validateFirstName` (via `firstNameSchema` in Zod) already handles this. Only letters, spaces, hyphens, apostrophes allowed. Max 50 chars. No changes needed. |
+| Student enters lastInitial with numbers or special chars | Validate: letters only, max 2 characters. Simple regex: `/^[a-zA-Z]{0,2}$/`. |
 
-**Student side:**
-1. Student receives broadcast, overlay appears immediately
-2. Overlay shows playful message: "This activity needs to cook! Your teacher paused voting."
-3. Vote buttons are disabled / hidden behind overlay
-4. When teacher resumes: overlay dismisses with animation, voting re-enabled
-5. Students who joined during pause see the paused state from initial page load
+### Auto-Rejoin Edge Cases
 
-**Schema change:** Add `isPaused Boolean @default(false) @map("is_paused")` to both Bracket and Poll models.
+| Scenario | Expected Behavior |
+|----------|-------------------|
+| Student returns to same session, same device | localStorage match found. Call `claimIdentity` silently to verify participant still exists. Skip wizard. Redirect to session view. Show brief "Welcome back, [emoji] [funName]!" toast or welcome-back screen. |
+| Student returns to ended session, same device | localStorage match found. Session status is "ended." Show results view directly (existing behavior in `joinSessionByName`). |
+| localStorage has stale participantId (teacher deleted/banned student) | `claimIdentity` returns error ("Participant not found" or "You have been removed"). Clear that session's entry from localStorage map. Show wizard as new student (for "not found") or show error (for "banned"). |
+| localStorage map grows very large (student joins 100+ sessions over a year) | Implement TTL cleanup: on each join, prune entries older than 90 days. localStorage has ~5MB limit; each entry is ~200 bytes, so ~25,000 sessions before limit. Not a practical concern but good hygiene. |
+| Multiple students share a device (siblings on family iPad) | Each sessionId has one entry in localStorage. If two siblings join the SAME session from the same device, the second student's wizard overwrites the first's entry for that sessionId. The first student would need to re-identify on their next visit. This is an acceptable edge case -- shared devices for the same class is rare, and re-identifying takes 15 seconds. |
+| Student clears browser data between classes | Same as new student. Full wizard. No data loss on server side -- their participant record still exists. If they enter the same name + initial, disambiguation lets them reclaim. |
 
-**Server-side enforcement:** Vote actions (`castVote`, `castSimplePollVote`, `castRankedPollVote`) must check `isPaused` before accepting votes. This is the critical path -- client overlay is cosmetic, server check is authoritative.
+### Cross-Device Reclaim Edge Cases
 
-### Undo Round -- Expected Behavior
+| Scenario | Expected Behavior |
+|----------|-------------------|
+| Unique firstName + lastInitial combo in session | Direct match (only one participant with that name + initial). Skip disambiguation. Reclaim silently -- same as auto-rejoin flow. |
+| Ambiguous firstName + lastInitial (two "Emma S."s exist) | Show fun names + emojis for visual disambiguation. Student picks "That's me!" using existing `NameDisambiguation` component with emoji enhancement. |
+| Student types wrong initial on different device | No match for that firstName + lastInitial combo. System creates new participant. Student ends up with two identities in the session. Teacher can manually remove the duplicate from student management. |
+| Case sensitivity in lastInitial matching | Case-insensitive matching (uppercase "S" matches lowercase "s"). Extend existing case-insensitive pattern from `findParticipantsByFirstName` to include lastInitial. |
+| Student switches device mid-vote (has active votes under old identity) | Votes are tied to participantId, not device. When student reclaims identity via disambiguation, they reclaim the same participantId and all their vote history comes with it. No vote duplication. |
 
-**For SE/DE brackets:**
-1. Teacher clicks "Undo" on the most recent decided round
-2. Confirmation dialog: "This will clear winners from Round X and reopen voting. Students will need to vote again."
-3. All matchups in that round: `status` = `voting`, `winnerId` = null
-4. Dependent matchups in round X+1: clear entrant references that came from round X winners
-5. Votes are preserved (students already voted; they can change if `allowVoteChange` is on)
-6. Broadcast: `{ event: 'round_advanced', payload: { action: 'undo_round', round: X } }`
+### Emoji Picker Edge Cases
 
-**For polls:**
-1. "Reopen Voting" button when poll is `closed`
-2. Status: `closed` -> `active`
-3. All existing votes preserved. New votes accepted.
-4. Broadcast: `{ event: 'poll_reopened' }`
-
-**Constraint:** Only the most recent round can be undone. No jumping back multiple rounds in one action (anti-feature: bulk undo).
-
-### Reopen Completed -- Expected Behavior
-
-**For brackets:**
-1. On the completed bracket detail page (showing champion), teacher sees "Reopen" button
-2. Confirmation: "This will reopen the bracket for more voting. The current champion will be cleared."
-3. Bracket status: `completed` -> `active`, bracket lands in paused state
-4. Final matchup: `winnerId` = null, `status` = `voting`
-5. Teacher must explicitly resume to allow student voting
-
-**For polls:**
-1. On the closed poll results page, teacher sees "Reopen" button (this may partially exist already via `updatePollStatus`)
-2. Status: `closed` -> `active`
-3. All votes preserved. Students can vote again or change votes.
-
-### Quick Create Brackets -- Expected Behavior
-
-1. On the bracket creation page, new mode toggle: "Quick Create" | "Step-by-Step" (mirroring poll creation page pattern)
-2. Quick Create shows: curated topic chip grid (reuse `TopicPicker` data), subject category filter chips
-3. Teacher taps a topic (e.g., "Planets & Celestial Bodies")
-4. Below the selected topic, size picker appears: chips for 4 / 8 / 16 (filtered by topic's available entrant count)
-5. Teacher taps a size (e.g., "8")
-6. "Create Bracket" button appears. One click creates with defaults (SE, vote-based advancement, show vote counts ON, advanced viewing mode)
-7. Redirects to the new bracket detail page
-
-**Why not auto-select bracket type?** Quick Create defaults to single-elimination because it is the simplest and most universally understood format. DE, RR, and Predictive have configuration options (pacing, resolution mode) that belong in Step-by-Step.
-
-### Real-time Vote Indicators -- Expected Behavior
-
-**Current state (brackets only):**
-- `ParticipationSidebar` shows green dots ONLY when a specific matchup is selected
-- Without matchup selection: shows "Select a matchup to see voting status"
-- Voter IDs come from `initialVoterIds` prop + realtime updates
-
-**Target state (all activity types):**
-- Green dot = student has voted on ANY currently-active matchup/poll (not just the selected one)
-- No matchup selection required for basic "has this student participated?" indication
-- For brackets: aggregate across all `voting` status matchups in the current round
-- For polls: voted on the active poll = green dot
-- Sidebar added to poll live dashboard (`PollLiveClient`) with same component
-
-**Implementation approach:**
-- Bracket: collect all voter IDs across all `voting` matchups, union into a single Set
-- Poll: voter IDs from poll vote records for the active poll
-- Same `ParticipationSidebar` component, different data source
-
-### Edit Settings After Creation -- Expected Behavior
-
-**Which settings are safe to edit anytime (including while live):**
-- `viewingMode` (simple/advanced) -- display only, no data impact
-- `showVoteCounts` -- display only
-- `showSeedNumbers` -- display only
-- `votingTimerSeconds` -- affects future matchups only
-- `showLiveResults` (polls) -- display only
-- `allowVoteChange` (polls) -- behavioral but safe to toggle
-
-**Which settings must be locked after creation:**
-- `bracketType` -- structural, determines matchup generation
-- `size` -- structural, determines bracket tree
-- `pollType` -- structural, determines vote schema
-- Entrant count -- can only add/remove while in draft (entrants are bound to matchups)
-
-**UI pattern:** Settings gear icon on live dashboard toolbar. Opens a slide-out panel or modal with toggle switches for editable settings. Grayed-out locked settings show "Set during creation" tooltip.
-
-**Broadcast on settings change:** When display settings change, broadcast to student views so they update in real time (e.g., switching from advanced to simple viewing mode mid-activity).
+| Scenario | Expected Behavior |
+|----------|-------------------|
+| Student taps emoji, then taps different emoji | Selected emoji changes. Only one can be selected. Visual highlight (border/scale) on selected emoji. No multi-select. |
+| Student taps selected emoji again | Deselects it. Student can proceed without emoji (nullable). |
+| Emoji renders differently across OS/browser | Expected. Apple emoji look different from Google/Windows emoji. This is cosmetic and acceptable. The emoji character is stored as Unicode -- rendering is browser-dependent. No custom emoji images needed. |
+| Emoji column needs to support future multi-codepoint emoji | Schema uses varchar(4) to handle emoji with variation selectors (e.g., skin tone modifiers). However, the curated 4x4 grid should use only single-codepoint emoji (no ZWJ sequences) to avoid rendering issues on older devices. |
 
 ## Sources
 
-- [Mentimeter: Enable/Disable Participation](https://help.mentimeter.com/en/articles/422270-how-to-enable-and-disable-participation-for-a-specific-slide) -- toggle responses, "C" keyboard shortcut, timer-based close
-- [Poll Everywhere: Locking/Unlocking Activities](https://support.polleverywhere.com/hc/en-us/articles/13839740560667-Locking-and-unlocking-activities) -- Lock button stops responses, Unlock resumes, distinct from deactivation
-- [Challonge: Reopen Tournament](https://kb.challonge.com/en/article/reopen-tournament-4jkuqg/) -- Settings > Advanced > Reopen, scores preserved and editable
-- [Challonge: Edit Match Results](https://kb.challonge.com/en/article/how-to-edit-match-results-1bf545k/) -- dependent matches require new scores after edit
-- [Challonge: Reset Tournament API](https://api.challonge.com/v1/documents/tournaments/reset) -- full reset deletes all scores (destructive alternative to reopen)
-- [Kahoot Pause Feature Request](https://support.kahoot.com/hc/en-us/community/posts/360037988953-Pause-Play-Kahoot-Feature) -- highly requested, not natively supported
-- [Vevox: Edit a Poll](https://help.vevox.com/hc/en-us/articles/360012815977-Edit-a-poll) -- cannot change type or add/delete options after responses exist
-- [BracketFights: Quick Create](https://bracketfights.com/create/) -- rapid bracket creation with image upload
+- Existing codebase analysis: `src/actions/student.ts`, `src/components/student/`, `src/lib/student/`, `prisma/schema.prisma`
+- [Emoji picker React guide -- Velt](https://velt.dev/blog/react-emoji-picker-guide)
+- [Frimousse -- lightweight emoji picker for React](https://frimousse.liveblocks.io/)
+- [emoji-mart on GitHub](https://github.com/missive/emoji-mart)
+- [Multi-step form best practices -- Webstacks](https://www.webstacks.com/blog/multi-step-form)
+- [Stepper UI examples -- Eleken](https://www.eleken.co/blog-posts/stepper-ui-examples)
+- [localStorage complete guide -- LogRocket](https://blog.logrocket.com/localstorage-javascript-complete-guide/)
+- [localStorage vs sessionStorage -- SuperTokens](https://supertokens.com/blog/localstorage-vs-session-storage)
+- [Audience response systems for classrooms -- ClassPoint](https://www.classpoint.io/blog/audience-response-systems-for-classrooms)
+- [Kahoot vs Mentimeter comparison -- Wooclap](https://www.wooclap.com/en/blog/kahoot-vs-mentimeter/)
 
 ---
-*Feature research for: classroom voting platform -- teacher activity controls and creation UX*
-*Researched: 2026-02-28*
+*Feature research for: Student join flow overhaul -- SparkVotEDU v3.0*
+*Researched: 2026-03-08*
