@@ -79,7 +79,7 @@ export function AnimatedBarChart({ data, total, large }: BarChartProps) {
               </div>
 
               {/* Bar */}
-              <div className={`relative ${large ? 'h-14' : 'h-8'} w-full overflow-hidden rounded-md bg-muted`}>
+              <div className={`relative ${large ? 'h-14' : 'h-8'} w-full overflow-visible rounded-md bg-muted`}>
                 <motion.div
                   className="absolute inset-y-0 left-0 rounded-md"
                   style={{ backgroundColor: color }}
@@ -92,12 +92,14 @@ export function AnimatedBarChart({ data, total, large }: BarChartProps) {
                     mass: 0.8,
                   }}
                 >
-                  {/* Count inside bar when wide enough */}
-                  {widthPct > 15 && (
-                    <span className={`absolute inset-y-0 right-2 flex items-center ${large ? 'text-lg' : 'text-xs'} font-bold text-white`}>
-                      {d.count}
-                    </span>
-                  )}
+                  {/* Vote count badge */}
+                  <span
+                    className={`absolute top-1/2 -translate-y-1/2 right-1 z-10 flex items-center justify-center rounded-full bg-white/90 shadow-sm font-bold tabular-nums text-gray-900 ${
+                      large ? 'h-11 w-11 text-xl' : 'h-7 w-7 text-sm'
+                    }`}
+                  >
+                    {d.count}
+                  </span>
                 </motion.div>
               </div>
             </motion.div>
