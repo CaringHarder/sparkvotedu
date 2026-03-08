@@ -30,7 +30,7 @@ Requirements for the Student Join Overhaul + Cleanup milestone.
 
 ### Migration
 
-- [ ] **MIGR-01**: Schema adds emoji and lastInitial columns to StudentParticipant (nullable, zero-downtime)
+- [x] **MIGR-01**: Schema adds emoji and lastInitial columns to StudentParticipant (nullable, zero-downtime)
 - [ ] **MIGR-02**: Existing participants get emoji prompt on next rejoin (one-time migration experience)
 - [ ] **MIGR-03**: New join flow works for both new and existing sessions seamlessly
 
@@ -79,7 +79,7 @@ Deferred to v3.x or later.
 | TCHR-02 | Phase 44 | Pending |
 | TCHR-03 | Phase 44 | Pending |
 | TCHR-04 | Phase 44 | Pending |
-| MIGR-01 | Phase 39 | Pending |
+| MIGR-01 | Phase 39 | Complete |
 | MIGR-02 | Phase 44 | Pending |
 | MIGR-03 | Phase 40 | Pending |
 | CLEN-01 | Phase 43 | Pending |
