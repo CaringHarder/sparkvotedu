@@ -79,7 +79,7 @@
 
 </details>
 
-### 🚧 v3.0 Student Join Overhaul + Cleanup (In Progress)
+### v3.0 Student Join Overhaul + Cleanup (In Progress)
 
 **Milestone Goal:** Redesign the student join experience to be instant (fun name + emoji first, real name second) with seamless same-device auto-rejoin and cross-device identity reclaim, plus clean up legacy fingerprinting code.
 
@@ -128,9 +128,11 @@ Plans:
   2. Student completes a 3-step wizard: first name (auto-focused input, green button appears on keystroke) then last initial (max 2 chars, animates in) then emoji picker (4x4 grid of 16 curated emojis)
   3. After completing the wizard, student sees a welcome screen showing their fun name + chosen emoji before entering the session
   4. Returning students who match by name+initial see a disambiguation screen with fun names and emojis to pick from (not auto-claimed)
-**Plans**: 1 plan
+**Plans**: 3 plans
 Plans:
-- [ ] 39-01-PLAN.md -- Schema migration + emoji pool module + EmojiAvatar component
+- [ ] 41-01-PLAN.md -- Server action + types + session store + JoinWizard shell with path selector
+- [ ] 41-02-PLAN.md -- New student wizard steps (fun name splash, first name, last initial, emoji picker, welcome)
+- [ ] 41-03-PLAN.md -- Returning student flow + page integration + human verification
 
 ### Phase 42: localStorage Persistence + Auto-Rejoin
 **Goal**: Students returning on the same device skip the join wizard entirely -- localStorage remembers their identity across all sessions they have joined, and re-entering a class code auto-rejoins silently
@@ -220,7 +222,7 @@ Phases 39-41 are strictly sequential (schema -> actions -> UI). Phase 42 require
 | 38. Email Verification | v2.0 | 3/3 | Complete | 2026-03-08 |
 | 39. Schema Migration + Data Foundation | 1/1 | Complete    | 2026-03-08 | - |
 | 40. Server Actions + DAL | 1/1 | Complete    | 2026-03-08 | - |
-| 41. Join Wizard UI | v3.0 | 0/TBD | Not started | - |
+| 41. Join Wizard UI | v3.0 | 0/3 | Not started | - |
 | 42. localStorage Persistence + Auto-Rejoin | v3.0 | 0/TBD | Not started | - |
 | 43. FingerprintJS Removal | v3.0 | 0/TBD | Not started | - |
 | 44. Teacher Sidebar + Emoji Display | v3.0 | 0/TBD | Not started | - |
