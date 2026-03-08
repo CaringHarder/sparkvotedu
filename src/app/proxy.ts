@@ -87,7 +87,8 @@ export async function proxy(request: NextRequest) {
   }
 
   // Redirect authenticated users away from auth pages to dashboard
-  if (claims && isAuthPage(pathname)) {
+  // Exception: /verify-email is accessible to authenticated users with unverified emails
+  if (claims && isAuthPage(pathname) && pathname !== '/verify-email') {
     const url = request.nextUrl.clone()
     url.pathname = '/dashboard'
     return NextResponse.redirect(url)
