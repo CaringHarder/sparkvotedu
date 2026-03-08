@@ -268,9 +268,9 @@ export function PollResults({
           ) : (
             <div className="space-y-4">
               {chartType === 'bar' ? (
-                <AnimatedBarChart data={chartData} total={liveTotalVotes} />
+                <AnimatedBarChart data={chartData} total={liveTotalVotes} large />
               ) : (
-                <DonutChart data={chartData} total={liveTotalVotes} />
+                <DonutChart data={chartData} total={liveTotalVotes} large />
               )}
             </div>
           )}

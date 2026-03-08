@@ -93,7 +93,7 @@ export function PresentationMode({
     <div className="fixed inset-0 z-50 flex flex-col bg-gray-950 text-white">
       {/* Header */}
       <div className="flex items-center justify-between border-b border-white/10 px-6 py-4">
-        <h1 className="text-3xl font-bold md:text-4xl">{title}</h1>
+        <h1 className="text-4xl font-bold md:text-5xl">{title}</h1>
         <button
           type="button"
           onClick={handleExitClick}
@@ -105,8 +105,8 @@ export function PresentationMode({
       </div>
 
       {/* Content area -- scaled up for projectors */}
-      <div className="flex-1 overflow-auto p-6 md:p-10">
-        <div className="mx-auto max-w-5xl text-white [&_.text-muted-foreground]:text-white/60 [&_.bg-muted]:bg-white/10 [&_.border]:border-white/20 [&_.bg-card]:bg-white/5 [&_.text-foreground]:text-white [&_.fill-foreground]:fill-white [&_.fill-muted-foreground]:fill-white/60">
+      <div className="flex-1 overflow-auto p-6 md:p-12 lg:p-16">
+        <div className="mx-auto max-w-screen-2xl text-white [&_.text-muted-foreground]:text-white/60 [&_.bg-muted]:bg-white/10 [&_.border]:border-white/20 [&_.bg-card]:bg-white/5 [&_.text-foreground]:text-white [&_.fill-foreground]:fill-white [&_.fill-muted-foreground]:fill-white/60">
           {children}
         </div>
       </div>
