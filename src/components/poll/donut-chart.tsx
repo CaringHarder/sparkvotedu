@@ -24,6 +24,7 @@ export interface DonutChartDatum {
 interface DonutChartProps {
   data: DonutChartDatum[]
   total: number
+  large?: boolean
 }
 
 /**
@@ -68,7 +69,7 @@ function describeArc(
  * SVG-based with configurable outer and inner radius for donut hole.
  * Each segment animates in with spring physics on opacity and scale.
  */
-export function DonutChart({ data, total }: DonutChartProps) {
+export function DonutChart({ data, total, large }: DonutChartProps) {
   const cx = 100
   const cy = 100
   const outerR = 80
@@ -77,7 +78,7 @@ export function DonutChart({ data, total }: DonutChartProps) {
   if (total === 0) {
     return (
       <div className="flex flex-col items-center gap-3">
-        <svg viewBox="0 0 200 200" className="h-48 w-48 md:h-56 md:w-56">
+        <svg viewBox="0 0 200 200" className={large ? 'h-80 w-80 md:h-96 md:w-96' : 'h-48 w-48 md:h-56 md:w-56'}>
           <circle
             cx={cx}
             cy={cy}
@@ -92,7 +93,7 @@ export function DonutChart({ data, total }: DonutChartProps) {
             y={cy}
             textAnchor="middle"
             dominantBaseline="central"
-            className="fill-muted-foreground text-[11px]"
+            className={large ? 'fill-muted-foreground text-[16px]' : 'fill-muted-foreground text-[11px]'}
           >
             No votes yet
           </text>
@@ -120,7 +121,7 @@ export function DonutChart({ data, total }: DonutChartProps) {
 
   return (
     <div className="flex flex-col items-center gap-4">
-      <svg viewBox="0 0 200 200" className="h-48 w-48 md:h-56 md:w-56">
+      <svg viewBox="0 0 200 200" className={large ? 'h-80 w-80 md:h-96 md:w-96' : 'h-48 w-48 md:h-56 md:w-56'}>
         {segments.map((seg, i) => (
           <motion.path
             key={seg.datum.optionId}
@@ -143,7 +144,7 @@ export function DonutChart({ data, total }: DonutChartProps) {
           y={cy - 6}
           textAnchor="middle"
           dominantBaseline="central"
-          className="fill-foreground text-[22px] font-bold"
+          className={`fill-foreground ${large ? 'text-[36px]' : 'text-[22px]'} font-bold`}
         >
           {total}
         </text>
@@ -152,21 +153,21 @@ export function DonutChart({ data, total }: DonutChartProps) {
           y={cy + 14}
           textAnchor="middle"
           dominantBaseline="central"
-          className="fill-muted-foreground text-[10px]"
+          className={`fill-muted-foreground ${large ? 'text-[16px]' : 'text-[10px]'}`}
         >
           votes
         </text>
       </svg>
 
       {/* Legend */}
-      <div className="flex flex-wrap justify-center gap-x-4 gap-y-1">
+      <div className={`flex flex-wrap justify-center ${large ? 'gap-x-6 gap-y-2' : 'gap-x-4 gap-y-1'}`}>
         {data.map((d, i) => {
           const color = d.color ?? COLORS[i % COLORS.length]
           const pct = total > 0 ? Math.round((d.count / total) * 100) : 0
           return (
-            <div key={d.optionId} className="flex items-center gap-1.5 text-xs">
+            <div key={d.optionId} className={`flex items-center gap-1.5 ${large ? 'text-lg' : 'text-xs'}`}>
               <span
-                className="inline-block h-2.5 w-2.5 rounded-full"
+                className={`inline-block ${large ? 'h-4 w-4' : 'h-2.5 w-2.5'} rounded-full`}
                 style={{ backgroundColor: color }}
               />
               <span className="truncate">{d.label}</span>

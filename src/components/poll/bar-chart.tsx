@@ -24,6 +24,7 @@ export interface BarChartDatum {
 interface BarChartProps {
   data: BarChartDatum[]
   total: number
+  large?: boolean
 }
 
 /**
@@ -33,7 +34,7 @@ interface BarChartProps {
  * ensuring visible relative differences even with low totals.
  * Each bar animates width with a bouncy spring transition.
  */
-export function AnimatedBarChart({ data, total }: BarChartProps) {
+export function AnimatedBarChart({ data, total, large }: BarChartProps) {
   const maxCount = Math.max(...data.map((d) => d.count), 1)
 
   // Determine leading option (only if there are actual votes)
@@ -44,7 +45,7 @@ export function AnimatedBarChart({ data, total }: BarChartProps) {
   const leadingId = total > 0 && maxCount > 0 ? leadingOptionId : null
 
   return (
-    <div className="space-y-3">
+    <div className={large ? 'space-y-5' : 'space-y-3'}>
       <AnimatePresence mode="popLayout">
         {data.map((d, i) => {
           const pct = total > 0 ? Math.round((d.count / total) * 100) : 0
@@ -67,8 +68,8 @@ export function AnimatedBarChart({ data, total }: BarChartProps) {
             >
               {/* Label row */}
               <div className="flex items-baseline justify-between gap-2">
-                <span className="truncate text-sm font-medium">{d.label}</span>
-                <span className={`shrink-0 text-sm tabular-nums transition-all duration-300 ${
+                <span className={`truncate ${large ? 'text-2xl font-bold' : 'text-sm font-medium'}`}>{d.label}</span>
+                <span className={`shrink-0 ${large ? 'text-xl' : 'text-sm'} tabular-nums transition-all duration-300 ${
                   isLeading
                     ? 'font-semibold text-foreground'
                     : 'text-muted-foreground'
@@ -78,7 +79,7 @@ export function AnimatedBarChart({ data, total }: BarChartProps) {
               </div>
 
               {/* Bar */}
-              <div className="relative h-8 w-full overflow-hidden rounded-md bg-muted">
+              <div className={`relative ${large ? 'h-14' : 'h-8'} w-full overflow-hidden rounded-md bg-muted`}>
                 <motion.div
                   className="absolute inset-y-0 left-0 rounded-md"
                   style={{ backgroundColor: color }}
@@ -93,7 +94,7 @@ export function AnimatedBarChart({ data, total }: BarChartProps) {
                 >
                   {/* Count inside bar when wide enough */}
                   {widthPct > 15 && (
-                    <span className="absolute inset-y-0 right-2 flex items-center text-xs font-bold text-white">
+                    <span className={`absolute inset-y-0 right-2 flex items-center ${large ? 'text-lg' : 'text-xs'} font-bold text-white`}>
                       {d.count}
                     </span>
                   )}
