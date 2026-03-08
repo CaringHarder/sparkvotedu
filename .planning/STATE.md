@@ -25,7 +25,7 @@ See: .planning/PROJECT.md (updated 2026-02-28)
 Phase: 38 of 38 (Require Email Verification Before Login) -- COMPLETE
 Plan: 3 of 3 complete
 Status: Phase 38 complete — all UAT scenarios passed
-Last activity: 2026-03-08 - Completed Phase 38 UAT (10/10 tests passed)
+Last activity: 2026-03-08 - Completed quick task 25: Enlarge poll results display and fullscreen presentation mode
 
 Progress: [██████████] 100% (v2.0)
 
@@ -168,6 +168,7 @@ None -- all v1.3 requirements shipped.
 | 22 | Make submit vote button green and obvious for younger students | 2026-03-07 | 4a79a1d | | [22-make-submit-vote-button-green-and-obviou](./quick/22-make-submit-vote-button-green-and-obviou/) |
 | 23 | Change submit vote button text to "VOTE" | 2026-03-08 | 858236b | | [23-change-submit-vote-button-text-to-vote-i](./quick/23-change-submit-vote-button-text-to-vote-i/) |
 | 24 | Move VOTE button above option cards in simple poll | 2026-03-08 | a6d9699 | | [24-move-vote-button-above-choices-in-simple](./quick/24-move-vote-button-above-choices-in-simple/) |
+| 25 | Enlarge poll results display and fullscreen presentation mode | 2026-03-08 | d266a55 | | [25-enlarge-poll-results-fullscreen-display](./quick/25-enlarge-poll-results-fullscreen-display/) |
 | Phase 31 P01 | 3min | 2 tasks | 10 files |
 | Phase 31 P02 | 5min | 3 tasks | 4 files |
 | Phase 31.1 P01 | 2min | 2 tasks | 5 files |
