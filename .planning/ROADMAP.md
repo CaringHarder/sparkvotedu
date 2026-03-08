@@ -116,7 +116,8 @@ Plans:
   4. The join flow server actions work identically for brand-new sessions and sessions with existing participants
 **Plans**: 1 plan
 Plans:
-- [ ] 39-01-PLAN.md -- Schema migration + emoji pool module + EmojiAvatar component
+- [ ] 40-01-PLAN.md -- DAL functions + server actions for cross-device identity reclaim and disambiguation
+
 
 ### Phase 41: Join Wizard UI
 **Goal**: Students entering a session see an instant fun name assignment followed by a guided 3-step wizard to enter their real name, pick an emoji, and see a welcome confirmation -- replacing the old single-input name form
