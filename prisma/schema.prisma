@@ -54,6 +54,8 @@ model StudentParticipant {
   id           String    @id @default(uuid())
   firstName    String    @map("first_name") @db.VarChar(50)
   funName      String    @map("fun_name")
+  emoji        String?   @db.VarChar(20)
+  lastInitial  String?   @map("last_initial") @db.VarChar(2)
   deviceId     String?   @map("device_id")
   fingerprint  String?
   recoveryCode String?   @map("recovery_code")
@@ -73,6 +75,7 @@ model StudentParticipant {
   @@index([sessionId, fingerprint])
   @@index([recoveryCode])
   @@index([sessionId, firstName])
+  @@index([sessionId, firstName, lastInitial])
   @@map("student_participants")
 }
 

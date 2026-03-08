@@ -193,7 +193,7 @@ export async function findParticipantsByFirstName(
       firstName: { equals: firstName, mode: 'insensitive' },
       banned: false,
     },
-    select: { id: true, firstName: true, funName: true },
+    select: { id: true, firstName: true, funName: true, emoji: true },
   })
 }
 

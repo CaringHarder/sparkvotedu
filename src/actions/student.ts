@@ -58,6 +58,8 @@ function toParticipantData(p: {
   id: string
   firstName: string
   funName: string
+  emoji?: string | null
+  lastInitial?: string | null
   rerollUsed: boolean
   recoveryCode: string | null
   sessionId: string
@@ -66,6 +68,8 @@ function toParticipantData(p: {
     id: p.id,
     firstName: p.firstName,
     funName: p.funName,
+    emoji: p.emoji ?? null,
+    lastInitial: p.lastInitial ?? null,
     rerollUsed: p.rerollUsed,
     recoveryCode: p.recoveryCode,
     sessionId: p.sessionId,
@@ -306,7 +310,7 @@ export async function joinSessionByName(input: {
 
   // Step 5: Duplicates found -- return candidates for disambiguation
   return {
-    duplicates: existing.map((p) => ({ id: p.id, funName: p.funName })),
+    duplicates: existing.map((p) => ({ id: p.id, funName: p.funName, emoji: p.emoji ?? null })),
     session: sessionInfo,
   }
 }

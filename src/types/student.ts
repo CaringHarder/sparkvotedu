@@ -19,6 +19,8 @@ export interface StudentParticipantData {
   id: string
   firstName: string
   funName: string
+  emoji: string | null
+  lastInitial: string | null
   rerollUsed: boolean
   recoveryCode: string | null
   sessionId: string
@@ -28,6 +30,7 @@ export interface StudentParticipantData {
 export interface DuplicateCandidate {
   id: string
   funName: string
+  emoji: string | null
 }
 
 /** Result of a student join attempt */
