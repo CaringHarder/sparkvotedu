@@ -67,30 +67,30 @@ Deferred to v3.x or later.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| JOIN-01 | — | Pending |
-| JOIN-02 | — | Pending |
-| JOIN-03 | — | Pending |
-| JOIN-04 | — | Pending |
-| PERS-01 | — | Pending |
-| PERS-02 | — | Pending |
-| PERS-03 | — | Pending |
-| PERS-04 | — | Pending |
-| TCHR-01 | — | Pending |
-| TCHR-02 | — | Pending |
-| TCHR-03 | — | Pending |
-| TCHR-04 | — | Pending |
-| MIGR-01 | — | Pending |
-| MIGR-02 | — | Pending |
-| MIGR-03 | — | Pending |
-| CLEN-01 | — | Pending |
-| CLEN-02 | — | Pending |
-| CLEN-03 | — | Pending |
+| JOIN-01 | Phase 41 | Pending |
+| JOIN-02 | Phase 41 | Pending |
+| JOIN-03 | Phase 41 | Pending |
+| JOIN-04 | Phase 44 | Pending |
+| PERS-01 | Phase 42 | Pending |
+| PERS-02 | Phase 42 | Pending |
+| PERS-03 | Phase 40 | Pending |
+| PERS-04 | Phase 40 | Pending |
+| TCHR-01 | Phase 44 | Pending |
+| TCHR-02 | Phase 44 | Pending |
+| TCHR-03 | Phase 44 | Pending |
+| TCHR-04 | Phase 44 | Pending |
+| MIGR-01 | Phase 39 | Pending |
+| MIGR-02 | Phase 44 | Pending |
+| MIGR-03 | Phase 40 | Pending |
+| CLEN-01 | Phase 43 | Pending |
+| CLEN-02 | Phase 43 | Pending |
+| CLEN-03 | Phase 43 | Pending |
 
 **Coverage:**
 - v3.0 requirements: 18 total
-- Mapped to phases: 0
-- Unmapped: 18 ⚠️
+- Mapped to phases: 18/18
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-03-08*
-*Last updated: 2026-03-08 after initial definition*
+*Last updated: 2026-03-08 after roadmap creation*

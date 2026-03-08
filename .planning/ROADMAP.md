@@ -6,7 +6,8 @@
 - ✅ **v1.1 Production Readiness & Deploy** -- Phases 14-18 (shipped 2026-02-21) | [Archive](milestones/v1.1-ROADMAP.md)
 - ✅ **v1.2 Classroom Hardening** -- Phases 19-24 (shipped 2026-02-24) | [Archive](milestones/v1.2-ROADMAP.md)
 - ✅ **v1.3 Bug Fixes & UX Parity** -- Phases 25-28 (shipped 2026-02-26) | [Archive](milestones/v1.3-ROADMAP.md)
-- 🚧 **v2.0 Teacher Power-Ups** -- Phases 29-37 (in progress)
+- ✅ **v2.0 Teacher Power-Ups** -- Phases 29-38 (shipped 2026-03-08)
+- 🚧 **v3.0 Student Join Overhaul + Cleanup** -- Phases 39-44 (in progress)
 
 ## Phases
 
@@ -61,212 +62,108 @@
 
 </details>
 
-### 🚧 v2.0 Teacher Power-Ups (In Progress)
+<details>
+<summary>✅ v2.0 Teacher Power-Ups (Phases 29-38) -- SHIPPED 2026-03-08</summary>
 
-**Milestone Goal:** Give teachers full control over their activities (pause, undo, reopen, edit settings), streamline creation with quick-create workflows, and polish student-facing UX.
+- [x] Phase 29: Pause/Resume & Go Live (3/3 plans) -- completed 2026-03-01
+- [x] Phase 30: Undo Round Advancement (3/3 plans) -- completed 2026-03-01
+- [x] Phase 31: Reopen Completed Activities (2/2 plans) -- completed 2026-03-01
+- [x] Phase 31.1: Activity Card Layout Fix & Quick Settings Toggle (3/3 plans) -- completed 2026-03-01
+- [x] Phase 32: Settings Editing (5/5 plans) -- completed 2026-03-01
+- [x] Phase 33: Bracket Quick Create (2/2 plans) -- completed 2026-03-02
+- [x] Phase 34: Poll Quick Create & Image Polish (3/3 plans) -- completed 2026-03-02
+- [x] Phase 35: Real-Time Vote Indicators (4/4 plans) -- completed 2026-03-02
+- [x] Phase 36: Bug Fixes (5/5 plans) -- completed 2026-03-02
+- [x] Phase 37: User Profile & Admin Access (3/3 plans) -- completed 2026-03-02
+- [x] Phase 38: Require Email Verification Before Login (3/3 plans) -- completed 2026-03-08
 
-- [x] **Phase 29: Pause/Resume & Go Live** - Teachers can freeze and unfreeze any activity, with playful student-facing feedback and server-side vote enforcement (completed 2026-03-01)
-- [x] **Phase 30: Undo Round Advancement** - Teachers can reverse the most recent round in any bracket type, with cascading cleanup of downstream matchups (completed 2026-03-01)
-- [x] **Phase 31: Reopen Completed Activities** - Teachers can bring completed brackets and closed polls back to life for additional voting (completed 2026-03-01)
-- [x] **Phase 31.1: Activity Card Layout Fix & Quick Settings Toggle** - Fix card title truncation at mid-width viewports and add inline simple/advanced toggle (INSERTED) (completed 2026-03-01)
-- [x] **Phase 32: Settings Editing** - Teachers can adjust display settings on brackets and polls after creation, even while live (completed 2026-03-01)
-- [x] **Phase 33: Bracket Quick Create** - Teachers can create a bracket in two clicks using curated topic chips and an entrant count picker (completed 2026-03-02)
-- [x] **Phase 34: Poll Quick Create & Image Polish** - Teachers can create polls with just a question and options, with image previews matching bracket style (completed 2026-03-02)
-- [x] **Phase 35: Real-Time Vote Indicators** - Teachers see per-student green dot indicators as students vote, updating live across all activity types (completed 2026-03-02)
-- [x] **Phase 36: Bug Fixes** - Fix nine bugs: duplicate poll options, 2-option centering, duplicate name prompt, poll quick create session selector, show live results, fullscreen auto-close, poll realtime updates, bracket vote indicators, Go Live/Start flow (completed 2026-03-02)
-- [x] **Phase 37: User Profile & Admin Access** - User profile page with name editing and password change, forced password reset on first login with temporary password, and streamlined admin panel access from sidebar (completed 2026-03-02)
-- [ ] **Phase 38: Require Email Verification Before Login** - Email signup requires clicking verification link before dashboard access; Google OAuth unaffected
+</details>
+
+### 🚧 v3.0 Student Join Overhaul + Cleanup (In Progress)
+
+**Milestone Goal:** Redesign the student join experience to be instant (fun name + emoji first, real name second) with seamless same-device auto-rejoin and cross-device identity reclaim, plus clean up legacy fingerprinting code.
+
+- [ ] **Phase 39: Schema Migration + Data Foundation** - Add emoji and lastInitial columns to StudentParticipant, create curated emoji pool module
+- [ ] **Phase 40: Server Actions + DAL** - Build backend logic for cross-device identity reclaim, name disambiguation, and unified join flow
+- [ ] **Phase 41: Join Wizard UI** - Replace NameEntryForm with 3-step join wizard (fun name instant, name entry, emoji pick, welcome)
+- [ ] **Phase 42: localStorage Persistence + Auto-Rejoin** - Same-device returning students auto-rejoin silently via localStorage session map
+- [ ] **Phase 43: FingerprintJS Removal** - Remove FingerprintJS package, application code, and database columns
+- [ ] **Phase 44: Teacher Sidebar + Emoji Display** - Teacher name view toggle, student self-edit, emoji display throughout all session UI
 
 ## Phase Details
 
-### Phase 29: Pause/Resume & Go Live
-**Goal**: Teachers can freeze any active bracket or poll to stop voting, then resume when ready -- with students seeing a playful "needs to cook" overlay and the server rejecting any sneaky vote attempts
-**Depends on**: Nothing (foundation for v2.0 control features)
-**Requirements**: CTRL-01, CTRL-02, CTRL-03, CTRL-04, CTRL-05, CTRL-06, LIVE-04
+### Phase 39: Schema Migration + Data Foundation
+**Goal**: The database can store emoji identity and last initial for every student participant, and a curated emoji pool module provides K-12-safe shortcodes for assignment
+**Depends on**: Nothing (foundation for all v3.0 work)
+**Requirements**: MIGR-01
 **Success Criteria** (what must be TRUE):
-  1. Teacher clicks Pause on an active bracket and all student voting stops immediately; students see a themed "needs to cook" overlay instead of vote buttons
-  2. Teacher clicks Resume on a paused bracket and students can vote again without refreshing; the overlay disappears automatically
-  3. Pause and resume work identically for polls (same overlay, same server enforcement)
-  4. A student who tries to submit a vote on a paused activity via API manipulation receives a rejection (server-side guard)
-  5. All "View Live" buttons and labels throughout the app now read "Go Live"
-**Plans:** 3/3 plans complete
+  1. StudentParticipant table has nullable `emoji` (varchar 20) and `lastInitial` (varchar 2) columns with a compound index on (sessionId, firstName, lastInitial)
+  2. Existing participants are unaffected -- all current data remains intact with null emoji and lastInitial values
+  3. A curated emoji pool module exports a list of 20-30 K-12-safe emoji shortcodes with a `pickEmoji()` function that attempts session-uniqueness
+  4. An `EmojiAvatar` component renders any shortcode as its visual emoji character consistently across browsers
+**Plans**: TBD
 
-Plans:
-- [ ] 29-01-PLAN.md -- Backend foundation: types, validation, DAL transitions, broadcast events, vote guards, realtime hooks, API filters
-- [ ] 29-02-PLAN.md -- Teacher controls: Radix Switch, pause toggle + banner in dashboards, Go Live rename + state indicators, status badges
-- [ ] 29-03-PLAN.md -- Student overlay: cooking-themed PausedOverlay component, bracket + poll student page integration
-
-### Phase 30: Undo Round Advancement
-**Goal**: Teachers can reverse the most recent round advancement in any bracket type, restoring the bracket to its pre-advancement state with all downstream effects cleaned up
-**Depends on**: Phase 29 (undo should be performed while paused; pause infrastructure provides status management foundation)
-**Requirements**: CTRL-07, CTRL-08, CTRL-09, CTRL-10, CTRL-11
+### Phase 40: Server Actions + DAL
+**Goal**: The backend can create participants with emoji and lastInitial, look up returning students by name+initial, and handle ambiguous matches -- enabling both new join and cross-device reclaim flows
+**Depends on**: Phase 39 (requires emoji/lastInitial columns and emoji pool module)
+**Requirements**: PERS-03, PERS-04, MIGR-03
 **Success Criteria** (what must be TRUE):
-  1. Teacher clicks Undo Round on an SE bracket and the most recent round's winners are cleared, matchups reopen for voting, and any downstream matchups that used those winners are also cleared
-  2. Teacher clicks Undo Round on a DE bracket and winners are cleared, loser bracket placements from that round are reversed, and downstream matchups in both winner and loser brackets are cleaned up
-  3. Teacher clicks Undo Round on an RR bracket and the most recent round's results are cleared, reopening those matchups for voting
-  4. Teacher clicks Undo Round on a predictive bracket and the most recent round's resolutions are reversed, restoring matchups to unresolved state
-  5. If a teacher already advanced rounds beyond the one being undone, all cascading dependent matchups and votes in later rounds are cleared as part of the undo
-**Plans:** 3/3 plans complete
+  1. `createParticipant` action accepts lastInitial and auto-assigns an emoji shortcode from the pool
+  2. A `lookupStudent` action finds returning students by firstName + lastInitial within a session, returning their fun name and emoji for confirmation
+  3. When multiple participants match a name+initial query, the action returns all matches with fun names and emojis so the student can pick their identity
+  4. The join flow server actions work identically for brand-new sessions and sessions with existing participants
+**Plans**: TBD
 
-Plans:
-- [ ] 30-01-PLAN.md -- Backend undo engine: SE + RR + DE + Predictive undo functions and round detection utility in advancement.ts
-- [ ] 30-02-PLAN.md -- Server action: broadcast type, validation schema, undoRoundAdvancement action with auto-pause
-- [ ] 30-03-PLAN.md -- Frontend UI: undo button, confirmation dialog, dynamic labels, loading states in live-dashboard
-
-### Phase 31: Reopen Completed Activities
-**Goal**: Teachers can bring completed brackets and closed polls back for additional voting instead of recreating them from scratch
-**Depends on**: Phase 29 (reopened activities land in paused state; requires pause infrastructure)
-**Requirements**: CTRL-12, CTRL-13
+### Phase 41: Join Wizard UI
+**Goal**: Students entering a session see an instant fun name assignment followed by a guided 3-step wizard to enter their real name, pick an emoji, and see a welcome confirmation -- replacing the old single-input name form
+**Depends on**: Phase 40 (wizard calls server actions for participant creation and lookup)
+**Requirements**: JOIN-01, JOIN-02, JOIN-03
 **Success Criteria** (what must be TRUE):
-  1. Teacher clicks Reopen on a completed bracket and it returns to a paused state with all existing data preserved; teacher can then resume to allow more voting
-  2. Teacher clicks Reopen on a closed poll and it returns to a paused state with all existing votes preserved; teacher can then resume to collect more votes
-  3. Students who had previously seen the completion/celebration screen now see the active activity again (no stale celebration stuck on screen)
-**Plans:** 2/2 plans complete
+  1. Student enters a class code (or visits a direct link) and immediately sees their assigned fun name before any form input
+  2. Student completes a 3-step wizard: first name (auto-focused input, green button appears on keystroke) then last initial (max 2 chars, animates in) then emoji picker (4x4 grid of 16 curated emojis)
+  3. After completing the wizard, student sees a welcome screen showing their fun name + chosen emoji before entering the session
+  4. Returning students who match by name+initial see a disambiguation screen with fun names and emojis to pick from (not auto-claimed)
+**Plans**: TBD
 
-Plans:
-- [ ] 31-01-PLAN.md -- Backend reopen infrastructure: DAL functions, server actions, broadcast events, realtime hook fixes
-- [ ] 31-02-PLAN.md -- UI reopen controls: context menu, live dashboard buttons, poll reopen fix, status badge, student transition verification
-
-### Phase 31.1: Activity Card Layout Fix & Quick Settings Toggle (INSERTED)
-
-**Goal:** Activity cards display properly at all screen sizes with readable titles/descriptions/metadata, and teachers can quickly toggle key bracket/poll settings inline on detail and live dashboard pages
-**Requirements**: Overlaps with CTRL-14/15/16/17 scope (quick-toggle subset)
-**Depends on:** Phase 31
+### Phase 42: localStorage Persistence + Auto-Rejoin
+**Goal**: Students returning on the same device skip the join wizard entirely -- localStorage remembers their identity across all sessions they have joined, and re-entering a class code auto-rejoins silently
+**Depends on**: Phase 41 (persistence enhances the working wizard; wizard must function without persistence first)
+**Requirements**: PERS-01, PERS-02
 **Success Criteria** (what must be TRUE):
-  1. Activity cards never squeeze below readable width -- grids auto-adjust column count with a minimum card width floor
-  2. Teacher can toggle bracket viewing mode (simple/advanced) on both the bracket detail page and live dashboard for single_elimination brackets
-  3. Teacher can toggle "Show Live Results" and "Allow Vote Change" on both the poll detail page and live dashboard
-  4. Settings changes on live activities take effect immediately for connected students without page refresh
-  5. Toggles have visible labels and blend into existing page layout (no separate Quick Settings section)
-**Plans:** 3/3 plans complete
+  1. Student who previously joined a session returns to the same class code on the same device and is auto-rejoined with zero clicks (no wizard shown)
+  2. localStorage stores identities for all sessions the student has joined (not just the most recent), keyed by sessionId
+  3. When localStorage is unavailable (ephemeral Chromebook mode, private browsing), the join wizard runs normally with no errors or warnings -- name-based server-side reclaim is the fallback
+  4. Stored identities older than 30 days are automatically pruned from localStorage
+**Plans**: TBD
 
-Plans:
-- [ ] 31.1-01-PLAN.md -- Card layout fix (auto-fill grid, badge wrap) + QuickSettingsToggle reusable component
-- [ ] 31.1-02-PLAN.md -- Backend: updateBracketViewingMode action, broadcast types, updatePoll broadcast
-- [ ] 31.1-03-PLAN.md -- Wire toggles on 4 teacher pages + student real-time hook updates
-
-### Phase 32: Settings Editing
-**Goal**: Teachers can adjust display settings on brackets and polls after creation -- even while live -- without risking structural data corruption
-**Depends on**: Phase 29 (settings editing enhances the pause-edit-resume workflow; broadcast infrastructure needed for live sync)
-**Requirements**: CTRL-14, CTRL-15, CTRL-16, CTRL-17
+### Phase 43: FingerprintJS Removal
+**Goal**: All FingerprintJS code, dependencies, and database columns are removed from the codebase, reducing the client bundle by ~150KB and eliminating dead code across application, schema, and package layers
+**Depends on**: Phase 42 (localStorage persistence fully replaces fingerprint-based identity; safe to remove after new system is working)
+**Requirements**: CLEN-01, CLEN-02, CLEN-03
 **Success Criteria** (what must be TRUE):
-  1. Teacher opens a bracket's settings and can toggle display options (simple/advanced mode, show seeds, show vote counts, timer) even if the bracket is currently live; changes save and persist
-  2. Teacher opens a poll's settings and can toggle display options (show live results, allow vote change) even if the poll is currently live; changes save and persist
-  3. When a teacher changes display settings on a live activity, all connected student views update in real time without requiring a page refresh
-  4. Structural settings (bracket type, bracket size, poll type) are visibly locked after creation with a clear indicator explaining they cannot be changed
-**Plans:** 5/5 plans complete
+  1. The FingerprintJS npm package is uninstalled and no fingerprint-related imports exist anywhere in the codebase (verified by grep)
+  2. All fingerprint-related application code (fingerprint.ts, use-device-identity.ts references, server action fingerprint parameters) is removed
+  3. Device fingerprint database columns are dropped via a separate Prisma migration
+  4. Client bundle size is reduced by approximately 150KB compared to pre-removal baseline
+**Plans**: TBD
 
-Plans:
-- [ ] 32-01-PLAN.md -- Foundation: DisplaySettingsSection, LockedSettingIndicator, consolidated updateBracketSettings action, useRealtimeBracket hook extension
-- [ ] 32-02-PLAN.md -- Bracket teacher pages: DisplaySettingsSection on bracket detail + live dashboard with all toggles and locked indicators
-- [ ] 32-03-PLAN.md -- Poll teacher pages: DisplaySettingsSection on poll detail + live dashboard with locked indicators
-- [ ] 32-04-PLAN.md -- Student bracket page: viewingMode routing for all bracket types, DE simple mode, showVoteCounts/showSeedNumbers reactivity
-
-### Phase 33: Bracket Quick Create
-**Goal**: Teachers can create a bracket in two clicks by picking a curated topic and entrant count, skipping the multi-step wizard entirely
-**Depends on**: Nothing (independent creation UX; uses existing createBracket action and CURATED_TOPICS data)
-**Requirements**: CREATE-01, CREATE-02
+### Phase 44: Teacher Sidebar + Emoji Display
+**Goal**: Teachers can toggle between fun name and real name views in the participation sidebar, edit student display names, and students can self-edit their name and emoji -- with emoji + fun name displayed consistently throughout all session UI
+**Depends on**: Phase 41 (emoji data must exist on participants; display components need EmojiAvatar from Phase 39)
+**Requirements**: JOIN-04, TCHR-01, TCHR-02, TCHR-03, TCHR-04, MIGR-02
 **Success Criteria** (what must be TRUE):
-  1. Bracket creation page shows a Quick Create mode with topic list chips (matching the existing poll quick-create pattern)
-  2. Teacher picks a topic chip and selects an entrant count (4/8/16), clicks create, and a bracket is created with SE type, simple display mode, no seeds as defaults -- no other fields required
-  3. The created bracket appears in the teacher's bracket list assigned to the correct session, ready to activate
-**Plans:** 2/2 plans complete
-
-Plans:
-- [ ] 33-01-PLAN.md -- Page restructure with tab toggle + BracketQuickCreate component (topic chips, count picker, session dropdown, instant create)
-- [ ] 33-02-PLAN.md -- Human verification of complete Quick Create flow
-
-### Phase 34: Poll Quick Create & Image Polish
-**Goal**: Teachers can create a poll with just a question and options, with settings available only in the step-by-step path, and image previews matching bracket visual style
-**Depends on**: Nothing (independent creation UX)
-**Requirements**: CREATE-03, CREATE-04, CREATE-05
-**Success Criteria** (what must be TRUE):
-  1. Poll Quick Create shows only a question field and option inputs -- no settings toggles visible (allow vote change, show live results are hidden)
-  2. Poll settings (allow vote change, show live results) are available only when the teacher uses Step-by-Step creation mode
-  3. Poll option images preview in the same card/thumbnail style as bracket entrant images before creation (consistent visual language)
-**Plans:** 3/3 plans complete
-
-Plans:
-- [ ] 34-01-PLAN.md -- Poll creation page restructure + PollForm Quick Create mode + template chip grid
-- [ ] 34-02-PLAN.md -- Image upload draft pattern + dashed-border camera icon + option row reorder
-- [ ] 34-03-PLAN.md -- Human verification of complete Quick Create & Image Polish flow
-
-### Phase 35: Real-Time Vote Indicators
-**Goal**: Teachers see at a glance which students have voted on the current round or poll, with green dot indicators that update live as votes come in
-**Depends on**: Nothing (independent live dashboard enhancement; extends existing ParticipationSidebar)
-**Requirements**: LIVE-01, LIVE-02, LIVE-03
-**Success Criteria** (what must be TRUE):
-  1. Student Activity panel on the live dashboard shows a green dot next to each student who has voted on the active round or poll
-  2. When a student casts a vote, their green dot appears within seconds without the teacher refreshing the page
-  3. Vote indicators work across all activity types: SE brackets, DE brackets, RR brackets, predictive brackets, and polls
-**Plans:** 3/4 plans executed
-
-Plans:
-- [ ] 35-01-PLAN.md -- Server-side broadcast augmentation + polling fallback APIs with participantId
-- [ ] 35-02-PLAN.md -- Bracket realtime voterIds in hook + live-dashboard wiring + sidebar sort reversal
-- [ ] 35-03-PLAN.md -- Poll ParticipationSidebar + poll realtime voterIds tracking
-- [ ] 35-04-PLAN.md -- Human verification across all activity types
-
-### Phase 36: Bug Fixes
-**Goal**: Fix nine known bugs affecting poll duplication, poll layout, duplicate name flow, poll quick create parity, live results display, fullscreen mode, poll realtime updates, bracket vote indicators, and Go Live/Start flow
-**Depends on**: Nothing (independent fixes)
-**Requirements**: FIX-01, FIX-02, FIX-03, FIX-04, FIX-05, FIX-06, FIX-07, FIX-08, FIX-09
-**Success Criteria** (what must be TRUE):
-  1. Teacher duplicates a poll, removes some options, saves -- the duplicated poll correctly shows only the remaining options (no ghost options from the original)
-  2. Student viewing a poll with exactly 2 options sees them as side-by-side larger cards, centered on screen (stacking vertically on mobile)
-  3. When a student enters a name already taken in the session, the duplicate name prompt says "Name taken. Add your last initial to join." with the original name kept in the input
-  4. Poll Quick Create includes an "Assign to session" dropdown matching the bracket Quick Create layout exactly
-  5. When "Show Live Results" is toggled ON for a poll, students see the same results display the teacher dashboard shows (vote counts + bars) in real time
-  6. Fullscreen mode on the teacher live dashboard stays open until Esc or F is pressed -- no auto-close
-  7. Poll teacher live dashboard updates in real time as students vote (no manual refresh needed)
-  8. Bracket vote indicators (blue/green dots) update correctly when students vote -- green dot + sort to bottom, matching poll behavior
-  9. Go Live button is hidden on bracket/poll detail pages until after Start is clicked; clicking Start activates and auto-navigates to the live dashboard
-**Plans:** 5/5 plans complete
-
-Plans:
-- [ ] 36-01-PLAN.md -- Fix ghost options on poll duplication + add session dropdown to Poll Quick Create
-- [ ] 36-02-PLAN.md -- Fix 2-option poll centering + student live results display
-- [ ] 36-03-PLAN.md -- Fix duplicate name prompt to direct "Name taken" message
-- [ ] 36-04-PLAN.md -- Fix fullscreen auto-close + poll teacher dashboard realtime updates
-- [ ] 36-05-PLAN.md -- Fix bracket vote indicators for SE/DE + Go Live/Start flow
-
-### Phase 37: User Profile & Admin Access
-**Goal**: Teachers can manage their account from a profile page (edit name, change password), admins can access the admin panel directly from the sidebar, and accounts created with temporary passwords force an immediate password change on first login
-**Depends on**: Nothing (independent account management features)
-**Requirements**: PROFILE-01, PROFILE-02, PROFILE-03, ADMIN-01
-**Success Criteria** (what must be TRUE):
-  1. Teacher clicks "Profile" in the sidebar (below Billing) and sees a profile page where they can edit their display name and save it
-  2. Teacher can change their password from the profile page (current password + new password + confirm)
-  3. When an admin creates a teacher account via the admin panel with a temporary password, that teacher's first login forces them to set a new password before accessing the dashboard
-  4. Admin users see an "Admin" link in the sidebar that navigates directly to /admin -- no manual URL typing required
-**Plans:** 3/3 plans complete
-
-Plans:
-- [x] 37-01-PLAN.md -- Backend foundation: Prisma migration (mustChangePassword), profile server actions, admin creation flag, proxy forced reset intercept
-- [x] 37-02-PLAN.md -- Profile page UI (three card sections), sidebar Profile link, admin gear icon in header
-- [x] 37-03-PLAN.md -- Forced password reset page (/set-password) with welcoming onboarding UX + human verification
-
-### Phase 38: Require Email Verification Before Login
-**Goal**: Email signup flow enforces verification before granting access -- teachers who sign up with email must click a verification link before they can log in; Google sign-in is unaffected (already verified by OAuth)
-**Depends on**: Nothing (independent auth enforcement)
-**Requirements**: AUTH-01
-**Success Criteria** (what must be TRUE):
-  1. Teacher signs up with email and receives a verification email with a working confirmation link
-  2. Teacher who has not verified their email is blocked from accessing the dashboard -- they see a "check your email" screen instead
-  3. Clicking the verification link in the email marks the account as verified and allows login/dashboard access
-  4. Teachers who sign in via Google OAuth bypass email verification entirely (Google already confirms email ownership)
-**Plans:** 2/3 plans executed
-
-Plans:
-- [ ] 38-01-PLAN.md -- Backend auth actions (signUp/signIn interception, resendVerification), proxy update, callback expired link handling
-- [ ] 38-02-PLAN.md -- Verify-email blocking page with resend/cooldown/Google/sign-out + signup/login form redirects
-- [ ] 38-03-PLAN.md -- Human verification of complete email verification flow
+  1. Teacher clicks a toggle in the participation sidebar to switch between fun name view (emoji + fun name) and real name view (first name + last initial) -- the toggle persists as a global default on the teacher profile
+  2. Teacher can override the global name view default on a per-session basis without changing their global preference
+  3. Teacher can click on any student in the sidebar and edit their display name
+  4. Student sees a gear icon in the session header that opens an editor to change their display name and emoji
+  5. Existing participants who rejoin without an emoji are prompted once to pick an emoji (one-time migration experience)
+**Plans**: TBD
 
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 29 -> 30 -> 31 -> 31.1 -> 32 -> 33 -> 34 -> 35 -> 36 -> 37 -> 38
-Note: Phases 33-36 are independent of the control feature chain (29-32) and can be parallelized if convenient.
+Phases execute in numeric order: 39 -> 40 -> 41 -> 42 -> 43 -> 44
+Phases 39-41 are strictly sequential (schema -> actions -> UI). Phase 42 requires 41. Phase 43 requires 42. Phase 44 requires 41.
 
 | Phase | Milestone | Plans | Status | Completed |
 |-------|-----------|-------|--------|-----------|
@@ -297,14 +194,20 @@ Note: Phases 33-36 are independent of the control feature chain (29-32) and can 
 | 26. Student Activity Removal | v1.3 | 2/2 | Complete | 2026-02-26 |
 | 27. SE Final Round Realtime Fix | v1.3 | 1/1 | Complete | 2026-02-26 |
 | 28. RR All-at-Once Completion Fix | v1.3 | 3/3 | Complete | 2026-02-26 |
-| 29. Pause/Resume & Go Live | 3/3 | Complete    | 2026-03-01 | - |
-| 30. Undo Round Advancement | 3/3 | Complete    | 2026-03-01 | - |
-| 31. Reopen Completed Activities | 2/2 | Complete    | 2026-03-01 | - |
-| 31.1 Activity Card Layout Fix & Quick Settings Toggle | 3/3 | Complete    | 2026-03-01 | - |
-| 32. Settings Editing | 5/5 | Complete    | 2026-03-01 | - |
-| 33. Bracket Quick Create | 1/2 | Complete    | 2026-03-02 | - |
-| 34. Poll Quick Create & Image Polish | 2/3 | Complete    | 2026-03-02 | - |
-| 35. Real-Time Vote Indicators | 4/4 | Complete    | 2026-03-02 | - |
-| 36. Bug Fixes | 5/5 | Complete    | 2026-03-02 | - |
-| 37. User Profile & Admin Access | 3/3 | Complete    | 2026-03-02 | - |
-| 38. Require Email Verification Before Login | 2/3 | In Progress|  | - |
+| 29. Pause/Resume & Go Live | v2.0 | 3/3 | Complete | 2026-03-01 |
+| 30. Undo Round Advancement | v2.0 | 3/3 | Complete | 2026-03-01 |
+| 31. Reopen Completed Activities | v2.0 | 2/2 | Complete | 2026-03-01 |
+| 31.1 Activity Card Layout Fix | v2.0 | 3/3 | Complete | 2026-03-01 |
+| 32. Settings Editing | v2.0 | 5/5 | Complete | 2026-03-01 |
+| 33. Bracket Quick Create | v2.0 | 2/2 | Complete | 2026-03-02 |
+| 34. Poll Quick Create & Image Polish | v2.0 | 3/3 | Complete | 2026-03-02 |
+| 35. Real-Time Vote Indicators | v2.0 | 4/4 | Complete | 2026-03-02 |
+| 36. Bug Fixes | v2.0 | 5/5 | Complete | 2026-03-02 |
+| 37. User Profile & Admin Access | v2.0 | 3/3 | Complete | 2026-03-02 |
+| 38. Email Verification | v2.0 | 3/3 | Complete | 2026-03-08 |
+| 39. Schema Migration + Data Foundation | v3.0 | 0/TBD | Not started | - |
+| 40. Server Actions + DAL | v3.0 | 0/TBD | Not started | - |
+| 41. Join Wizard UI | v3.0 | 0/TBD | Not started | - |
+| 42. localStorage Persistence + Auto-Rejoin | v3.0 | 0/TBD | Not started | - |
+| 43. FingerprintJS Removal | v3.0 | 0/TBD | Not started | - |
+| 44. Teacher Sidebar + Emoji Display | v3.0 | 0/TBD | Not started | - |

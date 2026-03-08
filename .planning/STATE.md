@@ -5,7 +5,7 @@ milestone_name: Student Join Overhaul + Cleanup
 status: planning
 last_updated: "2026-03-08T00:00:00Z"
 progress:
-  total_phases: 0
+  total_phases: 6
   completed_phases: 0
   total_plans: 0
   completed_plans: 0
@@ -18,14 +18,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-08)
 
 **Core value:** Teachers can instantly engage any classroom through voting -- on any topic, in any format -- and see participation happen in real time.
-**Current focus:** v3.0 Student Join Overhaul + Cleanup
+**Current focus:** Phase 39 - Schema Migration + Data Foundation
 
 ## Current Position
 
-Phase: Not started (defining requirements)
-Plan: —
-Status: Defining requirements
-Last activity: 2026-03-08 - Completed quick task 28: Bar chart vote count contrasting badge
+Phase: 39 (1 of 6 in v3.0) - Schema Migration + Data Foundation
+Plan: --
+Status: Ready to plan
+Last activity: 2026-03-08 -- Roadmap created for v3.0 (6 phases, 18 requirements)
+
+Progress: [░░░░░░░░░░] 0%
 
 ## Performance Metrics
 
@@ -42,10 +44,12 @@ Last activity: 2026-03-08 - Completed quick task 28: Bar chart vote count contra
 ### Decisions
 
 All decisions archived in PROJECT.md Key Decisions table.
+Recent decisions affecting current work:
 
-### Roadmap Evolution
-
-(New milestone — no changes yet)
+- Fun name + emoji as primary identity (replacing name-based join)
+- 3-step wizard: first name -> last initial -> emoji picker
+- localStorage auto-rejoin for all sessions (not just latest)
+- Emoji stored as shortcodes (not raw Unicode) for cross-platform safety
 
 ### Pending Todos
 
@@ -53,8 +57,9 @@ None.
 
 ### Blockers/Concerns
 
-- Microsoft and Apple OAuth held -- code complete, needs console config
-- FingerprintJS cleanup targeted for this milestone
+- School Chromebooks in ephemeral mode silently destroy localStorage -- server-side name reclaim must be authoritative fallback
+- Schema migration must use nullable columns (expand-and-contract) for zero-downtime deploy
+- FingerprintJS removal should happen after new persistence is verified working
 
 ### Quick Tasks Completed
 
@@ -65,5 +70,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-03-08
-Stopped at: Milestone v3.0 initialization
-Resume: Continue with requirements definition → roadmap
+Stopped at: Roadmap created for v3.0 milestone
+Resume: `/gsd:plan-phase 39` to plan Schema Migration + Data Foundation
