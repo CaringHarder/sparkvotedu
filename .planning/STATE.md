@@ -25,7 +25,7 @@ See: .planning/PROJECT.md (updated 2026-02-28)
 Phase: 38 of 38 (Require Email Verification Before Login) -- COMPLETE
 Plan: 3 of 3 complete
 Status: Phase 38 complete — all UAT scenarios passed
-Last activity: 2026-03-08 - Completed quick task 25: Enlarge poll results display and fullscreen presentation mode
+Last activity: 2026-03-08 - Completed quick task 26: Replace poll template grid with grouped dropdown
 
 Progress: [██████████] 100% (v2.0)
 
@@ -169,6 +169,7 @@ None -- all v1.3 requirements shipped.
 | 23 | Change submit vote button text to "VOTE" | 2026-03-08 | 858236b | | [23-change-submit-vote-button-text-to-vote-i](./quick/23-change-submit-vote-button-text-to-vote-i/) |
 | 24 | Move VOTE button above option cards in simple poll | 2026-03-08 | a6d9699 | | [24-move-vote-button-above-choices-in-simple](./quick/24-move-vote-button-above-choices-in-simple/) |
 | 25 | Enlarge poll results display and fullscreen presentation mode | 2026-03-08 | d266a55 | | [25-enlarge-poll-results-fullscreen-display](./quick/25-enlarge-poll-results-fullscreen-display/) |
+| 26 | Replace poll template grid with grouped dropdown | 2026-03-08 | e0750b6 | | [26-poll-quick-create-dropdown-templates](./quick/26-poll-quick-create-dropdown-templates/) |
 | Phase 31 P01 | 3min | 2 tasks | 10 files |
 | Phase 31 P02 | 5min | 3 tasks | 4 files |
 | Phase 31.1 P01 | 2min | 2 tasks | 5 files |
