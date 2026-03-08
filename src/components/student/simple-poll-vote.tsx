@@ -110,6 +110,37 @@ export function SimplePollVote({
         </div>
       )}
 
+      {/* Error message */}
+      {error && (
+        <p className="text-center text-sm text-destructive">{error}</p>
+      )}
+
+      {/* Action buttons */}
+      <div className="flex justify-center gap-3">
+        {!submitted && (
+          <Button
+            size="lg"
+            onClick={submitVote}
+            disabled={!selectedOptionId || submitting}
+            className={`min-w-[240px] text-xl font-bold py-7 ${
+              !selectedOptionId
+                ? ''
+                : submitting
+                  ? 'bg-green-400 hover:bg-green-400 text-white border-0'
+                  : 'bg-green-500 hover:bg-green-600 text-white border-0 shadow-lg shadow-green-500/30 ring-4 ring-green-300/50 animate-[pulse_2s_ease-in-out_infinite]'
+            }`}
+          >
+            {submitting ? 'Voting...' : 'VOTE'}
+          </Button>
+        )}
+
+        {submitted && canChangeVote && (
+          <Button variant="outline" size="lg" className="text-lg py-6" onClick={enableChangeVote}>
+            Change Vote
+          </Button>
+        )}
+      </div>
+
       {/* Options grid -- FIX-02: 2-option uses flex centered layout, 3+ uses grid */}
       <div
         className={
@@ -194,37 +225,6 @@ export function SimplePollVote({
             </Card>
           )
         })}
-      </div>
-
-      {/* Error message */}
-      {error && (
-        <p className="text-center text-sm text-destructive">{error}</p>
-      )}
-
-      {/* Action buttons */}
-      <div className="flex justify-center gap-3">
-        {!submitted && (
-          <Button
-            size="lg"
-            onClick={submitVote}
-            disabled={!selectedOptionId || submitting}
-            className={`min-w-[240px] text-xl font-bold py-7 ${
-              !selectedOptionId
-                ? ''
-                : submitting
-                  ? 'bg-green-400 hover:bg-green-400 text-white border-0'
-                  : 'bg-green-500 hover:bg-green-600 text-white border-0 shadow-lg shadow-green-500/30 ring-4 ring-green-300/50 animate-[pulse_2s_ease-in-out_infinite]'
-            }`}
-          >
-            {submitting ? 'Voting...' : 'VOTE'}
-          </Button>
-        )}
-
-        {submitted && canChangeVote && (
-          <Button variant="outline" size="lg" className="text-lg py-6" onClick={enableChangeVote}>
-            Change Vote
-          </Button>
-        )}
       </div>
 
       {/* FIX-05: Live results display when showLiveResults is ON */}
