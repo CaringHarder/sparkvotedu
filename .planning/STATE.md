@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v3.0
 milestone_name: Student Join Overhaul + Cleanup
-status: completed
-stopped_at: Phase 40 context gathered
-last_updated: "2026-03-08T18:10:25.049Z"
-last_activity: 2026-03-08 -- Executed 39-01 schema migration + emoji pool + avatar
+status: in-progress
+stopped_at: Completed 40-01-PLAN.md
+last_updated: "2026-03-08T18:26:44Z"
+last_activity: 2026-03-08 -- Executed 40-01 server actions + DAL for student identity reclaim
 progress:
   total_phases: 6
   completed_phases: 1
-  total_plans: 1
-  completed_plans: 1
-  percent: 17
+  total_plans: 2
+  completed_plans: 2
+  percent: 33
 ---
 
 # Project State
@@ -21,16 +21,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-08)
 
 **Core value:** Teachers can instantly engage any classroom through voting -- on any topic, in any format -- and see participation happen in real time.
-**Current focus:** Phase 39 - Schema Migration + Data Foundation
+**Current focus:** Phase 40 - Server Actions + DAL
 
 ## Current Position
 
-Phase: 39 (1 of 6 in v3.0) - Schema Migration + Data Foundation
+Phase: 40 (2 of 6 in v3.0) - Server Actions + DAL
 Plan: 1 of 1 complete
-Status: Phase 39 complete
-Last activity: 2026-03-08 -- Executed 39-01 schema migration + emoji pool + avatar
+Status: Phase 40 plan 01 complete
+Last activity: 2026-03-08 -- Executed 40-01 server actions + DAL for student identity reclaim
 
-Progress: [█░░░░░░░░░] 17%
+Progress: [███░░░░░░░] 33%
 
 ## Performance Metrics
 
@@ -55,6 +55,8 @@ Recent decisions affecting current work:
 - Emoji stored as shortcodes (not raw Unicode) for cross-platform safety
 - Used prisma db push instead of migrate dev due to shadow DB RLS conflict
 - djb2 hash for deterministic emoji selection from first name
+- Auto-reclaim after dedup: multiple DB rows with same funName+emoji treated as single match
+- claimReturningIdentity verifies teacher ownership for cross-teacher security
 
 ### Pending Todos
 
@@ -74,6 +76,6 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-03-08T18:10:25.046Z
-Stopped at: Phase 40 context gathered
-Resume: Next phase (40) needs planning -- `/gsd:plan-phase 40`
+Last session: 2026-03-08T18:26:44Z
+Stopped at: Completed 40-01-PLAN.md
+Resume: Continue phase 40 execution or advance to next plan

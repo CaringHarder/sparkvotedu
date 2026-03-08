@@ -18,8 +18,8 @@ Requirements for the Student Join Overhaul + Cleanup milestone.
 
 - [ ] **PERS-01**: Same-device returning student auto-rejoins silently via localStorage (zero clicks beyond entering class code or visiting direct link)
 - [ ] **PERS-02**: localStorage remembers all sessions the student has joined (not just the most recent)
-- [ ] **PERS-03**: Cross-device returning student can reclaim identity by typing first name + last initial
-- [ ] **PERS-04**: When cross-device name match is ambiguous, system shows fun names + emojis for student to pick from
+- [x] **PERS-03**: Cross-device returning student can reclaim identity by typing first name + last initial
+- [x] **PERS-04**: When cross-device name match is ambiguous, system shows fun names + emojis for student to pick from
 
 ### Teacher Controls
 
@@ -32,7 +32,7 @@ Requirements for the Student Join Overhaul + Cleanup milestone.
 
 - [x] **MIGR-01**: Schema adds emoji and lastInitial columns to StudentParticipant (nullable, zero-downtime)
 - [ ] **MIGR-02**: Existing participants get emoji prompt on next rejoin (one-time migration experience)
-- [ ] **MIGR-03**: New join flow works for both new and existing sessions seamlessly
+- [x] **MIGR-03**: New join flow works for both new and existing sessions seamlessly
 
 ### Cleanup
 
@@ -73,15 +73,15 @@ Deferred to v3.x or later.
 | JOIN-04 | Phase 44 | Pending |
 | PERS-01 | Phase 42 | Pending |
 | PERS-02 | Phase 42 | Pending |
-| PERS-03 | Phase 40 | Pending |
-| PERS-04 | Phase 40 | Pending |
+| PERS-03 | Phase 40 | Complete |
+| PERS-04 | Phase 40 | Complete |
 | TCHR-01 | Phase 44 | Pending |
 | TCHR-02 | Phase 44 | Pending |
 | TCHR-03 | Phase 44 | Pending |
 | TCHR-04 | Phase 44 | Pending |
 | MIGR-01 | Phase 39 | Complete |
 | MIGR-02 | Phase 44 | Pending |
-| MIGR-03 | Phase 40 | Pending |
+| MIGR-03 | Phase 40 | Complete |
 | CLEN-01 | Phase 43 | Pending |
 | CLEN-02 | Phase 43 | Pending |
 | CLEN-03 | Phase 43 | Pending |
