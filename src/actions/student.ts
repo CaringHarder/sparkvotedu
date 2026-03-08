@@ -11,6 +11,8 @@ import {
   findParticipantByRecoveryCode,
   findParticipantsByFirstName,
   createParticipant,
+  findReturningStudent,
+  createReturningParticipant,
   updateParticipantDevice,
   updateFirstName,
   updateLastSeen,
@@ -19,8 +21,10 @@ import {
 } from '@/lib/dal/student-session'
 import { broadcastParticipantJoined } from '@/lib/realtime/broadcast'
 import { firstNameSchema } from '@/lib/validations/first-name'
+import { lastInitialSchema } from '@/lib/validations/last-initial'
 import type {
   JoinResult,
+  LookupResult,
   StudentParticipantData,
 } from '@/types/student'
 
@@ -429,4 +433,122 @@ export async function updateParticipantName(input: {
   const updated = await updateFirstName(participantId, firstName)
 
   return { participant: toParticipantData(updated) }
+}
+
+// --- Cross-Session Identity Reclaim Actions ---
+
+const lookupStudentSchema = z.object({
+  code: z.string().regex(/^\d{6}$/, 'Class code must be exactly 6 digits'),
+  firstName: firstNameSchema,
+  lastInitial: lastInitialSchema,
+})
+
+/**
+ * Look up a returning student by firstName + lastInitial across all of a
+ * teacher's non-archived sessions.
+ *
+ * - Zero matches: return { isNew: true } so UI can proceed with new student wizard
+ * - One match: auto-reclaim silently (create participant in current session with matched identity)
+ * - Multiple matches: return deduplicated candidates for disambiguation
+ *
+ * No authentication required -- students are anonymous.
+ */
+export async function lookupStudent(input: {
+  code: string
+  firstName: string
+  lastInitial: string
+}): Promise<LookupResult> {
+  // Validate input
+  const parsed = lookupStudentSchema.safeParse(input)
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0].message }
+  }
+
+  const { code, firstName, lastInitial } = parsed.data
+
+  // Find session by code (any status, to handle ended)
+  const session = await findSessionByCode(code)
+  if (!session) {
+    return { error: 'Invalid class code' }
+  }
+
+  const sessionInfo = {
+    id: session.id,
+    code: session.code,
+    name: session.name,
+    status: session.status,
+    teacherName: session.teacher.name,
+  }
+
+  // If session ended, return flag for results UI
+  if (session.status === 'ended') {
+    return { session: sessionInfo, sessionEnded: true }
+  }
+
+  // Search across all of this teacher's non-archived sessions
+  const matches = await findReturningStudent(
+    session.teacherId,
+    firstName,
+    lastInitial
+  )
+
+  // Zero matches -- new student
+  if (matches.length === 0) {
+    return { isNew: true, session: sessionInfo }
+  }
+
+  // One match -- auto-reclaim silently
+  if (matches.length === 1) {
+    const match = matches[0]
+    const newParticipant = await createReturningParticipant(
+      session.id,
+      { funName: match.funName, emoji: match.emoji },
+      firstName,
+      lastInitial,
+      null
+    )
+    broadcastParticipantJoined(session.id).catch(() => {})
+    return {
+      participant: toParticipantData(newParticipant),
+      session: sessionInfo,
+      returning: true,
+    }
+  }
+
+  // Multiple matches -- deduplicate by funName+emoji and return candidates
+  const seen = new Set<string>()
+  const uniqueMatches = matches.filter((m) => {
+    const key = `${m.funName}|${m.emoji ?? ''}`
+    if (seen.has(key)) return false
+    seen.add(key)
+    return true
+  })
+
+  // After dedup, if only one unique identity remains, auto-reclaim
+  if (uniqueMatches.length === 1) {
+    const match = uniqueMatches[0]
+    const newParticipant = await createReturningParticipant(
+      session.id,
+      { funName: match.funName, emoji: match.emoji },
+      firstName,
+      lastInitial,
+      null
+    )
+    broadcastParticipantJoined(session.id).catch(() => {})
+    return {
+      participant: toParticipantData(newParticipant),
+      session: sessionInfo,
+      returning: true,
+    }
+  }
+
+  return {
+    candidates: uniqueMatches.map((m) => ({
+      id: m.id,
+      funName: m.funName,
+      emoji: m.emoji,
+    })),
+    session: sessionInfo,
+    allowNew: true,
+  }
 }

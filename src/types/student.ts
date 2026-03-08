@@ -48,6 +48,7 @@ export interface LookupResult {
   participant?: StudentParticipantData
   session?: ClassSessionData
   returning?: boolean
+  sessionEnded?: boolean
   candidates?: DuplicateCandidate[]
   isNew?: boolean
   allowNew?: boolean // true when candidates shown, enables "None of these" escape
