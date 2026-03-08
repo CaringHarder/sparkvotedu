@@ -166,7 +166,7 @@ None -- all v1.3 requirements shipped.
 | 20 | Replace viewing mode on/off switch with Simple/Advanced segmented control | 2026-03-02 | 9e9d283 | Verified | [20-fix-simple-advanced-viewing-mode-toggle-](./quick/20-fix-simple-advanced-viewing-mode-toggle-/) |
 | 21 | Make bigger cards/buttons for simple mode (brackets and polls) | 2026-03-07 | 8b45d68 | Verified | [21-make-bigger-cards-buttons-for-simple-mod](./quick/21-make-bigger-cards-buttons-for-simple-mod/) |
 | 22 | Make submit vote button green and obvious for younger students | 2026-03-07 | 4a79a1d | | [22-make-submit-vote-button-green-and-obviou](./quick/22-make-submit-vote-button-green-and-obviou/) |
-| 23 | Change submit vote button text to "VOTE" | 2026-03-07 | 858236b | | [23-change-submit-vote-button-text-to-vote-i](./quick/23-change-submit-vote-button-text-to-vote-i/) |
+| 23 | Change submit vote button text to "VOTE" | 2026-03-08 | 858236b | | [23-change-submit-vote-button-text-to-vote-i](./quick/23-change-submit-vote-button-text-to-vote-i/) |
 | Phase 31 P01 | 3min | 2 tasks | 10 files |
 | Phase 31 P02 | 5min | 3 tasks | 4 files |
 | Phase 31.1 P01 | 2min | 2 tasks | 5 files |
