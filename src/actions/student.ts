@@ -552,3 +552,95 @@ export async function lookupStudent(input: {
     allowNew: true,
   }
 }
+
+// --- Disambiguation Claim Action ---
+
+const claimReturningSchema = z.object({
+  participantId: z.string().min(1, 'Participant ID is required'),
+  sessionCode: z.string().regex(/^\d{6}$/, 'Session code must be exactly 6 digits'),
+  firstName: firstNameSchema,
+  lastInitial: lastInitialSchema,
+})
+
+/**
+ * Claim a returning student identity during disambiguation.
+ *
+ * When lookupStudent returns multiple candidates, the student picks one
+ * ("That's me"). This action creates a new participant in the current
+ * session with the selected identity's funName + emoji.
+ *
+ * Security: verifies the source participant belongs to one of this
+ * teacher's sessions (prevents cross-teacher identity theft).
+ *
+ * No authentication required -- students are anonymous.
+ */
+export async function claimReturningIdentity(input: {
+  participantId: string
+  sessionCode: string
+  firstName: string
+  lastInitial: string
+}): Promise<LookupResult> {
+  // Validate input
+  const parsed = claimReturningSchema.safeParse(input)
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0].message }
+  }
+
+  const { participantId, sessionCode, firstName, lastInitial } = parsed.data
+
+  // Find session by code
+  const session = await findSessionByCode(sessionCode)
+  if (!session) {
+    return { error: 'Invalid class code' }
+  }
+
+  const sessionInfo = {
+    id: session.id,
+    code: session.code,
+    name: session.name,
+    status: session.status,
+    teacherName: session.teacher.name,
+  }
+
+  // If session ended, reject
+  if (session.status === 'ended') {
+    return { error: 'Session has ended' }
+  }
+
+  // Look up the source participant to get their funName + emoji
+  const { prisma } = await import('@/lib/prisma')
+  const source = await prisma.studentParticipant.findUnique({
+    where: { id: participantId },
+    include: {
+      session: {
+        select: { teacherId: true },
+      },
+    },
+  })
+
+  if (!source) {
+    return { error: 'Participant not found' }
+  }
+
+  // Security: verify source belongs to same teacher
+  if (source.session.teacherId !== session.teacherId) {
+    return { error: 'Participant does not belong to this teacher' }
+  }
+
+  // Create participant in current session with the selected identity
+  const newParticipant = await createReturningParticipant(
+    session.id,
+    { funName: source.funName, emoji: source.emoji },
+    firstName,
+    lastInitial,
+    null
+  )
+
+  broadcastParticipantJoined(session.id).catch(() => {})
+
+  return {
+    participant: toParticipantData(newParticipant),
+    session: sessionInfo,
+    returning: true,
+  }
+}
