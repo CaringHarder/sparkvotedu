@@ -29,6 +29,7 @@ export function useRealtimeActivities(
 ) {
   const [activities, setActivities] = useState<Activity[]>([])
   const [loading, setLoading] = useState(true)
+  const [transport, setTransport] = useState<'websocket' | 'polling'>('websocket')
   const supabase = useMemo(() => createClient(), [])
 
   const fetchActivities = useCallback(async () => {
@@ -54,6 +55,9 @@ export function useRealtimeActivities(
   useEffect(() => {
     fetchActivities()
 
+    let wsConnected = false
+    let pollInterval: ReturnType<typeof setInterval> | null = null
+
     // Subscribe to Supabase Realtime channel for activity updates.
     // Uses broadcast (not postgres_changes) to avoid per-subscriber DB reads
     // in classrooms with 30+ students (see 02-RESEARCH.md Pitfall 5).
@@ -65,9 +69,19 @@ export function useRealtimeActivities(
       .subscribe((status) => {
         // Refetch on reconnect to catch missed events during outage
         if (status === 'SUBSCRIBED') {
+          wsConnected = true
           fetchActivities()
         }
       })
+
+    // Fall back to HTTP polling if WebSocket fails to connect within 5 seconds
+    const wsTimeout = setTimeout(() => {
+      if (!wsConnected) {
+        setTransport('polling')
+        fetchActivities()
+        pollInterval = setInterval(fetchActivities, 3000)
+      }
+    }, 5000)
 
     // Refetch when tab regains focus to catch missed deletions while backgrounded
     const handleVisibility = () => {
@@ -80,8 +94,10 @@ export function useRealtimeActivities(
     return () => {
       supabase.removeChannel(channel)
       document.removeEventListener('visibilitychange', handleVisibility)
+      clearTimeout(wsTimeout)
+      if (pollInterval) clearInterval(pollInterval)
     }
   }, [sessionId, supabase, fetchActivities])
 
-  return { activities, loading }
+  return { activities, loading, transport }
 }
