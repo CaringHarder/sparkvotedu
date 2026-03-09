@@ -58,8 +58,14 @@ None.
 
 - School Chromebooks in ephemeral mode silently destroy localStorage -- server-side name reclaim is authoritative fallback
 
+### Quick Tasks Completed
+
+| # | Description | Date | Commit | Directory |
+|---|-------------|------|--------|-----------|
+| 30 | Fix ghost students bug - phantom students with fun names but no real names created when class joins session | 2026-03-09 | 881aae4 | [30-fix-ghost-students-bug-phantom-students-](./quick/30-fix-ghost-students-bug-phantom-students-/) |
+
 ## Session Continuity
 
 Last session: 2026-03-09
-Stopped at: Completed quick-30 (fix ghost students bug)
+Last activity: 2026-03-09 - Completed quick task 30: Fix ghost students bug
 Resume: Start next milestone with `/gsd:new-milestone`
