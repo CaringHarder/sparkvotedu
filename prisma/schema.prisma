@@ -57,7 +57,6 @@ model StudentParticipant {
   emoji        String?   @db.VarChar(20)
   lastInitial  String?   @map("last_initial") @db.VarChar(2)
   deviceId     String?   @map("device_id")
-  fingerprint  String?
   recoveryCode String?   @map("recovery_code")
   rerollUsed   Boolean   @default(false) @map("reroll_used")
   banned       Boolean   @default(false)
@@ -72,7 +71,6 @@ model StudentParticipant {
 
   @@unique([sessionId, deviceId])
   @@unique([sessionId, funName])
-  @@index([sessionId, fingerprint])
   @@index([recoveryCode])
   @@index([sessionId, firstName])
   @@index([sessionId, firstName, lastInitial])
