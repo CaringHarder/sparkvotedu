@@ -855,3 +855,34 @@ export async function completeWizardProfile(input: {
     return { error: 'Failed to update profile' }
   }
 }
+
+// --- Emoji Migration Action ---
+
+/**
+ * Set the emoji for an existing participant (one-time migration).
+ *
+ * Validates that the emoji shortcode is in the EMOJI_POOL.
+ * No authentication required -- students are anonymous.
+ */
+export async function setParticipantEmoji(
+  participantId: string,
+  emoji: string
+): Promise<{ error?: string; success?: boolean }> {
+  // Validate emoji is in pool
+  const { EMOJI_POOL } = await import('@/lib/student/emoji-pool')
+  const valid = EMOJI_POOL.some((e) => e.shortcode === emoji)
+  if (!valid) {
+    return { error: 'Invalid emoji selection' }
+  }
+
+  try {
+    const { prisma } = await import('@/lib/prisma')
+    await prisma.studentParticipant.update({
+      where: { id: participantId },
+      data: { emoji },
+    })
+    return { success: true }
+  } catch {
+    return { error: 'Failed to set emoji' }
+  }
+}

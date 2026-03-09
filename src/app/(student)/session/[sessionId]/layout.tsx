@@ -2,9 +2,10 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
-import { getSessionParticipant } from '@/lib/student/session-store'
+import { getSessionParticipant, updateSessionParticipant } from '@/lib/student/session-store'
 import { SessionHeader } from '@/components/student/session-header'
 import { MobileBottomNav } from '@/components/student/mobile-bottom-nav'
+import { EmojiMigration } from '@/components/student/emoji-migration'
 import { Skeleton } from '@/components/ui/skeleton'
 
 interface ParticipantStore {
@@ -82,6 +83,23 @@ export default function SessionLayout({
         <Skeleton className="h-5 w-5 rounded-full" />
         <Skeleton className="h-4 w-32" />
       </div>
+    )
+  }
+
+  // Emoji migration: show one-time picker for returning participants without emoji
+  if (participant.emoji === null) {
+    return (
+      <EmojiMigration
+        participantId={participant.participantId}
+        funName={participant.funName}
+        sessionId={sessionId}
+        onComplete={(selectedEmoji) => {
+          // Update sessionStorage so subsequent visits skip migration
+          updateSessionParticipant(participant.participantId, { emoji: selectedEmoji })
+          // Update local state to re-render normal layout
+          setParticipant((prev) => prev ? { ...prev, emoji: selectedEmoji } : prev)
+        }}
+      />
     )
   }
 
