@@ -508,9 +508,35 @@ export async function lookupStudent(input: {
     return { isNew: true, session: sessionInfo }
   }
 
+  // Check if any match is already in the current session — return directly
+  const currentSessionMatch = matches.find((m) => m.sessionId === session.id)
+  if (currentSessionMatch) {
+    const { prisma } = await import('@/lib/prisma')
+    // Fetch full participant data for the existing participant
+    const existing = await prisma.studentParticipant.findUnique({
+      where: { id: currentSessionMatch.id },
+    })
+    if (existing) {
+      broadcastParticipantJoined(session.id).catch(() => {})
+      return {
+        participant: toParticipantData(existing),
+        session: sessionInfo,
+        returning: true,
+      }
+    }
+  }
+
+  // Filter out current-session matches for cross-session reclaim logic
+  const crossSessionMatches = matches.filter((m) => m.sessionId !== session.id)
+
+  // If no cross-session matches remain, treat as already-in-session
+  if (crossSessionMatches.length === 0) {
+    return { isNew: true, session: sessionInfo }
+  }
+
   // One match -- auto-reclaim silently
-  if (matches.length === 1) {
-    const match = matches[0]
+  if (crossSessionMatches.length === 1) {
+    const match = crossSessionMatches[0]
     const newParticipant = await createReturningParticipant(
       session.id,
       { funName: match.funName, emoji: match.emoji },
@@ -528,7 +554,7 @@ export async function lookupStudent(input: {
 
   // Multiple matches -- deduplicate by funName+emoji and return candidates
   const seen = new Set<string>()
-  const uniqueMatches = matches.filter((m) => {
+  const uniqueMatches = crossSessionMatches.filter((m) => {
     const key = `${m.funName}|${m.emoji ?? ''}`
     if (seen.has(key)) return false
     seen.add(key)
