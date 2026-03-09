@@ -173,9 +173,10 @@ Plans:
   3. Teacher can click on any student in the sidebar and edit their display name
   4. Student sees a gear icon in the session header that opens an editor to change their display name and emoji
   5. Existing participants who rejoin without an emoji are prompted once to pick an emoji (one-time migration experience)
-**Plans**: 1 plan
+**Plans**: 2 plans
 Plans:
-- [ ] 39-01-PLAN.md -- Schema migration + emoji pool module + EmojiAvatar component
+- [ ] 44-01-PLAN.md -- Schema migration + emoji data pipeline threading + student header emoji display
+- [ ] 44-02-PLAN.md -- Name view toggle + teacher edit dialog + emoji migration prompt
 
 ## Progress
 
@@ -228,4 +229,4 @@ Phases 39-41 are strictly sequential (schema -> actions -> UI). Phase 42 require
 | 41. Join Wizard UI | v3.0 | Complete    | 2026-03-09 | 2026-03-09 |
 | 42. localStorage Persistence + Auto-Rejoin | 1/1 | Complete    | 2026-03-09 | - |
 | 43. FingerprintJS Removal | 1/1 | Complete    | 2026-03-09 | - |
-| 44. Teacher Sidebar + Emoji Display | v3.0 | 0/TBD | Not started | - |
+| 44. Teacher Sidebar + Emoji Display | v3.0 | 0/2 | Not started | - |
