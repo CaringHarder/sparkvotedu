@@ -51,6 +51,20 @@ export const EMOJI_POOL: EmojiEntry[] = [
   { shortcode: 'music', emoji: '\u{1F3B5}', label: 'musical note' },
 ]
 
+/**
+ * Sentinel shortcode assigned to pre-existing participants who never chose an emoji.
+ * Not in EMOJI_POOL — triggers the migration picker on next sign-in.
+ */
+export const MIGRATION_SENTINEL = 'question'
+
+/** Unicode for the migration sentinel (❓) */
+export const MIGRATION_SENTINEL_EMOJI = '\u{2753}'
+
+/** Check whether a shortcode needs emoji migration */
+export function needsEmojiMigration(shortcode: string | null | undefined): boolean {
+  return shortcode === null || shortcode === undefined || shortcode === MIGRATION_SENTINEL
+}
+
 /** Lookup map for O(1) shortcode resolution */
 const shortcodeMap = new Map<string, string>(
   EMOJI_POOL.map((e) => [e.shortcode, e.emoji])
@@ -74,5 +88,6 @@ export function pickEmoji(firstName: string): EmojiEntry {
  * Returns null if the shortcode is not in the pool.
  */
 export function shortcodeToEmoji(shortcode: string): string | null {
+  if (shortcode === MIGRATION_SENTINEL) return MIGRATION_SENTINEL_EMOJI
   return shortcodeMap.get(shortcode) ?? null
 }

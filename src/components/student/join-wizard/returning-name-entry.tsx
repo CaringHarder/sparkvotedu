@@ -131,7 +131,7 @@ export function ReturningNameEntry({ code, onResult, onRedirectNew }: ReturningN
             setIsNew(false)
           }}
           onKeyDown={handleLastInitialKeyDown}
-          placeholder="Last initial (A-Z)"
+          placeholder="A-Z"
           maxLength={2}
           className="max-w-[120px] rounded-xl border-2 px-4 py-3 text-center text-2xl font-semibold outline-none transition-colors focus:border-primary"
           autoComplete="off"

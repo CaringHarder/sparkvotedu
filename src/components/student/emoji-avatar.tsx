@@ -2,7 +2,7 @@
 
 import { cva, type VariantProps } from 'class-variance-authority'
 import { cn } from '@/lib/utils'
-import { shortcodeToEmoji } from '@/lib/student/emoji-pool'
+import { shortcodeToEmoji, MIGRATION_SENTINEL_EMOJI } from '@/lib/student/emoji-pool'
 
 const avatarVariants = cva(
   'inline-flex items-center justify-center rounded-full bg-muted select-none',
@@ -21,16 +21,16 @@ const avatarVariants = cva(
 )
 
 interface EmojiAvatarProps extends VariantProps<typeof avatarVariants> {
-  /** Emoji shortcode (e.g., "rocket"). Null shows sparkles fallback. */
+  /** Emoji shortcode (e.g., "rocket"). Null shows ❓ fallback. */
   shortcode: string | null
   className?: string
 }
 
-/** Renders an emoji avatar circle from a shortcode. Shows sparkles for null/unknown. */
+/** Renders an emoji avatar circle from a shortcode. Shows ❓ for null/unknown. */
 export function EmojiAvatar({ shortcode, size, className }: EmojiAvatarProps) {
   const resolved = shortcode ? shortcodeToEmoji(shortcode) : null
-  // Sparkles fallback for null shortcode or unresolvable shortcode
-  const display = resolved ?? '\u{2728}'
+  // ❓ fallback for null shortcode or unresolvable shortcode
+  const display = resolved ?? MIGRATION_SENTINEL_EMOJI
   const label = shortcode ?? 'no emoji'
 
   return (

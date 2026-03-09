@@ -3,7 +3,7 @@
 import { useMemo, useState } from 'react'
 import { NameViewToggle } from '@/components/teacher/name-view-toggle'
 import { TeacherEditNameDialog } from '@/components/teacher/teacher-edit-name-dialog'
-import { shortcodeToEmoji } from '@/lib/student/emoji-pool'
+import { shortcodeToEmoji, MIGRATION_SENTINEL_EMOJI } from '@/lib/student/emoji-pool'
 
 interface ParticipationSidebarProps {
   participants: Array<{ id: string; funName: string; firstName?: string; emoji?: string | null; lastInitial?: string | null }>
@@ -179,7 +179,7 @@ export function ParticipationSidebar({
                       />
                       {nameView === 'fun' ? (
                         <span className="truncate">
-                          {emojiChar ?? '\u{2728}'}{' '}
+                          {emojiChar ?? MIGRATION_SENTINEL_EMOJI}{' '}
                           {participant.funName}
                         </span>
                       ) : (

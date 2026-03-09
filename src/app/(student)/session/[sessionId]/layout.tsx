@@ -6,6 +6,7 @@ import { getSessionParticipant, updateSessionParticipant } from '@/lib/student/s
 import { SessionHeader } from '@/components/student/session-header'
 import { MobileBottomNav } from '@/components/student/mobile-bottom-nav'
 import { EmojiMigration } from '@/components/student/emoji-migration'
+import { needsEmojiMigration } from '@/lib/student/emoji-pool'
 import { Skeleton } from '@/components/ui/skeleton'
 
 interface ParticipantStore {
@@ -86,8 +87,8 @@ export default function SessionLayout({
     )
   }
 
-  // Emoji migration: show one-time picker for returning participants without emoji
-  if (participant.emoji === null) {
+  // Emoji migration: show one-time picker for returning participants without emoji or with sentinel
+  if (needsEmojiMigration(participant.emoji)) {
     return (
       <EmojiMigration
         participantId={participant.participantId}
