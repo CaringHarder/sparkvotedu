@@ -3,11 +3,11 @@ gsd_state_version: 1.0
 milestone: v3.0
 milestone_name: Student Join Overhaul + Cleanup
 status: completed
-stopped_at: Completed 44-02-PLAN.md
-last_updated: "2026-03-09T10:12:45.609Z"
+stopped_at: Phase 45 context gathered
+last_updated: "2026-03-09T10:54:38.192Z"
 last_activity: 2026-03-09 -- Completed 44-02 sidebar toggle, teacher edit, emoji migration
 progress:
-  total_phases: 6
+  total_phases: 7
   completed_phases: 6
   total_plans: 9
   completed_plans: 9
@@ -76,6 +76,11 @@ Recent decisions affecting current work:
 - [Phase 44]: teacherUpdateStudentName reuses broadcastParticipantJoined for real-time propagation
 - [Phase 44]: Name view toggle is pure React state, no DB write on toggle
 
+### Roadmap Evolution
+
+- Phase 45 added: Polish teacher sidebar & student join UX (sidebar real-time refresh, returning student lookup without last initial, teacher edit dialog last initial, toggle persistence)
+- TCHR-04 updated: emoji editing intentionally excluded — emoji set once during join/migration only
+
 ### Pending Todos
 
 None.
@@ -100,6 +105,6 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-03-09T10:15:00Z
-Stopped at: Completed 44-02-PLAN.md
+Last session: 2026-03-09T10:54:38.187Z
+Stopped at: Phase 45 context gathered
 Resume: Phase 44 complete. Run phase verification or start next milestone.
