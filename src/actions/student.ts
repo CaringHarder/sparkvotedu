@@ -733,6 +733,55 @@ export async function rejoinWithStoredIdentity(input: {
   }
 }
 
+// --- Teacher Actions ---
+
+/**
+ * Teacher-initiated student name update.
+ *
+ * Auth: requires authenticated teacher who owns the session.
+ * Broadcasts participant update so student sees the change in real time.
+ */
+export async function teacherUpdateStudentName(input: {
+  participantId: string
+  firstName: string
+}): Promise<{ error?: string; success?: boolean }> {
+  const { getAuthenticatedTeacher } = await import('@/lib/dal/auth')
+  const teacher = await getAuthenticatedTeacher()
+  if (!teacher) {
+    return { error: 'Not authenticated' }
+  }
+
+  // Validate firstName
+  const result = firstNameSchema.safeParse(input.firstName)
+  if (!result.success) {
+    return { error: result.error.issues[0].message }
+  }
+
+  const { prisma } = await import('@/lib/prisma')
+  const participant = await prisma.studentParticipant.findUnique({
+    where: { id: input.participantId },
+    include: { session: { select: { teacherId: true, id: true } } },
+  })
+
+  if (!participant) {
+    return { error: 'Participant not found' }
+  }
+
+  if (participant.session.teacherId !== teacher.id) {
+    return { error: 'Not authorized to edit this student' }
+  }
+
+  await prisma.studentParticipant.update({
+    where: { id: input.participantId },
+    data: { firstName: result.data },
+  })
+
+  // Broadcast so student sees update in real time
+  broadcastParticipantJoined(participant.session.id).catch(() => {})
+
+  return { success: true }
+}
+
 // --- Wizard Actions ---
 
 /**

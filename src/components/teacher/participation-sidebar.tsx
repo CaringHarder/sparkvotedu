@@ -1,6 +1,9 @@
 'use client'
 
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
+import { NameViewToggle } from '@/components/teacher/name-view-toggle'
+import { TeacherEditNameDialog } from '@/components/teacher/teacher-edit-name-dialog'
+import { shortcodeToEmoji } from '@/lib/student/emoji-pool'
 
 interface ParticipationSidebarProps {
   participants: Array<{ id: string; funName: string; firstName?: string; emoji?: string | null; lastInitial?: string | null }>
@@ -21,8 +24,18 @@ export function ParticipationSidebar({
   hasActiveVotingContext = true,
   onToggle,
   isOpen,
-  teacherNameViewDefault: _teacherNameViewDefault = 'fun',
+  teacherNameViewDefault = 'fun',
 }: ParticipationSidebarProps) {
+  const [nameView, setNameView] = useState<'fun' | 'real'>(
+    teacherNameViewDefault === 'real' ? 'real' : 'fun'
+  )
+  const [editingParticipant, setEditingParticipant] = useState<{
+    id: string
+    firstName: string
+    funName: string
+    emoji: string | null
+  } | null>(null)
+
   const voterIdSet = useMemo(() => new Set(voterIds), [voterIds])
 
   const votedCount = useMemo(() => {
@@ -79,7 +92,10 @@ export function ParticipationSidebar({
         <div className="flex flex-1 flex-col overflow-hidden p-3">
           {/* Header */}
           <div className="mb-3">
-            <h2 className="text-sm font-semibold">Student Activity</h2>
+            <div className="flex items-center justify-between">
+              <h2 className="text-sm font-semibold">Student Activity</h2>
+              <NameViewToggle value={nameView} onChange={setNameView} />
+            </div>
             <p className="text-xs text-muted-foreground">
               {participants.length} student{participants.length !== 1 ? 's' : ''}
             </p>
@@ -126,11 +142,23 @@ export function ParticipationSidebar({
               {sortedParticipants.map((participant) => {
                 const isConnected = connectedIds.has(participant.id)
                 const hasVoted = voterIdSet.has(participant.id)
+                const emojiChar = participant.emoji
+                  ? shortcodeToEmoji(participant.emoji)
+                  : null
 
                 return (
-                  <div
+                  <button
                     key={participant.id}
-                    className={`rounded-md border px-2 py-2 text-xs transition-colors ${
+                    type="button"
+                    onClick={() =>
+                      setEditingParticipant({
+                        id: participant.id,
+                        firstName: participant.firstName ?? '',
+                        funName: participant.funName,
+                        emoji: participant.emoji ?? null,
+                      })
+                    }
+                    className={`cursor-pointer rounded-md border px-2 py-2 text-xs text-left transition-colors ${
                       !isConnected
                         ? 'border-muted bg-muted/30 text-muted-foreground opacity-50'
                         : hasVoted
@@ -138,27 +166,31 @@ export function ParticipationSidebar({
                           : 'border-border bg-background text-foreground'
                     }`}
                   >
-                    <div className="flex flex-col gap-0.5">
-                      <div className="flex items-center gap-1">
-                        {/* Status indicator dot */}
-                        <span
-                          className={`inline-block h-1.5 w-1.5 shrink-0 rounded-full ${
-                            !isConnected
-                              ? 'bg-gray-400'
-                              : hasVoted
-                                ? 'bg-green-500'
-                                : 'bg-blue-500'
-                          }`}
-                        />
-                        <span className="truncate">{participant.funName}</span>
-                      </div>
-                      {participant.firstName && (
-                        <span className="truncate text-[10px] text-muted-foreground pl-3">
-                          {participant.firstName}
+                    <div className="flex items-center gap-1">
+                      {/* Status indicator dot */}
+                      <span
+                        className={`inline-block h-1.5 w-1.5 shrink-0 rounded-full ${
+                          !isConnected
+                            ? 'bg-gray-400'
+                            : hasVoted
+                              ? 'bg-green-500'
+                              : 'bg-blue-500'
+                        }`}
+                      />
+                      {nameView === 'fun' ? (
+                        <span className="truncate">
+                          {emojiChar ?? '\u{2728}'}{' '}
+                          {participant.funName}
+                        </span>
+                      ) : (
+                        <span className="truncate">
+                          {participant.firstName
+                            ? `${participant.firstName}${participant.lastInitial ? ` ${participant.lastInitial}.` : ''}`
+                            : participant.funName}
                         </span>
                       )}
                     </div>
-                  </div>
+                  </button>
                 )
               })}
             </div>
@@ -170,6 +202,20 @@ export function ParticipationSidebar({
             </div>
           )}
         </div>
+      )}
+
+      {/* Edit name dialog */}
+      {editingParticipant && (
+        <TeacherEditNameDialog
+          open={!!editingParticipant}
+          onOpenChange={(open) => {
+            if (!open) setEditingParticipant(null)
+          }}
+          participantId={editingParticipant.id}
+          currentFirstName={editingParticipant.firstName}
+          funName={editingParticipant.funName}
+          emoji={editingParticipant.emoji}
+        />
       )}
     </div>
   )
