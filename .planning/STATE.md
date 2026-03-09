@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v3.0
 milestone_name: Student Join Overhaul + Cleanup
-status: in-progress
-stopped_at: Completed 40-01-PLAN.md
-last_updated: "2026-03-08T18:26:44Z"
-last_activity: 2026-03-08 -- Executed 40-01 server actions + DAL for student identity reclaim
+status: completed
+stopped_at: Completed 41-01-PLAN.md
+last_updated: "2026-03-09T00:14:55.013Z"
+last_activity: 2026-03-09 -- Executed 41-01 JoinWizard foundation (types, shell, server actions)
 progress:
   total_phases: 6
-  completed_phases: 1
-  total_plans: 2
-  completed_plans: 2
-  percent: 33
+  completed_phases: 2
+  total_plans: 5
+  completed_plans: 3
+  percent: 50
 ---
 
 # Project State
@@ -21,16 +21,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-08)
 
 **Core value:** Teachers can instantly engage any classroom through voting -- on any topic, in any format -- and see participation happen in real time.
-**Current focus:** Phase 40 - Server Actions + DAL
+**Current focus:** Phase 41 - Join Wizard UI
 
 ## Current Position
 
-Phase: 40 (2 of 6 in v3.0) - Server Actions + DAL
-Plan: 1 of 1 complete
-Status: Phase 40 plan 01 complete
-Last activity: 2026-03-08 -- Executed 40-01 server actions + DAL for student identity reclaim
+Phase: 41 (3 of 6 in v3.0) - Join Wizard UI
+Plan: 1 of 3 complete
+Status: Phase 41 plan 01 complete
+Last activity: 2026-03-09 -- Executed 41-01 JoinWizard foundation (types, shell, server actions)
 
-Progress: [███░░░░░░░] 33%
+Progress: [█████░░░░░] 50%
 
 ## Performance Metrics
 
@@ -57,6 +57,10 @@ Recent decisions affecting current work:
 - djb2 hash for deterministic emoji selection from first name
 - Auto-reclaim after dedup: multiple DB rows with same funName+emoji treated as single match
 - claimReturningIdentity verifies teacher ownership for cross-teacher security
+- useReducer with discriminated unions for type-safe wizard state transitions
+- createWizardParticipant creates with empty firstName; completeWizardProfile fills profile later
+- [Phase 41]: useReducer with discriminated unions for type-safe wizard state transitions
+- [Phase 41]: createWizardParticipant creates with empty firstName; completeWizardProfile fills later
 
 ### Pending Todos
 
@@ -73,9 +77,10 @@ None.
 | # | Description | Date | Commit | Directory |
 |---|-------------|------|--------|-----------|
 | 28 | Bar chart vote count high-contrast circular badge | 2026-03-08 | a1277ae | [28-bar-chart-larger-vote-count-badge](./quick/28-bar-chart-larger-vote-count-badge/) |
+| Phase 41 P01 | 3min | 2 tasks | 9 files |
 
 ## Session Continuity
 
-Last session: 2026-03-08T18:26:44Z
-Stopped at: Completed 40-01-PLAN.md
-Resume: Continue phase 40 execution or advance to next plan
+Last session: 2026-03-09T00:14:55.011Z
+Stopped at: Completed 41-01-PLAN.md
+Resume: Continue with 41-02 (new student wizard steps) or 41-03 (returning student flow)
