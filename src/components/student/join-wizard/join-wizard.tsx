@@ -1,11 +1,13 @@
 'use client'
 
-import { useReducer, useRef, useState, useCallback } from 'react'
+import { useReducer, useRef, useState, useCallback, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'motion/react'
-import { createWizardParticipant, completeWizardProfile, lookupStudent } from '@/actions/student'
+import { createWizardParticipant, completeWizardProfile, lookupStudent, rejoinWithStoredIdentity } from '@/actions/student'
 import { shortcodeToEmoji } from '@/lib/student/emoji-pool'
 import { setSessionParticipant } from '@/lib/student/session-store'
+import { getStoredIdentity, setStoredIdentity, clearStoredIdentity } from '@/lib/student/identity-store'
+import { LocalStorageConfirm } from './localStorage-confirm'
 import { PathSelector } from './path-selector'
 import { StepDots } from './step-dots'
 import { WizardHeader } from './wizard-header'
@@ -153,6 +155,15 @@ function wizardReducer(state: WizardStep, action: WizardAction): WizardStep {
     case 'REDIRECT_TO_NEW':
       return { type: 'path-select' }
 
+    case 'SET_STORED_IDENTITY':
+      return { type: 'localStorage-confirm', stored: action.stored }
+
+    case 'CONFIRM_IDENTITY':
+      return state // async handler manages transition
+
+    case 'DENY_IDENTITY':
+      return { type: 'path-select' }
+
     default:
       return state
   }
@@ -204,6 +215,74 @@ export function JoinWizard({ code, sessionInfo }: JoinWizardProps) {
   const directionRef = useRef<SlideDirection>(1)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [initialCheckDone, setInitialCheckDone] = useState(false)
+
+  // Check localStorage for stored identity on mount
+  useEffect(() => {
+    const stored = getStoredIdentity(sessionInfo.id)
+    if (stored) {
+      dispatch({ type: 'SET_STORED_IDENTITY', stored })
+    }
+    setInitialCheckDone(true)
+  }, [sessionInfo.id])
+
+  // Handler for confirming stored identity ("Yes, that's me!")
+  const handleConfirmIdentity = useCallback(async () => {
+    if (step.type !== 'localStorage-confirm') return
+    setLoading(true)
+    setError(null)
+
+    const result = await rejoinWithStoredIdentity({
+      participantId: step.stored.participantId,
+      sessionId: sessionInfo.id,
+    })
+
+    if (result.error) {
+      // Stored identity is stale -- clear it, fall through to wizard
+      clearStoredIdentity(sessionInfo.id)
+      setError(null)
+      dispatch({ type: 'DENY_IDENTITY' })
+      setLoading(false)
+      return
+    }
+
+    if (result.participant) {
+      // Set sessionStorage for in-session use
+      setSessionParticipant(sessionInfo.id, {
+        participantId: result.participant.id,
+        firstName: result.participant.firstName,
+        funName: result.participant.funName,
+        sessionId: sessionInfo.id,
+        rerollUsed: result.participant.rerollUsed,
+        emoji: result.participant.emoji,
+        lastInitial: result.participant.lastInitial,
+      })
+
+      // Update localStorage with fresh server data
+      setStoredIdentity({
+        participantId: result.participant.id,
+        funName: result.participant.funName,
+        emoji: result.participant.emoji,
+        firstName: result.participant.firstName,
+        lastInitial: result.participant.lastInitial,
+        sessionId: sessionInfo.id,
+        joinedAt: Date.now(),
+      })
+
+      // Navigate directly to session (skip welcome -- they already know who they are)
+      router.push(`/session/${sessionInfo.id}`)
+    }
+
+    setLoading(false)
+  }, [step, sessionInfo.id, router])
+
+  // Handler for denying stored identity ("Not me")
+  const handleDenyIdentity = useCallback(() => {
+    if (step.type !== 'localStorage-confirm') return
+    clearStoredIdentity(sessionInfo.id)
+    directionRef.current = 1
+    dispatch({ type: 'DENY_IDENTITY' })
+  }, [step, sessionInfo.id])
 
   // Handler for "I'm new here!" path
   const handleSelectNew = useCallback(async () => {
@@ -264,6 +343,17 @@ export function JoinWizard({ code, sessionInfo }: JoinWizardProps) {
         emoji,
         lastInitial: step.lastInitial,
       })
+
+      // Persist to localStorage for auto-rejoin
+      setStoredIdentity({
+        participantId: step.participantId,
+        funName: step.funName,
+        emoji,
+        firstName: step.firstName,
+        lastInitial: step.lastInitial,
+        sessionId: sessionInfo.id,
+        joinedAt: Date.now(),
+      })
     },
     [step, sessionInfo.id]
   )
@@ -292,6 +382,17 @@ export function JoinWizard({ code, sessionInfo }: JoinWizardProps) {
         rerollUsed: result.participant.rerollUsed,
         emoji: result.participant.emoji,
         lastInitial: result.participant.lastInitial,
+      })
+
+      // Persist to localStorage for auto-rejoin
+      setStoredIdentity({
+        participantId: result.participant.id,
+        funName: result.participant.funName,
+        emoji: result.participant.emoji,
+        firstName: result.participant.firstName,
+        lastInitial: result.participant.lastInitial,
+        sessionId: sessionInfo.id,
+        joinedAt: Date.now(),
       })
 
       dispatch({
@@ -335,6 +436,17 @@ export function JoinWizard({ code, sessionInfo }: JoinWizardProps) {
         lastInitial: result.participant.lastInitial,
       })
 
+      // Persist to localStorage for auto-rejoin
+      setStoredIdentity({
+        participantId: result.participant.id,
+        funName: result.participant.funName,
+        emoji: result.participant.emoji,
+        firstName: result.participant.firstName,
+        lastInitial: result.participant.lastInitial,
+        sessionId: sessionInfo.id,
+        joinedAt: Date.now(),
+      })
+
       dispatch({
         type: 'SET_RETURNING_WELCOME',
         funName: result.participant.funName,
@@ -364,6 +476,16 @@ export function JoinWizard({ code, sessionInfo }: JoinWizardProps) {
   // Render current step content
   const renderStepContent = () => {
     switch (step.type) {
+      case 'localStorage-confirm':
+        return (
+          <LocalStorageConfirm
+            stored={step.stored}
+            onConfirm={handleConfirmIdentity}
+            onDeny={handleDenyIdentity}
+            loading={loading}
+          />
+        )
+
       case 'path-select':
         return (
           <div className="flex flex-col gap-4">
@@ -425,6 +547,16 @@ export function JoinWizard({ code, sessionInfo }: JoinWizardProps) {
                   emoji: result.participant.emoji,
                   lastInitial: result.participant.lastInitial,
                 })
+                // Persist to localStorage for auto-rejoin
+                setStoredIdentity({
+                  participantId: result.participant.id,
+                  funName: result.participant.funName,
+                  emoji: result.participant.emoji,
+                  firstName: result.participant.firstName,
+                  lastInitial: result.participant.lastInitial,
+                  sessionId: sessionInfo.id,
+                  joinedAt: Date.now(),
+                })
                 dispatch({
                   type: 'SET_RETURNING_WELCOME',
                   funName: result.participant.funName,
@@ -480,6 +612,16 @@ export function JoinWizard({ code, sessionInfo }: JoinWizardProps) {
                     emoji: result.participant.emoji,
                     lastInitial: result.participant.lastInitial,
                   })
+                  // Persist to localStorage for auto-rejoin
+                  setStoredIdentity({
+                    participantId: result.participant.id,
+                    funName: result.participant.funName,
+                    emoji: result.participant.emoji,
+                    firstName: result.participant.firstName,
+                    lastInitial: result.participant.lastInitial,
+                    sessionId: sessionInfo.id,
+                    joinedAt: Date.now(),
+                  })
                   directionRef.current = 1
                   dispatch({
                     type: 'SET_RETURNING_WELCOME',
@@ -528,6 +670,11 @@ export function JoinWizard({ code, sessionInfo }: JoinWizardProps) {
       default:
         return null
     }
+  }
+
+  // Wait for initial localStorage check to prevent flash of path-select
+  if (!initialCheckDone) {
+    return <div className="mx-auto flex min-h-[400px] w-full max-w-md flex-col items-stretch gap-4" />
   }
 
   return (
