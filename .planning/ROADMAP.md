@@ -229,4 +229,4 @@ Phases 39-41 are strictly sequential (schema -> actions -> UI). Phase 42 require
 | 41. Join Wizard UI | v3.0 | Complete    | 2026-03-09 | 2026-03-09 |
 | 42. localStorage Persistence + Auto-Rejoin | 1/1 | Complete    | 2026-03-09 | - |
 | 43. FingerprintJS Removal | 1/1 | Complete    | 2026-03-09 | - |
-| 44. Teacher Sidebar + Emoji Display | v3.0 | 0/2 | Not started | - |
+| 44. Teacher Sidebar + Emoji Display | 1/2 | In Progress|  | - |

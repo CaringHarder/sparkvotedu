@@ -12,7 +12,7 @@ Requirements for the Student Join Overhaul + Cleanup milestone.
 - [x] **JOIN-01**: Student joins session (via class code entry or direct link) and instantly receives a unique fun name
 - [x] **JOIN-02**: Student completes 3-step wizard: first name (auto-focused, green button on keystroke) → last initial (max 2 chars, animates in) → emoji picker (4x4 grid of 16 curated K-12-safe emojis)
 - [x] **JOIN-03**: Student sees welcome screen with their fun name + chosen emoji before entering session
-- [ ] **JOIN-04**: Student's emoji + fun name display throughout the session (header, sidebar, voting UI, results)
+- [x] **JOIN-04**: Student's emoji + fun name display throughout the session (header, sidebar, voting UI, results)
 
 ### Persistence
 
@@ -24,9 +24,9 @@ Requirements for the Student Join Overhaul + Cleanup milestone.
 ### Teacher Controls
 
 - [ ] **TCHR-01**: Teacher can toggle participation sidebar between fun name view and real name view
-- [ ] **TCHR-02**: Toggle has a global default (saved to teacher profile) with per-session override
+- [x] **TCHR-02**: Toggle has a global default (saved to teacher profile) with per-session override
 - [ ] **TCHR-03**: Teacher can edit any student's display name from the participation sidebar
-- [ ] **TCHR-04**: Student can edit their own display name and emoji via gear icon in session header
+- [x] **TCHR-04**: Student can edit their own display name and emoji via gear icon in session header
 
 ### Migration
 
@@ -70,15 +70,15 @@ Deferred to v3.x or later.
 | JOIN-01 | Phase 41 | Complete |
 | JOIN-02 | Phase 41 | Complete |
 | JOIN-03 | Phase 41 | Complete |
-| JOIN-04 | Phase 44 | Pending |
+| JOIN-04 | Phase 44 | Complete |
 | PERS-01 | Phase 42 | Complete |
 | PERS-02 | Phase 42 | Complete |
 | PERS-03 | Phase 40 | Complete |
 | PERS-04 | Phase 40 | Complete |
 | TCHR-01 | Phase 44 | Pending |
-| TCHR-02 | Phase 44 | Pending |
+| TCHR-02 | Phase 44 | Complete |
 | TCHR-03 | Phase 44 | Pending |
-| TCHR-04 | Phase 44 | Pending |
+| TCHR-04 | Phase 44 | Complete |
 | MIGR-01 | Phase 39 | Complete |
 | MIGR-02 | Phase 44 | Pending |
 | MIGR-03 | Phase 40 | Complete |
