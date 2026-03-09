@@ -1,6 +1,6 @@
 import Image from 'next/image'
 import { JoinForm } from '@/components/student/join-form'
-import { NameEntryForm } from '@/components/student/name-entry-form'
+import { JoinWizard } from '@/components/student/join-wizard/join-wizard'
 import { findSessionByCode } from '@/lib/dal/class-session'
 
 export default async function NameEntryPage({
@@ -131,11 +131,11 @@ export default async function NameEntryPage({
           className="h-12 w-12"
           priority
         />
-        <h1 className="text-3xl font-bold tracking-tight">Enter your name</h1>
+        <h1 className="text-3xl font-bold tracking-tight">Join a Session</h1>
       </div>
 
-      <div className="w-full max-w-sm">
-        <NameEntryForm code={code} sessionInfo={sessionInfo} />
+      <div className="w-full max-w-md">
+        <JoinWizard code={code} sessionInfo={sessionInfo} />
       </div>
     </div>
   )

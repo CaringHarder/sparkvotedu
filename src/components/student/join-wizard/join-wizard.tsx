@@ -4,6 +4,7 @@ import { useReducer, useRef, useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'motion/react'
 import { createWizardParticipant, completeWizardProfile } from '@/actions/student'
+import { shortcodeToEmoji } from '@/lib/student/emoji-pool'
 import { setSessionParticipant } from '@/lib/student/session-store'
 import { PathSelector } from './path-selector'
 import { StepDots } from './step-dots'
@@ -13,7 +14,11 @@ import { WizardStepFirstName } from './wizard-step-first-name'
 import { WizardStepLastInitial } from './wizard-step-last-initial'
 import { WizardStepEmoji } from './wizard-step-emoji'
 import { WizardWelcome } from './wizard-welcome'
+import { ReturningNameEntry } from './returning-name-entry'
+import { ReturningDisambiguation } from './returning-disambiguation'
+import { ReturningWelcome } from './returning-welcome'
 import type { SessionInfo, WizardStep, WizardAction, SlideDirection } from './types'
+import type { LookupResult } from '@/types/student'
 
 // ---------------------------------------------------------------------------
 // Slide animation variants
@@ -241,6 +246,84 @@ export function JoinWizard({ code, sessionInfo }: JoinWizardProps) {
     router.push(`/session/${sessionInfo.id}`)
   }, [router, sessionInfo.id])
 
+  // Handler for returning student lookup result
+  const handleReturningResult = useCallback((result: LookupResult) => {
+    directionRef.current = 1
+
+    // Single match -- auto-reclaimed
+    if (result.participant) {
+      const emojiChar = result.participant.emoji
+        ? shortcodeToEmoji(result.participant.emoji) ?? ''
+        : ''
+
+      // Store identity in sessionStorage
+      setSessionParticipant(sessionInfo.id, {
+        participantId: result.participant.id,
+        firstName: result.participant.firstName,
+        funName: result.participant.funName,
+        sessionId: sessionInfo.id,
+        rerollUsed: result.participant.rerollUsed,
+        emoji: result.participant.emoji,
+        lastInitial: result.participant.lastInitial,
+      })
+
+      dispatch({
+        type: 'SET_RETURNING_WELCOME',
+        funName: result.participant.funName,
+        emoji: result.participant.emoji ?? '',
+        emojiChar,
+        participantId: result.participant.id,
+      })
+      return
+    }
+
+    // Multiple matches -- disambiguation
+    if (result.candidates) {
+      dispatch({
+        type: 'SET_RETURNING_DISAMBIGUATE',
+        candidates: result.candidates,
+        firstName: '',
+        lastInitial: '',
+      })
+    }
+  }, [sessionInfo.id])
+
+  // Handler for disambiguation claim result
+  const handleReturningClaimed = useCallback((result: LookupResult) => {
+    directionRef.current = 1
+
+    if (result.participant) {
+      const emojiChar = result.participant.emoji
+        ? shortcodeToEmoji(result.participant.emoji) ?? ''
+        : ''
+
+      // Store identity in sessionStorage
+      setSessionParticipant(sessionInfo.id, {
+        participantId: result.participant.id,
+        firstName: result.participant.firstName,
+        funName: result.participant.funName,
+        sessionId: sessionInfo.id,
+        rerollUsed: result.participant.rerollUsed,
+        emoji: result.participant.emoji,
+        lastInitial: result.participant.lastInitial,
+      })
+
+      dispatch({
+        type: 'SET_RETURNING_WELCOME',
+        funName: result.participant.funName,
+        emoji: result.participant.emoji ?? '',
+        emojiChar,
+        participantId: result.participant.id,
+      })
+    }
+  }, [sessionInfo.id])
+
+  // Handler for "None of these" or "Not found, join as new"
+  const handleRedirectToNew = useCallback(() => {
+    directionRef.current = -1
+    dispatch({ type: 'REDIRECT_TO_NEW' })
+  }, [])
+
   // Determine step dots and header visibility
   const stepInfo = getStepNumber(step)
   const headerFunName = showHeader(step)
@@ -314,23 +397,32 @@ export function JoinWizard({ code, sessionInfo }: JoinWizardProps) {
 
       case 'returning-name':
         return (
-          <div className="py-4 text-center text-muted-foreground">
-            <p>Returning student name entry (Plan 03)</p>
-          </div>
+          <ReturningNameEntry
+            code={code}
+            onResult={handleReturningResult}
+            onRedirectNew={handleRedirectToNew}
+          />
         )
 
       case 'returning-disambiguate':
         return (
-          <div className="py-4 text-center text-muted-foreground">
-            <p>Returning student disambiguation (Plan 03)</p>
-          </div>
+          <ReturningDisambiguation
+            candidates={step.candidates}
+            firstName={step.firstName}
+            lastInitial={step.lastInitial}
+            code={code}
+            onClaimed={handleReturningClaimed}
+            onNoneOfThese={handleRedirectToNew}
+          />
         )
 
       case 'returning-welcome':
         return (
-          <div className="py-4 text-center text-muted-foreground">
-            <p>Returning student welcome (Plan 03)</p>
-          </div>
+          <ReturningWelcome
+            funName={step.funName}
+            emojiChar={step.emojiChar}
+            onComplete={handleEnterSession}
+          />
         )
 
       default:
