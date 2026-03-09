@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { NameViewToggle } from '@/components/teacher/name-view-toggle'
 import { TeacherEditNameDialog } from '@/components/teacher/teacher-edit-name-dialog'
 import { shortcodeToEmoji, MIGRATION_SENTINEL_EMOJI } from '@/lib/student/emoji-pool'
@@ -14,6 +14,8 @@ interface ParticipationSidebarProps {
   onToggle: () => void
   isOpen: boolean
   teacherNameViewDefault?: string
+  newParticipantIds?: Set<string>
+  disconnectTimestamps?: Map<string, number>
 }
 
 export function ParticipationSidebar({
@@ -25,6 +27,8 @@ export function ParticipationSidebar({
   onToggle,
   isOpen,
   teacherNameViewDefault = 'fun',
+  newParticipantIds,
+  disconnectTimestamps,
 }: ParticipationSidebarProps) {
   const [nameView, setNameView] = useState<'fun' | 'real'>(
     teacherNameViewDefault === 'real' ? 'real' : 'fun'
@@ -32,9 +36,18 @@ export function ParticipationSidebar({
   const [editingParticipant, setEditingParticipant] = useState<{
     id: string
     firstName: string
+    lastInitial: string | null
     funName: string
     emoji: string | null
   } | null>(null)
+
+  // Tick every 15s for disconnect fade-out timing
+  const [now, setNow] = useState(Date.now())
+  useEffect(() => {
+    if (!disconnectTimestamps || disconnectTimestamps.size === 0) return
+    const interval = setInterval(() => setNow(Date.now()), 15_000)
+    return () => clearInterval(interval)
+  }, [disconnectTimestamps])
 
   const voterIdSet = useMemo(() => new Set(voterIds), [voterIds])
 
@@ -47,8 +60,15 @@ export function ParticipationSidebar({
     votedCount >= participants.length
 
   // Sort: voted first, then connected, then disconnected
+  // Filter out participants disconnected > 60 seconds
   const sortedParticipants = useMemo(() => {
-    return [...participants].sort((a, b) => {
+    const filtered = participants.filter((p) => {
+      if (!disconnectTimestamps) return true
+      const ts = disconnectTimestamps.get(p.id)
+      if (!ts) return true
+      return now - ts < 60_000
+    })
+    return filtered.sort((a, b) => {
       const aVoted = voterIdSet.has(a.id) ? 1 : 0
       const bVoted = voterIdSet.has(b.id) ? 1 : 0
       if (aVoted !== bVoted) return aVoted - bVoted
@@ -59,7 +79,7 @@ export function ParticipationSidebar({
 
       return a.funName.localeCompare(b.funName)
     })
-  }, [participants, voterIdSet, connectedIds])
+  }, [participants, voterIdSet, connectedIds, disconnectTimestamps, now])
 
   return (
     <div
@@ -142,9 +162,15 @@ export function ParticipationSidebar({
               {sortedParticipants.map((participant) => {
                 const isConnected = connectedIds.has(participant.id)
                 const hasVoted = voterIdSet.has(participant.id)
+                const isNew = newParticipantIds?.has(participant.id)
                 const emojiChar = participant.emoji
                   ? shortcodeToEmoji(participant.emoji)
                   : null
+
+                // Disconnect fade-out: reduce opacity after 45s
+                const disconnectTs = disconnectTimestamps?.get(participant.id)
+                const disconnectAge = disconnectTs ? now - disconnectTs : 0
+                const isFading = !isConnected && disconnectAge > 45_000
 
                 return (
                   <button
@@ -154,16 +180,19 @@ export function ParticipationSidebar({
                       setEditingParticipant({
                         id: participant.id,
                         firstName: participant.firstName ?? '',
+                        lastInitial: participant.lastInitial ?? null,
                         funName: participant.funName,
                         emoji: participant.emoji ?? null,
                       })
                     }
-                    className={`cursor-pointer rounded-md border px-2 py-2 text-xs text-left transition-colors ${
-                      !isConnected
-                        ? 'border-muted bg-muted/30 text-muted-foreground opacity-50'
-                        : hasVoted
-                          ? 'border-green-300 bg-green-50 text-green-800'
-                          : 'border-border bg-background text-foreground'
+                    className={`cursor-pointer rounded-md border px-2 py-2 text-xs text-left transition-all duration-500 ${
+                      isNew
+                        ? 'border-green-400 bg-green-100 text-green-900 animate-pulse'
+                        : !isConnected
+                          ? `border-muted bg-muted/30 text-muted-foreground ${isFading ? 'opacity-30' : 'opacity-50'}`
+                          : hasVoted
+                            ? 'border-green-300 bg-green-50 text-green-800'
+                            : 'border-border bg-background text-foreground'
                     }`}
                   >
                     <div className="flex items-center gap-1">

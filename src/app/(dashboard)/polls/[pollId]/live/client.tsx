@@ -15,6 +15,7 @@ import { DisplaySettingsSection } from '@/components/shared/display-settings-sec
 import { LockedSettingIndicator } from '@/components/shared/locked-setting-indicator'
 import { Switch } from '@/components/ui/switch'
 import { useRealtimePoll } from '@/hooks/use-realtime-poll'
+import { useRealtimeParticipants } from '@/hooks/use-realtime-participants'
 import { useSessionPresence } from '@/hooks/use-student-session'
 import type { PollWithOptions, PollStatus } from '@/lib/poll/types'
 
@@ -82,6 +83,10 @@ export function PollLiveClient({
   // Sidebar state
   const [sidebarOpen, setSidebarOpen] = useState(true)
 
+  // Real-time participant list refresh (new joins + name edits)
+  const { participants: realtimeParticipants, newParticipantIds } =
+    useRealtimeParticipants(sessionId, participants)
+
   // Session presence for connected status
   const { connectedStudents } = useSessionPresence(sessionId ?? '__no_session__', '__teacher__')
 
@@ -89,11 +94,11 @@ export function PollLiveClient({
   const connectedIds = useMemo(() => {
     const names = new Set(connectedStudents.map((s) => s.funName))
     const ids = new Set<string>()
-    for (const p of participants) {
+    for (const p of realtimeParticipants) {
       if (names.has(p.funName)) ids.add(p.id)
     }
     return ids
-  }, [connectedStudents, participants])
+  }, [connectedStudents, realtimeParticipants])
 
   // Single realtime subscription for all poll data (vote counts, voter IDs, status, etc.)
   // Previously PollResults had its own useRealtimePoll; now we lift data here to avoid
@@ -348,15 +353,16 @@ export function PollLiveClient({
         </div>
       </div>
 
-      {participants.length > 0 && (
+      {realtimeParticipants.length > 0 && (
         <ParticipationSidebar
-          participants={participants}
+          participants={realtimeParticipants}
           connectedIds={connectedIds}
           voterIds={mergedVoterIds}
           selectedMatchupId={poll.id}
           onToggle={() => setSidebarOpen(!sidebarOpen)}
           isOpen={sidebarOpen}
           teacherNameViewDefault={teacherNameViewDefault}
+          newParticipantIds={newParticipantIds}
         />
       )}
     </div>

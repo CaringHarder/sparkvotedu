@@ -2,6 +2,7 @@
 
 import { useState, useMemo, useCallback, useEffect, useRef, useTransition } from 'react'
 import { useRealtimeBracket } from '@/hooks/use-realtime-bracket'
+import { useRealtimeParticipants } from '@/hooks/use-realtime-participants'
 import { useSessionPresence } from '@/hooks/use-student-session'
 import { BracketDiagram } from '@/components/bracket/bracket-diagram'
 import { RegionBracketView } from '@/components/bracket/region-bracket-view'
@@ -219,6 +220,10 @@ export function LiveDashboard({
   const { voteCounts: realtimeVoteCounts, voterIds: realtimeVoterIds, matchups: realtimeMatchups, bracketCompleted } =
     useRealtimeBracket(bracket.id)
 
+  // Real-time participant list refresh (new joins + name edits)
+  const { participants: realtimeParticipants, newParticipantIds } =
+    useRealtimeParticipants(bracket.sessionId, participants)
+
   // Track connected students via Supabase Presence
   const { connectedStudents } = useSessionPresence(
     bracket.sessionId ?? '__no_session__',
@@ -229,13 +234,13 @@ export function LiveDashboard({
   const connectedIds = useMemo(() => {
     const names = new Set(connectedStudents.map((s) => s.funName))
     const ids = new Set<string>()
-    for (const p of participants) {
+    for (const p of realtimeParticipants) {
       if (names.has(p.funName)) {
         ids.add(p.id)
       }
     }
     return ids
-  }, [connectedStudents, participants])
+  }, [connectedStudents, realtimeParticipants])
 
   // Merge initial matchups with real-time updates
   const currentMatchups: MatchupData[] = useMemo(() => {
@@ -1889,11 +1894,12 @@ export function LiveDashboard({
 
         {/* Participation sidebar */}
         <ParticipationSidebar
-          participants={participants}
+          participants={realtimeParticipants}
           connectedIds={connectedIds}
           voterIds={currentVoterIds}
           selectedMatchupId={selectedMatchupId}
           hasActiveVotingContext={hasActiveVotingContext}
+          newParticipantIds={newParticipantIds}
           onToggle={() => setSidebarOpen(!sidebarOpen)}
           isOpen={sidebarOpen}
           teacherNameViewDefault={teacherNameViewDefault}

@@ -140,11 +140,21 @@ export async function broadcastActivityUpdate(
 export async function broadcastParticipantJoined(
   sessionId: string
 ): Promise<void> {
-  await broadcastMessage({
-    topic: `activities:${sessionId}`,
-    event: 'participant_joined',
-    payload: {},
-  })
+  // Broadcast to both channels:
+  // - activities:{sessionId} for useRealtimePoll (participantCount refresh)
+  // - participant-sidebar:{sessionId} for useRealtimeParticipants (sidebar refresh)
+  await Promise.all([
+    broadcastMessage({
+      topic: `activities:${sessionId}`,
+      event: 'participant_joined',
+      payload: {},
+    }),
+    broadcastMessage({
+      topic: `participant-sidebar:${sessionId}`,
+      event: 'participant_joined',
+      payload: {},
+    }),
+  ])
 }
 
 // ---------------------------------------------------------------------------
