@@ -682,6 +682,83 @@ export async function claimReturningIdentity(input: {
   }
 }
 
+// --- localStorage Auto-Rejoin Action ---
+
+const rejoinStoredSchema = z.object({
+  participantId: z.string().min(1, 'Participant ID is required'),
+  sessionId: z.string().min(1, 'Session ID is required'),
+})
+
+/**
+ * Rejoin a session using a stored localStorage identity.
+ *
+ * Verifies the participant still exists, belongs to the requested session,
+ * is not banned, and the session is not archived. Updates lastSeenAt on
+ * successful rejoin.
+ *
+ * No authentication required -- students are anonymous.
+ */
+export async function rejoinWithStoredIdentity(input: {
+  participantId: string
+  sessionId: string
+}): Promise<JoinResult> {
+  const parsed = rejoinStoredSchema.safeParse(input)
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0].message }
+  }
+
+  const { participantId, sessionId } = parsed.data
+
+  try {
+    const { prisma } = await import('@/lib/prisma')
+    const participant = await prisma.studentParticipant.findUnique({
+      where: { id: participantId },
+      include: {
+        session: {
+          select: {
+            id: true,
+            code: true,
+            name: true,
+            status: true,
+            archivedAt: true,
+            teacher: { select: { name: true } },
+          },
+        },
+      },
+    })
+
+    if (!participant || participant.sessionId !== sessionId) {
+      return { error: 'identity_not_found' }
+    }
+
+    if (participant.banned) {
+      return { error: 'You have been removed from this session' }
+    }
+
+    if (participant.session.archivedAt) {
+      return { error: 'This session has been archived' }
+    }
+
+    await updateLastSeen(participant.id)
+
+    const sessionInfo = {
+      id: participant.session.id,
+      code: participant.session.code,
+      name: participant.session.name,
+      status: participant.session.status,
+      teacherName: participant.session.teacher.name,
+    }
+
+    return {
+      participant: toParticipantData(participant),
+      session: sessionInfo,
+      returning: true,
+    }
+  } catch {
+    return { error: 'identity_not_found' }
+  }
+}
+
 // --- Wizard Actions ---
 
 /**

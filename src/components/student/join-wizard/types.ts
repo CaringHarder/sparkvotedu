@@ -1,4 +1,5 @@
 import type { DuplicateCandidate } from '@/types/student'
+import type { StoredIdentity } from '@/lib/student/identity-store'
 
 /** Session info passed to the wizard from the join page */
 export interface SessionInfo {
@@ -60,6 +61,10 @@ export type WizardStep =
       emojiChar: string
       participantId: string
     }
+  | {
+      type: 'localStorage-confirm'
+      stored: StoredIdentity
+    }
 
 /** Reducer actions for wizard state transitions */
 export type WizardAction =
@@ -91,3 +96,6 @@ export type WizardAction =
     }
   | { type: 'DECLINE_MATCH' }
   | { type: 'REDIRECT_TO_NEW' }
+  | { type: 'SET_STORED_IDENTITY'; stored: StoredIdentity }
+  | { type: 'CONFIRM_IDENTITY' }
+  | { type: 'DENY_IDENTITY' }
