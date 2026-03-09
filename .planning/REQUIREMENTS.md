@@ -23,15 +23,15 @@ Requirements for the Student Join Overhaul + Cleanup milestone.
 
 ### Teacher Controls
 
-- [ ] **TCHR-01**: Teacher can toggle participation sidebar between fun name view and real name view
+- [x] **TCHR-01**: Teacher can toggle participation sidebar between fun name view and real name view
 - [x] **TCHR-02**: Toggle has a global default (saved to teacher profile) with per-session override
-- [ ] **TCHR-03**: Teacher can edit any student's display name from the participation sidebar
+- [x] **TCHR-03**: Teacher can edit any student's display name from the participation sidebar
 - [x] **TCHR-04**: Student can edit their own display name and emoji via gear icon in session header
 
 ### Migration
 
 - [x] **MIGR-01**: Schema adds emoji and lastInitial columns to StudentParticipant (nullable, zero-downtime)
-- [ ] **MIGR-02**: Existing participants get emoji prompt on next rejoin (one-time migration experience)
+- [x] **MIGR-02**: Existing participants get emoji prompt on next rejoin (one-time migration experience)
 - [x] **MIGR-03**: New join flow works for both new and existing sessions seamlessly
 
 ### Cleanup
@@ -75,12 +75,12 @@ Deferred to v3.x or later.
 | PERS-02 | Phase 42 | Complete |
 | PERS-03 | Phase 40 | Complete |
 | PERS-04 | Phase 40 | Complete |
-| TCHR-01 | Phase 44 | Pending |
+| TCHR-01 | Phase 44 | Complete |
 | TCHR-02 | Phase 44 | Complete |
-| TCHR-03 | Phase 44 | Pending |
+| TCHR-03 | Phase 44 | Complete |
 | TCHR-04 | Phase 44 | Complete |
 | MIGR-01 | Phase 39 | Complete |
-| MIGR-02 | Phase 44 | Pending |
+| MIGR-02 | Phase 44 | Complete |
 | MIGR-03 | Phase 40 | Complete |
 | CLEN-01 | Phase 43 | Complete |
 | CLEN-02 | Phase 43 | Complete |
