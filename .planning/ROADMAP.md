@@ -223,6 +223,6 @@ Phases 39-41 are strictly sequential (schema -> actions -> UI). Phase 42 require
 | 39. Schema Migration + Data Foundation | 1/1 | Complete    | 2026-03-08 | - |
 | 40. Server Actions + DAL | 1/1 | Complete    | 2026-03-08 | - |
 | 41. Join Wizard UI | v3.0 | Complete    | 2026-03-09 | 2026-03-09 |
-| 42. localStorage Persistence + Auto-Rejoin | 1/1 | Complete   | 2026-03-09 | - |
+| 42. localStorage Persistence + Auto-Rejoin | 1/1 | Complete    | 2026-03-09 | - |
 | 43. FingerprintJS Removal | v3.0 | 0/TBD | Not started | - |
 | 44. Teacher Sidebar + Emoji Display | v3.0 | 0/TBD | Not started | - |
