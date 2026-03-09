@@ -1,11 +1,18 @@
 'use client'
 
 import { useReducer, useRef, useState, useCallback } from 'react'
+import { useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'motion/react'
-import { createWizardParticipant } from '@/actions/student'
+import { createWizardParticipant, completeWizardProfile } from '@/actions/student'
+import { setSessionParticipant } from '@/lib/student/session-store'
 import { PathSelector } from './path-selector'
 import { StepDots } from './step-dots'
 import { WizardHeader } from './wizard-header'
+import { FunNameSplash } from './fun-name-splash'
+import { WizardStepFirstName } from './wizard-step-first-name'
+import { WizardStepLastInitial } from './wizard-step-last-initial'
+import { WizardStepEmoji } from './wizard-step-emoji'
+import { WizardWelcome } from './wizard-welcome'
 import type { SessionInfo, WizardStep, WizardAction, SlideDirection } from './types'
 
 // ---------------------------------------------------------------------------
@@ -46,6 +53,16 @@ function wizardReducer(state: WizardStep, action: WizardAction): WizardStep {
         funName: action.funName,
         participantId: action.participantId,
       }
+
+    case 'SPLASH_COMPLETE':
+      if (state.type === 'fun-name-splash') {
+        return {
+          type: 'first-name',
+          funName: state.funName,
+          participantId: state.participantId,
+        }
+      }
+      return state
 
     case 'SUBMIT_FIRST_NAME':
       if (state.type === 'first-name') {
@@ -150,6 +167,7 @@ interface JoinWizardProps {
 }
 
 export function JoinWizard({ code, sessionInfo }: JoinWizardProps) {
+  const router = useRouter()
   const [step, dispatch] = useReducer(wizardReducer, { type: 'path-select' } as WizardStep)
   const directionRef = useRef<SlideDirection>(1)
   const [loading, setLoading] = useState(false)
@@ -186,9 +204,139 @@ export function JoinWizard({ code, sessionInfo }: JoinWizardProps) {
     dispatch({ type: 'SELECT_RETURNING' })
   }, [])
 
+  // Handler for emoji selection -- dispatches and saves profile in background
+  const handleEmojiSelect = useCallback(
+    (emoji: string, emojiChar: string) => {
+      if (step.type !== 'emoji-pick') return
+
+      directionRef.current = 1
+      dispatch({ type: 'SELECT_EMOJI', emoji, emojiChar })
+
+      // Save profile to DB in the background (don't block UI transition)
+      completeWizardProfile({
+        participantId: step.participantId,
+        firstName: step.firstName,
+        lastInitial: step.lastInitial,
+        emoji,
+      }).catch(() => {
+        // Profile save failed -- non-blocking, will be retried on session entry
+      })
+
+      // Store identity in sessionStorage for the session page
+      setSessionParticipant(sessionInfo.id, {
+        participantId: step.participantId,
+        firstName: step.firstName,
+        funName: step.funName,
+        sessionId: sessionInfo.id,
+        rerollUsed: false,
+        emoji,
+        lastInitial: step.lastInitial,
+      })
+    },
+    [step, sessionInfo.id]
+  )
+
+  // Handler for entering session after welcome screen
+  const handleEnterSession = useCallback(() => {
+    router.push(`/session/${sessionInfo.id}`)
+  }, [router, sessionInfo.id])
+
   // Determine step dots and header visibility
   const stepInfo = getStepNumber(step)
   const headerFunName = showHeader(step)
+
+  // Render current step content
+  const renderStepContent = () => {
+    switch (step.type) {
+      case 'path-select':
+        return (
+          <div className="flex flex-col gap-4">
+            <PathSelector
+              onSelectNew={handleSelectNew}
+              onSelectReturning={handleSelectReturning}
+            />
+            {loading && (
+              <p className="text-center text-sm text-muted-foreground">
+                Setting things up...
+              </p>
+            )}
+          </div>
+        )
+
+      case 'fun-name-splash':
+        return (
+          <FunNameSplash
+            funName={step.funName}
+            onComplete={() => {
+              directionRef.current = 1
+              dispatch({ type: 'SPLASH_COMPLETE' })
+            }}
+          />
+        )
+
+      case 'first-name':
+        return (
+          <WizardStepFirstName
+            onSubmit={(firstName) => {
+              directionRef.current = 1
+              dispatch({ type: 'SUBMIT_FIRST_NAME', firstName })
+            }}
+          />
+        )
+
+      case 'last-initial':
+        return (
+          <WizardStepLastInitial
+            firstName={step.firstName}
+            onSubmit={(lastInitial) => {
+              directionRef.current = 1
+              dispatch({ type: 'SUBMIT_LAST_INITIAL', lastInitial })
+            }}
+          />
+        )
+
+      case 'emoji-pick':
+        return (
+          <WizardStepEmoji
+            onSelect={(emoji, emojiChar) => handleEmojiSelect(emoji, emojiChar)}
+          />
+        )
+
+      case 'welcome':
+        return (
+          <WizardWelcome
+            funName={step.funName}
+            emojiChar={step.emojiChar}
+            firstName={step.firstName}
+            onComplete={handleEnterSession}
+          />
+        )
+
+      case 'returning-name':
+        return (
+          <div className="py-4 text-center text-muted-foreground">
+            <p>Returning student name entry (Plan 03)</p>
+          </div>
+        )
+
+      case 'returning-disambiguate':
+        return (
+          <div className="py-4 text-center text-muted-foreground">
+            <p>Returning student disambiguation (Plan 03)</p>
+          </div>
+        )
+
+      case 'returning-welcome':
+        return (
+          <div className="py-4 text-center text-muted-foreground">
+            <p>Returning student welcome (Plan 03)</p>
+          </div>
+        )
+
+      default:
+        return null
+    }
+  }
 
   return (
     <div className="mx-auto flex min-h-[400px] w-full max-w-md flex-col items-stretch gap-4">
@@ -230,101 +378,10 @@ export function JoinWizard({ code, sessionInfo }: JoinWizardProps) {
             transition={{ duration: 0.35, ease: 'easeOut' }}
             className="w-full"
           >
-            {renderStep(step, loading, handleSelectNew, handleSelectReturning)}
+            {renderStepContent()}
           </motion.div>
         </AnimatePresence>
       </div>
     </div>
   )
-}
-
-// ---------------------------------------------------------------------------
-// Step renderer
-// ---------------------------------------------------------------------------
-
-function renderStep(
-  step: WizardStep,
-  loading: boolean,
-  onSelectNew: () => void,
-  onSelectReturning: () => void
-) {
-  switch (step.type) {
-    case 'path-select':
-      return (
-        <div className="flex flex-col gap-4">
-          <PathSelector
-            onSelectNew={onSelectNew}
-            onSelectReturning={onSelectReturning}
-          />
-          {loading && (
-            <p className="text-center text-sm text-muted-foreground">
-              Setting things up...
-            </p>
-          )}
-        </div>
-      )
-
-    case 'fun-name-splash':
-      return (
-        <div className="flex flex-col items-center gap-4 py-8 text-center">
-          <p className="text-lg text-muted-foreground">Your name is</p>
-          <p className="text-3xl font-bold">{step.funName}</p>
-          <p className="text-sm text-muted-foreground">
-            This is your identity in class!
-          </p>
-        </div>
-      )
-
-    case 'first-name':
-      return (
-        <div className="py-4 text-center text-muted-foreground">
-          <p>First name entry (Plan 02)</p>
-        </div>
-      )
-
-    case 'last-initial':
-      return (
-        <div className="py-4 text-center text-muted-foreground">
-          <p>Last initial entry (Plan 02)</p>
-        </div>
-      )
-
-    case 'emoji-pick':
-      return (
-        <div className="py-4 text-center text-muted-foreground">
-          <p>Emoji picker (Plan 02)</p>
-        </div>
-      )
-
-    case 'welcome':
-      return (
-        <div className="py-4 text-center text-muted-foreground">
-          <p>Welcome screen (Plan 02)</p>
-        </div>
-      )
-
-    case 'returning-name':
-      return (
-        <div className="py-4 text-center text-muted-foreground">
-          <p>Returning student name entry (Plan 03)</p>
-        </div>
-      )
-
-    case 'returning-disambiguate':
-      return (
-        <div className="py-4 text-center text-muted-foreground">
-          <p>Returning student disambiguation (Plan 03)</p>
-        </div>
-      )
-
-    case 'returning-welcome':
-      return (
-        <div className="py-4 text-center text-muted-foreground">
-          <p>Returning student welcome (Plan 03)</p>
-        </div>
-      )
-
-    default:
-      return null
-  }
 }

@@ -74,4 +74,5 @@ export type WizardAction =
       emojiChar: string
       participantId: string
     }
+  | { type: 'SPLASH_COMPLETE' }
   | { type: 'REDIRECT_TO_NEW' }
