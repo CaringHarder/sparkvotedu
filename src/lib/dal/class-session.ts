@@ -75,6 +75,7 @@ export async function getSessionWithParticipants(
     },
     include: {
       participants: {
+        where: { firstName: { not: '' } },
         orderBy: { createdAt: 'asc' },
       },
     },

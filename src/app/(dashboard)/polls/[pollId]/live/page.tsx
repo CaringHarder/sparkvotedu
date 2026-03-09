@@ -49,7 +49,7 @@ export default async function PollLivePage({
         select: { code: true, name: true, _count: { select: { participants: true } } },
       }),
       prisma.studentParticipant.findMany({
-        where: { sessionId: poll.sessionId, banned: false },
+        where: { sessionId: poll.sessionId, banned: false, firstName: { not: '' } },
         select: { id: true, funName: true, firstName: true, lastSeenAt: true, emoji: true, lastInitial: true },
         orderBy: { funName: 'asc' },
       }),
@@ -57,7 +57,7 @@ export default async function PollLivePage({
     ])
     sessionCode = session?.code ?? null
     sessionName = session?.name ?? null
-    participantCount = session?._count.participants ?? 0
+    participantCount = sessionParticipants.length
     participants = sessionParticipants.map(p => ({
       id: p.id,
       funName: p.funName,

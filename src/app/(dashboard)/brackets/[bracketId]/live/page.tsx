@@ -54,7 +54,7 @@ export default async function LiveDashboardPage({ params }: PageProps) {
   if (bracket.sessionId) {
     const [sessionParticipants, session] = await Promise.all([
       prisma.studentParticipant.findMany({
-        where: { sessionId: bracket.sessionId, banned: false },
+        where: { sessionId: bracket.sessionId, banned: false, firstName: { not: '' } },
         select: { id: true, funName: true, firstName: true, lastSeenAt: true, emoji: true, lastInitial: true },
       }),
       prisma.classSession.findUnique({
