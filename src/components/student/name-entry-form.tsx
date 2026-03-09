@@ -88,6 +88,8 @@ export function NameEntryForm({ code, sessionInfo }: NameEntryFormProps) {
           funName: result.participant.funName,
           sessionId: result.session.id,
           rerollUsed: result.participant.rerollUsed,
+          emoji: result.participant.emoji ?? null,
+          lastInitial: result.participant.lastInitial ?? null,
         })
         // Keep last session code in localStorage (convenience auto-fill, not identity)
         try {

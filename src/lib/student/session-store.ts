@@ -15,6 +15,8 @@ export interface SessionParticipantStore {
   funName: string
   sessionId: string
   rerollUsed: boolean
+  emoji: string | null
+  lastInitial: string | null
 }
 
 const KEY_PREFIX = 'sparkvotedu_session_'

@@ -51,6 +51,17 @@ const claimIdentitySchema = z.object({
   sessionCode: z.string().regex(/^\d{6}$/, 'Session code must be exactly 6 digits'),
 })
 
+const completeWizardSchema = z.object({
+  participantId: z.string().min(1, 'Participant ID is required'),
+  firstName: firstNameSchema,
+  lastInitial: lastInitialSchema,
+  emoji: z.string().min(1, 'Emoji is required'),
+})
+
+const createWizardSchema = z.object({
+  code: z.string().regex(/^\d{6}$/, 'Class code must be exactly 6 digits'),
+})
+
 const updateNameSchema = z.object({
   participantId: z.string().min(1, 'Participant ID is required'),
   firstName: firstNameSchema,
@@ -642,5 +653,79 @@ export async function claimReturningIdentity(input: {
     participant: toParticipantData(newParticipant),
     session: sessionInfo,
     returning: true,
+  }
+}
+
+// --- Wizard Actions ---
+
+/**
+ * Create a new participant with empty firstName for the join wizard.
+ * The wizard collects profile info (name, initial, emoji) in later steps.
+ *
+ * No authentication required -- students are anonymous.
+ */
+export async function createWizardParticipant(input: {
+  code: string
+}): Promise<JoinResult> {
+  const parsed = createWizardSchema.safeParse(input)
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0].message }
+  }
+
+  const session = await findSessionByCode(parsed.data.code)
+  if (!session) {
+    return { error: 'Invalid class code' }
+  }
+
+  const sessionInfo = {
+    id: session.id,
+    code: session.code,
+    name: session.name,
+    status: session.status,
+    teacherName: session.teacher.name,
+  }
+
+  if (session.status === 'ended') {
+    return { session: sessionInfo, sessionEnded: true }
+  }
+
+  const participant = await createParticipant(session.id, null, undefined, '')
+  broadcastParticipantJoined(session.id).catch(() => {})
+
+  return {
+    participant: toParticipantData(participant),
+    session: sessionInfo,
+    returning: false,
+  }
+}
+
+/**
+ * Complete a wizard participant's profile with firstName, lastInitial, and emoji.
+ * Called at the end of the new-student wizard after all steps are collected.
+ *
+ * No authentication required -- students are anonymous.
+ */
+export async function completeWizardProfile(input: {
+  participantId: string
+  firstName: string
+  lastInitial: string
+  emoji: string
+}): Promise<{ participant?: StudentParticipantData; error?: string }> {
+  const parsed = completeWizardSchema.safeParse(input)
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0].message }
+  }
+
+  const { participantId, firstName, lastInitial, emoji } = parsed.data
+
+  try {
+    const { prisma } = await import('@/lib/prisma')
+    const updated = await prisma.studentParticipant.update({
+      where: { id: participantId },
+      data: { firstName, lastInitial, emoji },
+    })
+    return { participant: toParticipantData(updated) }
+  } catch {
+    return { error: 'Failed to update profile' }
   }
 }
