@@ -230,3 +230,14 @@ Phases 39-41 are strictly sequential (schema -> actions -> UI). Phase 42 require
 | 42. localStorage Persistence + Auto-Rejoin | 1/1 | Complete    | 2026-03-09 | - |
 | 43. FingerprintJS Removal | 1/1 | Complete    | 2026-03-09 | - |
 | 44. Teacher Sidebar + Emoji Display | 2/2 | Complete   | 2026-03-09 | - |
+
+### Phase 45: Polish teacher sidebar & student join UX
+
+**Goal:** Fix sidebar real-time refresh after teacher name edits, improve returning student lookup (search by first name alone with disambiguation), add last initial to teacher edit dialog, and persist Fun/Real toggle preference to teacher profile (TCHR-02 gap closure).
+**Requirements**: TCHR-02
+**Depends on:** Phase 44
+**Plans:** 2 plans
+
+Plans:
+- [ ] 45-01-PLAN.md -- Backend + returning student first-name-only flow with confirmation card
+- [ ] 45-02-PLAN.md -- Sidebar live refresh + toggle persistence + teacher edit lastInitial + verification
