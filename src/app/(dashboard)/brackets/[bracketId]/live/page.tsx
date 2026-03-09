@@ -47,7 +47,7 @@ export default async function LiveDashboardPage({ params }: PageProps) {
   }
 
   // Fetch session participants and code if bracket has a session
-  let participants: Array<{ id: string; funName: string; firstName: string; lastSeenAt: Date }> = []
+  let participants: Array<{ id: string; funName: string; firstName: string; lastSeenAt: Date; emoji: string | null; lastInitial: string | null }> = []
   let sessionCode: string | null = null
   let sessionName: string | null = null
 
@@ -55,7 +55,7 @@ export default async function LiveDashboardPage({ params }: PageProps) {
     const [sessionParticipants, session] = await Promise.all([
       prisma.studentParticipant.findMany({
         where: { sessionId: bracket.sessionId, banned: false },
-        select: { id: true, funName: true, firstName: true, lastSeenAt: true },
+        select: { id: true, funName: true, firstName: true, lastSeenAt: true, emoji: true, lastInitial: true },
       }),
       prisma.classSession.findUnique({
         where: { id: bracket.sessionId },
@@ -188,11 +188,20 @@ export default async function LiveDashboardPage({ params }: PageProps) {
     })),
   }
 
+  // Fetch teacher's name view preference
+  const teacherPrefs = await prisma.teacher.findUnique({
+    where: { id: teacher.id },
+    select: { nameViewDefault: true },
+  })
+  const teacherNameViewDefault = teacherPrefs?.nameViewDefault ?? 'fun'
+
   const serializedParticipants = participants.map((p) => ({
     id: p.id,
     funName: p.funName,
     firstName: p.firstName,
     lastSeenAt: p.lastSeenAt.toISOString(),
+    emoji: p.emoji,
+    lastInitial: p.lastInitial,
   }))
 
   return (
@@ -206,6 +215,7 @@ export default async function LiveDashboardPage({ params }: PageProps) {
       standings={standings}
       predictionScores={predictionScores}
       sessionName={sessionName}
+      teacherNameViewDefault={teacherNameViewDefault}
     />
   )
 }

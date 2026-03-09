@@ -36,13 +36,14 @@ type DERegion = 'winners' | 'losers' | 'grand_finals'
 interface LiveDashboardProps {
   bracket: BracketWithDetails
   totalRounds: number
-  participants: Array<{ id: string; funName: string; firstName?: string; lastSeenAt: string }>
+  participants: Array<{ id: string; funName: string; firstName?: string; lastSeenAt: string; emoji?: string | null; lastInitial?: string | null }>
   initialVoteCounts: Record<string, VoteCounts>
   initialVoterIds: Record<string, string[]>
   sessionCode?: string | null
   standings?: RoundRobinStanding[]
   predictionScores?: PredictionScore[]
   sessionName?: string | null
+  teacherNameViewDefault?: string
 }
 
 interface RevealState {
@@ -105,6 +106,7 @@ export function LiveDashboard({
   standings = [],
   predictionScores = [],
   sessionName,
+  teacherNameViewDefault = 'fun',
 }: LiveDashboardProps) {
   const [selectedMatchupId, setSelectedMatchupId] = useState<string | null>(null)
   const [sidebarOpen, setSidebarOpen] = useState(true)
@@ -1894,6 +1896,7 @@ export function LiveDashboard({
           hasActiveVotingContext={hasActiveVotingContext}
           onToggle={() => setSidebarOpen(!sidebarOpen)}
           isOpen={sidebarOpen}
+          teacherNameViewDefault={teacherNameViewDefault}
         />
       </div>
     </div>

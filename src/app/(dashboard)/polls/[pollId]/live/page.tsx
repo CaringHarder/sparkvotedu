@@ -40,7 +40,7 @@ export default async function PollLivePage({
   let sessionCode: string | null = null
   let sessionName: string | null = null
   let participantCount = 0
-  let participants: Array<{ id: string; funName: string; firstName?: string; lastSeenAt: string }> = []
+  let participants: Array<{ id: string; funName: string; firstName?: string; lastSeenAt: string; emoji?: string | null; lastInitial?: string | null }> = []
   let initialVoterIds: string[] = []
   if (poll.sessionId) {
     const [session, sessionParticipants, voterPids] = await Promise.all([
@@ -50,7 +50,7 @@ export default async function PollLivePage({
       }),
       prisma.studentParticipant.findMany({
         where: { sessionId: poll.sessionId, banned: false },
-        select: { id: true, funName: true, firstName: true, lastSeenAt: true },
+        select: { id: true, funName: true, firstName: true, lastSeenAt: true, emoji: true, lastInitial: true },
         orderBy: { funName: 'asc' },
       }),
       getPollVoterParticipantIds(pollId),
@@ -63,9 +63,18 @@ export default async function PollLivePage({
       funName: p.funName,
       firstName: p.firstName ?? undefined,
       lastSeenAt: p.lastSeenAt.toISOString(),
+      emoji: p.emoji,
+      lastInitial: p.lastInitial,
     }))
     initialVoterIds = voterPids
   }
+
+  // Fetch teacher's name view preference
+  const teacherPrefs = await prisma.teacher.findUnique({
+    where: { id: teacher.id },
+    select: { nameViewDefault: true },
+  })
+  const teacherNameViewDefault = teacherPrefs?.nameViewDefault ?? 'fun'
 
   // Serialize for client component
   const serialized: PollWithOptions = {
@@ -101,6 +110,7 @@ export default async function PollLivePage({
       participants={participants}
       initialVoterIds={initialVoterIds}
       sessionId={poll.sessionId}
+      teacherNameViewDefault={teacherNameViewDefault}
     />
   )
 }

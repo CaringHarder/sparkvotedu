@@ -3,13 +3,14 @@
 import { useMemo } from 'react'
 
 interface ParticipationSidebarProps {
-  participants: Array<{ id: string; funName: string; firstName?: string }>
+  participants: Array<{ id: string; funName: string; firstName?: string; emoji?: string | null; lastInitial?: string | null }>
   connectedIds: Set<string>
   voterIds: string[]
   selectedMatchupId: string | null
   hasActiveVotingContext?: boolean
   onToggle: () => void
   isOpen: boolean
+  teacherNameViewDefault?: string
 }
 
 export function ParticipationSidebar({
@@ -20,6 +21,7 @@ export function ParticipationSidebar({
   hasActiveVotingContext = true,
   onToggle,
   isOpen,
+  teacherNameViewDefault: _teacherNameViewDefault = 'fun',
 }: ParticipationSidebarProps) {
   const voterIdSet = useMemo(() => new Set(voterIds), [voterIds])
 

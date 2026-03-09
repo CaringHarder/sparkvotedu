@@ -178,7 +178,7 @@ export async function scoreBracketPredictions(
       const participantIds = scores.map((s) => s.participantId)
       const participants = await prisma.studentParticipant.findMany({
         where: { id: { in: participantIds } },
-        select: { id: true, funName: true },
+        select: { id: true, funName: true, emoji: true },
       })
       const nameMap = new Map(participants.map((p) => [p.id, p.funName]))
 

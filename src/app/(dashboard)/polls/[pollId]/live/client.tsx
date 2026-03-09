@@ -34,9 +34,10 @@ interface PollLiveClientProps {
   sessionCode: string | null
   initialParticipantCount: number
   sessionName?: string | null
-  participants: Array<{ id: string; funName: string; firstName?: string; lastSeenAt: string }>
+  participants: Array<{ id: string; funName: string; firstName?: string; lastSeenAt: string; emoji?: string | null; lastInitial?: string | null }>
   initialVoterIds: string[]
   sessionId: string | null
+  teacherNameViewDefault?: string
 }
 
 /**
@@ -58,6 +59,7 @@ export function PollLiveClient({
   participants,
   initialVoterIds,
   sessionId,
+  teacherNameViewDefault = 'fun',
 }: PollLiveClientProps) {
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
@@ -354,6 +356,7 @@ export function PollLiveClient({
           selectedMatchupId={poll.id}
           onToggle={() => setSidebarOpen(!sidebarOpen)}
           isOpen={sidebarOpen}
+          teacherNameViewDefault={teacherNameViewDefault}
         />
       )}
     </div>
