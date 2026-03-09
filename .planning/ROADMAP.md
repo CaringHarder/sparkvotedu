@@ -236,7 +236,7 @@ Phases 39-41 are strictly sequential (schema -> actions -> UI). Phase 42 require
 **Goal:** Fix sidebar real-time refresh after teacher name edits, improve returning student lookup (search by first name alone with disambiguation), add last initial to teacher edit dialog, and persist Fun/Real toggle preference to teacher profile (TCHR-02 gap closure).
 **Requirements**: TCHR-02
 **Depends on:** Phase 44
-**Plans:** 1/2 plans executed
+**Plans:** 2/2 plans complete
 
 Plans:
 - [ ] 45-01-PLAN.md -- Backend + returning student first-name-only flow with confirmation card

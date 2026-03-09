@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v3.0
 milestone_name: Student Join Overhaul + Cleanup
 status: in-progress
-stopped_at: Completed 45-01-PLAN.md
-last_updated: "2026-03-09T12:05:36.000Z"
+stopped_at: Completed 45-02-PLAN.md
+last_updated: "2026-03-09T12:32:40.912Z"
 last_activity: 2026-03-09 -- Completed 45-01 firstName-only returning flow + confirmation card
 progress:
   total_phases: 7
-  completed_phases: 6
-  total_plans: 10
-  completed_plans: 10
-  percent: 95
+  completed_phases: 7
+  total_plans: 11
+  completed_plans: 11
+  percent: 50
 ---
 
 # Project State
@@ -26,11 +26,11 @@ See: .planning/PROJECT.md (updated 2026-03-08)
 ## Current Position
 
 Phase: 45 (7 of 7 in v3.0) - Polish Teacher Sidebar & Student Join UX
-Plan: 1 of 2 complete
-Status: in-progress
-Last activity: 2026-03-09 -- Completed 45-01 firstName-only returning flow + confirmation card
+Plan: 2 of 2 complete
+Status: complete
+Last activity: 2026-03-09 -- Completed 45-02 sidebar polish (realtime refresh, toggle persistence, edit dialog lastInitial)
 
-Progress: [█████░░░░░] 50%
+Progress: [██████████] 100%
 
 ## Performance Metrics
 
@@ -78,6 +78,9 @@ Recent decisions affecting current work:
 - [Phase 45]: firstName-only returning lookup -- no auto-reclaim, always show confirmation card
 - [Phase 45]: Impersonation guard is warning-only (does not block submission)
 - [Phase 45]: claimReturningIdentity reused for confirmation card claim
+- [Phase 45]: useRealtimeParticipants creates own Supabase channel subscription separate from poll/bracket hooks
+- [Phase 45]: Set as default link only visible when toggle differs from saved default
+- [Phase 45]: lastInitial required (1+ chars, uppercase-only) in teacher edit dialog
 
 ### Roadmap Evolution
 
@@ -106,9 +109,10 @@ None.
 | Phase 44 P01 | 3min | 2 tasks | 9 files |
 | Phase 44 P02 | 12min | 3 tasks | 15 files |
 | Phase 45 P01 | 5min | 3 tasks | 10 files |
+| Phase 45 P02 | 8min | 3 tasks | 8 files |
 
 ## Session Continuity
 
-Last session: 2026-03-09T12:05:36Z
-Stopped at: Completed 45-01-PLAN.md
-Resume: Plan 45-01 complete. Execute 45-02-PLAN.md for toggle persistence and teacher edit dialog.
+Last session: 2026-03-09T19:19:00Z
+Stopped at: Completed 45-02-PLAN.md
+Resume: Phase 45 complete. All plans done. Milestone v3.0 ready for final verification.
