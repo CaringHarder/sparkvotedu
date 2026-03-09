@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v3.0
 milestone_name: Student Join Overhaul + Cleanup
 status: completed
-stopped_at: Phase 43 context gathered
-last_updated: "2026-03-09T02:19:09.821Z"
-last_activity: 2026-03-09 -- Completed 42-01 localStorage persistence + auto-rejoin
+stopped_at: Completed 43-01 FingerprintJS removal
+last_updated: "2026-03-09T02:51:24Z"
+last_activity: 2026-03-09 -- Completed 43-01 FingerprintJS removal
 progress:
   total_phases: 6
-  completed_phases: 4
-  total_plans: 6
-  completed_plans: 6
+  completed_phases: 5
+  total_plans: 7
+  completed_plans: 7
   percent: 100
 ---
 
@@ -21,14 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-08)
 
 **Core value:** Teachers can instantly engage any classroom through voting -- on any topic, in any format -- and see participation happen in real time.
-**Current focus:** Phase 42 - localStorage Persistence + Auto-Rejoin
+**Current focus:** Phase 43 - FingerprintJS Removal
 
 ## Current Position
 
-Phase: 42 (4 of 6 in v3.0) - localStorage Persistence + Auto-Rejoin
+Phase: 43 (5 of 6 in v3.0) - FingerprintJS Removal
 Plan: 1 of 1 complete
-Status: Phase 42 complete
-Last activity: 2026-03-09 -- Completed 42-01 localStorage persistence + auto-rejoin
+Status: Phase 43 complete
+Last activity: 2026-03-09 -- Completed 43-01 FingerprintJS removal
 
 Progress: [██████████] 100%
 
@@ -68,6 +68,8 @@ Recent decisions affecting current work:
 - [Phase 42]: Single localStorage key with schema versioning (v: 1) for identity persistence
 - [Phase 42]: 90-day TTL with 50-entry cap for school semester-length storage
 - [Phase 42]: initialCheckDone guard prevents flash of path-select before localStorage check
+- [Phase 43]: Privacy page uses "browser storage" not "localStorage" for abstract terminology
+- [Phase 43]: Clean removal -- no stubs, no comments, no historical references
 
 ### Pending Todos
 
@@ -77,7 +79,6 @@ None.
 
 - School Chromebooks in ephemeral mode silently destroy localStorage -- server-side name reclaim must be authoritative fallback
 - Schema migration must use nullable columns (expand-and-contract) for zero-downtime deploy
-- FingerprintJS removal should happen after new persistence is verified working
 
 ### Quick Tasks Completed
 
@@ -88,9 +89,10 @@ None.
 | Phase 41 P02 | 2min | 2 tasks | 7 files |
 | Phase 41 P03 | 3min | 3 tasks | 6 files |
 | Phase 42 P01 | 3min | 2 tasks | 5 files |
+| Phase 43 P01 | 5min | 2 tasks | 12 files |
 
 ## Session Continuity
 
-Last session: 2026-03-09T02:19:09.818Z
-Stopped at: Phase 43 context gathered
+Last session: 2026-03-09T02:51:24Z
+Stopped at: Completed 43-01 FingerprintJS removal
 Resume: Continue with next phase in v3.0

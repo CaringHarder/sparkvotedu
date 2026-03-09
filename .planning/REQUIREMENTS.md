@@ -36,9 +36,9 @@ Requirements for the Student Join Overhaul + Cleanup milestone.
 
 ### Cleanup
 
-- [ ] **CLEN-01**: FingerprintJS package and all fingerprint-related application code removed
-- [ ] **CLEN-02**: Device fingerprint database columns removed via separate migration
-- [ ] **CLEN-03**: Bundle size reduced by removing unused fingerprinting dependencies (~150KB)
+- [x] **CLEN-01**: FingerprintJS package and all fingerprint-related application code removed
+- [x] **CLEN-02**: Device fingerprint database columns removed via separate migration
+- [x] **CLEN-03**: Bundle size reduced by removing unused fingerprinting dependencies (~150KB)
 
 ## Future Requirements
 
@@ -82,9 +82,9 @@ Deferred to v3.x or later.
 | MIGR-01 | Phase 39 | Complete |
 | MIGR-02 | Phase 44 | Pending |
 | MIGR-03 | Phase 40 | Complete |
-| CLEN-01 | Phase 43 | Pending |
-| CLEN-02 | Phase 43 | Pending |
-| CLEN-03 | Phase 43 | Pending |
+| CLEN-01 | Phase 43 | Complete |
+| CLEN-02 | Phase 43 | Complete |
+| CLEN-03 | Phase 43 | Complete |
 
 **Coverage:**
 - v3.0 requirements: 18 total
