@@ -3,7 +3,7 @@
 import { useReducer, useRef, useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'motion/react'
-import { createWizardParticipant, completeWizardProfile } from '@/actions/student'
+import { createWizardParticipant, completeWizardProfile, lookupStudent } from '@/actions/student'
 import { shortcodeToEmoji } from '@/lib/student/emoji-pool'
 import { setSessionParticipant } from '@/lib/student/session-store'
 import { PathSelector } from './path-selector'
@@ -81,6 +81,8 @@ function wizardReducer(state: WizardStep, action: WizardAction): WizardStep {
       return state
 
     case 'SUBMIT_LAST_INITIAL':
+      // Note: actual transition is handled async in component (lookup check)
+      // This is only called as a fallback -- normally SET_NEW_MATCH_FOUND or direct emoji-pick dispatch
       if (state.type === 'last-initial') {
         return {
           type: 'emoji-pick',
@@ -88,6 +90,31 @@ function wizardReducer(state: WizardStep, action: WizardAction): WizardStep {
           participantId: state.participantId,
           firstName: state.firstName,
           lastInitial: action.lastInitial,
+        }
+      }
+      return state
+
+    case 'SET_NEW_MATCH_FOUND':
+      if (state.type === 'last-initial') {
+        return {
+          type: 'new-match-found',
+          funName: state.funName,
+          participantId: state.participantId,
+          firstName: state.firstName,
+          lastInitial: action.lastInitial,
+          candidates: action.candidates,
+        }
+      }
+      return state
+
+    case 'DECLINE_MATCH':
+      if (state.type === 'new-match-found') {
+        return {
+          type: 'emoji-pick',
+          funName: state.funName,
+          participantId: state.participantId,
+          firstName: state.firstName,
+          lastInitial: state.lastInitial,
         }
       }
       return state
@@ -324,6 +351,12 @@ export function JoinWizard({ code, sessionInfo }: JoinWizardProps) {
     dispatch({ type: 'REDIRECT_TO_NEW' })
   }, [])
 
+  // Handler for declining a match in new-student flow (continue as new)
+  const handleDeclineMatch = useCallback(() => {
+    directionRef.current = 1
+    dispatch({ type: 'DECLINE_MATCH' })
+  }, [])
+
   // Determine step dots and header visibility
   const stepInfo = getStepNumber(step)
   const headerFunName = showHeader(step)
@@ -371,9 +404,38 @@ export function JoinWizard({ code, sessionInfo }: JoinWizardProps) {
         return (
           <WizardStepLastInitial
             firstName={step.firstName}
-            onSubmit={(lastInitial) => {
+            onSubmit={async (lastInitial) => {
               directionRef.current = 1
-              dispatch({ type: 'SUBMIT_LAST_INITIAL', lastInitial })
+              // Check if this student already exists across teacher's sessions
+              const result = await lookupStudent({ code, firstName: step.firstName, lastInitial })
+              if (result.candidates && result.candidates.length > 0) {
+                // Multiple matches -- show "is this you?" interstitial
+                dispatch({ type: 'SET_NEW_MATCH_FOUND', candidates: result.candidates, firstName: step.firstName, lastInitial })
+              } else if (result.participant) {
+                // Single match auto-reclaimed -- treat as returning
+                const emojiChar = result.participant.emoji
+                  ? shortcodeToEmoji(result.participant.emoji) ?? ''
+                  : ''
+                setSessionParticipant(sessionInfo.id, {
+                  participantId: result.participant.id,
+                  firstName: result.participant.firstName,
+                  funName: result.participant.funName,
+                  sessionId: sessionInfo.id,
+                  rerollUsed: result.participant.rerollUsed,
+                  emoji: result.participant.emoji,
+                  lastInitial: result.participant.lastInitial,
+                })
+                dispatch({
+                  type: 'SET_RETURNING_WELCOME',
+                  funName: result.participant.funName,
+                  emoji: result.participant.emoji ?? '',
+                  emojiChar,
+                  participantId: result.participant.id,
+                })
+              } else {
+                // No matches -- continue to emoji picker
+                dispatch({ type: 'SUBMIT_LAST_INITIAL', lastInitial })
+              }
             }}
           />
         )
@@ -393,6 +455,44 @@ export function JoinWizard({ code, sessionInfo }: JoinWizardProps) {
             firstName={step.firstName}
             onComplete={handleEnterSession}
           />
+        )
+
+      case 'new-match-found':
+        return (
+          <div className="flex flex-col items-center gap-0">
+            <ReturningDisambiguation
+              candidates={step.candidates}
+              firstName={step.firstName}
+              lastInitial={step.lastInitial}
+              code={code}
+              onClaimed={(result) => {
+                // Reclaim existing identity instead of creating new
+                if (result.participant) {
+                  const emojiChar = result.participant.emoji
+                    ? shortcodeToEmoji(result.participant.emoji) ?? ''
+                    : ''
+                  setSessionParticipant(sessionInfo.id, {
+                    participantId: result.participant.id,
+                    firstName: result.participant.firstName,
+                    funName: result.participant.funName,
+                    sessionId: sessionInfo.id,
+                    rerollUsed: result.participant.rerollUsed,
+                    emoji: result.participant.emoji,
+                    lastInitial: result.participant.lastInitial,
+                  })
+                  directionRef.current = 1
+                  dispatch({
+                    type: 'SET_RETURNING_WELCOME',
+                    funName: result.participant.funName,
+                    emoji: result.participant.emoji ?? '',
+                    emojiChar,
+                    participantId: result.participant.id,
+                  })
+                }
+              }}
+              onNoneOfThese={handleDeclineMatch}
+            />
+          </div>
         )
 
       case 'returning-name':

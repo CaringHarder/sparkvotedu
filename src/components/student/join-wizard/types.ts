@@ -46,6 +46,14 @@ export type WizardStep =
       lastInitial: string
     }
   | {
+      type: 'new-match-found'
+      funName: string
+      participantId: string
+      firstName: string
+      lastInitial: string
+      candidates: DuplicateCandidate[]
+    }
+  | {
       type: 'returning-welcome'
       funName: string
       emoji: string
@@ -75,4 +83,11 @@ export type WizardAction =
       participantId: string
     }
   | { type: 'SPLASH_COMPLETE' }
+  | {
+      type: 'SET_NEW_MATCH_FOUND'
+      candidates: DuplicateCandidate[]
+      firstName: string
+      lastInitial: string
+    }
+  | { type: 'DECLINE_MATCH' }
   | { type: 'REDIRECT_TO_NEW' }
