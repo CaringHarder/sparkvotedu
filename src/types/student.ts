@@ -1,10 +1,3 @@
-/** Client-side device identity composed from localStorage UUID and browser fingerprint */
-export interface DeviceIdentity {
-  deviceId: string
-  fingerprint: string
-  ready: boolean
-}
-
 /** Class session data returned to student-facing views */
 export interface ClassSessionData {
   id: string

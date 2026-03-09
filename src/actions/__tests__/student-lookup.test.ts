@@ -10,7 +10,6 @@ vi.mock('@/lib/dal/student-session', () => ({
   findReturningStudent: vi.fn(),
   createReturningParticipant: vi.fn(),
   findParticipantByDevice: vi.fn(),
-  findParticipantByFingerprint: vi.fn(),
   findParticipantsByFirstName: vi.fn(),
   createParticipant: vi.fn(),
   updateParticipantDevice: vi.fn(),

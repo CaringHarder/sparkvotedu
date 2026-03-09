@@ -7,7 +7,6 @@ import {
 } from '@/lib/dal/class-session'
 import {
   findParticipantByDevice,
-  findParticipantByFingerprint,
   findParticipantByRecoveryCode,
   findParticipantsByFirstName,
   createParticipant,
@@ -33,7 +32,6 @@ import type {
 const joinSessionSchema = z.object({
   code: z.string().regex(/^\d{6}$/, 'Class code must be exactly 6 digits'),
   deviceId: z.string().min(1, 'Device ID is required'),
-  fingerprint: z.string().optional(),
 })
 
 const recoverIdentitySchema = z.object({
@@ -96,17 +94,15 @@ function toParticipantData(p: {
 /**
  * Join a class session using a 6-digit code and device identity.
  *
- * Three-layer identity matching:
- * 1. deviceId (localStorage UUID) -- most reliable, per-Chrome-profile
- * 2. fingerprint (FingerprintJS) -- fallback when localStorage cleared
- * 3. Create new participant -- first-time student
+ * Two-step identity matching:
+ * 1. deviceId (localStorage UUID) -- per-Chrome-profile
+ * 2. Create new participant -- first-time student
  *
  * No authentication required -- students are anonymous.
  */
 export async function joinSession(input: {
   code: string
   deviceId: string
-  fingerprint?: string
 }): Promise<JoinResult> {
   // Validate input
   const parsed = joinSessionSchema.safeParse(input)
@@ -114,7 +110,7 @@ export async function joinSession(input: {
     return { error: parsed.error.issues[0].message }
   }
 
-  const { code, deviceId, fingerprint } = parsed.data
+  const { code, deviceId } = parsed.data
 
   // Step 1: Find active session by code
   const session = await findActiveSessionByCode(code)
@@ -143,31 +139,10 @@ export async function joinSession(input: {
     }
   }
 
-  // Step 3: Check fingerprint match (secondary identity)
-  if (fingerprint) {
-    const byFingerprint = await findParticipantByFingerprint(
-      session.id,
-      fingerprint
-    )
-    if (byFingerprint) {
-      // localStorage was cleared but fingerprint matches -- update deviceId
-      const updated = await updateParticipantDevice(
-        byFingerprint.id,
-        deviceId
-      )
-      return {
-        participant: toParticipantData(updated),
-        session: sessionInfo,
-        returning: true,
-      }
-    }
-  }
-
-  // Step 4: New student -- create participant
+  // Step 3: New student -- create participant
   const participant = await createParticipant(
     session.id,
-    deviceId,
-    fingerprint
+    deviceId
   )
   broadcastParticipantJoined(session.id).catch(() => {})
   return {
@@ -261,7 +236,7 @@ export async function recoverIdentity(
 /**
  * Join a class session using a 6-digit code and first name.
  *
- * Name-based identity flow (replaces device-fingerprint approach):
+ * Name-based identity flow:
  * 1. Find session by code (active or ended)
  * 2. If ended, return sessionEnded flag so UI can show results
  * 3. If active, do case-insensitive name lookup for duplicates
@@ -312,7 +287,6 @@ export async function joinSessionByName(input: {
     const participant = await createParticipant(
       session.id,
       null,
-      undefined,
       firstName
     )
     broadcastParticipantJoined(session.id).catch(() => {})
@@ -792,7 +766,7 @@ export async function createWizardParticipant(input: {
     return { session: sessionInfo, sessionEnded: true }
   }
 
-  const participant = await createParticipant(session.id, null, undefined, '')
+  const participant = await createParticipant(session.id, null, '')
   broadcastParticipantJoined(session.id).catch(() => {})
 
   return {

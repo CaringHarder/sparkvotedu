@@ -19,25 +19,6 @@ export async function findParticipantByDevice(
 }
 
 /**
- * Find a non-banned participant by fingerprint within a session.
- * This is the secondary identity lookup when localStorage was cleared
- * but the browser fingerprint still matches.
- * Returns null if no match found.
- */
-export async function findParticipantByFingerprint(
-  sessionId: string,
-  fingerprint: string
-) {
-  return prisma.studentParticipant.findFirst({
-    where: {
-      sessionId,
-      fingerprint,
-      banned: false,
-    },
-  })
-}
-
-/**
  * Find a participant by their recovery code.
  * Includes the session for context when restoring identity on a new device.
  * Returns null if code is invalid.
@@ -52,13 +33,12 @@ export async function findParticipantByRecoveryCode(recoveryCode: string) {
 /**
  * Create a new participant in a session with a unique alliterative fun name.
  * Fetches existing names in the session to ensure uniqueness.
- * deviceId accepts null for name-based join flow (no device fingerprinting).
+ * deviceId accepts null for name-based join flow.
  * lastInitial and emoji are optional for backward compatibility.
  */
 export async function createParticipant(
   sessionId: string,
   deviceId: string | null,
-  fingerprint?: string,
   firstName: string = '',
   lastInitial: string | null = null,
   emoji: string | null = null
@@ -78,7 +58,6 @@ export async function createParticipant(
       funName,
       firstName,
       deviceId,
-      fingerprint: fingerprint ?? null,
       lastInitial,
       emoji,
     },
@@ -87,8 +66,7 @@ export async function createParticipant(
 
 /**
  * Update a participant's device ID.
- * Used when localStorage was cleared but the fingerprint matched,
- * so the student gets re-associated with a new device ID.
+ * Used when a student re-associates with a new device ID.
  * Also updates lastSeenAt.
  */
 export async function updateParticipantDevice(
@@ -293,7 +271,6 @@ export async function createReturningParticipant(
       lastInitial,
       emoji: source.emoji,
       deviceId,
-      fingerprint: null,
     },
   })
 }

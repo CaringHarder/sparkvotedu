@@ -58,8 +58,8 @@ export default function PrivacyPage() {
         </p>
 
         <p className="text-muted-foreground leading-relaxed mb-4">
-          <strong className="text-foreground">Device fingerprinting:</strong> We
-          use anonymous device fingerprinting solely to prevent duplicate voting
+          <strong className="text-foreground">Session identity:</strong> We
+          use anonymous browser storage to maintain your session identity
           within a session. This data is not linked to any individual identity
           and is stored locally on the device.
         </p>
@@ -80,7 +80,7 @@ export default function PrivacyPage() {
           <li>To provide and maintain the SparkVotEDU service</li>
           <li>To process teacher account registration and subscriptions</li>
           <li>
-            To prevent duplicate voting within sessions (device fingerprinting)
+            To ensure one participation per student per session (browser storage)
           </li>
           <li>To improve the platform based on usage patterns</li>
           <li>To communicate with teachers about their accounts</li>
@@ -99,8 +99,8 @@ export default function PrivacyPage() {
         </p>
         <ul className="list-disc pl-6 text-muted-foreground leading-relaxed mb-4 space-y-2">
           <li>
-            Device fingerprinting is used only for session integrity (preventing
-            duplicate votes) and is never used to track or identify students.
+            Browser storage is used only for session continuity and is never
+            used to track or identify students.
           </li>
           <li>
             Teachers control all classroom content and participation.
