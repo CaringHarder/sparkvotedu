@@ -31,17 +31,34 @@ export async function findParticipantByRecoveryCode(recoveryCode: string) {
 }
 
 /**
+ * Generate a unique fun name for a session WITHOUT creating a DB record.
+ * Used by the reservation-based wizard flow so the student sees a name
+ * before any participant record exists.
+ */
+export async function generateUniqueFunName(sessionId: string): Promise<string> {
+  const existing = await prisma.studentParticipant.findMany({
+    where: { sessionId },
+    select: { funName: true },
+  })
+  const existingNames = new Set(existing.map((p) => p.funName))
+  return generateFunName(existingNames)
+}
+
+/**
  * Create a new participant in a session with a unique alliterative fun name.
  * Fetches existing names in the session to ensure uniqueness.
  * deviceId accepts null for name-based join flow.
  * lastInitial and emoji are optional for backward compatibility.
+ * preferredFunName: if provided and still unique in the session, use it;
+ * otherwise generate a new one. Used by the reservation-based wizard flow.
  */
 export async function createParticipant(
   sessionId: string,
   deviceId: string | null,
   firstName: string = '',
   lastInitial: string | null = null,
-  emoji: string | null = null
+  emoji: string | null = null,
+  preferredFunName?: string
 ) {
   // Fetch existing fun names for this session
   const existing = await prisma.studentParticipant.findMany({
@@ -50,7 +67,11 @@ export async function createParticipant(
   })
   const existingNames = new Set(existing.map((p) => p.funName))
 
-  const funName = generateFunName(existingNames)
+  // Use preferred name if provided and still unique, otherwise generate
+  const funName =
+    preferredFunName && !existingNames.has(preferredFunName)
+      ? preferredFunName
+      : generateFunName(existingNames)
 
   return prisma.studentParticipant.create({
     data: {

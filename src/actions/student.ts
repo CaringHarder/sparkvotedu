@@ -18,6 +18,7 @@ import {
   updateLastSeen,
   rerollParticipantName,
   generateRecoveryCode as generateRecoveryCodeDAL,
+  generateUniqueFunName,
 } from '@/lib/dal/student-session'
 import { broadcastParticipantJoined } from '@/lib/realtime/broadcast'
 import { firstNameSchema } from '@/lib/validations/first-name'
@@ -64,6 +65,22 @@ const createWizardSchema = z.object({
 const updateNameSchema = z.object({
   participantId: z.string().min(1, 'Participant ID is required'),
   firstName: firstNameSchema,
+})
+
+const reserveFunNameSchema = z.object({
+  code: z.string().regex(/^\d{6}$/, 'Class code must be exactly 6 digits'),
+})
+
+const createCompletedParticipantSchema = z.object({
+  code: z.string().regex(/^\d{6}$/, 'Class code must be exactly 6 digits'),
+  funName: z.string().min(1, 'Fun name is required'),
+  firstName: firstNameSchema,
+  lastInitial: lastInitialSchema,
+  emoji: z.string().min(1, 'Emoji is required'),
+})
+
+const removeIncompleteSchema = z.object({
+  sessionId: z.string().min(1, 'Session ID is required'),
 })
 
 // --- Helper ---
@@ -930,9 +947,162 @@ export async function setNameViewDefault(input: {
   return { success: true }
 }
 
-// --- Wizard Actions ---
+// --- Reservation-Based Wizard Actions ---
 
 /**
+ * Reserve a unique fun name for a new student WITHOUT creating a DB record.
+ * The wizard shows this name on the splash screen. The actual participant
+ * record is only created when the wizard completes (emoji step).
+ *
+ * No authentication required -- students are anonymous.
+ */
+export async function reserveFunName(input: {
+  code: string
+}): Promise<{ funName?: string; session?: JoinResult['session']; error?: string; sessionEnded?: boolean }> {
+  const parsed = reserveFunNameSchema.safeParse(input)
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0].message }
+  }
+
+  const session = await findSessionByCode(parsed.data.code)
+  if (!session) {
+    return { error: 'Invalid class code' }
+  }
+
+  const sessionInfo = {
+    id: session.id,
+    code: session.code,
+    name: session.name,
+    status: session.status,
+    teacherName: session.teacher.name,
+  }
+
+  if (session.status === 'ended') {
+    return { session: sessionInfo, sessionEnded: true }
+  }
+
+  const funName = await generateUniqueFunName(session.id)
+
+  return { funName, session: sessionInfo }
+}
+
+/**
+ * Create a completed participant with all fields populated atomically.
+ * Called at the end of the new-student wizard (emoji step). This is the ONLY
+ * point where a DB record is created for new students.
+ *
+ * Uses the reserved funName if still unique in the session, otherwise
+ * generates a new one (collision during wizard delay).
+ *
+ * No authentication required -- students are anonymous.
+ */
+export async function createCompletedParticipant(input: {
+  code: string
+  funName: string
+  firstName: string
+  lastInitial: string
+  emoji: string
+}): Promise<JoinResult> {
+  const parsed = createCompletedParticipantSchema.safeParse(input)
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0].message }
+  }
+
+  const { code, funName, firstName, lastInitial, emoji } = parsed.data
+
+  // Validate emoji is in pool
+  const { EMOJI_POOL } = await import('@/lib/student/emoji-pool')
+  const validEmoji = EMOJI_POOL.some((e) => e.shortcode === emoji)
+  if (!validEmoji) {
+    return { error: 'Invalid emoji selection' }
+  }
+
+  const session = await findSessionByCode(code)
+  if (!session) {
+    return { error: 'Invalid class code' }
+  }
+
+  const sessionInfo = {
+    id: session.id,
+    code: session.code,
+    name: session.name,
+    status: session.status,
+    teacherName: session.teacher.name,
+  }
+
+  if (session.status === 'ended') {
+    return { session: sessionInfo, sessionEnded: true }
+  }
+
+  // Create participant with all fields, preferring the reserved funName
+  const participant = await createParticipant(
+    session.id,
+    null,
+    firstName,
+    lastInitial,
+    emoji,
+    funName
+  )
+
+  broadcastParticipantJoined(session.id).catch(() => {})
+
+  return {
+    participant: toParticipantData(participant),
+    session: sessionInfo,
+    returning: false,
+  }
+}
+
+/**
+ * Remove incomplete (ghost) participants from a session.
+ * Ghost participants have empty firstName -- created by the old wizard flow
+ * when students clicked "I'm new here!" but never completed the wizard.
+ *
+ * Auth: requires authenticated teacher who owns the session.
+ */
+export async function removeIncompleteParticipants(input: {
+  sessionId: string
+}): Promise<{ removed?: number; error?: string }> {
+  const { getAuthenticatedTeacher } = await import('@/lib/dal/auth')
+  const teacher = await getAuthenticatedTeacher()
+  if (!teacher) {
+    return { error: 'Not authenticated' }
+  }
+
+  const parsed = removeIncompleteSchema.safeParse(input)
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0].message }
+  }
+
+  const { prisma } = await import('@/lib/prisma')
+
+  // Verify teacher owns the session
+  const session = await prisma.classSession.findUnique({
+    where: { id: parsed.data.sessionId },
+    select: { teacherId: true },
+  })
+
+  if (!session || session.teacherId !== teacher.id) {
+    return { error: 'Session not found or not authorized' }
+  }
+
+  const result = await prisma.studentParticipant.deleteMany({
+    where: {
+      sessionId: parsed.data.sessionId,
+      firstName: '',
+    },
+  })
+
+  return { removed: result.count }
+}
+
+// --- Wizard Actions (DEPRECATED) ---
+
+/**
+ * @deprecated Use `reserveFunName` + `createCompletedParticipant` instead.
+ * This creates a ghost participant with empty firstName -- the bug we're fixing.
+ * Kept for backward compatibility until the new flow is confirmed working.
+ *
  * Create a new participant with empty firstName for the join wizard.
  * The wizard collects profile info (name, initial, emoji) in later steps.
  *
@@ -974,6 +1144,9 @@ export async function createWizardParticipant(input: {
 }
 
 /**
+ * @deprecated Use `createCompletedParticipant` instead, which creates the
+ * participant atomically with all fields. This two-step approach creates ghosts.
+ *
  * Complete a wizard participant's profile with firstName, lastInitial, and emoji.
  * Called at the end of the new-student wizard after all steps are collected.
  *

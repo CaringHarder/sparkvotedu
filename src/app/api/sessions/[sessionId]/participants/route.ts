@@ -29,7 +29,10 @@ export async function GET(
   }
 
   const participants = await prisma.studentParticipant.findMany({
-    where: { sessionId },
+    where: {
+      sessionId,
+      firstName: { not: '' },
+    },
     select: {
       id: true,
       funName: true,
