@@ -37,7 +37,7 @@ export async function GET(
     let participantCount = 0
     if (poll.sessionId) {
       participantCount = await prisma.studentParticipant.count({
-        where: { sessionId: poll.sessionId, banned: false },
+        where: { sessionId: poll.sessionId, banned: false, firstName: { not: '' } },
       })
     }
 
