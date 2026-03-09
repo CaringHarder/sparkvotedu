@@ -41,10 +41,15 @@ export type WizardStep =
     }
   | { type: 'returning-name' }
   | {
+      type: 'returning-confirm'
+      candidate: DuplicateCandidate
+      firstName: string
+    }
+  | {
       type: 'returning-disambiguate'
       candidates: DuplicateCandidate[]
       firstName: string
-      lastInitial: string
+      lastInitial?: string
     }
   | {
       type: 'new-match-found'
@@ -75,10 +80,15 @@ export type WizardAction =
   | { type: 'SUBMIT_LAST_INITIAL'; lastInitial: string }
   | { type: 'SELECT_EMOJI'; emoji: string; emojiChar: string }
   | {
+      type: 'SET_RETURNING_CONFIRM'
+      candidate: DuplicateCandidate
+      firstName: string
+    }
+  | {
       type: 'SET_RETURNING_DISAMBIGUATE'
       candidates: DuplicateCandidate[]
       firstName: string
-      lastInitial: string
+      lastInitial?: string
     }
   | {
       type: 'SET_RETURNING_WELCOME'

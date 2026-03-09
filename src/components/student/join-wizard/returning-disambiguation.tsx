@@ -10,7 +10,7 @@ import type { DuplicateCandidate, LookupResult } from '@/types/student'
 interface ReturningDisambiguationProps {
   candidates: DuplicateCandidate[]
   firstName: string
-  lastInitial: string
+  lastInitial?: string
   code: string
   onClaimed: (result: LookupResult) => void
   onNoneOfThese: () => void
@@ -38,7 +38,7 @@ export function ReturningDisambiguation({
         participantId: candidate.id,
         sessionCode: code,
         firstName,
-        lastInitial,
+        lastInitial: lastInitial ?? candidate.lastInitial ?? '',
       })
 
       if (result.error) {
@@ -82,9 +82,14 @@ export function ReturningDisambiguation({
                 )}
               </span>
 
-              {/* Fun name */}
-              <span className="flex-1 text-left text-lg font-semibold">
+              {/* Fun name + last initial */}
+              <span className="flex flex-1 items-baseline gap-1.5 text-left text-lg font-semibold">
                 {candidate.funName}
+                {candidate.lastInitial && (
+                  <span className="text-sm font-normal text-muted-foreground">
+                    ({candidate.lastInitial}.)
+                  </span>
+                )}
               </span>
 
               {/* Loading indicator */}

@@ -17,6 +17,7 @@ import { WizardStepLastInitial } from './wizard-step-last-initial'
 import { WizardStepEmoji } from './wizard-step-emoji'
 import { WizardWelcome } from './wizard-welcome'
 import { ReturningNameEntry } from './returning-name-entry'
+import { ReturningConfirmation } from './returning-confirmation'
 import { ReturningDisambiguation } from './returning-disambiguation'
 import { ReturningWelcome } from './returning-welcome'
 import type { SessionInfo, WizardStep, WizardAction, SlideDirection } from './types'
@@ -134,6 +135,13 @@ function wizardReducer(state: WizardStep, action: WizardAction): WizardStep {
         }
       }
       return state
+
+    case 'SET_RETURNING_CONFIRM':
+      return {
+        type: 'returning-confirm',
+        candidate: action.candidate,
+        firstName: action.firstName,
+      }
 
     case 'SET_RETURNING_DISAMBIGUATE':
       return {
@@ -363,11 +371,10 @@ export function JoinWizard({ code, sessionInfo }: JoinWizardProps) {
     router.push(`/session/${sessionInfo.id}`)
   }, [router, sessionInfo.id])
 
-  // Handler for returning student lookup result
-  const handleReturningResult = useCallback((result: LookupResult) => {
+  // Handler for returning student auto-reclaim (already in current session)
+  const handleReturningAutoReclaim = useCallback((result: LookupResult) => {
     directionRef.current = 1
 
-    // Single match -- auto-reclaimed
     if (result.participant) {
       const emojiChar = result.participant.emoji
         ? shortcodeToEmoji(result.participant.emoji) ?? ''
@@ -402,19 +409,28 @@ export function JoinWizard({ code, sessionInfo }: JoinWizardProps) {
         emojiChar,
         participantId: result.participant.id,
       })
-      return
-    }
-
-    // Multiple matches -- disambiguation
-    if (result.candidates) {
-      dispatch({
-        type: 'SET_RETURNING_DISAMBIGUATE',
-        candidates: result.candidates,
-        firstName: '',
-        lastInitial: '',
-      })
     }
   }, [sessionInfo.id])
+
+  // Handler for single match -- show confirmation card
+  const handleReturningSingleMatch = useCallback((candidate: import('@/types/student').DuplicateCandidate, firstName: string) => {
+    directionRef.current = 1
+    dispatch({
+      type: 'SET_RETURNING_CONFIRM',
+      candidate,
+      firstName,
+    })
+  }, [])
+
+  // Handler for multiple matches -- show disambiguation
+  const handleReturningMultipleMatches = useCallback((candidates: import('@/types/student').DuplicateCandidate[], firstName: string) => {
+    directionRef.current = 1
+    dispatch({
+      type: 'SET_RETURNING_DISAMBIGUATE',
+      candidates,
+      firstName,
+    })
+  }, [])
 
   // Handler for disambiguation claim result
   const handleReturningClaimed = useCallback((result: LookupResult) => {
@@ -641,8 +657,22 @@ export function JoinWizard({ code, sessionInfo }: JoinWizardProps) {
         return (
           <ReturningNameEntry
             code={code}
-            onResult={handleReturningResult}
+            sessionId={sessionInfo.id}
+            onSingleMatch={handleReturningSingleMatch}
+            onMultipleMatches={handleReturningMultipleMatches}
+            onAutoReclaim={handleReturningAutoReclaim}
             onRedirectNew={handleRedirectToNew}
+          />
+        )
+
+      case 'returning-confirm':
+        return (
+          <ReturningConfirmation
+            candidate={step.candidate}
+            code={code}
+            firstName={step.firstName}
+            onClaim={handleReturningClaimed}
+            onNoneOfThese={handleRedirectToNew}
           />
         )
 

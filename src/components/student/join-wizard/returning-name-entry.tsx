@@ -3,25 +3,35 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
 import { motion, AnimatePresence } from 'motion/react'
 import { Loader2 } from 'lucide-react'
-import { lookupStudent } from '@/actions/student'
+import { lookupStudentByFirstName } from '@/actions/student'
 import { validateFirstName } from '@/lib/validations/first-name'
-import type { LookupResult } from '@/types/student'
+import { getStoredIdentity } from '@/lib/student/identity-store'
+import type { LookupResult, DuplicateCandidate } from '@/types/student'
 
 interface ReturningNameEntryProps {
   code: string
-  onResult: (result: LookupResult) => void
+  sessionId: string
+  onSingleMatch: (candidate: DuplicateCandidate, firstName: string) => void
+  onMultipleMatches: (candidates: DuplicateCandidate[], firstName: string) => void
+  onAutoReclaim: (result: LookupResult) => void
   onRedirectNew: () => void
 }
 
-export function ReturningNameEntry({ code, onResult, onRedirectNew }: ReturningNameEntryProps) {
+export function ReturningNameEntry({
+  code,
+  sessionId,
+  onSingleMatch,
+  onMultipleMatches,
+  onAutoReclaim,
+  onRedirectNew,
+}: ReturningNameEntryProps) {
   const [firstName, setFirstName] = useState('')
-  const [lastInitial, setLastInitial] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [isNew, setIsNew] = useState(false)
+  const [impersonationWarning, setImpersonationWarning] = useState<string | null>(null)
 
   const firstNameRef = useRef<HTMLInputElement>(null)
-  const lastInitialRef = useRef<HTMLInputElement>(null)
 
   // Auto-focus on first name input after 400ms delay
   useEffect(() => {
@@ -31,7 +41,24 @@ export function ReturningNameEntry({ code, onResult, onRedirectNew }: ReturningN
     return () => clearTimeout(timer)
   }, [])
 
-  const canSubmit = firstName.trim().length > 0 && lastInitial.trim().length > 0
+  const canSubmit = firstName.trim().length > 0
+
+  // Impersonation guard: check if student already in session under different name
+  useEffect(() => {
+    const stored = getStoredIdentity(sessionId)
+    if (
+      stored &&
+      firstName.trim().length > 0 &&
+      stored.firstName &&
+      stored.firstName.toLowerCase() !== firstName.trim().toLowerCase()
+    ) {
+      setImpersonationWarning(
+        `You're already in this session as ${stored.funName}. Looking up a different name?`
+      )
+    } else {
+      setImpersonationWarning(null)
+    }
+  }, [firstName, sessionId])
 
   const handleSubmit = useCallback(async () => {
     if (!canSubmit || loading) return
@@ -48,10 +75,9 @@ export function ReturningNameEntry({ code, onResult, onRedirectNew }: ReturningN
     setLoading(true)
 
     try {
-      const result = await lookupStudent({
+      const result = await lookupStudentByFirstName({
         code,
         firstName: firstName.trim(),
-        lastInitial: lastInitial.trim().toUpperCase(),
       })
 
       if (result.sessionEnded) {
@@ -72,23 +98,31 @@ export function ReturningNameEntry({ code, onResult, onRedirectNew }: ReturningN
         return
       }
 
-      // Single match (auto-reclaimed) or multiple matches (candidates)
-      onResult(result)
+      // Already in current session (auto-reclaim)
+      if (result.participant) {
+        onAutoReclaim(result)
+        return
+      }
+
+      // Single match -- confirmation card
+      if (result.candidates?.length === 1) {
+        onSingleMatch(result.candidates[0], firstName.trim())
+        return
+      }
+
+      // Multiple matches -- disambiguation
+      if (result.candidates && result.candidates.length > 1) {
+        onMultipleMatches(result.candidates, firstName.trim())
+        return
+      }
     } catch {
       setError('Something went wrong. Please try again.')
     } finally {
       setLoading(false)
     }
-  }, [canSubmit, loading, firstName, lastInitial, code, onResult])
+  }, [canSubmit, loading, firstName, code, onSingleMatch, onMultipleMatches, onAutoReclaim])
 
-  const handleFirstNameKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' || e.key === 'Tab') {
-      e.preventDefault()
-      lastInitialRef.current?.focus()
-    }
-  }
-
-  const handleLastInitialKeyDown = (e: React.KeyboardEvent) => {
+  const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter') {
       e.preventDefault()
       handleSubmit()
@@ -99,7 +133,7 @@ export function ReturningNameEntry({ code, onResult, onRedirectNew }: ReturningN
     <div className="flex flex-col items-center gap-5 py-4">
       <p className="text-2xl font-bold">Welcome back!</p>
       <p className="text-sm text-muted-foreground">
-        Enter your name so we can find you
+        Enter your first name so we can find you
       </p>
 
       <div className="flex w-full flex-col items-center gap-3">
@@ -113,30 +147,19 @@ export function ReturningNameEntry({ code, onResult, onRedirectNew }: ReturningN
             setError(null)
             setIsNew(false)
           }}
-          onKeyDown={handleFirstNameKeyDown}
+          onKeyDown={handleKeyDown}
           placeholder="Your first name"
           className="w-full rounded-xl border-2 px-4 py-3 text-center text-2xl font-semibold outline-none transition-colors focus:border-primary"
           autoComplete="off"
         />
-
-        {/* Last initial input */}
-        <input
-          ref={lastInitialRef}
-          type="text"
-          value={lastInitial}
-          onChange={(e) => {
-            const val = e.target.value.toUpperCase().replace(/[^A-Z]/g, '')
-            setLastInitial(val)
-            setError(null)
-            setIsNew(false)
-          }}
-          onKeyDown={handleLastInitialKeyDown}
-          placeholder="A-Z"
-          maxLength={2}
-          className="max-w-[120px] rounded-xl border-2 px-4 py-3 text-center text-2xl font-semibold outline-none transition-colors focus:border-primary"
-          autoComplete="off"
-        />
       </div>
+
+      {/* Impersonation warning */}
+      {impersonationWarning && (
+        <p className="text-center text-xs font-medium text-amber-600">
+          {impersonationWarning}
+        </p>
+      )}
 
       {/* Error display */}
       {error && (
@@ -157,6 +180,17 @@ export function ReturningNameEntry({ code, onResult, onRedirectNew }: ReturningN
             className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
           >
             Join as new student
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setIsNew(false)
+              setFirstName('')
+              setTimeout(() => firstNameRef.current?.focus(), 100)
+            }}
+            className="text-xs text-muted-foreground underline hover:text-foreground transition-colors"
+          >
+            Oops, I misspelled my name -- try again
           </button>
         </div>
       )}
