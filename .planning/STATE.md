@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v3.0
 milestone_name: Student Join Overhaul + Cleanup
 status: completed
-stopped_at: Completed 41-02-PLAN.md
-last_updated: "2026-03-09T00:18:13Z"
-last_activity: 2026-03-09 -- Executed 41-02 new student wizard steps (splash, name, initial, emoji, welcome)
+stopped_at: Completed 41-03-PLAN.md (Phase 41 complete)
+last_updated: "2026-03-09T01:30:00Z"
+last_activity: 2026-03-09 -- Completed 41-03 returning student flow + page integration + verification
 progress:
   total_phases: 6
-  completed_phases: 2
+  completed_phases: 3
   total_plans: 5
-  completed_plans: 4
-  percent: 50
+  completed_plans: 5
+  percent: 100
 ---
 
 # Project State
@@ -26,11 +26,11 @@ See: .planning/PROJECT.md (updated 2026-03-08)
 ## Current Position
 
 Phase: 41 (3 of 6 in v3.0) - Join Wizard UI
-Plan: 2 of 3 complete
-Status: Phase 41 plan 02 complete
-Last activity: 2026-03-09 -- Executed 41-02 new student wizard steps (splash, name, initial, emoji, welcome)
+Plan: 3 of 3 complete
+Status: Phase 41 complete
+Last activity: 2026-03-09 -- Completed 41-03 returning student flow + page integration + verification
 
-Progress: [██████████] 99%
+Progress: [██████████] 100%
 
 ## Performance Metrics
 
@@ -63,6 +63,8 @@ Recent decisions affecting current work:
 - [Phase 41]: createWizardParticipant creates with empty firstName; completeWizardProfile fills later
 - [Phase 41]: SPLASH_COMPLETE action for fun-name-splash to first-name transition
 - [Phase 41]: completeWizardProfile called in background after emoji selection (non-blocking UI)
+- [Phase 41]: ReturningDisambiguation shared between returning flow and new-match-found interstitial
+- [Phase 41]: lookupStudent must check current session before creating duplicate participant
 
 ### Pending Todos
 
@@ -81,9 +83,10 @@ None.
 | 28 | Bar chart vote count high-contrast circular badge | 2026-03-08 | a1277ae | [28-bar-chart-larger-vote-count-badge](./quick/28-bar-chart-larger-vote-count-badge/) |
 | Phase 41 P01 | 3min | 2 tasks | 9 files |
 | Phase 41 P02 | 2min | 2 tasks | 7 files |
+| Phase 41 P03 | 3min | 3 tasks | 6 files |
 
 ## Session Continuity
 
-Last session: 2026-03-09T00:18:13Z
-Stopped at: Completed 41-02-PLAN.md
-Resume: Continue with 41-03 (returning student flow)
+Last session: 2026-03-09T01:30:00Z
+Stopped at: Completed 41-03-PLAN.md (Phase 41 complete)
+Resume: Continue with Phase 42 (localStorage Persistence + Auto-Rejoin)
