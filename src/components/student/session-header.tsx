@@ -9,6 +9,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { updateSessionParticipant } from '@/lib/student/session-store'
+import { shortcodeToEmoji } from '@/lib/student/emoji-pool'
 import { RerollButton } from './reroll-button'
 import { RecoveryCodeDialog } from './recovery-code-dialog'
 import { EditNameDialog } from './edit-name-dialog'
@@ -18,6 +19,7 @@ interface SessionHeaderProps {
   participantId: string
   rerollUsed: boolean
   firstName?: string
+  emoji?: string | null
 }
 
 export function SessionHeader({
@@ -25,6 +27,7 @@ export function SessionHeader({
   participantId,
   rerollUsed: initialRerollUsed,
   firstName: initialFirstName,
+  emoji,
 }: SessionHeaderProps) {
   const [funName, setFunName] = useState(initialFunName)
   const [rerollUsed, setRerollUsed] = useState(initialRerollUsed)
@@ -64,7 +67,7 @@ export function SessionHeader({
       {/* Center/Right: fun name + settings */}
       <div className="flex items-center gap-2">
         <span className="rounded-md bg-brand-amber/10 px-2.5 py-1 text-sm font-semibold text-brand-amber-dark dark:text-brand-amber">
-          {funName}
+          {emoji ? shortcodeToEmoji(emoji) + ' ' : ''}{funName}
         </span>
 
         <DropdownMenu>

@@ -13,6 +13,7 @@ interface ParticipantStore {
   firstName?: string
   sessionId: string
   rerollUsed: boolean
+  emoji?: string | null
 }
 
 export default function SessionLayout({
@@ -91,6 +92,7 @@ export default function SessionLayout({
         participantId={participant.participantId}
         rerollUsed={participant.rerollUsed}
         firstName={participant.firstName}
+        emoji={participant.emoji}
       />
       {/* Add bottom padding on mobile for bottom nav clearance */}
       <div className={`px-4 py-6 ${!isWelcomePage ? 'pb-20 md:pb-6' : ''}`}>
