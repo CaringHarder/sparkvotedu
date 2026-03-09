@@ -10,8 +10,8 @@ Requirements for the Student Join Overhaul + Cleanup milestone.
 ### Join Flow
 
 - [x] **JOIN-01**: Student joins session (via class code entry or direct link) and instantly receives a unique fun name
-- [ ] **JOIN-02**: Student completes 3-step wizard: first name (auto-focused, green button on keystroke) → last initial (max 2 chars, animates in) → emoji picker (4x4 grid of 16 curated K-12-safe emojis)
-- [ ] **JOIN-03**: Student sees welcome screen with their fun name + chosen emoji before entering session
+- [x] **JOIN-02**: Student completes 3-step wizard: first name (auto-focused, green button on keystroke) → last initial (max 2 chars, animates in) → emoji picker (4x4 grid of 16 curated K-12-safe emojis)
+- [x] **JOIN-03**: Student sees welcome screen with their fun name + chosen emoji before entering session
 - [ ] **JOIN-04**: Student's emoji + fun name display throughout the session (header, sidebar, voting UI, results)
 
 ### Persistence
@@ -68,8 +68,8 @@ Deferred to v3.x or later.
 | Requirement | Phase | Status |
 |-------------|-------|--------|
 | JOIN-01 | Phase 41 | Complete |
-| JOIN-02 | Phase 41 | Pending |
-| JOIN-03 | Phase 41 | Pending |
+| JOIN-02 | Phase 41 | Complete |
+| JOIN-03 | Phase 41 | Complete |
 | JOIN-04 | Phase 44 | Pending |
 | PERS-01 | Phase 42 | Pending |
 | PERS-02 | Phase 42 | Pending |

@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v3.0
 milestone_name: Student Join Overhaul + Cleanup
 status: completed
-stopped_at: Completed 41-01-PLAN.md
-last_updated: "2026-03-09T00:14:55.013Z"
-last_activity: 2026-03-09 -- Executed 41-01 JoinWizard foundation (types, shell, server actions)
+stopped_at: Completed 41-02-PLAN.md
+last_updated: "2026-03-09T00:18:13Z"
+last_activity: 2026-03-09 -- Executed 41-02 new student wizard steps (splash, name, initial, emoji, welcome)
 progress:
   total_phases: 6
   completed_phases: 2
   total_plans: 5
-  completed_plans: 3
+  completed_plans: 4
   percent: 50
 ---
 
@@ -26,11 +26,11 @@ See: .planning/PROJECT.md (updated 2026-03-08)
 ## Current Position
 
 Phase: 41 (3 of 6 in v3.0) - Join Wizard UI
-Plan: 1 of 3 complete
-Status: Phase 41 plan 01 complete
-Last activity: 2026-03-09 -- Executed 41-01 JoinWizard foundation (types, shell, server actions)
+Plan: 2 of 3 complete
+Status: Phase 41 plan 02 complete
+Last activity: 2026-03-09 -- Executed 41-02 new student wizard steps (splash, name, initial, emoji, welcome)
 
-Progress: [█████░░░░░] 50%
+Progress: [██████████] 99%
 
 ## Performance Metrics
 
@@ -61,6 +61,8 @@ Recent decisions affecting current work:
 - createWizardParticipant creates with empty firstName; completeWizardProfile fills profile later
 - [Phase 41]: useReducer with discriminated unions for type-safe wizard state transitions
 - [Phase 41]: createWizardParticipant creates with empty firstName; completeWizardProfile fills later
+- [Phase 41]: SPLASH_COMPLETE action for fun-name-splash to first-name transition
+- [Phase 41]: completeWizardProfile called in background after emoji selection (non-blocking UI)
 
 ### Pending Todos
 
@@ -78,9 +80,10 @@ None.
 |---|-------------|------|--------|-----------|
 | 28 | Bar chart vote count high-contrast circular badge | 2026-03-08 | a1277ae | [28-bar-chart-larger-vote-count-badge](./quick/28-bar-chart-larger-vote-count-badge/) |
 | Phase 41 P01 | 3min | 2 tasks | 9 files |
+| Phase 41 P02 | 2min | 2 tasks | 7 files |
 
 ## Session Continuity
 
-Last session: 2026-03-09T00:14:55.011Z
-Stopped at: Completed 41-01-PLAN.md
-Resume: Continue with 41-02 (new student wizard steps) or 41-03 (returning student flow)
+Last session: 2026-03-09T00:18:13Z
+Stopped at: Completed 41-02-PLAN.md
+Resume: Continue with 41-03 (returning student flow)
