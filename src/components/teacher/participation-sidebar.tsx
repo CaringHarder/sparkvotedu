@@ -1,8 +1,9 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { NameViewToggle } from '@/components/teacher/name-view-toggle'
 import { TeacherEditNameDialog } from '@/components/teacher/teacher-edit-name-dialog'
+import { setNameViewDefault } from '@/actions/student'
 import { shortcodeToEmoji, MIGRATION_SENTINEL_EMOJI } from '@/lib/student/emoji-pool'
 
 interface ParticipationSidebarProps {
@@ -33,6 +34,17 @@ export function ParticipationSidebar({
   const [nameView, setNameView] = useState<'fun' | 'real'>(
     teacherNameViewDefault === 'real' ? 'real' : 'fun'
   )
+  const [savedDefault, setSavedDefault] = useState<'fun' | 'real'>(
+    teacherNameViewDefault === 'real' ? 'real' : 'fun'
+  )
+
+  const handleSetDefault = useCallback(async (value: 'fun' | 'real') => {
+    const res = await setNameViewDefault({ value })
+    if (res.success) {
+      setSavedDefault(value)
+    }
+  }, [])
+
   const [editingParticipant, setEditingParticipant] = useState<{
     id: string
     firstName: string
@@ -114,7 +126,12 @@ export function ParticipationSidebar({
           <div className="mb-3">
             <div className="flex items-center justify-between">
               <h2 className="text-sm font-semibold">Student Activity</h2>
-              <NameViewToggle value={nameView} onChange={setNameView} />
+              <NameViewToggle
+                value={nameView}
+                onChange={setNameView}
+                savedDefault={savedDefault}
+                onSetDefault={handleSetDefault}
+              />
             </div>
             <p className="text-xs text-muted-foreground">
               {participants.length} student{participants.length !== 1 ? 's' : ''}
@@ -242,6 +259,7 @@ export function ParticipationSidebar({
           }}
           participantId={editingParticipant.id}
           currentFirstName={editingParticipant.firstName}
+          currentLastInitial={editingParticipant.lastInitial}
           funName={editingParticipant.funName}
           emoji={editingParticipant.emoji}
         />

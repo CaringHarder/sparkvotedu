@@ -20,6 +20,7 @@ interface TeacherEditNameDialogProps {
   onOpenChange: (open: boolean) => void
   participantId: string
   currentFirstName: string
+  currentLastInitial?: string | null
   funName: string
   emoji: string | null
 }
@@ -29,18 +30,23 @@ export function TeacherEditNameDialog({
   onOpenChange,
   participantId,
   currentFirstName,
+  currentLastInitial,
   funName,
   emoji,
 }: TeacherEditNameDialogProps) {
   const [firstName, setFirstName] = useState(currentFirstName)
+  const [lastInitial, setLastInitial] = useState(currentLastInitial ?? '')
   const [error, setError] = useState<string | null>(null)
+  const [lastInitialError, setLastInitialError] = useState<string | null>(null)
   const [isPending, startTransition] = useTransition()
 
   // Reset state when dialog opens with new participant
   const handleOpenChange = (nextOpen: boolean) => {
     if (nextOpen) {
       setFirstName(currentFirstName)
+      setLastInitial(currentLastInitial ?? '')
       setError(null)
+      setLastInitialError(null)
     }
     onOpenChange(nextOpen)
   }
@@ -52,11 +58,24 @@ export function TeacherEditNameDialog({
       return
     }
 
+    // Validate lastInitial: must be 1-2 uppercase letters if provided
+    const trimmedInitial = lastInitial.trim()
+    if (trimmedInitial.length === 0) {
+      setLastInitialError('Last initial is required')
+      return
+    }
+    if (!/^[A-Z]{1,2}$/.test(trimmedInitial)) {
+      setLastInitialError('Must be 1-2 uppercase letters')
+      return
+    }
+
     setError(null)
+    setLastInitialError(null)
     startTransition(async () => {
       const res = await teacherUpdateStudentName({
         participantId,
         firstName: result.name,
+        lastInitial: trimmedInitial,
       })
       if (res.error) {
         setError(res.error)
@@ -79,26 +98,53 @@ export function TeacherEditNameDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-2">
-          <label htmlFor="teacher-edit-name" className="text-sm font-medium">
-            First Name
-          </label>
-          <Input
-            id="teacher-edit-name"
-            value={firstName}
-            onChange={(e) => {
-              setFirstName(e.target.value)
-              setError(null)
-            }}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') handleSave()
-            }}
-            placeholder="Student first name"
-            autoFocus
-          />
-          {error && (
-            <p className="text-sm text-destructive">{error}</p>
-          )}
+        <div className="space-y-3">
+          <div className="space-y-1">
+            <label htmlFor="teacher-edit-name" className="text-sm font-medium">
+              First Name
+            </label>
+            <Input
+              id="teacher-edit-name"
+              value={firstName}
+              onChange={(e) => {
+                setFirstName(e.target.value)
+                setError(null)
+              }}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') handleSave()
+              }}
+              placeholder="Student first name"
+              autoFocus
+            />
+            {error && (
+              <p className="text-sm text-destructive">{error}</p>
+            )}
+          </div>
+
+          <div className="space-y-1">
+            <label htmlFor="teacher-edit-initial" className="text-sm font-medium">
+              Last Initial
+            </label>
+            <Input
+              id="teacher-edit-initial"
+              value={lastInitial}
+              onChange={(e) => {
+                // Uppercase only, max 2 chars
+                const filtered = e.target.value.toUpperCase().replace(/[^A-Z]/g, '').slice(0, 2)
+                setLastInitial(filtered)
+                setLastInitialError(null)
+              }}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') handleSave()
+              }}
+              placeholder="e.g. S"
+              maxLength={2}
+              className="w-20"
+            />
+            {lastInitialError && (
+              <p className="text-sm text-destructive">{lastInitialError}</p>
+            )}
+          </div>
         </div>
 
         <DialogFooter>
