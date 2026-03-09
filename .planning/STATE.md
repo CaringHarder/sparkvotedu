@@ -4,13 +4,13 @@ milestone: v3.0
 milestone_name: Student Join Overhaul + Cleanup
 status: completed
 stopped_at: Phase 42 context gathered
-last_updated: "2026-03-09T01:30:59.119Z"
+last_updated: "2026-03-09T01:54:13.303Z"
 last_activity: 2026-03-09 -- Completed 41-03 returning student flow + page integration + verification
 progress:
   total_phases: 6
-  completed_phases: 3
-  total_plans: 5
-  completed_plans: 5
+  completed_phases: 4
+  total_plans: 6
+  completed_plans: 6
   percent: 100
 ---
 
@@ -21,14 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-08)
 
 **Core value:** Teachers can instantly engage any classroom through voting -- on any topic, in any format -- and see participation happen in real time.
-**Current focus:** Phase 41 - Join Wizard UI
+**Current focus:** Phase 42 - localStorage Persistence + Auto-Rejoin
 
 ## Current Position
 
-Phase: 41 (3 of 6 in v3.0) - Join Wizard UI
-Plan: 3 of 3 complete
-Status: Phase 41 complete
-Last activity: 2026-03-09 -- Completed 41-03 returning student flow + page integration + verification
+Phase: 42 (4 of 6 in v3.0) - localStorage Persistence + Auto-Rejoin
+Plan: 1 of 1 complete
+Status: Phase 42 complete
+Last activity: 2026-03-09 -- Completed 42-01 localStorage persistence + auto-rejoin
 
 Progress: [██████████] 100%
 
@@ -65,6 +65,9 @@ Recent decisions affecting current work:
 - [Phase 41]: completeWizardProfile called in background after emoji selection (non-blocking UI)
 - [Phase 41]: ReturningDisambiguation shared between returning flow and new-match-found interstitial
 - [Phase 41]: lookupStudent must check current session before creating duplicate participant
+- [Phase 42]: Single localStorage key with schema versioning (v: 1) for identity persistence
+- [Phase 42]: 90-day TTL with 50-entry cap for school semester-length storage
+- [Phase 42]: initialCheckDone guard prevents flash of path-select before localStorage check
 
 ### Pending Todos
 
@@ -84,9 +87,10 @@ None.
 | Phase 41 P01 | 3min | 2 tasks | 9 files |
 | Phase 41 P02 | 2min | 2 tasks | 7 files |
 | Phase 41 P03 | 3min | 3 tasks | 6 files |
+| Phase 42 P01 | 3min | 2 tasks | 5 files |
 
 ## Session Continuity
 
-Last session: 2026-03-09T01:30:59.117Z
-Stopped at: Phase 42 context gathered
-Resume: Continue with Phase 42 (localStorage Persistence + Auto-Rejoin)
+Last session: 2026-03-09T01:53:29Z
+Stopped at: Completed 42-01-PLAN.md
+Resume: Continue with next phase in v3.0

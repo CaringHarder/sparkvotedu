@@ -86,7 +86,7 @@
 - [x] **Phase 39: Schema Migration + Data Foundation** - Add emoji and lastInitial columns to StudentParticipant, create curated emoji pool module (completed 2026-03-08)
 - [x] **Phase 40: Server Actions + DAL** - Build backend logic for cross-device identity reclaim, name disambiguation, and unified join flow (completed 2026-03-08)
 - [x] **Phase 41: Join Wizard UI** - Replace NameEntryForm with 3-step join wizard (fun name instant, name entry, emoji pick, welcome) (completed 2026-03-09)
-- [ ] **Phase 42: localStorage Persistence + Auto-Rejoin** - Same-device returning students auto-rejoin silently via localStorage session map
+- [x] **Phase 42: localStorage Persistence + Auto-Rejoin** - Same-device returning students auto-rejoin silently via localStorage session map (completed 2026-03-09)
 - [ ] **Phase 43: FingerprintJS Removal** - Remove FingerprintJS package, application code, and database columns
 - [ ] **Phase 44: Teacher Sidebar + Emoji Display** - Teacher name view toggle, student self-edit, emoji display throughout all session UI
 
@@ -223,6 +223,6 @@ Phases 39-41 are strictly sequential (schema -> actions -> UI). Phase 42 require
 | 39. Schema Migration + Data Foundation | 1/1 | Complete    | 2026-03-08 | - |
 | 40. Server Actions + DAL | 1/1 | Complete    | 2026-03-08 | - |
 | 41. Join Wizard UI | v3.0 | Complete    | 2026-03-09 | 2026-03-09 |
-| 42. localStorage Persistence + Auto-Rejoin | v3.0 | 0/1 | Not started | - |
+| 42. localStorage Persistence + Auto-Rejoin | 1/1 | Complete   | 2026-03-09 | - |
 | 43. FingerprintJS Removal | v3.0 | 0/TBD | Not started | - |
 | 44. Teacher Sidebar + Emoji Display | v3.0 | 0/TBD | Not started | - |

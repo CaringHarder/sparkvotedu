@@ -16,8 +16,8 @@ Requirements for the Student Join Overhaul + Cleanup milestone.
 
 ### Persistence
 
-- [ ] **PERS-01**: Same-device returning student auto-rejoins silently via localStorage (zero clicks beyond entering class code or visiting direct link)
-- [ ] **PERS-02**: localStorage remembers all sessions the student has joined (not just the most recent)
+- [x] **PERS-01**: Same-device returning student auto-rejoins silently via localStorage (zero clicks beyond entering class code or visiting direct link)
+- [x] **PERS-02**: localStorage remembers all sessions the student has joined (not just the most recent)
 - [x] **PERS-03**: Cross-device returning student can reclaim identity by typing first name + last initial
 - [x] **PERS-04**: When cross-device name match is ambiguous, system shows fun names + emojis for student to pick from
 
@@ -71,8 +71,8 @@ Deferred to v3.x or later.
 | JOIN-02 | Phase 41 | Complete |
 | JOIN-03 | Phase 41 | Complete |
 | JOIN-04 | Phase 44 | Pending |
-| PERS-01 | Phase 42 | Pending |
-| PERS-02 | Phase 42 | Pending |
+| PERS-01 | Phase 42 | Complete |
+| PERS-02 | Phase 42 | Complete |
 | PERS-03 | Phase 40 | Complete |
 | PERS-04 | Phase 40 | Complete |
 | TCHR-01 | Phase 44 | Pending |
