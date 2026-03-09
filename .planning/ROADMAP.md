@@ -139,13 +139,13 @@ Plans:
 **Depends on**: Phase 41 (persistence enhances the working wizard; wizard must function without persistence first)
 **Requirements**: PERS-01, PERS-02
 **Success Criteria** (what must be TRUE):
-  1. Student who previously joined a session returns to the same class code on the same device and is auto-rejoined with zero clicks (no wizard shown)
+  1. Student who previously joined a session returns to the same class code on the same device and sees "Is this you?" confirmation with their identity
   2. localStorage stores identities for all sessions the student has joined (not just the most recent), keyed by sessionId
   3. When localStorage is unavailable (ephemeral Chromebook mode, private browsing), the join wizard runs normally with no errors or warnings -- name-based server-side reclaim is the fallback
-  4. Stored identities older than 30 days are automatically pruned from localStorage
+  4. Stored identities older than 90 days are automatically pruned from localStorage
 **Plans**: 1 plan
 Plans:
-- [ ] 39-01-PLAN.md -- Schema migration + emoji pool module + EmojiAvatar component
+- [ ] 42-01-PLAN.md -- Identity store module + rejoin server action + confirmation UI + wizard integration
 
 ### Phase 43: FingerprintJS Removal
 **Goal**: All FingerprintJS code, dependencies, and database columns are removed from the codebase, reducing the client bundle by ~150KB and eliminating dead code across application, schema, and package layers
@@ -223,6 +223,6 @@ Phases 39-41 are strictly sequential (schema -> actions -> UI). Phase 42 require
 | 39. Schema Migration + Data Foundation | 1/1 | Complete    | 2026-03-08 | - |
 | 40. Server Actions + DAL | 1/1 | Complete    | 2026-03-08 | - |
 | 41. Join Wizard UI | v3.0 | Complete    | 2026-03-09 | 2026-03-09 |
-| 42. localStorage Persistence + Auto-Rejoin | v3.0 | 0/TBD | Not started | - |
+| 42. localStorage Persistence + Auto-Rejoin | v3.0 | 0/1 | Not started | - |
 | 43. FingerprintJS Removal | v3.0 | 0/TBD | Not started | - |
 | 44. Teacher Sidebar + Emoji Display | v3.0 | 0/TBD | Not started | - |
