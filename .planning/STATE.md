@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v3.0
 milestone_name: Student Join Overhaul + Cleanup
-status: completed
-stopped_at: Phase 45 context gathered
-last_updated: "2026-03-09T10:54:38.192Z"
-last_activity: 2026-03-09 -- Completed 44-02 sidebar toggle, teacher edit, emoji migration
+status: in-progress
+stopped_at: Completed 45-01-PLAN.md
+last_updated: "2026-03-09T12:05:36.000Z"
+last_activity: 2026-03-09 -- Completed 45-01 firstName-only returning flow + confirmation card
 progress:
   total_phases: 7
   completed_phases: 6
-  total_plans: 9
-  completed_plans: 9
-  percent: 100
+  total_plans: 10
+  completed_plans: 10
+  percent: 95
 ---
 
 # Project State
@@ -21,16 +21,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-08)
 
 **Core value:** Teachers can instantly engage any classroom through voting -- on any topic, in any format -- and see participation happen in real time.
-**Current focus:** Phase 44 - Teacher Sidebar Emoji Display
+**Current focus:** Phase 45 - Polish Teacher Sidebar & Student Join UX
 
 ## Current Position
 
-Phase: 44 (6 of 6 in v3.0) - Teacher Sidebar Emoji Display
-Plan: 2 of 2 complete
-Status: Phase 44 complete
-Last activity: 2026-03-09 -- Completed 44-02 sidebar toggle, teacher edit, emoji migration
+Phase: 45 (7 of 7 in v3.0) - Polish Teacher Sidebar & Student Join UX
+Plan: 1 of 2 complete
+Status: in-progress
+Last activity: 2026-03-09 -- Completed 45-01 firstName-only returning flow + confirmation card
 
-Progress: [██████████] 100%
+Progress: [█████░░░░░] 50%
 
 ## Performance Metrics
 
@@ -75,6 +75,9 @@ Recent decisions affecting current work:
 - [Phase 44]: Sentinel emoji migration -- placeholder emoji detected and replaced on next visit via interstitial
 - [Phase 44]: teacherUpdateStudentName reuses broadcastParticipantJoined for real-time propagation
 - [Phase 44]: Name view toggle is pure React state, no DB write on toggle
+- [Phase 45]: firstName-only returning lookup -- no auto-reclaim, always show confirmation card
+- [Phase 45]: Impersonation guard is warning-only (does not block submission)
+- [Phase 45]: claimReturningIdentity reused for confirmation card claim
 
 ### Roadmap Evolution
 
@@ -102,9 +105,10 @@ None.
 | Phase 43 P01 | 5min | 2 tasks | 12 files |
 | Phase 44 P01 | 3min | 2 tasks | 9 files |
 | Phase 44 P02 | 12min | 3 tasks | 15 files |
+| Phase 45 P01 | 5min | 3 tasks | 10 files |
 
 ## Session Continuity
 
-Last session: 2026-03-09T10:54:38.187Z
-Stopped at: Phase 45 context gathered
-Resume: Phase 44 complete. Run phase verification or start next milestone.
+Last session: 2026-03-09T12:05:36Z
+Stopped at: Completed 45-01-PLAN.md
+Resume: Plan 45-01 complete. Execute 45-02-PLAN.md for toggle persistence and teacher edit dialog.
