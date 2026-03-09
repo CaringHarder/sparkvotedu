@@ -3,7 +3,7 @@
 import { useReducer, useRef, useState, useCallback, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'motion/react'
-import { createWizardParticipant, completeWizardProfile, lookupStudent, rejoinWithStoredIdentity } from '@/actions/student'
+import { reserveFunName, createCompletedParticipant, lookupStudent, rejoinWithStoredIdentity } from '@/actions/student'
 import { shortcodeToEmoji } from '@/lib/student/emoji-pool'
 import { setSessionParticipant } from '@/lib/student/session-store'
 import { getStoredIdentity, setStoredIdentity, clearStoredIdentity } from '@/lib/student/identity-store'
@@ -59,7 +59,6 @@ function wizardReducer(state: WizardStep, action: WizardAction): WizardStep {
       return {
         type: 'fun-name-splash',
         funName: action.funName,
-        participantId: action.participantId,
       }
 
     case 'SPLASH_COMPLETE':
@@ -67,7 +66,6 @@ function wizardReducer(state: WizardStep, action: WizardAction): WizardStep {
         return {
           type: 'first-name',
           funName: state.funName,
-          participantId: state.participantId,
         }
       }
       return state
@@ -77,7 +75,6 @@ function wizardReducer(state: WizardStep, action: WizardAction): WizardStep {
         return {
           type: 'last-initial',
           funName: state.funName,
-          participantId: state.participantId,
           firstName: action.firstName,
         }
       }
@@ -90,7 +87,6 @@ function wizardReducer(state: WizardStep, action: WizardAction): WizardStep {
         return {
           type: 'emoji-pick',
           funName: state.funName,
-          participantId: state.participantId,
           firstName: state.firstName,
           lastInitial: action.lastInitial,
         }
@@ -102,7 +98,6 @@ function wizardReducer(state: WizardStep, action: WizardAction): WizardStep {
         return {
           type: 'new-match-found',
           funName: state.funName,
-          participantId: state.participantId,
           firstName: state.firstName,
           lastInitial: action.lastInitial,
           candidates: action.candidates,
@@ -115,7 +110,6 @@ function wizardReducer(state: WizardStep, action: WizardAction): WizardStep {
         return {
           type: 'emoji-pick',
           funName: state.funName,
-          participantId: state.participantId,
           firstName: state.firstName,
           lastInitial: state.lastInitial,
         }
@@ -129,7 +123,7 @@ function wizardReducer(state: WizardStep, action: WizardAction): WizardStep {
           funName: state.funName,
           emoji: action.emoji,
           emojiChar: action.emojiChar,
-          participantId: state.participantId,
+          participantId: action.participantId,
           firstName: state.firstName,
           lastInitial: state.lastInitial,
         }
@@ -298,7 +292,7 @@ export function JoinWizard({ code, sessionInfo }: JoinWizardProps) {
     setError(null)
     directionRef.current = 1
 
-    const result = await createWizardParticipant({ code })
+    const result = await reserveFunName({ code })
 
     if (result.error) {
       setError(result.error)
@@ -306,11 +300,16 @@ export function JoinWizard({ code, sessionInfo }: JoinWizardProps) {
       return
     }
 
-    if (result.participant) {
+    if (result.sessionEnded) {
+      setError('This session has ended')
+      setLoading(false)
+      return
+    }
+
+    if (result.funName) {
       dispatch({
         type: 'SET_FUN_NAME',
-        funName: result.participant.funName,
-        participantId: result.participant.id,
+        funName: result.funName,
       })
     }
 
@@ -323,47 +322,62 @@ export function JoinWizard({ code, sessionInfo }: JoinWizardProps) {
     dispatch({ type: 'SELECT_RETURNING' })
   }, [])
 
-  // Handler for emoji selection -- dispatches and saves profile in background
+  // Handler for emoji selection -- creates participant atomically, then transitions
   const handleEmojiSelect = useCallback(
-    (emoji: string, emojiChar: string) => {
+    async (emoji: string, emojiChar: string) => {
       if (step.type !== 'emoji-pick') return
 
+      setLoading(true)
+      setError(null)
       directionRef.current = 1
-      dispatch({ type: 'SELECT_EMOJI', emoji, emojiChar })
 
-      // Save profile to DB in the background (don't block UI transition)
-      completeWizardProfile({
-        participantId: step.participantId,
-        firstName: step.firstName,
-        lastInitial: step.lastInitial,
-        emoji,
-      }).catch(() => {
-        // Profile save failed -- non-blocking, will be retried on session entry
-      })
-
-      // Store identity in sessionStorage for the session page
-      setSessionParticipant(sessionInfo.id, {
-        participantId: step.participantId,
-        firstName: step.firstName,
+      const result = await createCompletedParticipant({
+        code,
         funName: step.funName,
-        sessionId: sessionInfo.id,
-        rerollUsed: false,
-        emoji,
-        lastInitial: step.lastInitial,
-      })
-
-      // Persist to localStorage for auto-rejoin
-      setStoredIdentity({
-        participantId: step.participantId,
-        funName: step.funName,
-        emoji,
         firstName: step.firstName,
         lastInitial: step.lastInitial,
-        sessionId: sessionInfo.id,
-        joinedAt: Date.now(),
+        emoji,
       })
+
+      if (result.error) {
+        setError(result.error)
+        setLoading(false)
+        return
+      }
+
+      if (result.participant) {
+        // Use the ACTUAL funName from server (may differ if reserved name was taken)
+        const actualFunName = result.participant.funName
+
+        // Store identity in sessionStorage for the session page
+        setSessionParticipant(sessionInfo.id, {
+          participantId: result.participant.id,
+          firstName: result.participant.firstName,
+          funName: actualFunName,
+          sessionId: sessionInfo.id,
+          rerollUsed: false,
+          emoji,
+          lastInitial: step.lastInitial,
+        })
+
+        // Persist to localStorage for auto-rejoin
+        setStoredIdentity({
+          participantId: result.participant.id,
+          funName: actualFunName,
+          emoji,
+          firstName: step.firstName,
+          lastInitial: step.lastInitial,
+          sessionId: sessionInfo.id,
+          joinedAt: Date.now(),
+        })
+
+        // Transition to welcome screen with the actual participant data
+        dispatch({ type: 'SELECT_EMOJI', emoji, emojiChar, participantId: result.participant.id })
+      }
+
+      setLoading(false)
     },
-    [step, sessionInfo.id]
+    [step, sessionInfo.id, code]
   )
 
   // Handler for entering session after welcome screen

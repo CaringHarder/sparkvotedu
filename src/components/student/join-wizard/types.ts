@@ -15,18 +15,16 @@ export type SlideDirection = 1 | -1
 /** Discriminated union of every wizard screen */
 export type WizardStep =
   | { type: 'path-select' }
-  | { type: 'fun-name-splash'; funName: string; participantId: string }
-  | { type: 'first-name'; funName: string; participantId: string }
+  | { type: 'fun-name-splash'; funName: string }
+  | { type: 'first-name'; funName: string }
   | {
       type: 'last-initial'
       funName: string
-      participantId: string
       firstName: string
     }
   | {
       type: 'emoji-pick'
       funName: string
-      participantId: string
       firstName: string
       lastInitial: string
     }
@@ -54,7 +52,6 @@ export type WizardStep =
   | {
       type: 'new-match-found'
       funName: string
-      participantId: string
       firstName: string
       lastInitial: string
       candidates: DuplicateCandidate[]
@@ -75,10 +72,10 @@ export type WizardStep =
 export type WizardAction =
   | { type: 'SELECT_NEW' }
   | { type: 'SELECT_RETURNING' }
-  | { type: 'SET_FUN_NAME'; funName: string; participantId: string }
+  | { type: 'SET_FUN_NAME'; funName: string }
   | { type: 'SUBMIT_FIRST_NAME'; firstName: string }
   | { type: 'SUBMIT_LAST_INITIAL'; lastInitial: string }
-  | { type: 'SELECT_EMOJI'; emoji: string; emojiChar: string }
+  | { type: 'SELECT_EMOJI'; emoji: string; emojiChar: string; participantId: string }
   | {
       type: 'SET_RETURNING_CONFIRM'
       candidate: DuplicateCandidate
