@@ -158,7 +158,10 @@ Plans:
   4. Client bundle size is reduced by approximately 150KB compared to pre-removal baseline
 **Plans**: 1 plan
 Plans:
-- [ ] 39-01-PLAN.md -- Schema migration + emoji pool module + EmojiAvatar component
+- [ ] 43-01-PLAN.md -- Remove FingerprintJS code, dependencies, schema column, and update privacy page
+
+
+
 
 ### Phase 44: Teacher Sidebar + Emoji Display
 **Goal**: Teachers can toggle between fun name and real name views in the participation sidebar, edit student display names, and students can self-edit their name and emoji -- with emoji + fun name displayed consistently throughout all session UI
@@ -224,5 +227,5 @@ Phases 39-41 are strictly sequential (schema -> actions -> UI). Phase 42 require
 | 40. Server Actions + DAL | 1/1 | Complete    | 2026-03-08 | - |
 | 41. Join Wizard UI | v3.0 | Complete    | 2026-03-09 | 2026-03-09 |
 | 42. localStorage Persistence + Auto-Rejoin | 1/1 | Complete    | 2026-03-09 | - |
-| 43. FingerprintJS Removal | v3.0 | 0/TBD | Not started | - |
+| 43. FingerprintJS Removal | v3.0 | 0/1 | Not started | - |
 | 44. Teacher Sidebar + Emoji Display | v3.0 | 0/TBD | Not started | - |
