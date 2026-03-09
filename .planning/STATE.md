@@ -4,8 +4,8 @@ milestone: v3.0
 milestone_name: Student Join Overhaul + Cleanup
 status: completed
 stopped_at: Milestone v3.0 archived
-last_updated: "2026-03-09T13:15:00.000Z"
-last_activity: "2026-03-09 -- Milestone v3.0 archived and tagged"
+last_updated: "2026-03-09T20:00:00.000Z"
+last_activity: "2026-03-09 -- Quick task 30: fix ghost students bug"
 progress:
   total_phases: 7
   completed_phases: 7
@@ -61,5 +61,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-03-09
-Stopped at: Milestone v3.0 archived
+Stopped at: Completed quick-30 (fix ghost students bug)
 Resume: Start next milestone with `/gsd:new-milestone`
