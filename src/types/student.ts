@@ -24,6 +24,7 @@ export interface DuplicateCandidate {
   id: string
   funName: string
   emoji: string | null
+  lastInitial: string | null
 }
 
 /** Result of a student join attempt */

@@ -239,6 +239,38 @@ export async function findReturningStudent(
 }
 
 /**
+ * Find returning students by firstName only (no lastInitial) across ALL of a
+ * teacher's non-archived sessions. Used for first-name-only lookup flow.
+ *
+ * Returns matches ordered by lastSeenAt desc (most recent first).
+ * Includes lastInitial in the result for display in disambiguation cards.
+ */
+export async function findReturningByFirstName(
+  teacherId: string,
+  firstName: string
+) {
+  return prisma.studentParticipant.findMany({
+    where: {
+      firstName: { equals: firstName, mode: 'insensitive' },
+      banned: false,
+      session: {
+        teacherId,
+        archivedAt: null,
+      },
+    },
+    select: {
+      id: true,
+      funName: true,
+      emoji: true,
+      lastInitial: true,
+      sessionId: true,
+      lastSeenAt: true,
+    },
+    orderBy: { lastSeenAt: 'desc' },
+  })
+}
+
+/**
  * Create a returning participant in a target session, copying the identity
  * (funName + emoji) from a previous session's participant.
  *

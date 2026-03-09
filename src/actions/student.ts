@@ -11,6 +11,7 @@ import {
   findParticipantsByFirstName,
   createParticipant,
   findReturningStudent,
+  findReturningByFirstName,
   createReturningParticipant,
   updateParticipantDevice,
   updateFirstName,
@@ -299,7 +300,7 @@ export async function joinSessionByName(input: {
 
   // Step 5: Duplicates found -- return candidates for disambiguation
   return {
-    duplicates: existing.map((p) => ({ id: p.id, funName: p.funName, emoji: p.emoji ?? null })),
+    duplicates: existing.map((p) => ({ id: p.id, funName: p.funName, emoji: p.emoji ?? null, lastInitial: null })),
     session: sessionInfo,
   }
 }
@@ -558,6 +559,108 @@ export async function lookupStudent(input: {
       id: m.id,
       funName: m.funName,
       emoji: m.emoji,
+      lastInitial: null,
+    })),
+    session: sessionInfo,
+    allowNew: true,
+  }
+}
+
+// --- First-Name-Only Lookup Action ---
+
+const lookupStudentByFirstNameSchema = z.object({
+  code: z.string().regex(/^\d{6}$/, 'Class code must be exactly 6 digits'),
+  firstName: firstNameSchema,
+})
+
+/**
+ * Look up a returning student by firstName only (no lastInitial) across all
+ * of a teacher's non-archived sessions.
+ *
+ * Unlike lookupStudent, this NEVER auto-reclaims. All matches (including single)
+ * are returned as candidates so the UI can show a confirmation card.
+ *
+ * - Zero matches: return { isNew: true }
+ * - One match: return { candidates: [match] } (confirmation card)
+ * - Multiple matches: return deduplicated { candidates } (disambiguation)
+ * - Current-session match: auto-reclaim (already in this session)
+ *
+ * No authentication required -- students are anonymous.
+ */
+export async function lookupStudentByFirstName(input: {
+  code: string
+  firstName: string
+}): Promise<LookupResult> {
+  const parsed = lookupStudentByFirstNameSchema.safeParse(input)
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0].message }
+  }
+
+  const { code, firstName } = parsed.data
+
+  const session = await findSessionByCode(code)
+  if (!session) {
+    return { error: 'Invalid class code' }
+  }
+
+  const sessionInfo = {
+    id: session.id,
+    code: session.code,
+    name: session.name,
+    status: session.status,
+    teacherName: session.teacher.name,
+  }
+
+  if (session.status === 'ended') {
+    return { session: sessionInfo, sessionEnded: true }
+  }
+
+  const matches = await findReturningByFirstName(session.teacherId, firstName)
+
+  if (matches.length === 0) {
+    return { isNew: true, session: sessionInfo }
+  }
+
+  // Check if any match is already in the current session -- auto-reclaim
+  const currentSessionMatch = matches.find((m) => m.sessionId === session.id)
+  if (currentSessionMatch) {
+    const { prisma } = await import('@/lib/prisma')
+    const existing = await prisma.studentParticipant.findUnique({
+      where: { id: currentSessionMatch.id },
+    })
+    if (existing) {
+      broadcastParticipantJoined(session.id).catch(() => {})
+      return {
+        participant: toParticipantData(existing),
+        session: sessionInfo,
+        returning: true,
+      }
+    }
+  }
+
+  // Filter out current-session matches for cross-session candidates
+  const crossSessionMatches = matches.filter((m) => m.sessionId !== session.id)
+
+  if (crossSessionMatches.length === 0) {
+    return { isNew: true, session: sessionInfo }
+  }
+
+  // Deduplicate by funName+emoji
+  const seen = new Set<string>()
+  const uniqueMatches = crossSessionMatches.filter((m) => {
+    const key = `${m.funName}|${m.emoji ?? ''}`
+    if (seen.has(key)) return false
+    seen.add(key)
+    return true
+  })
+
+  // Return ALL candidates (including single match) -- no auto-reclaim
+  return {
+    candidates: uniqueMatches.map((m) => ({
+      id: m.id,
+      funName: m.funName,
+      emoji: m.emoji,
+      lastInitial: m.lastInitial,
     })),
     session: sessionInfo,
     allowNew: true,
@@ -744,6 +847,7 @@ export async function rejoinWithStoredIdentity(input: {
 export async function teacherUpdateStudentName(input: {
   participantId: string
   firstName: string
+  lastInitial?: string
 }): Promise<{ error?: string; success?: boolean }> {
   const { getAuthenticatedTeacher } = await import('@/lib/dal/auth')
   const teacher = await getAuthenticatedTeacher()
@@ -755,6 +859,14 @@ export async function teacherUpdateStudentName(input: {
   const result = firstNameSchema.safeParse(input.firstName)
   if (!result.success) {
     return { error: result.error.issues[0].message }
+  }
+
+  // Validate lastInitial if provided
+  if (input.lastInitial !== undefined && input.lastInitial !== '') {
+    const liResult = lastInitialSchema.safeParse(input.lastInitial)
+    if (!liResult.success) {
+      return { error: liResult.error.issues[0].message }
+    }
   }
 
   const { prisma } = await import('@/lib/prisma')
@@ -771,13 +883,49 @@ export async function teacherUpdateStudentName(input: {
     return { error: 'Not authorized to edit this student' }
   }
 
+  // Build update data
+  const updateData: { firstName: string; lastInitial?: string } = {
+    firstName: result.data,
+  }
+  if (input.lastInitial !== undefined && input.lastInitial !== '') {
+    updateData.lastInitial = input.lastInitial
+  }
+
   await prisma.studentParticipant.update({
     where: { id: input.participantId },
-    data: { firstName: result.data },
+    data: updateData,
   })
 
   // Broadcast so student sees update in real time
   broadcastParticipantJoined(participant.session.id).catch(() => {})
+
+  return { success: true }
+}
+
+/**
+ * Persist the teacher's preferred name view default (fun or real).
+ * Auth: requires authenticated teacher.
+ */
+export async function setNameViewDefault(input: {
+  value: 'fun' | 'real'
+}): Promise<{ error?: string; success?: boolean }> {
+  const { getAuthenticatedTeacher } = await import('@/lib/dal/auth')
+  const teacher = await getAuthenticatedTeacher()
+  if (!teacher) {
+    return { error: 'Not authenticated' }
+  }
+
+  const schema = z.object({ value: z.enum(['fun', 'real']) })
+  const parsed = schema.safeParse(input)
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0].message }
+  }
+
+  const { prisma } = await import('@/lib/prisma')
+  await prisma.teacher.update({
+    where: { id: teacher.id },
+    data: { nameViewDefault: parsed.data.value },
+  })
 
   return { success: true }
 }
