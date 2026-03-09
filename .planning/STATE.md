@@ -28,7 +28,7 @@ See: .planning/PROJECT.md (updated 2026-03-08)
 Phase: 45 (7 of 7 in v3.0) - Polish Teacher Sidebar & Student Join UX
 Plan: 2 of 2 complete
 Status: complete
-Last activity: 2026-03-09 -- Completed 45-02 sidebar polish (realtime refresh, toggle persistence, edit dialog lastInitial)
+Last activity: 2026-03-09 -- Completed quick task 29: Fix dashboard server-side rendering error
 
 Progress: [██████████] 100%
 
@@ -101,6 +101,7 @@ None.
 | # | Description | Date | Commit | Directory |
 |---|-------------|------|--------|-----------|
 | 28 | Bar chart vote count high-contrast circular badge | 2026-03-08 | a1277ae | [28-bar-chart-larger-vote-count-badge](./quick/28-bar-chart-larger-vote-count-badge/) |
+| 29 | Fix dashboard server-side rendering error | 2026-03-09 | d7f6eea | [29-fix-dashboard-server-side-rendering-erro](./quick/29-fix-dashboard-server-side-rendering-erro/) |
 | Phase 41 P01 | 3min | 2 tasks | 9 files |
 | Phase 41 P02 | 2min | 2 tasks | 7 files |
 | Phase 41 P03 | 3min | 3 tasks | 6 files |
