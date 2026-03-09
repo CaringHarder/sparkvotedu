@@ -8,6 +8,7 @@ vi.mock('@/lib/dal/class-session', () => ({
 
 vi.mock('@/lib/dal/student-session', () => ({
   findReturningStudent: vi.fn(),
+  findReturningByFirstName: vi.fn(),
   createReturningParticipant: vi.fn(),
   findParticipantByDevice: vi.fn(),
   findParticipantsByFirstName: vi.fn(),
@@ -24,13 +25,31 @@ vi.mock('@/lib/realtime/broadcast', () => ({
   broadcastParticipantJoined: vi.fn().mockResolvedValue(undefined),
 }))
 
-import { lookupStudent } from '../student'
+// Mock auth module
+vi.mock('@/lib/dal/auth', () => ({
+  getAuthenticatedTeacher: vi.fn(),
+}))
+
+// Mock prisma for teacherUpdateStudentName
+vi.mock('@/lib/prisma', () => ({
+  prisma: {
+    studentParticipant: {
+      findUnique: vi.fn(),
+      update: vi.fn(),
+    },
+  },
+}))
+
+import { lookupStudent, lookupStudentByFirstName, teacherUpdateStudentName } from '../student'
 import { findSessionByCode } from '@/lib/dal/class-session'
 import {
   findReturningStudent,
+  findReturningByFirstName,
   createReturningParticipant,
 } from '@/lib/dal/student-session'
 import { broadcastParticipantJoined } from '@/lib/realtime/broadcast'
+import { getAuthenticatedTeacher } from '@/lib/dal/auth'
+import { prisma } from '@/lib/prisma'
 
 const mockSession = {
   id: 'session-1',
@@ -180,5 +199,94 @@ describe('lookupStudent', () => {
     })
 
     expect(result.error).toBeDefined()
+  })
+})
+
+describe('lookupStudentByFirstName', () => {
+  it('returns single candidate for firstName only lookup (no auto-reclaim)', async () => {
+    const match = {
+      id: 'part-old',
+      funName: 'Daring Dragon',
+      emoji: ':sparkles:',
+      lastInitial: 'R',
+      sessionId: 'session-old',
+      lastSeenAt: new Date(),
+    }
+    vi.mocked(findSessionByCode).mockResolvedValue(mockSession as never)
+    vi.mocked(findReturningByFirstName).mockResolvedValue([match])
+
+    const result = await lookupStudentByFirstName({
+      code: '123456',
+      firstName: 'Alice',
+    })
+
+    expect(result.candidates).toHaveLength(1)
+    expect(result.candidates![0].lastInitial).toBe('R')
+    expect(result.returning).toBeUndefined()
+    expect(result.participant).toBeUndefined()
+    expect(createReturningParticipant).not.toHaveBeenCalled()
+  })
+
+  it('returns multiple candidates with lastInitial included', async () => {
+    const matches = [
+      { id: 'p1', funName: 'Daring Dragon', emoji: ':sparkles:', lastInitial: 'R', sessionId: 's1', lastSeenAt: new Date() },
+      { id: 'p2', funName: 'Mighty Moose', emoji: ':fire:', lastInitial: 'S', sessionId: 's2', lastSeenAt: new Date() },
+    ]
+    vi.mocked(findSessionByCode).mockResolvedValue(mockSession as never)
+    vi.mocked(findReturningByFirstName).mockResolvedValue(matches)
+
+    const result = await lookupStudentByFirstName({
+      code: '123456',
+      firstName: 'Alice',
+    })
+
+    expect(result.candidates).toHaveLength(2)
+    expect(result.candidates![0].lastInitial).toBe('R')
+    expect(result.candidates![1].lastInitial).toBe('S')
+    expect(result.allowNew).toBe(true)
+  })
+
+  it('returns isNew when no matches', async () => {
+    vi.mocked(findSessionByCode).mockResolvedValue(mockSession as never)
+    vi.mocked(findReturningByFirstName).mockResolvedValue([])
+
+    const result = await lookupStudentByFirstName({
+      code: '123456',
+      firstName: 'Alice',
+    })
+
+    expect(result.isNew).toBe(true)
+    expect(result.session).toBeDefined()
+  })
+})
+
+describe('teacherUpdateStudentName with lastInitial', () => {
+  it('includes lastInitial in teacherUpdateStudentName', async () => {
+    vi.mocked(getAuthenticatedTeacher).mockResolvedValue({
+      id: 'teacher-1',
+      name: 'Ms. Smith',
+    } as never)
+    vi.mocked(prisma.studentParticipant.findUnique).mockResolvedValue({
+      id: 'part-1',
+      sessionId: 'session-1',
+      session: { teacherId: 'teacher-1', id: 'session-1' },
+    } as never)
+    vi.mocked(prisma.studentParticipant.update).mockResolvedValue({} as never)
+
+    const result = await teacherUpdateStudentName({
+      participantId: 'part-1',
+      firstName: 'Alice',
+      lastInitial: 'B',
+    })
+
+    expect(result.success).toBe(true)
+    expect(prisma.studentParticipant.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          firstName: 'Alice',
+          lastInitial: 'B',
+        }),
+      })
+    )
   })
 })
