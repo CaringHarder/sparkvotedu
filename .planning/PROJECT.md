@@ -2,7 +2,7 @@
 
 ## What This Is
 
-A web application that lets teachers create polls and tournament-style brackets for their classes, where students participate anonymously. Teachers manage brackets (single-elimination, double-elimination, round-robin, predictive), advance winners by vote or by choice, and watch results on a live dashboard. Students join via class code, get a fun name + emoji identity instantly, then enter their first name and last initial in a guided wizard -- no account needed. Returning students auto-rejoin silently on the same device, or reclaim their identity by name on a different device. The platform uses a freemium model (Free / Pro / Pro Plus) with Stripe billing to gate bracket types, quantity limits, and advanced features. It integrates with SportsDataIO to auto-generate real NCAA March Madness tournament brackets for classroom prediction competitions. Visual bracket placement lets teachers click to place entrants into specific bracket positions during creation. An admin panel lets the site owner manage teachers, accounts, and subscriptions. Consistent context menus across all card types provide rename, duplicate, archive, and delete actions. Deleted activities disappear from student views in real time.
+A web application that lets teachers create polls and tournament-style brackets for their classes, where students participate with fun name + emoji identities. Teachers manage brackets (single-elimination, double-elimination, round-robin, predictive), advance winners by vote or by choice, and watch results on a live dashboard. Students join via class code, instantly receive a fun name, then complete a 3-step wizard (first name, last initial, emoji pick) -- no account needed. Returning students auto-rejoin silently on the same device via localStorage, or reclaim their identity by name on a different device. Teachers toggle between fun name and real name views in the participation sidebar, with a global default that persists to their profile. The platform uses a freemium model (Free / Pro / Pro Plus) with Stripe billing to gate bracket types, quantity limits, and advanced features. It integrates with SportsDataIO to auto-generate real NCAA March Madness tournament brackets for classroom prediction competitions. Visual bracket placement lets teachers click to place entrants into specific bracket positions during creation. An admin panel lets the site owner manage teachers, accounts, and subscriptions. Consistent context menus across all card types provide rename, duplicate, archive, and delete actions. Deleted activities disappear from student views in real time.
 
 ## Core Value
 
@@ -71,25 +71,24 @@ Teachers can instantly engage any classroom through voting -- on any topic, in a
 - ✓ Email verification enforcement before dashboard access -- v2.0
 - ✓ Safari OAuth compatibility (requestIdleCallback polyfill) -- v2.0
 
+- ✓ Zero-friction student join: fun name + emoji assigned instantly, 3-step wizard (first name, last initial, emoji) -- v3.0
+- ✓ Same-device auto-rejoin via localStorage (zero clicks, 90-day TTL, all sessions remembered) -- v3.0
+- ✓ Cross-device identity reclaim via first name + last initial matching with disambiguation -- v3.0
+- ✓ Teacher sidebar toggle: fun name view vs real name view with global default + per-session override -- v3.0
+- ✓ Student self-edit: gear icon to change display name from session header -- v3.0
+- ✓ Teacher can edit student display names and last initial from sidebar -- v3.0
+- ✓ Existing participant emoji migration: sentinel detection, one-time emoji pick prompt on rejoin -- v3.0
+- ✓ FingerprintJS complete removal: package, code, and database columns cleaned up (~150KB bundle reduction) -- v3.0
+
 ### Active
 
-## Current Milestone: v3.0 Student Join Overhaul + Cleanup
-
-**Goal:** Redesign the student join experience to be instant (fun name + emoji first, real name second) with seamless same-device auto-rejoin and cross-device identity reclaim, plus clean up legacy fingerprinting code.
-
-**Target features:**
-- Zero-friction student join (fun name + emoji assigned instantly, 3-step name wizard)
-- Same-device auto-rejoin via localStorage (zero clicks)
-- Cross-device identity reclaim via name matching
-- Teacher sidebar toggle (fun name view vs real name view, global default + per-session override)
-- Student self-edit (gear icon to change name/emoji)
-- Teacher can edit student display names from sidebar
-- Existing participant migration (auto-assign fun names, prompt for emoji on rejoin)
-- FingerprintJS removal and tech debt cleanup
+(None -- planning next milestone)
 
 ### Future
 
 - Permanent teacher account deletion from admin panel (identified during v2.0 UAT)
+- Custom emoji set per teacher (teacher curates available emojis)
+- QR code auto-fill for mobile join (scan to join, no typing)
 
 ### Out of Scope
 
@@ -105,22 +104,21 @@ Teachers can instantly engage any classroom through voting -- on any topic, in a
 - Collaborative bracket editing -- one teacher per bracket
 - Offline mode -- real-time is core value
 - Admin password reset for teachers -- self-service forgot-password flow exists
-- Device fingerprinting improvements -- fundamentally broken on identical school hardware; replaced by name-based identity in v1.2, evolving to fun name + emoji in v3.0
+- Device fingerprinting -- fundamentally broken on identical school hardware; replaced by fun name + emoji identity in v3.0, FingerprintJS fully removed
 - Student accounts with passwords/email -- fun name + emoji identity preserves anonymity
 
 ## Context
 
-**Current state:** v2.0 shipped 2026-03-08. Live at sparkvotedu.com. 55,141 LOC TypeScript. 38 phases completed across 5 milestones (v1.0-v2.0).
+**Current state:** v3.0 shipped 2026-03-09. Live at sparkvotedu.com. 89,896 LOC TypeScript. 45 phases completed across 6 milestones (v1.0-v3.0).
 
 **Tech stack:** Next.js 16 (App Router, Turbopack), Prisma v7, Supabase (auth + realtime + storage), Stripe (billing), SportsDataIO (sports data), Tailwind CSS v4, shadcn/ui, Framer Motion.
 
 **Deployment:** sparkvotedu.com on Vercel. Health endpoint at /api/health monitors Supabase Auth, Supabase Storage, Stripe, SportsDataIO, and cron secret. Branded auth domain at api.sparkvotedu.com.
 
-**Classroom testing:** Name-based student identity (v1.2) works but has friction -- name collisions in school-wide sessions, 4-click rejoin flow, typo issues. v3.0 redesigns identity around fun name + emoji as primary key.
+**Student identity:** Fun name + emoji identity system (v3.0). Students get instant fun name assignment, complete 3-step wizard (first name, last initial, emoji picker). localStorage auto-rejoin on same device. Cross-device reclaim via name matching. FingerprintJS fully removed.
 
 **Known items for future work:**
 - Microsoft and Apple OAuth configured in code but held (Google + email/password only)
-- FingerprintJS package and device fingerprint columns still in codebase (targeted for v3.0 cleanup)
 
 ## Constraints
 
@@ -155,10 +153,13 @@ Teachers can instantly engage any classroom through voting -- on any topic, in a
 | Cache-bust + sequence guard for realtime fetch | Next.js framework caching and stale responses broke SE final round updates | ✓ Good -- belt-and-suspenders approach |
 | Default roundRobinPacing to round_by_round when null | Existing brackets without pacing set behave as before | ✓ Good -- backward compatible |
 
-| Fun name + emoji as primary identity | Name-based join had friction: collisions, 4-click rejoin, typos. Fun name is unique, real name is metadata | — Pending |
-| 3-step name wizard (first name → last initial → emoji) | Removes typing barrier from initial join while still collecting teacher-useful info | — Pending |
-| localStorage auto-rejoin (all sessions) | Same-device return should be zero-click; remember all sessions not just latest | — Pending |
-| Cross-device reclaim via name match | Staff/adults may switch devices; name + initial narrows to unique participant | — Pending |
+| Fun name + emoji as primary identity | Name-based join had friction: collisions, 4-click rejoin, typos. Fun name is unique, real name is metadata | ✓ Good -- instant identity, no collisions |
+| 3-step name wizard (first name → last initial → emoji) | Removes typing barrier from initial join while still collecting teacher-useful info | ✓ Good -- smooth guided flow |
+| localStorage auto-rejoin (all sessions) | Same-device return should be zero-click; remember all sessions not just latest | ✓ Good -- 90-day TTL, 50-entry cap |
+| Cross-device reclaim via name match | Staff/adults may switch devices; name + initial narrows to unique participant | ✓ Good -- firstName-only lookup with confirmation |
+| Emoji stored as shortcodes (not Unicode) | Cross-platform rendering consistency on school devices | ✓ Good -- shortcodeToEmoji lookup works everywhere |
+| Sentinel emoji migration | Pre-existing participants need emoji without re-joining | ✓ Good -- one-time interstitial prompt |
+| FingerprintJS complete removal | Dead code, ~150KB bundle bloat, privacy concerns | ✓ Good -- clean codebase |
 
 ---
-*Last updated: 2026-03-08 after v3.0 milestone started*
+*Last updated: 2026-03-09 after v3.0 milestone*

@@ -1,5 +1,21 @@
 # Milestones
 
+## v3.0 Student Join Overhaul + Cleanup (Shipped: 2026-03-09)
+
+**Phases completed:** 7 phases (39-45), 11 plans
+
+**Key accomplishments:**
+- Emoji identity system: 24 K-12-safe shortcodes with deterministic djb2-hash selection, EmojiAvatar component, sentinel migration for pre-existing participants
+- 3-step join wizard: fun name splash -> first name -> last initial -> emoji picker -> welcome screen, replacing old single-input name form
+- Cross-device identity reclaim: server actions for name+initial lookup with disambiguation UI for ambiguous matches
+- localStorage auto-rejoin: zero-click same-device return with 90-day TTL, 50-entry cap, schema versioning, and "Is this you?" confirmation
+- FingerprintJS complete removal: npm package uninstalled, all application code removed, database columns dropped, privacy page updated (~150KB bundle reduction)
+- Teacher sidebar controls: fun/real name toggle with global default + per-session override, teacher edit dialog with last initial, real-time participant list refresh via Supabase channel
+
+**Stats:** ~77 commits, 89,896 LOC TypeScript, 2 days (2026-03-08 to 2026-03-09)
+
+---
+
 ## v1.0 MVP (Shipped: 2026-02-16)
 
 **Phases completed:** 13 phases, 102 plans, 59 tasks
