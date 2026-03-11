@@ -5,7 +5,7 @@ milestone_name: Student Join Overhaul + Cleanup
 status: completed
 stopped_at: Milestone v3.0 archived
 last_updated: "2026-03-09T20:00:00.000Z"
-last_activity: "2026-03-09 -- Quick task 30: fix ghost students bug"
+last_activity: "2026-03-11 -- Quick task 31: fix returning student search multi-match"
 progress:
   total_phases: 7
   completed_phases: 7
@@ -63,9 +63,10 @@ None.
 | # | Description | Date | Commit | Directory |
 |---|-------------|------|--------|-----------|
 | 30 | Fix ghost students bug - phantom students with fun names but no real names created when class joins session | 2026-03-09 | 881aae4 | [30-fix-ghost-students-bug-phantom-students-](./quick/30-fix-ghost-students-bug-phantom-students-/) |
+| 31 | Fix returning student search to handle multiple current-session matches | 2026-03-11 | f412bf8 | [31-fix-returning-student-search-to-handle-m](./quick/31-fix-returning-student-search-to-handle-m/) |
 
 ## Session Continuity
 
-Last session: 2026-03-09
-Last activity: 2026-03-09 - Completed quick task 30: Fix ghost students bug
+Last session: 2026-03-11
+Last activity: 2026-03-11 - Completed quick task 31: Fix returning student search multi-match
 Resume: Start next milestone with `/gsd:new-milestone`
