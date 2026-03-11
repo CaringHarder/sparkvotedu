@@ -258,6 +258,75 @@ describe('lookupStudentByFirstName', () => {
     expect(result.isNew).toBe(true)
     expect(result.session).toBeDefined()
   })
+
+  it('shows candidates when multiple current-session matches exist', async () => {
+    const matches = [
+      { id: 'p1', funName: 'Daring Dragon', emoji: ':sparkles:', lastInitial: 'R', sessionId: 'session-1', lastSeenAt: new Date() },
+      { id: 'p2', funName: 'Mighty Moose', emoji: ':fire:', lastInitial: 'S', sessionId: 'session-1', lastSeenAt: new Date() },
+    ]
+    vi.mocked(findSessionByCode).mockResolvedValue(mockSession as never)
+    vi.mocked(findReturningByFirstName).mockResolvedValue(matches)
+
+    const result = await lookupStudentByFirstName({
+      code: '123456',
+      firstName: 'David',
+    })
+
+    expect(result.candidates).toHaveLength(2)
+    expect(result.returning).toBeUndefined()
+    expect(result.participant).toBeUndefined()
+    expect(createReturningParticipant).not.toHaveBeenCalled()
+  })
+
+  it('auto-reclaims when exactly one current-session match', async () => {
+    const match = {
+      id: 'part-current',
+      funName: 'Brave Bear',
+      emoji: ':bear:',
+      lastInitial: 'J',
+      sessionId: 'session-1',
+      lastSeenAt: new Date(),
+    }
+    vi.mocked(findSessionByCode).mockResolvedValue(mockSession as never)
+    vi.mocked(findReturningByFirstName).mockResolvedValue([match])
+    vi.mocked(prisma.studentParticipant.findUnique).mockResolvedValue({
+      id: 'part-current',
+      firstName: 'David',
+      funName: 'Brave Bear',
+      emoji: ':bear:',
+      lastInitial: 'J',
+      rerollUsed: false,
+      recoveryCode: null,
+      sessionId: 'session-1',
+    } as never)
+
+    const result = await lookupStudentByFirstName({
+      code: '123456',
+      firstName: 'David',
+    })
+
+    expect(result.returning).toBe(true)
+    expect(result.participant).toBeDefined()
+    expect(result.participant!.funName).toBe('Brave Bear')
+  })
+
+  it('shows all candidates when multiple current-session + cross-session matches', async () => {
+    const matches = [
+      { id: 'p1', funName: 'Daring Dragon', emoji: ':sparkles:', lastInitial: 'R', sessionId: 'session-1', lastSeenAt: new Date() },
+      { id: 'p2', funName: 'Mighty Moose', emoji: ':fire:', lastInitial: 'S', sessionId: 'session-1', lastSeenAt: new Date() },
+      { id: 'p3', funName: 'Cool Cat', emoji: ':cat:', lastInitial: 'T', sessionId: 'session-old', lastSeenAt: new Date() },
+    ]
+    vi.mocked(findSessionByCode).mockResolvedValue(mockSession as never)
+    vi.mocked(findReturningByFirstName).mockResolvedValue(matches)
+
+    const result = await lookupStudentByFirstName({
+      code: '123456',
+      firstName: 'David',
+    })
+
+    expect(result.candidates).toHaveLength(3)
+    expect(result.allowNew).toBe(true)
+  })
 })
 
 describe('teacherUpdateStudentName with lastInitial', () => {

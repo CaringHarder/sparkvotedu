@@ -638,9 +638,10 @@ export async function lookupStudentByFirstName(input: {
     return { isNew: true, session: sessionInfo }
   }
 
-  // Check if any match is already in the current session -- auto-reclaim
-  const currentSessionMatch = matches.find((m) => m.sessionId === session.id)
-  if (currentSessionMatch) {
+  // Check if any match is already in the current session -- auto-reclaim only if exactly one
+  const currentSessionMatches = matches.filter((m) => m.sessionId === session.id)
+  if (currentSessionMatches.length === 1) {
+    const currentSessionMatch = currentSessionMatches[0]
     const { prisma } = await import('@/lib/prisma')
     const existing = await prisma.studentParticipant.findUnique({
       where: { id: currentSessionMatch.id },
@@ -655,16 +656,19 @@ export async function lookupStudentByFirstName(input: {
     }
   }
 
-  // Filter out current-session matches for cross-session candidates
-  const crossSessionMatches = matches.filter((m) => m.sessionId !== session.id)
+  // If multiple current-session matches, include them in candidates for disambiguation
+  // Otherwise, exclude the single auto-reclaimed match from candidates
+  const candidateMatches = currentSessionMatches.length > 1
+    ? matches  // Include all (current + cross-session)
+    : matches.filter((m) => m.sessionId !== session.id)
 
-  if (crossSessionMatches.length === 0) {
+  if (candidateMatches.length === 0) {
     return { isNew: true, session: sessionInfo }
   }
 
   // Deduplicate by funName+emoji
   const seen = new Set<string>()
-  const uniqueMatches = crossSessionMatches.filter((m) => {
+  const uniqueMatches = candidateMatches.filter((m) => {
     const key = `${m.funName}|${m.emoji ?? ''}`
     if (seen.has(key)) return false
     seen.add(key)
