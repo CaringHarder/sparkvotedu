@@ -65,9 +65,10 @@ None.
 | 30 | Fix ghost students bug - phantom students with fun names but no real names created when class joins session | 2026-03-09 | 881aae4 | [30-fix-ghost-students-bug-phantom-students-](./quick/30-fix-ghost-students-bug-phantom-students-/) |
 | 31 | Fix returning student search to handle multiple current-session matches | 2026-03-11 | f412bf8 | [31-fix-returning-student-search-to-handle-m](./quick/31-fix-returning-student-search-to-handle-m/) |
 | 32 | Session page: add name edit + unban device | 2026-03-11 | 9abeec9 | [32-session-page-add-name-edit-unban-device-](./quick/32-session-page-add-name-edit-unban-device-/) |
+| 33 | Change last initial label to "First Letter of your Last Name" | 2026-03-11 | 8082400 | [33-change-last-initial-label-to-first-lette](./quick/33-change-last-initial-label-to-first-lette/) |
 
 ## Session Continuity
 
 Last session: 2026-03-11
-Last activity: 2026-03-11 - Completed quick task 32: Session page add name edit + unban device
+Last activity: 2026-03-11 - Completed quick task 33: Change last initial label
 Resume: Start next milestone with `/gsd:new-milestone`
