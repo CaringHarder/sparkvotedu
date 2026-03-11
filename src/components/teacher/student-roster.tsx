@@ -7,6 +7,8 @@ interface ParticipantData {
   id: string
   funName: string
   firstName: string
+  lastInitial: string | null
+  emoji: string | null
   banned: boolean
   rerollUsed: boolean
   lastSeenAt: string
@@ -85,7 +87,7 @@ export function StudentRoster({
                         : ''
                     }
                   >
-                    {p.funName}{p.firstName ? ` (${p.firstName})` : ''}
+                    {p.funName}{p.firstName ? ` (${p.firstName}${p.lastInitial ? ` ${p.lastInitial}.` : ''})` : ''}
                   </span>
                   {p.banned && (
                     <span className="text-xs text-red-500 font-medium">

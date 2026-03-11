@@ -21,6 +21,8 @@ interface ParticipantData {
   id: string
   funName: string
   firstName: string
+  lastInitial: string | null
+  emoji: string | null
   banned: boolean
   rerollUsed: boolean
   lastSeenAt: string

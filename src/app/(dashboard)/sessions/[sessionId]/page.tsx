@@ -32,6 +32,8 @@ export default async function SessionDetailPage({
       id: p.id,
       funName: p.funName,
       firstName: p.firstName,
+      lastInitial: p.lastInitial ?? null,
+      emoji: p.emoji ?? null,
       banned: p.banned,
       rerollUsed: p.rerollUsed,
       lastSeenAt: p.lastSeenAt.toISOString(),
