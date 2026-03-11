@@ -173,6 +173,16 @@ export async function banParticipant(participantId: string) {
 }
 
 /**
+ * Unban a participant, allowing their device to rejoin the session.
+ */
+export async function unbanParticipant(participantId: string) {
+  return prisma.studentParticipant.update({
+    where: { id: participantId },
+    data: { banned: false },
+  })
+}
+
+/**
  * Remove a participant from the session entirely.
  * Deletes the record from the database.
  */

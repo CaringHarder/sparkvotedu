@@ -101,14 +101,16 @@ export function StudentRoster({
                     Joined{' '}
                     {new Date(p.createdAt).toLocaleDateString()}
                   </span>
-                  {sessionActive && !p.banned && (
-                    <StudentManagement
-                      participantId={p.id}
-                      funName={p.funName}
-                      banned={p.banned}
-                      onAction={onRefresh}
-                    />
-                  )}
+                  <StudentManagement
+                    participantId={p.id}
+                    funName={p.funName}
+                    firstName={p.firstName}
+                    lastInitial={p.lastInitial}
+                    emoji={p.emoji}
+                    banned={p.banned}
+                    sessionActive={sessionActive}
+                    onAction={onRefresh}
+                  />
                 </div>
               </li>
             )

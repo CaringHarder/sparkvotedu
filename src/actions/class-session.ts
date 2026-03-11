@@ -15,6 +15,7 @@ import {
 import { revalidatePath } from 'next/cache'
 import {
   banParticipant as banParticipantDAL,
+  unbanParticipant as unbanParticipantDAL,
   removeParticipant as removeParticipantDAL,
 } from '@/lib/dal/student-session'
 
@@ -104,6 +105,24 @@ export async function banStudent(participantId: string) {
     return { success: true }
   } catch {
     return { error: 'Failed to ban student' }
+  }
+}
+
+/**
+ * Unban a student participant, allowing their device to rejoin.
+ * Requires teacher authentication.
+ */
+export async function unbanStudent(participantId: string) {
+  const teacher = await getAuthenticatedTeacher()
+  if (!teacher) {
+    return { error: 'Not authenticated' }
+  }
+
+  try {
+    await unbanParticipantDAL(participantId)
+    return { success: true }
+  } catch {
+    return { error: 'Failed to unban student' }
   }
 }
 
