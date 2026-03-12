@@ -66,9 +66,10 @@ None.
 | 31 | Fix returning student search to handle multiple current-session matches | 2026-03-11 | f412bf8 | [31-fix-returning-student-search-to-handle-m](./quick/31-fix-returning-student-search-to-handle-m/) |
 | 32 | Session page: add name edit + unban device | 2026-03-11 | 9abeec9 | [32-session-page-add-name-edit-unban-device-](./quick/32-session-page-add-name-edit-unban-device-/) |
 | 33 | Change last initial label to "First Letter of your Last Name" | 2026-03-11 | 8082400 | [33-change-last-initial-label-to-first-lette](./quick/33-change-last-initial-label-to-first-lette/) |
+| 34 | Update last initial label to "Last Name, first letter" | 2026-03-12 | 44095a5 | [34-update-last-initial-label-to-last-name-f](./quick/34-update-last-initial-label-to-last-name-f/) |
 
 ## Session Continuity
 
-Last session: 2026-03-11
-Last activity: 2026-03-11 - Completed quick task 33: Change last initial label
+Last session: 2026-03-12
+Last activity: 2026-03-12 - Completed quick task 34: Update last initial label
 Resume: Start next milestone with `/gsd:new-milestone`
