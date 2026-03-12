@@ -17,24 +17,27 @@ import {
 interface EditNameDialogProps {
   participantId: string
   currentFirstName: string
-  onNameUpdated: (newName: string) => void
+  currentLastInitial: string
+  onNameUpdated: (firstName: string, lastInitial: string) => void
 }
 
 export function EditNameDialog({
   participantId,
   currentFirstName,
+  currentLastInitial,
   onNameUpdated,
 }: EditNameDialogProps) {
   const [open, setOpen] = useState(false)
   const [name, setName] = useState(currentFirstName)
+  const [lastInitial, setLastInitial] = useState(currentLastInitial)
   const [error, setError] = useState('')
   const [saving, setSaving] = useState(false)
 
   function handleOpenChange(isOpen: boolean) {
     setOpen(isOpen)
     if (isOpen) {
-      // Reset state when opening
       setName(currentFirstName)
+      setLastInitial(currentLastInitial)
       setError('')
       setSaving(false)
     }
@@ -43,15 +46,19 @@ export function EditNameDialog({
   async function handleSave() {
     setError('')
 
-    // Client-side validation
     const validation = validateFirstName(name)
     if (!validation.valid) {
       setError(validation.error)
       return
     }
 
-    // If name hasn't changed, just close
-    if (validation.name === currentFirstName) {
+    const trimmedLI = lastInitial.trim().toUpperCase().replace(/[^A-Z]/g, '').slice(0, 2)
+    if (trimmedLI.length === 0) {
+      setError('Last initial is required')
+      return
+    }
+
+    if (validation.name === currentFirstName && trimmedLI === currentLastInitial) {
       setOpen(false)
       return
     }
@@ -62,6 +69,7 @@ export function EditNameDialog({
       const result = await updateParticipantName({
         participantId,
         firstName: validation.name,
+        lastInitial: trimmedLI,
       })
 
       if (result.error) {
@@ -71,7 +79,7 @@ export function EditNameDialog({
       }
 
       if (result.participant) {
-        onNameUpdated(result.participant.firstName)
+        onNameUpdated(result.participant.firstName, result.participant.lastInitial ?? trimmedLI)
         setOpen(false)
       }
     } catch {
@@ -93,14 +101,15 @@ export function EditNameDialog({
       </DialogTrigger>
       <DialogContent className="max-w-sm">
         <DialogHeader>
-          <DialogTitle>Edit Your Name</DialogTitle>
+          <DialogTitle>Fix My Name</DialogTitle>
           <DialogDescription>
-            Update your first name for this session
+            Update your name for this session
           </DialogDescription>
         </DialogHeader>
 
         <div className="flex flex-col gap-4 py-4">
           <div className="space-y-2">
+            <label className="text-sm font-medium">First Name</label>
             <Input
               value={name}
               onChange={(e) => {
@@ -115,10 +124,35 @@ export function EditNameDialog({
                 }
               }}
             />
-            {error && (
-              <p className="text-sm text-destructive">{error}</p>
-            )}
           </div>
+
+          <div className="space-y-2">
+            <label className="text-sm font-medium">Last Name, first letter</label>
+            <Input
+              value={lastInitial}
+              onChange={(e) => {
+                setLastInitial(
+                  e.target.value
+                    .toUpperCase()
+                    .replace(/[^A-Z]/g, '')
+                    .slice(0, 2)
+                )
+                if (error) setError('')
+              }}
+              placeholder="A-Z"
+              maxLength={2}
+              className="max-w-[120px]"
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && !saving) {
+                  handleSave()
+                }
+              }}
+            />
+          </div>
+
+          {error && (
+            <p className="text-sm text-destructive">{error}</p>
+          )}
 
           <div className="flex justify-end gap-2">
             <Button

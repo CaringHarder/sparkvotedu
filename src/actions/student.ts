@@ -65,6 +65,7 @@ const createWizardSchema = z.object({
 const updateNameSchema = z.object({
   participantId: z.string().min(1, 'Participant ID is required'),
   firstName: firstNameSchema,
+  lastInitial: lastInitialSchema.optional(),
 })
 
 const reserveFunNameSchema = z.object({
@@ -400,6 +401,7 @@ export async function claimIdentity(input: {
 export async function updateParticipantName(input: {
   participantId: string
   firstName: string
+  lastInitial?: string
 }): Promise<{ participant?: StudentParticipantData; error?: string }> {
   // Validate input
   const parsed = updateNameSchema.safeParse(input)
@@ -407,7 +409,7 @@ export async function updateParticipantName(input: {
     return { error: parsed.error.issues[0].message }
   }
 
-  const { participantId, firstName } = parsed.data
+  const { participantId, firstName, lastInitial } = parsed.data
 
   // Look up participant to get sessionId
   const { prisma } = await import('@/lib/prisma')
@@ -432,8 +434,8 @@ export async function updateParticipantName(input: {
     }
   }
 
-  // Update the first name
-  const updated = await updateFirstName(participantId, firstName)
+  // Update firstName and optionally lastInitial
+  const updated = await updateFirstName(participantId, firstName, lastInitial)
 
   return { participant: toParticipantData(updated) }
 }

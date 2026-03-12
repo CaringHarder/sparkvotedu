@@ -217,11 +217,15 @@ export async function findParticipantsByFirstName(
  */
 export async function updateFirstName(
   participantId: string,
-  firstName: string
+  firstName: string,
+  lastInitial?: string
 ) {
   return prisma.studentParticipant.update({
     where: { id: participantId },
-    data: { firstName },
+    data: {
+      firstName,
+      ...(lastInitial !== undefined && { lastInitial }),
+    },
   })
 }
 

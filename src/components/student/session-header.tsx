@@ -18,6 +18,7 @@ interface SessionHeaderProps {
   participantId: string
   rerollUsed: boolean
   firstName?: string
+  lastInitial?: string | null
   emoji?: string | null
 }
 
@@ -26,11 +27,13 @@ export function SessionHeader({
   participantId,
   rerollUsed: initialRerollUsed,
   firstName: initialFirstName,
+  lastInitial: initialLastInitial,
   emoji,
 }: SessionHeaderProps) {
   const [funName, setFunName] = useState(initialFunName)
   const [rerollUsed, setRerollUsed] = useState(initialRerollUsed)
   const [firstName, setFirstName] = useState(initialFirstName ?? '')
+  const [lastInitial, setLastInitial] = useState(initialLastInitial ?? '')
 
   function handleReroll(newName: string) {
     setFunName(newName)
@@ -40,11 +43,12 @@ export function SessionHeader({
     updateSessionParticipant(participantId, { funName: newName, rerollUsed: true })
   }
 
-  function handleNameUpdated(newName: string) {
-    setFirstName(newName)
+  function handleNameUpdated(newFirstName: string, newLastInitial: string) {
+    setFirstName(newFirstName)
+    setLastInitial(newLastInitial)
 
-    // Update sessionStorage with new first name
-    updateSessionParticipant(participantId, { firstName: newName })
+    // Update sessionStorage with new name
+    updateSessionParticipant(participantId, { firstName: newFirstName, lastInitial: newLastInitial })
   }
 
   return (
@@ -97,6 +101,7 @@ export function SessionHeader({
             <EditNameDialog
               participantId={participantId}
               currentFirstName={firstName}
+              currentLastInitial={lastInitial}
               onNameUpdated={handleNameUpdated}
             />
           </DropdownMenuContent>

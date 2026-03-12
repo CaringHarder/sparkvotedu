@@ -13,6 +13,7 @@ interface ParticipantStore {
   participantId: string
   funName: string
   firstName?: string
+  lastInitial?: string | null
   sessionId: string
   rerollUsed: boolean
   emoji?: string | null
@@ -111,6 +112,7 @@ export default function SessionLayout({
         participantId={participant.participantId}
         rerollUsed={participant.rerollUsed}
         firstName={participant.firstName}
+        lastInitial={participant.lastInitial}
         emoji={participant.emoji}
       />
       {/* Add bottom padding on mobile for bottom nav clearance */}
