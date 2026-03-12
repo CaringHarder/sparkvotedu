@@ -57,7 +57,7 @@ export function RerollButton({
           ? 'Rolling...'
           : used
             ? 'Name Change Used'
-            : 'New Name'}
+            : 'Change Fun Name'}
       </Button>
       {error && !used && (
         <p className="px-2 text-xs text-destructive">{error}</p>

@@ -11,7 +11,6 @@ import {
 import { updateSessionParticipant } from '@/lib/student/session-store'
 import { shortcodeToEmoji } from '@/lib/student/emoji-pool'
 import { RerollButton } from './reroll-button'
-import { RecoveryCodeDialog } from './recovery-code-dialog'
 import { EditNameDialog } from './edit-name-dialog'
 
 interface SessionHeaderProps {
@@ -100,7 +99,6 @@ export function SessionHeader({
               currentFirstName={firstName}
               onNameUpdated={handleNameUpdated}
             />
-            <RecoveryCodeDialog participantId={participantId} />
           </DropdownMenuContent>
         </DropdownMenu>
       </div>

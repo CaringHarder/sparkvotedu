@@ -88,7 +88,7 @@ export function EditNameDialog({
           size="sm"
           className="w-full justify-start text-sm"
         >
-          Edit Name
+          Fix My Name
         </Button>
       </DialogTrigger>
       <DialogContent className="max-w-sm">
