@@ -37,7 +37,7 @@ export function WizardStepLastInitial({
   return (
     <div className="flex flex-col items-center gap-6 py-4">
       <h2 className="text-2xl font-bold">
-        First letter of your <span className="underline">Last Name</span>, {firstName}?
+        <span className="font-bold underline">Last Name</span>, first letter
       </h2>
 
       <input
