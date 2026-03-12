@@ -68,9 +68,10 @@ None.
 | 33 | Change last initial label to "First Letter of your Last Name" | 2026-03-11 | 8082400 | [33-change-last-initial-label-to-first-lette](./quick/33-change-last-initial-label-to-first-lette/) |
 | 34 | Update last initial label to "Last Name, first letter" | 2026-03-12 | 44095a5 | [34-update-last-initial-label-to-last-name-f](./quick/34-update-last-initial-label-to-last-name-f/) |
 | 35 | Improve student settings menu labels, remove recovery code | 2026-03-12 | d195e13 | [35-improve-student-dashboard-settings-menu-](./quick/35-improve-student-dashboard-settings-menu-/) |
+| 36 | Add last initial field to student Fix My Name dialog | 2026-03-12 | 8c953cf | [36-add-last-initial-field-to-student-fix-my](./quick/36-add-last-initial-field-to-student-fix-my/) |
 
 ## Session Continuity
 
 Last session: 2026-03-12
-Last activity: 2026-03-12 - Completed quick task 35: Improve student settings menu
+Last activity: 2026-03-12 - Completed quick task 36: Add lastInitial to Fix My Name dialog
 Resume: Start next milestone with `/gsd:new-milestone`
