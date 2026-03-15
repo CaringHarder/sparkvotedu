@@ -30,6 +30,7 @@ export interface SportsTournament {
   startDate: string
   endDate: string
   teamCount: number
+  gameCount: number
   teamsPopulated: boolean
   status: TournamentStatus
 }

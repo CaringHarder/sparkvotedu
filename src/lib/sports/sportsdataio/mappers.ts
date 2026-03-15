@@ -184,6 +184,10 @@ export function mapTournament(
     if (game.AwayTeamID != null) teamIds.add(game.AwayTeamID)
   }
 
+  // NCAA tournaments need at least 60 teams to be considered fully populated
+  const isNCAA = raw.Name.includes('NCAA')
+  const teamsPopulated = isNCAA ? teamIds.size >= 60 : teamIds.size > 0
+
   return {
     externalId: raw.TournamentID.toString(),
     name: raw.Name,
@@ -192,7 +196,8 @@ export function mapTournament(
     startDate,
     endDate,
     teamCount: teamIds.size,
-    teamsPopulated: teamIds.size > 0,
+    gameCount: games.length,
+    teamsPopulated,
     status,
   }
 }
