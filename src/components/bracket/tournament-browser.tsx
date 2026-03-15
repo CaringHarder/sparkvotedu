@@ -216,6 +216,12 @@ export function TournamentBrowser({ sessions }: TournamentBrowserProps) {
   )
 }
 
+// --- Helpers ---
+
+function isIncompleteNCAA(t: SportsTournament): boolean {
+  return t.name.includes('NCAA') && t.teamCount < 60
+}
+
 // --- Tournament card sub-component ---
 
 function TournamentCard({
@@ -281,13 +287,27 @@ function TournamentCard({
 
       <div className="mt-3 flex items-center gap-4 text-xs text-muted-foreground">
         <span>{tournament.season} Season</span>
-        <span>{tournament.teamsPopulated ? `${tournament.teamCount} teams` : 'Teams TBD'}</span>
+        <span>
+          {isIncompleteNCAA(tournament)
+            ? `Bracket loading... (${tournament.teamCount} of 68 teams)`
+            : tournament.teamsPopulated
+              ? `${tournament.teamCount} teams`
+              : 'Teams TBD'}
+        </span>
+        {tournament.gameCount > 0 && <span>{tournament.gameCount} games</span>}
         <span>
           {formatDate(tournament.startDate)} &ndash; {formatDate(tournament.endDate)}
         </span>
       </div>
 
-      {!tournament.teamsPopulated && (
+      {isIncompleteNCAA(tournament) && (
+        <p className="mt-2 text-xs text-amber-600 dark:text-amber-400">
+          Bracket data is still loading from the NCAA. Full bracket will be available once all teams
+          and games are published.
+        </p>
+      )}
+
+      {!isIncompleteNCAA(tournament) && !tournament.teamsPopulated && (
         <p className="mt-2 text-xs text-amber-600 dark:text-amber-400">
           Bracket teams haven&apos;t been announced yet. Check back after the Selection Show.
         </p>
