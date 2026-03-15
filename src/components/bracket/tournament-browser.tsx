@@ -208,7 +208,7 @@ export function TournamentBrowser({ sessions }: TournamentBrowserProps) {
             tournament={tournament}
             onImport={handleImport}
             isImporting={importing === tournament.externalId || isPending}
-            disabled={!selectedSessionId}
+            disabled={!selectedSessionId || !tournament.teamsPopulated}
           />
         ))}
       </div>
@@ -281,11 +281,17 @@ function TournamentCard({
 
       <div className="mt-3 flex items-center gap-4 text-xs text-muted-foreground">
         <span>{tournament.season} Season</span>
-        <span>{tournament.teamCount} teams</span>
+        <span>{tournament.teamsPopulated ? `${tournament.teamCount} teams` : 'Teams TBD'}</span>
         <span>
           {formatDate(tournament.startDate)} &ndash; {formatDate(tournament.endDate)}
         </span>
       </div>
+
+      {!tournament.teamsPopulated && (
+        <p className="mt-2 text-xs text-amber-600 dark:text-amber-400">
+          Bracket teams haven&apos;t been announced yet. Check back after the Selection Show.
+        </p>
+      )}
 
       <div className="mt-3">
         <button

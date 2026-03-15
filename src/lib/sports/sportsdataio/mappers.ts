@@ -177,11 +177,11 @@ export function mapTournament(
   const startDate = gameDates[0] ?? ''
   const endDate = gameDates[gameDates.length - 1] ?? ''
 
-  // Count unique teams
+  // Count unique teams (exclude null/undefined IDs — TBD games)
   const teamIds = new Set<number>()
   for (const game of games) {
-    teamIds.add(game.HomeTeamID)
-    teamIds.add(game.AwayTeamID)
+    if (game.HomeTeamID != null) teamIds.add(game.HomeTeamID)
+    if (game.AwayTeamID != null) teamIds.add(game.AwayTeamID)
   }
 
   return {
@@ -192,6 +192,7 @@ export function mapTournament(
     startDate,
     endDate,
     teamCount: teamIds.size,
+    teamsPopulated: teamIds.size > 0,
     status,
   }
 }

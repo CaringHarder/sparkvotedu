@@ -19,7 +19,7 @@ import type {
 
 // SportsDataIO API v3 base URLs
 const CBB_BASE = 'https://api.sportsdata.io/v3/cbb' // Men's college basketball
-const WCBB_BASE = 'https://api.sportsdata.io/v3/wcbb' // Women's college basketball
+const WCBB_BASE = 'https://api.sportsdata.io/v3/cwbb' // Women's college basketball
 
 /**
  * Low-level HTTP client for the SportsDataIO REST API.
@@ -58,8 +58,9 @@ export class SportsDataIOClient {
       headers: {
         'Ocp-Apim-Subscription-Key': this.apiKey,
       },
-      // Cache for 60 seconds to avoid hitting rate limits
-      next: { revalidate: 60 },
+      // No caching — tournament data changes frequently (Selection Sunday, live scores)
+      // and Next.js fetch cache can cause truncated/stale responses
+      cache: 'no-store',
     })
 
     if (!response.ok) {
