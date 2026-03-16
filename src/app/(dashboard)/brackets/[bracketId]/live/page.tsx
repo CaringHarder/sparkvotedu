@@ -102,8 +102,9 @@ export default async function LiveDashboardPage({ params }: PageProps) {
       : 0
     totalRounds = wbRounds + lbRounds + gfRounds
   } else {
+    // Sports brackets: use size (64), not maxEntrants (68) — First Four is round 0
     // SE / Predictive: use maxEntrants for bye bracket support, else size
-    const effectiveSize = bracket.maxEntrants ?? bracket.size
+    const effectiveSize = bracket.bracketType === 'sports' ? bracket.size : (bracket.maxEntrants ?? bracket.size)
     totalRounds = Math.ceil(Math.log2(effectiveSize))
   }
 
