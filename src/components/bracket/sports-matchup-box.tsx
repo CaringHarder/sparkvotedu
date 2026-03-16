@@ -146,12 +146,12 @@ interface SportsEntrantRowProps {
 export function SportsEntrantRow({ entrant, score, isWinner, x, y, width }: SportsEntrantRowProps) {
   if (!entrant) return null
 
-  // Don't display seedPosition for sports brackets — it's an auto-increment ID,
-  // not the real tournament seed. Team name + logo is sufficient.
-  const nameText = entrant.name
+  // Display tournament seed (1-16) as prefix when available
+  const seedPrefix = entrant.tournamentSeed != null ? `${entrant.tournamentSeed} ` : ''
+  const nameText = seedPrefix + entrant.name
 
-  // Truncate long names to fit in matchup box
-  const maxChars = score != null ? 14 : 18
+  // Truncate long names to fit in matchup box (reduced by 2 chars to accommodate seed prefix)
+  const maxChars = score != null ? 12 : 16
   const displayName = nameText.length > maxChars
     ? nameText.substring(0, maxChars - 1) + '\u2026'
     : nameText
