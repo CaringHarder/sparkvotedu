@@ -959,6 +959,17 @@ export function LiveDashboard({
     return () => clearInterval(interval)
   }, [isSports])
 
+  // Auto-poll sports scores every 60 seconds
+  useEffect(() => {
+    if (!isSports) return
+    const interval = setInterval(() => {
+      if (!isSyncing) {
+        handleManualSync()
+      }
+    }, 60000)
+    return () => clearInterval(interval)
+  }, [isSports, handleManualSync])
+
   // ---------------------------------------------------------------------------
   // Aggregate vote progress across all currently-voting matchups
   // ---------------------------------------------------------------------------
@@ -1684,6 +1695,12 @@ export function LiveDashboard({
           {/* Last synced time */}
           <span className="text-xs text-muted-foreground">
             Last synced: {lastSyncDisplay}
+          </span>
+
+          {/* Auto-sync indicator */}
+          <span className="flex items-center gap-1 text-xs text-emerald-600 dark:text-emerald-400">
+            <span className="inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-500" />
+            Auto-sync 60s
           </span>
 
           {/* Manual sync button */}
