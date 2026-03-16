@@ -101,10 +101,12 @@ export async function createSportsBracketDAL(
     let seedPosition = 1
 
     for (const team of teams) {
+      // Use auto-incrementing seedPosition for uniqueness constraint.
+      // NCAA seeds (1-16) repeat across 4 regions, so team.seed is NOT unique.
       const record = await tx.bracketEntrant.create({
         data: {
           name: team.shortName,
-          seedPosition: team.seed ?? seedPosition,
+          seedPosition,
           bracketId: created.id,
           externalTeamId: team.externalId,
           logoUrl: resolveTeamLogoUrl(team.logoUrl, team.abbreviation),
