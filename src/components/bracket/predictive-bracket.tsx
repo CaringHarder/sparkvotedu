@@ -41,6 +41,8 @@ export function PredictiveBracket({ bracket, participantId, isTeacher, effective
   // Use viewingMode from prop (realtime) if provided, otherwise fall back to bracket.predictiveMode
   const predictiveMode = viewingModeProp === 'advanced' ? 'advanced' : viewingModeProp === 'simple' ? 'simple' : (bracket.predictiveMode ?? 'simple')
   const predictionStatus = effectivePredictionStatus ?? bracket.predictionStatus ?? 'draft'
+  // Sports brackets render through PredictiveBracket but need sports-specific diagram rendering
+  const isSports = bracket.bracketType === 'sports'
 
   const { myPredictions, leaderboard, isLoading, refetch } = usePredictions(
     bracket.id,
@@ -98,6 +100,7 @@ function TeacherPredictiveView({
   const [isPending, startTransition] = useTransition()
   const router = useRouter()
   const isAutoMode = bracket.predictiveResolutionMode === 'auto'
+  const isSports = bracket.bracketType === 'sports'
 
   // Auto-mode state
   const [tabulationResults, setTabulationResults] = useState<TabulationResult[]>([])
@@ -106,7 +109,8 @@ function TeacherPredictiveView({
   const [presentationMode, setPresentationMode] = useState(false)
   const [presentationView, setPresentationView] = useState<'bracket' | 'leaderboard'>('bracket')
 
-  const totalRounds = Math.ceil(Math.log2(bracket.maxEntrants ?? bracket.size))
+  const effectiveSize = isSports ? bracket.size : (bracket.maxEntrants ?? bracket.size)
+  const totalRounds = Math.ceil(Math.log2(effectiveSize))
   const revealedUpToRound = bracket.revealedUpToRound ?? 0
 
   // Re-fetch tabulation results on mount when in previewing status
@@ -246,6 +250,7 @@ function TeacherPredictiveView({
               totalRounds={totalRounds}
               bracketSize={bracket.maxEntrants ?? bracket.size}
               showSeedNumbers={bracket.showSeedNumbers}
+              isSports={isSports}
             />
           </div>
         </div>
@@ -369,6 +374,7 @@ function TeacherPredictiveView({
                     totalRounds={totalRounds}
                     bracketSize={bracket.maxEntrants ?? bracket.size}
                     showSeedNumbers={bracket.showSeedNumbers}
+                    isSports={isSports}
                   />
                 </div>
               ) : (
@@ -460,6 +466,7 @@ function TeacherPredictiveView({
                 totalRounds={totalRounds}
                 bracketSize={bracket.maxEntrants ?? bracket.size}
                 showSeedNumbers={bracket.showSeedNumbers}
+                isSports={isSports}
               />
             </div>
           ) : (
@@ -543,6 +550,7 @@ function TeacherPredictiveView({
                       totalRounds={totalRounds}
                       bracketSize={bracket.maxEntrants ?? bracket.size}
                       showSeedNumbers={bracket.showSeedNumbers}
+                      isSports={isSports}
                     />
                   </div>
                 ) : (
@@ -565,6 +573,7 @@ function TeacherPredictiveView({
               totalRounds={totalRounds}
               bracketSize={bracket.maxEntrants ?? bracket.size}
               showSeedNumbers={bracket.showSeedNumbers}
+              isSports={isSports}
             />
           </div>
 
@@ -611,6 +620,7 @@ function TeacherPredictiveView({
             totalRounds={totalRounds}
             bracketSize={bracket.maxEntrants ?? bracket.size}
             showSeedNumbers={bracket.showSeedNumbers}
+            isSports={isSports}
           />
         </div>
       </div>
@@ -668,6 +678,7 @@ function TeacherPredictiveView({
           totalRounds={totalRounds}
           bracketSize={bracket.maxEntrants ?? bracket.size}
           showSeedNumbers={bracket.showSeedNumbers}
+          isSports={isSports}
         />
       </div>
 
@@ -998,7 +1009,9 @@ function AdvancedPredictionMode({
   const [isEditing, setIsEditing] = useState(myPredictions.length === 0)
   const [isPending, startTransition] = useTransition()
 
-  const totalRounds = Math.ceil(Math.log2(bracket.maxEntrants ?? bracket.size))
+  const isSports = bracket.bracketType === 'sports'
+  const effectiveSize = isSports ? bracket.size : (bracket.maxEntrants ?? bracket.size)
+  const totalRounds = Math.ceil(Math.log2(effectiveSize))
 
   const initialSelections = useMemo(() => {
     const map: Record<string, string> = {}
@@ -1097,6 +1110,7 @@ function AdvancedPredictionMode({
               bracketSize={bracket.maxEntrants ?? bracket.size}
               votedEntrantIds={existingMap}
               showSeedNumbers={bracket.showSeedNumbers}
+              isSports={isSports}
             />
           </div>
         )}
@@ -1131,6 +1145,7 @@ function AdvancedPredictionMode({
             bracketSize={bracket.maxEntrants ?? bracket.size}
             votedEntrantIds={votedEntrantIds}
             showSeedNumbers={bracket.showSeedNumbers}
+            isSports={isSports}
           />
         </div>
       </div>
@@ -1178,6 +1193,7 @@ function AdvancedPredictionMode({
           allowPendingClick
           pendingPredictionIds={pendingPredictionIds}
           showSeedNumbers={bracket.showSeedNumbers}
+          isSports={isSports}
         />
       </div>
     </div>
@@ -1198,6 +1214,7 @@ function PredictiveDiagram(props: {
   allowPendingClick?: boolean
   pendingPredictionIds?: Set<string>
   showSeedNumbers?: boolean
+  isSports?: boolean
 }) {
   if (props.bracketSize >= 32) {
     return <RegionBracketView {...props} />

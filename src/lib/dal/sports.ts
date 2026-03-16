@@ -89,6 +89,7 @@ export async function createSportsBracketDAL(
         name: bracketName,
         bracketType: 'sports',
         status: 'draft',
+        predictionStatus: 'draft',
         predictiveResolutionMode: 'auto',
         externalTournamentId: input.tournamentId,
         dataSource: getProviderName(),
