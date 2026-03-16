@@ -7,7 +7,7 @@
  */
 
 import { prisma } from '@/lib/prisma'
-import { getProvider } from '@/lib/sports/provider'
+import { getProvider, getProviderName } from '@/lib/sports/provider'
 import { resolveTeamLogoUrl } from '@/lib/sports/logo-resolver'
 import { broadcastBracketUpdate } from '@/lib/realtime/broadcast'
 import type { SportsGame, SportsTeam, SportGender } from '@/lib/sports/types'
@@ -82,7 +82,7 @@ export async function createSportsBracketDAL(
         status: 'draft',
         predictiveResolutionMode: 'auto',
         externalTournamentId: input.tournamentId,
-        dataSource: 'sportsdataio',
+        dataSource: getProviderName(),
         lastSyncAt: new Date(),
         sportGender: gender,
         sessionId: input.sessionId,
