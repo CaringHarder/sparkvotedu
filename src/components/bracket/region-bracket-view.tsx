@@ -34,6 +34,123 @@ export function computeRegions(
   connectingRegion: RegionDef | null
   regionRounds: number
 } {
+  // Check if matchups have bracketRegion set (sports brackets from ESPN/SportsDataIO)
+  // If so, group by actual region names instead of position-based math
+  const hasBracketRegions = matchups.some(
+    (m) => m.bracketRegion && m.round > 0 && !['Final Four', 'finals'].includes(m.bracketRegion)
+  )
+
+  if (hasBracketRegions) {
+    return computeRegionsFromBracketField(matchups, totalRounds)
+  }
+
+  return computeRegionsFromPositions(matchups, totalRounds)
+}
+
+/**
+ * Group matchups into regions using the bracketRegion field (sports brackets).
+ * Each unique bracketRegion becomes a region. Final Four / Championship is the connecting region.
+ */
+function computeRegionsFromBracketField(
+  matchups: MatchupData[],
+  totalRounds: number
+): {
+  regions: RegionDef[]
+  connectingRegion: RegionDef | null
+  regionRounds: number
+} {
+  const regionMap = new Map<string, MatchupData[]>()
+  const connectingBucket: MatchupData[] = []
+
+  for (const m of matchups) {
+    if (m.round <= 0) continue // Skip First Four / play-in games
+
+    const region = m.bracketRegion
+    if (!region || region === 'Final Four') {
+      connectingBucket.push(m)
+      continue
+    }
+
+    if (!regionMap.has(region)) {
+      regionMap.set(region, [])
+    }
+    regionMap.get(region)!.push(m)
+  }
+
+  // Determine regionRounds from the max round in any region
+  let regionRounds = 0
+  for (const ms of regionMap.values()) {
+    for (const m of ms) {
+      if (m.round > regionRounds) regionRounds = m.round
+    }
+  }
+
+  const regions: RegionDef[] = []
+  let regionIdx = 0
+
+  for (const [label, ms] of regionMap) {
+    // Sort by round then position
+    ms.sort((a, b) => a.round - b.round || a.position - b.position)
+
+    // Reassign positions within each region to be 1-based per round
+    const posCounters = new Map<number, number>()
+    const normalized = ms.map((m) => {
+      const pos = (posCounters.get(m.round) ?? 0) + 1
+      posCounters.set(m.round, pos)
+      return { ...m, position: pos }
+    })
+
+    const r1Count = normalized.filter((m) => m.round === 1).length
+    regions.push({
+      key: `region-${regionIdx}`,
+      label,
+      matchups: normalized,
+      rounds: regionRounds,
+      r1Start: regionIdx * r1Count + 1,
+      r1End: (regionIdx + 1) * r1Count,
+    })
+    regionIdx++
+  }
+
+  // Connecting region (Final Four / Championship)
+  let connectingRegion: RegionDef | null = null
+  if (connectingBucket.length > 0) {
+    const connectingRounds = totalRounds - regionRounds
+    const posCounters = new Map<number, number>()
+    const normalized = connectingBucket
+      .sort((a, b) => a.round - b.round || a.position - b.position)
+      .map((m) => {
+        const adjustedRound = m.round - regionRounds
+        const pos = (posCounters.get(adjustedRound) ?? 0) + 1
+        posCounters.set(adjustedRound, pos)
+        return { ...m, round: adjustedRound, position: pos }
+      })
+
+    connectingRegion = {
+      key: 'finals',
+      label: connectingRounds >= 2 ? 'Final Four' : 'Championship',
+      matchups: normalized,
+      rounds: connectingRounds,
+      r1Start: 1,
+      r1End: Math.pow(2, connectingRounds - 1),
+    }
+  }
+
+  return { regions, connectingRegion, regionRounds }
+}
+
+/**
+ * Group matchups into regions using position-based math (standard brackets).
+ * This is the original algorithm for non-sports brackets.
+ */
+function computeRegionsFromPositions(
+  matchups: MatchupData[],
+  totalRounds: number
+): {
+  regions: RegionDef[]
+  connectingRegion: RegionDef | null
+  regionRounds: number
+} {
   // Cap region depth at 4 rounds (16 entrants), reserve at least 1 connecting round
   const regionRounds = Math.min(4, totalRounds - 1)
   const r1PerRegion = Math.pow(2, regionRounds - 1)
@@ -41,7 +158,6 @@ export function computeRegions(
   const numRegions = Math.round(totalR1 / r1PerRegion)
 
   // Bucket matchups into regions by tracing to R1 ancestor
-  // Skip round-0 (play-in/First Four) matchups — they don't fit the standard bracket grid
   const regionBuckets: MatchupData[][] = Array.from({ length: numRegions }, () => [])
   const connectingBucket: MatchupData[] = []
 

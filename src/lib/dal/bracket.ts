@@ -647,10 +647,12 @@ export async function updateBracketStatusDAL(
   }
 
   // Additional validation: activating requires full entrant roster
+  // Sports brackets use maxEntrants (68 for NCAA with First Four) instead of size (64)
   if (bracket.status === 'draft' && status === 'active') {
-    if (bracket._count.entrants !== bracket.size) {
+    const expectedEntrants = bracket.maxEntrants ?? bracket.size
+    if (bracket._count.entrants !== expectedEntrants) {
       return {
-        error: `Bracket must have ${bracket.size} entrants to activate (has ${bracket._count.entrants})`,
+        error: `Bracket must have ${expectedEntrants} entrants to activate (has ${bracket._count.entrants})`,
       }
     }
   }

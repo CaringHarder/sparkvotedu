@@ -146,9 +146,9 @@ interface SportsEntrantRowProps {
 export function SportsEntrantRow({ entrant, score, isWinner, x, y, width }: SportsEntrantRowProps) {
   if (!entrant) return null
 
-  const nameText = entrant.seedPosition != null
-    ? `(${entrant.seedPosition}) ${entrant.name}`
-    : entrant.name
+  // Don't display seedPosition for sports brackets — it's an auto-increment ID,
+  // not the real tournament seed. Team name + logo is sufficient.
+  const nameText = entrant.name
 
   // Truncate long names to fit in matchup box
   const maxChars = score != null ? 14 : 18
