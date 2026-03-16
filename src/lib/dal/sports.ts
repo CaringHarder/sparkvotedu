@@ -129,6 +129,47 @@ export async function createSportsBracketDAL(
       seedPosition++
     }
 
+    // b2. Create combined play-in entrants for First Four games
+    // ESPN shows "TEX/NCSU" as a selectable entry in R1 matchups where
+    // the opponent comes from a First Four play-in. This makes all 32
+    // R1 matchups fully selectable for predictions from day one.
+    //
+    // Match logic: First Four seed 16 in region X → R1 game where seed 1 plays TBD
+    //              First Four seed 11 in region X → R1 game where seed 6 plays TBD
+    const playInEntrantIds = new Map<string, string>() // key: "region-seed" → entrantId
+
+    for (const ffGame of firstFourGames) {
+      const team1 = ffGame.homeTeam
+      const team2 = ffGame.awayTeam
+      if (!team1 || !team2 || team1.externalId <= 0 || team2.externalId <= 0) continue
+
+      const ffSeed = team1.seed ?? team2.seed ?? null
+      const ffRegion = ffGame.bracket
+      if (!ffSeed || !ffRegion) continue
+
+      // Create combined entrant: "TEX/NCSU" with shared seed
+      const combinedName = `${team1.abbreviation}/${team2.abbreviation}`
+      const combinedRecord = await tx.bracketEntrant.create({
+        data: {
+          name: combinedName,
+          seedPosition,
+          bracketId: created.id,
+          externalTeamId: null, // No single team — placeholder
+          logoUrl: null, // No single logo for combined entry
+          abbreviation: combinedName,
+          tournamentSeed: ffSeed,
+        },
+      })
+      seedPosition++
+
+      // Store for R1 matchup assignment: key is "region-opponentSeed"
+      // Seed 16 play-in feeds into 1-seed's matchup, seed 11 feeds into 6-seed's
+      const r1OpponentSeed = ffSeed === 16 ? 1 : ffSeed === 11 ? 6 : null
+      if (r1OpponentSeed && ffRegion) {
+        playInEntrantIds.set(`${ffRegion}-${r1OpponentSeed}`, combinedRecord.id)
+      }
+    }
+
     // c. Create Matchup records -- two-pass approach
     // First pass: create all matchups without nextMatchupId
     const allGames = [...firstFourGames, ...mainGames]
@@ -168,12 +209,29 @@ export async function createSportsBracketDAL(
       }
 
       // Resolve entrant IDs from teams
-      const entrant1Id = game.homeTeam
+      // For R1 matchups with TBD slots (play-in feeder), use the combined entrant
+      let entrant1Id = game.homeTeam
         ? (entrantByExternalId.get(game.homeTeam.externalId) ?? null)
         : null
-      const entrant2Id = game.awayTeam
+      let entrant2Id = game.awayTeam
         ? (entrantByExternalId.get(game.awayTeam.externalId) ?? null)
         : null
+
+      // Fill TBD slots in R1 with combined play-in entrants
+      if (round === 1 && game.bracket) {
+        if (!entrant1Id && entrant2Id) {
+          // Home team is TBD — find play-in entrant for this region + away team's seed
+          const awaySeed = game.awayTeam?.seed ?? 99
+          const playInId = playInEntrantIds.get(`${game.bracket}-${awaySeed}`)
+          if (playInId) entrant1Id = playInId
+        }
+        if (!entrant2Id && entrant1Id) {
+          // Away team is TBD — find play-in entrant for this region + home team's seed
+          const homeSeed = game.homeTeam?.seed ?? 99
+          const playInId = playInEntrantIds.get(`${game.bracket}-${homeSeed}`)
+          if (playInId) entrant2Id = playInId
+        }
+      }
 
       // Determine bracket region
       // Men's: East, West, South, Midwest, Final Four

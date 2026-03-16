@@ -180,7 +180,7 @@ export function SportsEntrantRow({ entrant, score, isWinner, x, y, width }: Spor
             fontFamily: 'inherit',
           }}
         >
-          {entrant.abbreviation.substring(0, 3)}
+          {entrant.abbreviation.includes('/') ? entrant.abbreviation : entrant.abbreviation.substring(0, 3)}
         </text>
       ) : null}
 
