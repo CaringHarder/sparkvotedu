@@ -143,6 +143,7 @@ function MatchupBox({
   isSelected,
   allowPendingClick,
   showSeedNumbers,
+  isSports,
 }: {
   matchup: MatchupData
   x: number
@@ -154,7 +155,35 @@ function MatchupBox({
   isSelected?: boolean
   allowPendingClick?: boolean
   showSeedNumbers?: boolean
+  isSports?: boolean
 }) {
+  // Sports brackets render text via SportsMatchupOverlay — skip standard text
+  if (isSports) {
+    return (
+      <g>
+        <rect
+          x={x}
+          y={y}
+          width={MATCH_WIDTH}
+          height={MATCH_HEIGHT}
+          rx={6}
+          ry={6}
+          style={{
+            fill: 'var(--card)',
+            stroke: 'var(--border)',
+            strokeWidth: 1,
+          }}
+        />
+        <line
+          x1={x}
+          y1={y + MATCH_HEIGHT / 2}
+          x2={x + MATCH_WIDTH}
+          y2={y + MATCH_HEIGHT / 2}
+          style={{ stroke: 'var(--border)', strokeWidth: 0.5 }}
+        />
+      </g>
+    )
+  }
   const isByeMatchup = matchup.isBye === true
   // For bye matchups: show "BYE" for the null slot, real entrant name for the other
   const isBye1 = isByeMatchup && matchup.entrant1 == null
@@ -664,6 +693,7 @@ export function BracketDiagram({ matchups, totalRounds, className, bracketSize, 
             isSelected={selectedMatchupId === matchup.id}
             allowPendingClick={allowPendingClick}
             showSeedNumbers={showSeedNumbers}
+            isSports={isSports}
           />
         ))}
 

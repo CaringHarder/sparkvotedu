@@ -176,7 +176,7 @@ export default function StudentBracketVotingPage() {
         if (bracketData.status === 'draft') {
           // For predictive brackets with predictions_open, show PredictiveBracket
           // (predictionStatus controls lifecycle separately from bracket status)
-          if (bracketData.bracketType === 'predictive' && bracketData.predictionStatus === 'predictions_open') {
+          if ((bracketData.bracketType === 'predictive' || bracketData.bracketType === 'sports') && bracketData.predictionStatus === 'predictions_open') {
             setState({
               type: 'ready',
               bracket,
@@ -191,7 +191,7 @@ export default function StudentBracketVotingPage() {
 
         if (bracketData.status === 'completed') {
           // Auto-mode predictive brackets: route through PredictiveStudentView for PredictionReveal (podium celebration)
-          if (bracketData.bracketType === 'predictive' && bracketData.predictiveResolutionMode === 'auto') {
+          if ((bracketData.bracketType === 'predictive' || bracketData.bracketType === 'sports') && bracketData.predictiveResolutionMode === 'auto') {
             setState({
               type: 'ready',
               bracket,
@@ -345,7 +345,7 @@ export default function StudentBracketVotingPage() {
                 isTeacher={false}
               />
             </div>
-          ) : bracket.bracketType === 'predictive' ? (
+          ) : bracket.bracketType === 'predictive' || bracket.bracketType === 'sports' ? (
             <PredictiveBracket
               bracket={bracket}
               participantId=""
@@ -367,8 +367,9 @@ export default function StudentBracketVotingPage() {
   // Ready state: render appropriate view based on bracketType
   const { bracket, participantId, initialVotes } = state
 
-  // Predictive brackets: unified component handles prediction → live transition in real-time
-  if (bracket.bracketType === 'predictive') {
+  // Predictive and sports brackets: unified component handles prediction → live transition in real-time
+  // Sports brackets use predictiveResolutionMode: 'auto' — students predict, API resolves
+  if (bracket.bracketType === 'predictive' || bracket.bracketType === 'sports') {
     return (
       <>
         {deletionToast}
