@@ -101,6 +101,7 @@ export default async function BracketDetailPage({
       externalTeamId: e.externalTeamId ?? null,
       logoUrl: e.logoUrl ?? null,
       abbreviation: e.abbreviation ?? null,
+      tournamentSeed: e.tournamentSeed ?? null,
     })),
     matchups: bracket.matchups.map((m) => ({
       id: m.id,
@@ -121,13 +122,13 @@ export default async function BracketDetailPage({
       gameStatus: m.gameStatus ?? null,
       gameStartTime: m.gameStartTime?.toISOString() ?? null,
       entrant1: m.entrant1
-        ? { id: m.entrant1.id, name: m.entrant1.name, seedPosition: m.entrant1.seedPosition, bracketId: m.entrant1.bracketId, externalTeamId: m.entrant1.externalTeamId ?? null, logoUrl: m.entrant1.logoUrl ?? null, abbreviation: m.entrant1.abbreviation ?? null }
+        ? { id: m.entrant1.id, name: m.entrant1.name, seedPosition: m.entrant1.seedPosition, bracketId: m.entrant1.bracketId, externalTeamId: m.entrant1.externalTeamId ?? null, logoUrl: m.entrant1.logoUrl ?? null, abbreviation: m.entrant1.abbreviation ?? null, tournamentSeed: m.entrant1.tournamentSeed ?? null }
         : null,
       entrant2: m.entrant2
-        ? { id: m.entrant2.id, name: m.entrant2.name, seedPosition: m.entrant2.seedPosition, bracketId: m.entrant2.bracketId, externalTeamId: m.entrant2.externalTeamId ?? null, logoUrl: m.entrant2.logoUrl ?? null, abbreviation: m.entrant2.abbreviation ?? null }
+        ? { id: m.entrant2.id, name: m.entrant2.name, seedPosition: m.entrant2.seedPosition, bracketId: m.entrant2.bracketId, externalTeamId: m.entrant2.externalTeamId ?? null, logoUrl: m.entrant2.logoUrl ?? null, abbreviation: m.entrant2.abbreviation ?? null, tournamentSeed: m.entrant2.tournamentSeed ?? null }
         : null,
       winner: m.winner
-        ? { id: m.winner.id, name: m.winner.name, seedPosition: m.winner.seedPosition, bracketId: m.winner.bracketId, externalTeamId: m.winner.externalTeamId ?? null, logoUrl: m.winner.logoUrl ?? null, abbreviation: m.winner.abbreviation ?? null }
+        ? { id: m.winner.id, name: m.winner.name, seedPosition: m.winner.seedPosition, bracketId: m.winner.bracketId, externalTeamId: m.winner.externalTeamId ?? null, logoUrl: m.winner.logoUrl ?? null, abbreviation: m.winner.abbreviation ?? null, tournamentSeed: m.winner.tournamentSeed ?? null }
         : null,
     })),
   }

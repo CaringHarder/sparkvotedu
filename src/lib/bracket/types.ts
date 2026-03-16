@@ -126,6 +126,7 @@ export interface BracketEntrantData {
   externalTeamId: number | null
   logoUrl: string | null
   abbreviation: string | null
+  tournamentSeed: number | null
 }
 
 // Serialized matchup data

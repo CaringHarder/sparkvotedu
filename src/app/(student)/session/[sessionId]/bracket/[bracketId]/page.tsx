@@ -56,9 +56,9 @@ interface BracketStateResponse {
     entrant1Id: string | null
     entrant2Id: string | null
     winnerId: string | null
-    entrant1: { id: string; name: string; seedPosition: number; externalTeamId?: number | null; logoUrl?: string | null; abbreviation?: string | null } | null
-    entrant2: { id: string; name: string; seedPosition: number; externalTeamId?: number | null; logoUrl?: string | null; abbreviation?: string | null } | null
-    winner: { id: string; name: string; seedPosition: number; externalTeamId?: number | null; logoUrl?: string | null; abbreviation?: string | null } | null
+    entrant1: { id: string; name: string; seedPosition: number; externalTeamId?: number | null; logoUrl?: string | null; abbreviation?: string | null; tournamentSeed?: number | null } | null
+    entrant2: { id: string; name: string; seedPosition: number; externalTeamId?: number | null; logoUrl?: string | null; abbreviation?: string | null; tournamentSeed?: number | null } | null
+    winner: { id: string; name: string; seedPosition: number; externalTeamId?: number | null; logoUrl?: string | null; abbreviation?: string | null; tournamentSeed?: number | null } | null
     voteCounts?: Record<string, number>
     bracketRegion: string | null
     isBye: boolean
@@ -70,7 +70,7 @@ interface BracketStateResponse {
     gameStatus?: string | null
     gameStartTime?: string | null
   }>
-  entrants: { id: string; name: string; seedPosition: number; externalTeamId?: number | null; logoUrl?: string | null; abbreviation?: string | null }[]
+  entrants: { id: string; name: string; seedPosition: number; externalTeamId?: number | null; logoUrl?: string | null; abbreviation?: string | null; tournamentSeed?: number | null }[]
 }
 
 type PageState =
@@ -1394,13 +1394,13 @@ function toBracketWithDetails(
     gameStatus: m.gameStatus ?? null,
     gameStartTime: m.gameStartTime ?? null,
     entrant1: m.entrant1
-      ? { ...m.entrant1, bracketId, externalTeamId: m.entrant1.externalTeamId ?? null, logoUrl: m.entrant1.logoUrl ?? null, abbreviation: m.entrant1.abbreviation ?? null }
+      ? { ...m.entrant1, bracketId, externalTeamId: m.entrant1.externalTeamId ?? null, logoUrl: m.entrant1.logoUrl ?? null, abbreviation: m.entrant1.abbreviation ?? null, tournamentSeed: m.entrant1.tournamentSeed ?? null }
       : null,
     entrant2: m.entrant2
-      ? { ...m.entrant2, bracketId, externalTeamId: m.entrant2.externalTeamId ?? null, logoUrl: m.entrant2.logoUrl ?? null, abbreviation: m.entrant2.abbreviation ?? null }
+      ? { ...m.entrant2, bracketId, externalTeamId: m.entrant2.externalTeamId ?? null, logoUrl: m.entrant2.logoUrl ?? null, abbreviation: m.entrant2.abbreviation ?? null, tournamentSeed: m.entrant2.tournamentSeed ?? null }
       : null,
     winner: m.winner
-      ? { ...m.winner, bracketId, externalTeamId: m.winner.externalTeamId ?? null, logoUrl: m.winner.logoUrl ?? null, abbreviation: m.winner.abbreviation ?? null }
+      ? { ...m.winner, bracketId, externalTeamId: m.winner.externalTeamId ?? null, logoUrl: m.winner.logoUrl ?? null, abbreviation: m.winner.abbreviation ?? null, tournamentSeed: m.winner.tournamentSeed ?? null }
       : null,
   }))
 
@@ -1410,6 +1410,7 @@ function toBracketWithDetails(
     externalTeamId: e.externalTeamId ?? null,
     logoUrl: e.logoUrl ?? null,
     abbreviation: e.abbreviation ?? null,
+    tournamentSeed: e.tournamentSeed ?? null,
   }))
 
   // Calculate bracket size from entrants count (round to nearest power of 2)

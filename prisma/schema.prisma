@@ -128,6 +128,7 @@ model BracketEntrant {
   externalTeamId Int?     @map("external_team_id")
   logoUrl        String?  @map("logo_url")
   abbreviation   String?
+  tournamentSeed Int?     @map("tournament_seed")
   createdAt      DateTime @default(now()) @map("created_at")
 
   matchupsAsEntrant1    Matchup[] @relation("entrant1")
