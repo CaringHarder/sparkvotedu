@@ -82,8 +82,9 @@ function getMatchPosition(
 ): { x: number; y: number } {
   const x = PADDING + (round - 1) * (MATCH_WIDTH + ROUND_GAP)
 
-  // Round 1: evenly spaced vertically
-  if (round === 1) {
+  // Guard: round <= 0 should never reach here (play-in games are filtered out)
+  // but prevent infinite recursion just in case
+  if (round <= 1) {
     const y = PADDING + LABEL_HEIGHT + (position - 1) * (MATCH_HEIGHT + MATCH_V_GAP)
     return { x, y }
   }

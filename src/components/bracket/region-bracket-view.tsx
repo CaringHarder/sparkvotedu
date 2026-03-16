@@ -41,10 +41,12 @@ export function computeRegions(
   const numRegions = Math.round(totalR1 / r1PerRegion)
 
   // Bucket matchups into regions by tracing to R1 ancestor
+  // Skip round-0 (play-in/First Four) matchups — they don't fit the standard bracket grid
   const regionBuckets: MatchupData[][] = Array.from({ length: numRegions }, () => [])
   const connectingBucket: MatchupData[] = []
 
   for (const m of matchups) {
+    if (m.round <= 0) continue // Skip First Four / play-in games
     if (m.round > regionRounds) {
       connectingBucket.push(m)
       continue
