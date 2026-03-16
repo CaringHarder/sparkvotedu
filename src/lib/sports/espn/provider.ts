@@ -21,19 +21,15 @@ function getTournamentDates(): string[] {
   const year = new Date().getFullYear()
   const y = String(year)
 
-  // Known tournament game dates (both men's and women's):
-  // First Four: Mar 17-19, R1: Mar 19-21, R2: Mar 21-23,
-  // Sweet 16: Mar 27-29, Elite 8: Mar 28-30, FF: Apr 4-5, Championship: Apr 6-7
-  const monthDays = [
-    [3, [17, 18, 19, 20, 21, 22, 23, 27, 28, 29, 30]],
-    [4, [4, 5, 6, 7]],
-  ] as const
-
+  // Full tournament window: March 17 through April 8
+  // Use contiguous range to avoid missing dates that vary year to year.
+  // Empty dates return quickly with parallel batching.
   const dates: string[] = []
-  for (const [month, days] of monthDays) {
-    for (const day of days) {
-      dates.push(`${y}${String(month).padStart(2, '0')}${String(day).padStart(2, '0')}`)
-    }
+  for (let day = 17; day <= 31; day++) {
+    dates.push(`${y}03${String(day).padStart(2, '0')}`)
+  }
+  for (let day = 1; day <= 8; day++) {
+    dates.push(`${y}04${String(day).padStart(2, '0')}`)
   }
 
   return dates
