@@ -53,12 +53,21 @@ export async function createSportsBracketDAL(
   const games = await provider.getTournamentGames(input.tournamentId, input.season)
 
   // 2. Extract unique real teams from games (skip TBD placeholders with negative IDs)
+  // Also collect play-in team IDs — these get combined entrants instead of individual ones
+  const playInTeamIds = new Set<number>()
+  for (const game of games) {
+    if (game.round === 0) {
+      if (game.homeTeam && game.homeTeam.externalId > 0) playInTeamIds.add(game.homeTeam.externalId)
+      if (game.awayTeam && game.awayTeam.externalId > 0) playInTeamIds.add(game.awayTeam.externalId)
+    }
+  }
+
   const teamMap = new Map<number, SportsTeam>()
   for (const game of games) {
-    if (game.homeTeam && game.homeTeam.externalId > 0 && !teamMap.has(game.homeTeam.externalId)) {
+    if (game.homeTeam && game.homeTeam.externalId > 0 && !playInTeamIds.has(game.homeTeam.externalId) && !teamMap.has(game.homeTeam.externalId)) {
       teamMap.set(game.homeTeam.externalId, game.homeTeam)
     }
-    if (game.awayTeam && game.awayTeam.externalId > 0 && !teamMap.has(game.awayTeam.externalId)) {
+    if (game.awayTeam && game.awayTeam.externalId > 0 && !playInTeamIds.has(game.awayTeam.externalId) && !teamMap.has(game.awayTeam.externalId)) {
       teamMap.set(game.awayTeam.externalId, game.awayTeam)
     }
   }
@@ -97,7 +106,7 @@ export async function createSportsBracketDAL(
         sportGender: gender,
         sessionId: input.sessionId,
         size: bracketSize,
-        maxEntrants: 68, // includes First Four teams
+        maxEntrants: bracketSize, // 64: play-in teams are combined into single entrants
         playInEnabled: true,
         viewingMode: 'advanced',
         predictiveMode: 'advanced',
