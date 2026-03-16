@@ -1883,6 +1883,7 @@ export function LiveDashboard({
                 onMatchupClick={handleMatchupClick}
                 selectedMatchupId={selectedMatchupId}
                 showSeedNumbers={bracket.showSeedNumbers}
+                isSports={isSports}
               />
             ) : (
               <BracketDiagram
@@ -1892,6 +1893,7 @@ export function LiveDashboard({
                 onMatchupClick={handleMatchupClick}
                 selectedMatchupId={selectedMatchupId}
                 showSeedNumbers={bracket.showSeedNumbers}
+                isSports={isSports}
               />
             )
           )}

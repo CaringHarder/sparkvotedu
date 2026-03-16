@@ -29,7 +29,7 @@ export async function submitPredictions(
     return { error: 'Bracket not found' }
   }
 
-  if (bracket.bracketType !== 'predictive') {
+  if (bracket.bracketType !== 'predictive' && bracket.bracketType !== 'sports') {
     return { error: 'Bracket is not a predictive bracket' }
   }
 
@@ -398,7 +398,7 @@ export async function updatePredictionStatusDAL(
     return { error: 'Bracket not found' }
   }
 
-  if (bracket.bracketType !== 'predictive') {
+  if (bracket.bracketType !== 'predictive' && bracket.bracketType !== 'sports') {
     return { error: 'Bracket is not a predictive bracket' }
   }
 
@@ -503,7 +503,7 @@ export async function getTabulationResults(
     return { error: 'Bracket not found' }
   }
 
-  if (bracket.bracketType !== 'predictive') {
+  if (bracket.bracketType !== 'predictive' && bracket.bracketType !== 'sports') {
     return { error: 'Bracket is not a predictive bracket' }
   }
 
@@ -624,7 +624,7 @@ export async function tabulateBracketPredictions(
     return { error: 'Bracket not found' }
   }
 
-  if (bracket.bracketType !== 'predictive') {
+  if (bracket.bracketType !== 'predictive' && bracket.bracketType !== 'sports') {
     return { error: 'Bracket is not a predictive bracket' }
   }
 
