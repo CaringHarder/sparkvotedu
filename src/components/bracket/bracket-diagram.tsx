@@ -157,70 +157,9 @@ function MatchupBox({
   showSeedNumbers?: boolean
   isSports?: boolean
 }) {
-  // Sports brackets render text via SportsMatchupOverlay — skip standard text
-  // but still render background box and click targets for predictions
-  if (isSports) {
-    const sportsClickable = (matchup.status === 'voting' || (allowPendingClick && matchup.status === 'pending')) && onEntrantClick
-    return (
-      <g>
-        <rect
-          x={x}
-          y={y}
-          width={MATCH_WIDTH}
-          height={MATCH_HEIGHT}
-          rx={6}
-          ry={6}
-          style={{
-            fill: 'var(--card)',
-            stroke: isSelected ? 'var(--primary)' : 'var(--border)',
-            strokeWidth: isSelected ? 2 : 1,
-          }}
-        />
-        <line
-          x1={x}
-          y1={y + MATCH_HEIGHT / 2}
-          x2={x + MATCH_WIDTH}
-          y2={y + MATCH_HEIGHT / 2}
-          style={{ stroke: 'var(--border)', strokeWidth: 0.5 }}
-        />
-        {/* Click target for top entrant (prediction/vote) */}
-        {sportsClickable && matchup.entrant1Id && (
-          <rect
-            x={x}
-            y={y}
-            width={MATCH_WIDTH}
-            height={MATCH_HEIGHT / 2}
-            style={{ fill: 'transparent', cursor: 'pointer' }}
-            onPointerDown={(e) => e.stopPropagation()}
-            onClick={() => onEntrantClick!(matchup.id, matchup.entrant1Id!)}
-          />
-        )}
-        {/* Click target for bottom entrant (prediction/vote) */}
-        {sportsClickable && matchup.entrant2Id && (
-          <rect
-            x={x}
-            y={y + MATCH_HEIGHT / 2}
-            width={MATCH_WIDTH}
-            height={MATCH_HEIGHT / 2}
-            style={{ fill: 'transparent', cursor: 'pointer' }}
-            onPointerDown={(e) => e.stopPropagation()}
-            onClick={() => onEntrantClick!(matchup.id, matchup.entrant2Id!)}
-          />
-        )}
-        {/* Matchup click target (teacher select) */}
-        {onMatchupClick && (
-          <rect
-            x={x}
-            y={y}
-            width={MATCH_WIDTH}
-            height={MATCH_HEIGHT}
-            style={{ fill: 'transparent', cursor: 'pointer' }}
-            onClick={() => onMatchupClick(matchup.id)}
-          />
-        )}
-      </g>
-    )
-  }
+  // Sports brackets: let the standard MatchupBox render fully (backgrounds, highlights,
+  // click handlers, vote indicators) but suppress TEXT — the SportsMatchupOverlay
+  // handles text/logos/scores on top. This preserves prediction cascade visuals.
   const isByeMatchup = matchup.isBye === true
   // For bye matchups: show "BYE" for the null slot, real entrant name for the other
   const isBye1 = isByeMatchup && matchup.entrant1 == null
@@ -415,6 +354,8 @@ function MatchupBox({
         </rect>
       )}
 
+      {/* Text/logos/vote counts — hidden for sports brackets (SportsMatchupOverlay handles rendering) */}
+      <g style={isSports ? { display: 'none' } : undefined}>
       {/* Top entrant logo */}
       {matchup.entrant1?.logoUrl && !isBye1 && (
         <image
@@ -552,6 +493,7 @@ function MatchupBox({
           {voteLabel.e2}
         </text>
       )}
+      </g>
     </g>
   )
 }
