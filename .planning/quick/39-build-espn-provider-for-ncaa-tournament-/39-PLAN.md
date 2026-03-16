@@ -10,17 +10,22 @@ files_modified:
   - src/lib/sports/espn/mappers.ts
   - src/lib/sports/espn/provider.ts
   - src/lib/sports/provider.ts
+  - src/lib/dal/sports.ts
 autonomous: true
 requirements: [ESPN-PROVIDER]
 
 must_haves:
   truths:
-    - "ESPN provider implements SportsDataProvider interface fully"
+    - "ESPN provider implements SportsDataProvider interface fully (all 5 methods)"
     - "getActiveTournaments returns men's and women's NCAA tournaments with correct metadata"
     - "getTournamentGames queries all tournament dates and returns mapped SportsGame[] with seeds, regions, rounds"
+    - "getGamesByDate returns games for a given date across both genders"
+    - "getGameById searches today's scoreboard for a specific game by ID"
     - "areGamesInProgress checks today's ESPN scoreboard for live games"
     - "getProvider() defaults to ESPN without requiring any API key"
     - "SportsDataIO provider remains available via SPORTS_PROVIDER=sportsdataio env var"
+    - "DAL dataSource reflects the active provider ('espn' or 'sportsdataio')"
+    - "Tournament browser and import flow work end-to-end with ESPN string tournament IDs"
   artifacts:
     - path: "src/lib/sports/espn/types.ts"
       provides: "Raw ESPN API response types matching actual endpoint shape"
@@ -32,6 +37,8 @@ must_haves:
       provides: "ESPNProvider class implementing SportsDataProvider"
     - path: "src/lib/sports/provider.ts"
       provides: "Updated factory defaulting to ESPN"
+    - path: "src/lib/dal/sports.ts"
+      provides: "Updated DAL with dynamic dataSource based on active provider"
   key_links:
     - from: "src/lib/sports/espn/provider.ts"
       to: "src/lib/sports/espn/client.ts"
@@ -49,13 +56,21 @@ must_haves:
       to: "src/lib/sports/types.ts"
       via: "Implements SportsDataProvider interface"
       pattern: "implements SportsDataProvider"
+    - from: "src/lib/dal/sports.ts"
+      to: "src/lib/sports/provider.ts"
+      via: "DAL calls getProvider() which now returns ESPN by default"
+      pattern: "getProvider\\(\\)"
+    - from: "src/components/bracket/tournament-browser.tsx"
+      to: "src/actions/sports.ts"
+      via: "Browser calls importTournament with ESPN string tournamentId"
+      pattern: "importTournament\\("
 ---
 
 <objective>
-Build a complete ESPN provider for NCAA tournament data (men's and women's) using ESPN's free scoreboard API, and update the provider factory to use ESPN as the default.
+Build a complete ESPN provider for NCAA tournament data (men's and women's) using ESPN's free scoreboard API, update the provider factory to use ESPN as the default, and ensure the full end-to-end import flow works (tournament browser -> import action -> DAL).
 
 Purpose: Replace SportsDataIO (which returns scrambled trial data) with ESPN's free, real production data for NCAA tournament brackets.
-Output: Four new ESPN provider files + updated factory. Teachers can immediately import real NCAA brackets.
+Output: Four new ESPN provider files + updated factory + updated DAL. Teachers can immediately import real NCAA brackets via the existing tournament browser UI.
 </objective>
 
 <execution_context>
@@ -129,7 +144,7 @@ export interface SportsDataProvider {
 }
 ```
 
-From src/lib/sports/provider.ts (current — will be modified):
+From src/lib/sports/provider.ts (current -- will be modified):
 ```typescript
 import type { SportsDataProvider } from './types'
 import { SportsDataIOClient } from './sportsdataio/client'
@@ -146,6 +161,26 @@ export function getProvider(): SportsDataProvider {
   return cachedProvider
 }
 ```
+
+From src/lib/dal/sports.ts (relevant -- dataSource hardcoded):
+```typescript
+// Line 85 in createSportsBracketDAL:
+dataSource: 'sportsdataio',  // MUST be updated to use dynamic provider name
+```
+
+From src/lib/utils/validation.ts (import schema -- already accepts string tournamentId):
+```typescript
+export const importTournamentSchema = z.object({
+  tournamentId: z.string().min(1),  // Works with ESPN string IDs like 'espn-mens-ncaat'
+  season: z.number().int().min(2020),
+  sessionId: z.string().uuid(),
+})
+```
+
+From src/components/bracket/tournament-browser.tsx (no changes needed):
+- `isIncompleteNCAA` checks `t.name.includes('NCAA')` -- ESPN names contain "NCAA" so this works
+- `teamCount < 60` threshold applies to ESPN data too (ESPN returns 66+ teams, passes check)
+- Import calls `importTournament({ tournamentId: tournament.externalId, season, sessionId })` -- works with string IDs
 </interfaces>
 </context>
 
@@ -157,7 +192,7 @@ export function getProvider(): SportsDataProvider {
   <action>
 Create 3 files in `src/lib/sports/espn/`:
 
-**types.ts** — Raw ESPN API response types matching the verified endpoint shape:
+**types.ts** -- Raw ESPN API response types matching the verified endpoint shape:
 ```typescript
 // ESPN scoreboard response wrapper
 export interface ESPNScoreboardResponse {
@@ -202,16 +237,16 @@ export interface ESPNCompetitor {
 }
 ```
 
-**client.ts** — ESPN HTTP client (no auth needed):
+**client.ts** -- ESPN HTTP client (no auth needed):
 - Base URL: `https://site.api.espn.com/apis/site/v2/sports/basketball`
 - Sport path: `mens-college-basketball` or `womens-college-basketball` based on SportGender
-- `fetchScoreboard(gender: SportGender, date: string): Promise<ESPNScoreboardResponse>` — date is YYYYMMDD format, uses `?groups=100&dates={date}&limit=100`
-- `fetchScoreboardForDates(gender: SportGender, dates: string[]): Promise<ESPNEvent[]>` — queries each date sequentially (to avoid rate limits), collects all events, deduplicates by event.id
+- `fetchScoreboard(gender: SportGender, date: string): Promise<ESPNScoreboardResponse>` -- date is YYYYMMDD format, uses `?groups=100&dates={date}&limit=100`
+- `fetchScoreboardForDates(gender: SportGender, dates: string[]): Promise<ESPNEvent[]>` -- queries each date sequentially (to avoid rate limits), collects all events, deduplicates by event.id
 - Use `cache: 'no-store'` on fetch (same pattern as SportsDataIO client)
 - Add 100ms delay between date requests to be respectful of ESPN's servers
 - Error handling: log and continue on individual date failures (don't fail entire batch)
 
-**mappers.ts** — Pure mapping functions:
+**mappers.ts** -- Pure mapping functions:
 
 `mapEventStatus(event: ESPNEvent): GameStatus`:
 - `state === 'pre'` -> `'scheduled'`
@@ -273,10 +308,10 @@ export interface ESPNCompetitor {
 </task>
 
 <task type="auto">
-  <name>Task 2: Create ESPN provider and update factory</name>
-  <files>src/lib/sports/espn/provider.ts, src/lib/sports/provider.ts</files>
+  <name>Task 2: Create ESPN provider, update factory, and fix DAL dataSource</name>
+  <files>src/lib/sports/espn/provider.ts, src/lib/sports/provider.ts, src/lib/dal/sports.ts</files>
   <action>
-**src/lib/sports/espn/provider.ts** — ESPNProvider implements SportsDataProvider:
+**src/lib/sports/espn/provider.ts** -- ESPNProvider implements SportsDataProvider:
 
 ```typescript
 export class ESPNProvider implements SportsDataProvider {
@@ -288,7 +323,7 @@ Define tournament date ranges as constants (these are known NCAA tournament date
 
 ```typescript
 // NCAA tournament date ranges by gender
-// These cover the full tournament window — extra dates just return empty results
+// These cover the full tournament window -- extra dates just return empty results
 function getTournamentDates(gender: SportGender): string[] {
   // Generate dates from March 17 through April 8 (covers both men's and women's entire window)
   // Format: YYYYMMDD
@@ -308,16 +343,16 @@ function getTournamentDates(gender: SportGender): string[] {
 
 **getActiveTournaments():**
 - For each gender ('mens', 'womens'):
-  - Pick a known tournament date (e.g., March 21 — R1 for both) and query it
+  - Pick a known tournament date (e.g., March 21 -- R1 for both) and query it
   - If events come back with tournament-related notes headlines, tournament exists
   - Build SportsTournament using `mapEventsToTournament` from those sample events
-  - Note: this is just a probe — we don't need ALL games here, just enough to confirm tournament exists and get metadata
+  - Note: this is just a probe -- we don't need ALL games here, just enough to confirm tournament exists and get metadata
 - Return array of found tournaments
 - Wrap each gender in try/catch (log warn, continue)
 
 **getTournamentGames(tournamentId: string, season: number):**
-- Determine gender from tournamentId: use convention — if tournamentId starts with "espn-mens" -> mens, "espn-womens" -> womens. (Define these IDs in the mappers/constants.)
-- Actually, simpler: store gender in the tournamentId itself: `espn-mens-ncaat` and `espn-womens-ncaat`
+- Determine gender from tournamentId: if tournamentId starts with "espn-mens" -> mens, "espn-womens" -> womens
+- Store gender in the tournamentId itself: `espn-mens-ncaat` and `espn-womens-ncaat`
 - Get all tournament dates for that gender
 - Call `client.fetchScoreboardForDates(gender, dates)` to get all events
 - Map each event using `mapEventToGame(event, tournamentId)`
@@ -326,7 +361,8 @@ function getTournamentDates(gender: SportGender): string[] {
 **getGamesByDate(date: string):**
 - Convert YYYY-MM-DD to YYYYMMDD
 - Fetch scoreboard for both genders for that date
-- Map all events to SportsGame[]
+- Map all events to SportsGame[] using `mapEventToGame`
+- Use `espn-mens-ncaat` / `espn-womens-ncaat` as the tournamentId for each gender's games
 
 **getGameById(gameId: number):**
 - This is rarely called and ESPN has no single-game endpoint in the scoreboard API
@@ -338,14 +374,19 @@ function getTournamentDates(gender: SportGender): string[] {
 - Fetch scoreboard for both genders for today
 - Return true if any event has `status.type.state === 'in'`
 
-**src/lib/sports/provider.ts** — Update factory:
+**src/lib/sports/provider.ts** -- Update factory:
 - Import ESPNClient and ESPNProvider
+- Export a `getProviderName()` helper that returns `'espn'` or `'sportsdataio'` based on `process.env.SPORTS_PROVIDER ?? 'espn'`
 - Change logic:
   ```typescript
+  export function getProviderName(): string {
+    return process.env.SPORTS_PROVIDER ?? 'espn'
+  }
+
   export function getProvider(): SportsDataProvider {
     if (cachedProvider) return cachedProvider
 
-    const providerType = process.env.SPORTS_PROVIDER ?? 'espn'
+    const providerType = getProviderName()
 
     if (providerType === 'sportsdataio') {
       const apiKey = process.env.SPORTSDATAIO_API_KEY
@@ -355,7 +396,7 @@ function getTournamentDates(gender: SportGender): string[] {
       const client = new SportsDataIOClient({ apiKey })
       cachedProvider = new SportsDataIOProvider(client)
     } else {
-      // ESPN provider — no API key needed
+      // ESPN provider -- no API key needed
       const client = new ESPNClient()
       cachedProvider = new ESPNProvider(client)
     }
@@ -367,23 +408,36 @@ function getTournamentDates(gender: SportGender): string[] {
 - Add ESPN imports
 - Update JSDoc comment to reflect ESPN as default
 
+**src/lib/dal/sports.ts** -- Fix hardcoded dataSource:
+- Import `getProviderName` from `@/lib/sports/provider`
+- In `createSportsBracketDAL`, change line ~85 from `dataSource: 'sportsdataio'` to `dataSource: getProviderName()` so it dynamically reflects whether ESPN or SportsDataIO is active
+- This is important for the end-to-end flow: when a teacher imports via the tournament browser, the bracket record correctly records that it came from ESPN
+
+**End-to-end flow verification notes (no code changes needed for these):**
+- `importTournamentSchema` in validation.ts already accepts `tournamentId: z.string().min(1)` -- works with ESPN string IDs like `espn-mens-ncaat`
+- `tournament-browser.tsx` passes `tournament.externalId` directly to `importTournament` action -- works with any string
+- `isIncompleteNCAA` in tournament-browser.tsx checks `t.name.includes('NCAA')` -- ESPN tournament names contain "NCAA" so this works
+- `teamCount < 60` threshold applies to ESPN data too (ESPN returns 66+ teams, so it passes)
+- The DAL's second-pass wiring for `previousHomeGameId`/`previousAwayGameId` will find no matches (ESPN returns null) -- this is fine, bracket displays by region/round/position
+- The DAL already parses gender from tournamentId string: `input.tournamentId.toLowerCase().includes('womens')` -- works with `espn-womens-ncaat`
+
 **IMPORTANT tournament ID convention:**
 In `getActiveTournaments()`, use `externalId: 'espn-mens-ncaat'` and `externalId: 'espn-womens-ncaat'`. In `getTournamentGames()`, parse gender from this ID. This keeps it simple and avoids collisions with SportsDataIO numeric IDs.
   </action>
   <verify>
-    <automated>cd /Users/davidreynoldsjr/VibeCoding/SparkVotEDU && npx tsc --noEmit src/lib/sports/espn/provider.ts src/lib/sports/provider.ts 2>&1 | head -30</automated>
+    <automated>cd /Users/davidreynoldsjr/VibeCoding/SparkVotEDU && npx tsc --noEmit src/lib/sports/espn/provider.ts src/lib/sports/provider.ts src/lib/dal/sports.ts 2>&1 | head -30</automated>
   </verify>
-  <done>ESPNProvider fully implements SportsDataProvider, getProvider() defaults to ESPN with no env var needed, SportsDataIO still available via SPORTS_PROVIDER=sportsdataio, TypeScript compiles clean</done>
+  <done>ESPNProvider fully implements all 5 SportsDataProvider methods (including getGamesByDate and getGameById), getProvider() defaults to ESPN with no env var needed, SportsDataIO still available via SPORTS_PROVIDER=sportsdataio, DAL dataSource is dynamic, TypeScript compiles clean</done>
 </task>
 
 <task type="auto">
-  <name>Task 3: Smoke test ESPN provider against live API</name>
+  <name>Task 3: Smoke test ESPN provider and verify end-to-end import flow</name>
   <files>src/lib/sports/espn/provider.ts</files>
   <action>
 Run a quick smoke test to verify the ESPN provider works against the live API. Create a temporary test script (delete after):
 
 ```typescript
-// /tmp/espn-smoke-test.ts — run with npx tsx
+// /tmp/espn-smoke-test.ts -- run with npx tsx
 import { ESPNClient } from './src/lib/sports/espn/client'
 
 async function main() {
@@ -408,40 +462,48 @@ Run: `npx tsx /tmp/espn-smoke-test.ts`
 
 If the test returns games, the provider is working. If it returns 0 games (tournament hasn't started yet or date is wrong), try a known active date.
 
-Then verify the full provider flow:
+Then verify the full provider and end-to-end flow:
 1. Ensure `npx tsc --noEmit` passes for the entire project (not just ESPN files)
 2. Ensure `npm run build` succeeds (Next.js build catches additional issues)
+3. Verify end-to-end import path compiles correctly: `getProvider()` -> `ESPNProvider` -> `getActiveTournaments()` returns tournaments with `externalId: 'espn-mens-ncaat'` -> tournament browser displays them -> user clicks Import -> `importTournament` action validates string ID via Zod -> `createSportsBracketDAL` receives string tournamentId -> DAL calls `getProvider().getTournamentGames('espn-mens-ncaat', season)` -> bracket created with `dataSource: 'espn'`
+4. Grep to confirm no remaining hardcoded `'sportsdataio'` in the DAL's create path: `grep -n "dataSource:" src/lib/dal/sports.ts` should show `getProviderName()` not a string literal
 
 If there are any type errors or runtime issues, fix them. Common issues to watch for:
-- ESPN might return `curatedRank` as undefined for some competitors (e.g., non-tournament teams in exhibition games) — add null checks
-- `notes` array might be empty for some events — handle gracefully
-- Some events might have `competitions` as empty array — skip those
-- `score` field might be empty string instead of "0" for pre-game — handle in parseInt
+- ESPN might return `curatedRank` as undefined for some competitors (e.g., non-tournament teams in exhibition games) -- add null checks
+- `notes` array might be empty for some events -- handle gracefully
+- Some events might have `competitions` as empty array -- skip those
+- `score` field might be empty string instead of "0" for pre-game -- handle in parseInt
 
 After verification, delete the smoke test file.
   </action>
   <verify>
     <automated>cd /Users/davidreynoldsjr/VibeCoding/SparkVotEDU && npx tsc --noEmit 2>&1 | tail -5</automated>
   </verify>
-  <done>Full project compiles with no type errors, ESPN provider successfully fetches and maps real tournament data from ESPN's live API, provider factory defaults to ESPN</done>
+  <done>Full project compiles with no type errors, ESPN provider successfully fetches and maps real tournament data from ESPN's live API, provider factory defaults to ESPN, DAL dataSource is dynamic, end-to-end import flow verified from tournament browser through to bracket creation</done>
 </task>
 
 </tasks>
 
 <verification>
-1. `npx tsc --noEmit` — full project compiles clean
-2. `npm run build` — Next.js build succeeds
+1. `npx tsc --noEmit` -- full project compiles clean
+2. `npm run build` -- Next.js build succeeds
 3. Provider factory returns ESPNProvider by default (no env var needed)
 4. Provider factory returns SportsDataIOProvider when SPORTS_PROVIDER=sportsdataio
 5. ESPN types match the verified API shape from live endpoint testing
+6. DAL `dataSource` field uses `getProviderName()` (not hardcoded 'sportsdataio')
+7. End-to-end: tournament browser -> import action -> DAL all work with ESPN string tournament IDs
 </verification>
 
 <success_criteria>
-- ESPN provider implements all 5 SportsDataProvider methods
+- ESPN provider implements all 5 SportsDataProvider methods (getActiveTournaments, getTournamentGames, getGamesByDate, getGameById, areGamesInProgress)
 - getActiveTournaments returns both men's and women's NCAA tournaments
 - getTournamentGames returns 60+ games with correct seeds, regions, and rounds
+- getGamesByDate returns games for a specific date across both genders
+- getGameById searches today's scoreboard and returns matching game or null
 - Provider factory defaults to ESPN, falls back to SportsDataIO via env var
+- DAL records correct dataSource ('espn' by default)
 - Full project builds without errors
+- Tournament browser UI can display ESPN tournaments and import them as brackets
 </success_criteria>
 
 <output>
