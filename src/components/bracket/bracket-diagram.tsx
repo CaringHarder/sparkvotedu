@@ -158,7 +158,9 @@ function MatchupBox({
   isSports?: boolean
 }) {
   // Sports brackets render text via SportsMatchupOverlay — skip standard text
+  // but still render background box and click targets for predictions
   if (isSports) {
+    const sportsClickable = (matchup.status === 'voting' || (allowPendingClick && matchup.status === 'pending')) && onEntrantClick
     return (
       <g>
         <rect
@@ -170,8 +172,8 @@ function MatchupBox({
           ry={6}
           style={{
             fill: 'var(--card)',
-            stroke: 'var(--border)',
-            strokeWidth: 1,
+            stroke: isSelected ? 'var(--primary)' : 'var(--border)',
+            strokeWidth: isSelected ? 2 : 1,
           }}
         />
         <line
@@ -181,6 +183,41 @@ function MatchupBox({
           y2={y + MATCH_HEIGHT / 2}
           style={{ stroke: 'var(--border)', strokeWidth: 0.5 }}
         />
+        {/* Click target for top entrant (prediction/vote) */}
+        {sportsClickable && matchup.entrant1Id && (
+          <rect
+            x={x}
+            y={y}
+            width={MATCH_WIDTH}
+            height={MATCH_HEIGHT / 2}
+            style={{ fill: 'transparent', cursor: 'pointer' }}
+            onPointerDown={(e) => e.stopPropagation()}
+            onClick={() => onEntrantClick!(matchup.id, matchup.entrant1Id!)}
+          />
+        )}
+        {/* Click target for bottom entrant (prediction/vote) */}
+        {sportsClickable && matchup.entrant2Id && (
+          <rect
+            x={x}
+            y={y + MATCH_HEIGHT / 2}
+            width={MATCH_WIDTH}
+            height={MATCH_HEIGHT / 2}
+            style={{ fill: 'transparent', cursor: 'pointer' }}
+            onPointerDown={(e) => e.stopPropagation()}
+            onClick={() => onEntrantClick!(matchup.id, matchup.entrant2Id!)}
+          />
+        )}
+        {/* Matchup click target (teacher select) */}
+        {onMatchupClick && (
+          <rect
+            x={x}
+            y={y}
+            width={MATCH_WIDTH}
+            height={MATCH_HEIGHT}
+            style={{ fill: 'transparent', cursor: 'pointer' }}
+            onClick={() => onMatchupClick(matchup.id)}
+          />
+        )}
       </g>
     )
   }

@@ -100,6 +100,7 @@ export async function createSportsBracketDAL(
         maxEntrants: 68, // includes First Four teams
         playInEnabled: true,
         viewingMode: 'advanced',
+        predictiveMode: 'advanced',
         showSeedNumbers: true,
         teacherId,
       },
