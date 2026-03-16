@@ -13,6 +13,15 @@ import { broadcastBracketUpdate } from '@/lib/realtime/broadcast'
 import type { SportsGame, SportsTeam, SportGender } from '@/lib/sports/types'
 
 /**
+ * Standard NCAA bracket position by higher seed within a region (Round 1).
+ * Maps the favored seed in each matchup to its bracket position:
+ * 1v16=pos1, 8v9=pos2, 5v12=pos3, 4v13=pos4, 6v11=pos5, 3v14=pos6, 7v10=pos7, 2v15=pos8
+ */
+const SEED_TO_R1_POSITION: Record<number, number> = {
+  1: 1, 8: 2, 5: 3, 4: 4, 6: 5, 3: 6, 7: 7, 2: 8,
+}
+
+/**
  * Determine which slot a matchup feeds into in the next round.
  * Odd positions (1, 3, 5...) -> entrant1Id, even positions (2, 4, 6...) -> entrant2Id.
  * Mirrors the logic in bracket.ts getSlotForPosition and advancement.ts.
@@ -111,6 +120,7 @@ export async function createSportsBracketDAL(
           externalTeamId: team.externalId,
           logoUrl: resolveTeamLogoUrl(team.logoUrl, team.abbreviation),
           abbreviation: team.abbreviation,
+          tournamentSeed: team.seed ?? null,
         },
       })
       entrantByExternalId.set(team.externalId, record.id)
@@ -122,13 +132,38 @@ export async function createSportsBracketDAL(
     const allGames = [...firstFourGames, ...mainGames]
     const matchupByExternalGameId = new Map<number, { id: string; position: number }>()
 
-    // Build position counters per round for unique position assignment
+    // Build region ordering for seed-based R1 position assignment
+    // Collect unique region names from R1 main games (exclude Final Four / null regions)
+    const r1Regions: string[] = []
+    for (const game of mainGames) {
+      if (game.round === 1 && game.bracket && !r1Regions.includes(game.bracket)) {
+        r1Regions.push(game.bracket)
+      }
+    }
+    const regionIndex = new Map<string, number>()
+    r1Regions.forEach((r, i) => regionIndex.set(r, i))
+
+    // Position counters for non-R1 rounds (R0, R2+)
     const positionCounters = new Map<number, number>()
 
     for (const game of allGames) {
       const round = game.round
-      const currentPosition = (positionCounters.get(round) ?? 0) + 1
-      positionCounters.set(round, currentPosition)
+
+      // For R1 main bracket games: use seed-based position ordering
+      let currentPosition: number
+      if (round === 1 && game.bracket && regionIndex.has(game.bracket)) {
+        // Determine the higher seed (lower number) from both teams
+        const seed1 = game.homeTeam?.seed ?? 99
+        const seed2 = game.awayTeam?.seed ?? 99
+        const higherSeed = Math.min(seed1, seed2)
+        const seedPos = SEED_TO_R1_POSITION[higherSeed] ?? 1
+        const regIdx = regionIndex.get(game.bracket) ?? 0
+        currentPosition = regIdx * 8 + seedPos
+      } else {
+        // For R0 (First Four) and R2+ games: sequential counter
+        currentPosition = (positionCounters.get(round) ?? 0) + 1
+        positionCounters.set(round, currentPosition)
+      }
 
       // Resolve entrant IDs from teams
       const entrant1Id = game.homeTeam
