@@ -13,22 +13,27 @@ import { mapEventToGame, mapEventsToTournament } from './mappers'
 import type { ESPNEvent } from './types'
 
 /**
- * Generate tournament date strings (YYYYMMDD) covering the full NCAA window.
- * March 17 through April 8 covers both men's and women's tournaments.
- * Dates outside the tournament window simply return empty results from ESPN.
+ * Generate tournament date strings (YYYYMMDD) covering known NCAA game dates.
+ * Only includes dates when games are actually scheduled (not every day in the window).
+ * This reduces API calls from ~23 to ~13, critical for Vercel serverless timeouts.
  */
 function getTournamentDates(): string[] {
   const year = new Date().getFullYear()
+  const y = String(year)
+
+  // Known tournament game dates (both men's and women's):
+  // First Four: Mar 17-19, R1: Mar 19-21, R2: Mar 21-23,
+  // Sweet 16: Mar 27-29, Elite 8: Mar 28-30, FF: Apr 4-5, Championship: Apr 6-7
+  const monthDays = [
+    [3, [17, 18, 19, 20, 21, 22, 23, 27, 28, 29, 30]],
+    [4, [4, 5, 6, 7]],
+  ] as const
+
   const dates: string[] = []
-
-  // March 17 through March 31
-  for (let day = 17; day <= 31; day++) {
-    dates.push(`${year}${String(3).padStart(2, '0')}${String(day).padStart(2, '0')}`)
-  }
-
-  // April 1 through April 8
-  for (let day = 1; day <= 8; day++) {
-    dates.push(`${year}${String(4).padStart(2, '0')}${String(day).padStart(2, '0')}`)
+  for (const [month, days] of monthDays) {
+    for (const day of days) {
+      dates.push(`${y}${String(month).padStart(2, '0')}${String(day).padStart(2, '0')}`)
+    }
   }
 
   return dates

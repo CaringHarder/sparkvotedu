@@ -45,9 +45,8 @@ export class ESPNClient {
   /**
    * Fetch scoreboards across multiple dates, collecting and deduplicating events.
    *
-   * Queries each date sequentially with a 150ms delay between requests
-   * to be respectful of ESPN's servers. Individual date failures are logged
-   * and skipped (the batch continues).
+   * Queries dates in parallel batches of 5 to balance speed vs rate limits.
+   * Individual date failures are logged and skipped (the batch continues).
    *
    * @param gender - 'mens' or 'womens'
    * @param dates - Array of dates in YYYYMMDD format
@@ -56,25 +55,30 @@ export class ESPNClient {
   async fetchScoreboardForDates(gender: SportGender, dates: string[]): Promise<ESPNEvent[]> {
     const seenIds = new Set<string>()
     const events: ESPNEvent[] = []
+    const BATCH_SIZE = 5
 
-    for (let i = 0; i < dates.length; i++) {
-      try {
-        const response = await this.fetchScoreboard(gender, dates[i])
+    for (let i = 0; i < dates.length; i += BATCH_SIZE) {
+      const batch = dates.slice(i, i + BATCH_SIZE)
 
-        for (const event of response.events) {
-          if (!seenIds.has(event.id)) {
-            seenIds.add(event.id)
-            events.push(event)
+      const results = await Promise.allSettled(
+        batch.map((date) => this.fetchScoreboard(gender, date))
+      )
+
+      for (const result of results) {
+        if (result.status === 'fulfilled') {
+          for (const event of result.value.events) {
+            if (!seenIds.has(event.id)) {
+              seenIds.add(event.id)
+              events.push(event)
+            }
           }
         }
-      } catch (error) {
-        console.warn(`ESPN: failed to fetch ${gender} scoreboard for ${dates[i]}:`, error)
-        // Continue with remaining dates
+        // Rejected results are silently skipped (empty dates are common)
       }
 
-      // Rate-limit: 150ms delay between requests
-      if (i < dates.length - 1) {
-        await delay(150)
+      // Small delay between batches to be respectful
+      if (i + BATCH_SIZE < dates.length) {
+        await delay(100)
       }
     }
 

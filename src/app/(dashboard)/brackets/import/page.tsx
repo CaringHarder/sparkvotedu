@@ -5,6 +5,9 @@ import { getAuthenticatedTeacher } from '@/lib/dal/auth'
 import { prisma } from '@/lib/prisma'
 import { TournamentBrowser } from '@/components/bracket/tournament-browser'
 
+// ESPN provider fetches multiple dates + creates 68 entrants + 67 matchups
+export const maxDuration = 60
+
 export default async function ImportTournamentPage() {
   const teacher = await getAuthenticatedTeacher()
   if (!teacher) {
