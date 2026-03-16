@@ -183,7 +183,7 @@ export function mapEventsToTournament(
   gender: SportGender,
   tournamentId: string
 ): SportsTournament {
-  // Collect unique teams
+  // Collect unique real teams (filter out TBD placeholders with negative IDs)
   const teamIds = new Set<string>()
   const dates: string[] = []
 
@@ -194,7 +194,12 @@ export function mapEventsToTournament(
     dates.push(competition.date)
 
     for (const competitor of competition.competitors) {
-      teamIds.add(competitor.team.id)
+      const id = competitor.team.id
+      const seed = competitor.curatedRank?.current
+      // Skip TBD placeholders: negative IDs or seed 99
+      if (parseInt(id, 10) > 0 && (seed === undefined || seed < 99)) {
+        teamIds.add(id)
+      }
     }
   }
 

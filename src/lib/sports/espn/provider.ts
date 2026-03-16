@@ -72,28 +72,25 @@ export class ESPNProvider implements SportsDataProvider {
   /**
    * Get active NCAA tournaments for both men's and women's.
    *
-   * Probes a known tournament date (March 21) to detect if tournament data exists.
+   * Fetches all tournament dates to get accurate team/game counts.
    * Returns a SportsTournament for each gender where games are found.
    */
   async getActiveTournaments(): Promise<SportsTournament[]> {
     const tournaments: SportsTournament[] = []
     const genders: SportGender[] = ['mens', 'womens']
-
-    // Probe a known R1 date to check for tournament existence
-    const year = new Date().getFullYear()
-    const probeDate = `${year}0321`
+    const dates = getTournamentDates()
 
     for (const gender of genders) {
       try {
-        const response = await this.client.fetchScoreboard(gender, probeDate)
-        const tournamentEvents = response.events.filter(isTournamentGame)
+        const events = await this.client.fetchScoreboardForDates(gender, dates)
+        const tournamentEvents = events.filter(isTournamentGame)
 
         if (tournamentEvents.length > 0) {
           const tournamentId = getTournamentId(gender)
           tournaments.push(mapEventsToTournament(tournamentEvents, gender, tournamentId))
         }
       } catch (error) {
-        console.warn(`ESPN: failed to probe ${gender} tournament:`, error)
+        console.warn(`ESPN: failed to fetch ${gender} tournament:`, error)
       }
     }
 
