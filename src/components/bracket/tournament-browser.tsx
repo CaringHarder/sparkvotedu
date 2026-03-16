@@ -207,8 +207,8 @@ export function TournamentBrowser({ sessions }: TournamentBrowserProps) {
             key={tournament.externalId}
             tournament={tournament}
             onImport={handleImport}
-            isImporting={importing === tournament.externalId || isPending}
-            disabled={!selectedSessionId || !tournament.teamsPopulated}
+            isImporting={importing === tournament.externalId && isPending}
+            disabled={!selectedSessionId || !tournament.teamsPopulated || (importing !== null && importing !== tournament.externalId)}
           />
         ))}
       </div>
