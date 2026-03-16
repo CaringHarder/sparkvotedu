@@ -43,13 +43,13 @@ export async function createSportsBracketDAL(
   const provider = getProvider()
   const games = await provider.getTournamentGames(input.tournamentId, input.season)
 
-  // 2. Extract unique teams from games
+  // 2. Extract unique real teams from games (skip TBD placeholders with negative IDs)
   const teamMap = new Map<number, SportsTeam>()
   for (const game of games) {
-    if (game.homeTeam && !teamMap.has(game.homeTeam.externalId)) {
+    if (game.homeTeam && game.homeTeam.externalId > 0 && !teamMap.has(game.homeTeam.externalId)) {
       teamMap.set(game.homeTeam.externalId, game.homeTeam)
     }
-    if (game.awayTeam && !teamMap.has(game.awayTeam.externalId)) {
+    if (game.awayTeam && game.awayTeam.externalId > 0 && !teamMap.has(game.awayTeam.externalId)) {
       teamMap.set(game.awayTeam.externalId, game.awayTeam)
     }
   }
@@ -137,19 +137,9 @@ export async function createSportsBracketDAL(
         : null
 
       // Determine bracket region
-      let bracketRegion: string | null = null
-      if (game.bracket) {
-        const bracketStr = game.bracket.toLowerCase()
-        if (
-          bracketStr === 'east' ||
-          bracketStr === 'west' ||
-          bracketStr === 'south' ||
-          bracketStr === 'midwest'
-        ) {
-          bracketRegion = game.bracket
-        }
-        // Final Four / Championship -> null region
-      }
+      // Men's: East, West, South, Midwest, Final Four
+      // Women's (ESPN): Regional 1, Regional 2, Regional 3, Regional 4, Final Four
+      const bracketRegion = game.bracket ?? null
 
       const matchup = await tx.matchup.create({
         data: {
