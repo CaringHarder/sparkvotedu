@@ -60,20 +60,20 @@ None.
 
 ### Quick Tasks Completed
 
-| # | Description | Date | Commit | Directory |
-|---|-------------|------|--------|-----------|
-| 30 | Fix ghost students bug - phantom students with fun names but no real names created when class joins session | 2026-03-09 | 881aae4 | [30-fix-ghost-students-bug-phantom-students-](./quick/30-fix-ghost-students-bug-phantom-students-/) |
-| 31 | Fix returning student search to handle multiple current-session matches | 2026-03-11 | f412bf8 | [31-fix-returning-student-search-to-handle-m](./quick/31-fix-returning-student-search-to-handle-m/) |
-| 32 | Session page: add name edit + unban device | 2026-03-11 | 9abeec9 | [32-session-page-add-name-edit-unban-device-](./quick/32-session-page-add-name-edit-unban-device-/) |
-| 33 | Change last initial label to "First Letter of your Last Name" | 2026-03-11 | 8082400 | [33-change-last-initial-label-to-first-lette](./quick/33-change-last-initial-label-to-first-lette/) |
-| 34 | Update last initial label to "Last Name, first letter" | 2026-03-12 | 44095a5 | [34-update-last-initial-label-to-last-name-f](./quick/34-update-last-initial-label-to-last-name-f/) |
-| 35 | Improve student settings menu labels, remove recovery code | 2026-03-12 | d195e13 | [35-improve-student-dashboard-settings-menu-](./quick/35-improve-student-dashboard-settings-menu-/) |
-| 36 | Add last initial field to student Fix My Name dialog | 2026-03-12 | 8c953cf | [36-add-last-initial-field-to-student-fix-my](./quick/36-add-last-initial-field-to-student-fix-my/) |
-| 37 | Detect and warn on incomplete NCAA bracket data | 2026-03-15 | 96972d2 | [37-check-mens-ncaa-bracket-working-now-that](./quick/37-check-mens-ncaa-bracket-working-now-that/) |
-| 38 | Add auto-polling for sports bracket live scores | 2026-03-15 | 2519132 | [38-add-client-side-polling-and-manual-sync-](./quick/38-add-client-side-polling-and-manual-sync-/) |
+| # | Description | Date | Commit | Status | Directory |
+|---|-------------|------|--------|--------|-----------|
+| 30 | Fix ghost students bug - phantom students with fun names but no real names created when class joins session | 2026-03-09 | 881aae4 | | [30-fix-ghost-students-bug-phantom-students-](./quick/30-fix-ghost-students-bug-phantom-students-/) |
+| 31 | Fix returning student search to handle multiple current-session matches | 2026-03-11 | f412bf8 | | [31-fix-returning-student-search-to-handle-m](./quick/31-fix-returning-student-search-to-handle-m/) |
+| 32 | Session page: add name edit + unban device | 2026-03-11 | 9abeec9 | | [32-session-page-add-name-edit-unban-device-](./quick/32-session-page-add-name-edit-unban-device-/) |
+| 33 | Change last initial label to "First Letter of your Last Name" | 2026-03-11 | 8082400 | | [33-change-last-initial-label-to-first-lette](./quick/33-change-last-initial-label-to-first-lette/) |
+| 34 | Update last initial label to "Last Name, first letter" | 2026-03-12 | 44095a5 | | [34-update-last-initial-label-to-last-name-f](./quick/34-update-last-initial-label-to-last-name-f/) |
+| 35 | Improve student settings menu labels, remove recovery code | 2026-03-12 | d195e13 | | [35-improve-student-dashboard-settings-menu-](./quick/35-improve-student-dashboard-settings-menu-/) |
+| 36 | Add last initial field to student Fix My Name dialog | 2026-03-12 | 8c953cf | | [36-add-last-initial-field-to-student-fix-my](./quick/36-add-last-initial-field-to-student-fix-my/) |
+| 37 | Detect and warn on incomplete NCAA bracket data | 2026-03-15 | 96972d2 | | [37-check-mens-ncaa-bracket-working-now-that](./quick/37-check-mens-ncaa-bracket-working-now-that/) |
+| 38 | Add auto-polling for sports bracket live scores | 2026-03-15 | 2519132 | | [38-add-client-side-polling-and-manual-sync-](./quick/38-add-client-side-polling-and-manual-sync-/) |
 | 39 | Build ESPN provider for NCAA tournament data | 2026-03-16 | 06badac | Verified | [39-build-espn-provider-for-ncaa-tournament-](./quick/39-build-espn-provider-for-ncaa-tournament-/) |
-| 40 | Fix NCAA bracket matchup ordering and add seed display | 2026-03-16 | 9d87822 | [40-fix-ncaa-bracket-matchup-ordering-to-sta](./quick/40-fix-ncaa-bracket-matchup-ordering-to-sta/) |
-| 42 | Merge sports bracket rendering into MatchupBox, remove overlay | 2026-03-17 | a56e0cb | [42-merge-sports-bracket-rendering-into-the-](./quick/42-merge-sports-bracket-rendering-into-the-/) |
+| 40 | Fix NCAA bracket matchup ordering and add seed display | 2026-03-16 | 9d87822 | | [40-fix-ncaa-bracket-matchup-ordering-to-sta](./quick/40-fix-ncaa-bracket-matchup-ordering-to-sta/) |
+| 42 | Merge sports bracket rendering into MatchupBox, remove overlay | 2026-03-17 | a56e0cb | Verified | [42-merge-sports-bracket-rendering-into-the-](./quick/42-merge-sports-bracket-rendering-into-the-/) |
 
 ## Session Continuity
 
