@@ -75,7 +75,7 @@ None.
 | 40 | Fix NCAA bracket matchup ordering and add seed display | 2026-03-16 | 9d87822 | | [40-fix-ncaa-bracket-matchup-ordering-to-sta](./quick/40-fix-ncaa-bracket-matchup-ordering-to-sta/) |
 | 42 | Merge sports bracket rendering into MatchupBox, remove overlay | 2026-03-17 | a56e0cb | Verified | [42-merge-sports-bracket-rendering-into-the-](./quick/42-merge-sports-bracket-rendering-into-the-/) |
 | 43 | Fix next_matchup_id linkage for predictive bracket cascade | 2026-03-17 | 1bd3f86 | Verified | [43-fix-next-matchup-id-linkage-so-predictiv](./quick/43-fix-next-matchup-id-linkage-so-predictiv/) |
-| 44 | Fix live classroom issues: null R2 regions, slow activities API | 2026-03-17 | 382562b | | [44-fix-live-classroom-issues-null-r2-region](./quick/44-fix-live-classroom-issues-null-r2-region/) |
+| 44 | Fix live classroom issues: null R2 regions, slow API, Final Four pairing | 2026-03-17 | 7cc39e4 | | [44-fix-live-classroom-issues-null-r2-region](./quick/44-fix-live-classroom-issues-null-r2-region/) |
 
 ## Session Continuity
 
