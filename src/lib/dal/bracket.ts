@@ -840,7 +840,10 @@ export async function duplicateBracketDAL(
 ) {
   const source = await prisma.bracket.findFirst({
     where: { id: bracketId, teacherId },
-    include: { entrants: { orderBy: { seedPosition: 'asc' } } },
+    include: {
+      entrants: { orderBy: { seedPosition: 'asc' } },
+      matchups: { orderBy: [{ round: 'asc' }, { position: 'asc' }] },
+    },
   })
 
   if (!source) {
@@ -871,17 +874,85 @@ export async function duplicateBracketDAL(
       },
     })
 
-    // Clone entrants (without externalTeamId -- fresh copy)
+    // Clone entrants (preserve sports fields for sports brackets)
+    const oldToNewEntrant = new Map<string, string>()
     for (const entrant of source.entrants) {
-      await tx.bracketEntrant.create({
+      const created = await tx.bracketEntrant.create({
         data: {
           name: entrant.name,
           seedPosition: entrant.seedPosition,
           bracketId: newBracket.id,
           logoUrl: entrant.logoUrl,
           abbreviation: entrant.abbreviation,
+          externalTeamId: entrant.externalTeamId,
+          tournamentSeed: entrant.tournamentSeed,
         },
       })
+      oldToNewEntrant.set(entrant.id, created.id)
+    }
+
+    // Clone matchups if source has them (sports brackets need full structure)
+    if (source.matchups.length > 0) {
+      const oldToNewMatchup = new Map<string, string>()
+
+      // First pass: create all matchups without nextMatchupId
+      for (const m of source.matchups) {
+        const created = await tx.matchup.create({
+          data: {
+            round: m.round,
+            position: m.position,
+            status: 'pending',
+            bracketId: newBracket.id,
+            entrant1Id: m.entrant1Id ? oldToNewEntrant.get(m.entrant1Id) ?? null : null,
+            entrant2Id: m.entrant2Id ? oldToNewEntrant.get(m.entrant2Id) ?? null : null,
+            bracketRegion: m.bracketRegion,
+            isBye: m.isBye,
+            externalGameId: m.externalGameId,
+            homeScore: null,
+            awayScore: null,
+            gameStatus: m.gameStatus === 'final' ? 'scheduled' : m.gameStatus,
+            gameStartTime: m.gameStartTime,
+          },
+        })
+        oldToNewMatchup.set(m.id, created.id)
+      }
+
+      // Second pass: wire nextMatchupId using the old→new map
+      for (const m of source.matchups) {
+        if (m.nextMatchupId) {
+          const newId = oldToNewMatchup.get(m.id)
+          const newNextId = oldToNewMatchup.get(m.nextMatchupId)
+          if (newId && newNextId) {
+            await tx.matchup.update({
+              where: { id: newId },
+              data: { nextMatchupId: newNextId },
+            })
+          }
+        }
+      }
+
+      // Auto-advance bye matchups
+      for (const m of source.matchups) {
+        if (m.isBye && m.entrant1Id && !m.entrant2Id) {
+          const newId = oldToNewMatchup.get(m.id)
+          const newEntrant = oldToNewEntrant.get(m.entrant1Id)
+          if (newId && newEntrant) {
+            await tx.matchup.update({
+              where: { id: newId },
+              data: { winnerId: newEntrant, status: 'decided' },
+            })
+          }
+        } else if (m.isBye && m.entrant2Id && !m.entrant1Id) {
+          const newId = oldToNewMatchup.get(m.id)
+          const newEntrant = oldToNewEntrant.get(m.entrant2Id)
+          if (newId && newEntrant) {
+            await tx.matchup.update({
+              where: { id: newId },
+              data: { winnerId: newEntrant, status: 'decided' },
+            })
+          }
+        }
+      }
     }
 
     return tx.bracket.findUniqueOrThrow({
