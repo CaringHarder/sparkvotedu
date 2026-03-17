@@ -7,10 +7,13 @@
  */
 
 import { prisma } from '@/lib/prisma'
+import type { PrismaClient } from '../../../prisma/generated/prisma'
 import { getProvider, getProviderName } from '@/lib/sports/provider'
 import { resolveTeamLogoUrl } from '@/lib/sports/logo-resolver'
 import { broadcastBracketUpdate } from '@/lib/realtime/broadcast'
 import type { SportsGame, SportsTeam, SportGender } from '@/lib/sports/types'
+
+type TransactionClient = Parameters<Parameters<PrismaClient['$transaction']>[0]>[0]
 
 /**
  * Standard NCAA bracket position by higher seed within a region (Round 1).
@@ -28,6 +31,128 @@ const SEED_TO_R1_POSITION: Record<number, number> = {
  */
 function getSlotForPosition(position: number): 'entrant1Id' | 'entrant2Id' {
   return position % 2 === 1 ? 'entrant1Id' : 'entrant2Id'
+}
+
+/**
+ * Compute and write nextMatchupId linkage for all matchups in a bracket
+ * based on round/position/region data. This is a fallback for when ESPN
+ * data does not provide previousHomeGameId/previousAwayGameId (which is
+ * the case for the ESPN provider).
+ *
+ * Algorithm:
+ * - Rounds 1-3 (within-region): group by bracketRegion, sort by position,
+ *   pair consecutive matchups: index i feeds into floor(i/2) in the next round.
+ * - Rounds 4+ (cross-region): sort by position, pair consecutively.
+ * - Round 0 (play-in) and the final round (championship) are skipped.
+ * - Only updates matchups where nextMatchupId is currently null.
+ *
+ * @param bracketId - The bracket to wire
+ * @param tx - Optional transaction client; uses prisma directly if not provided
+ */
+export async function wireMatchupAdvancement(
+  bracketId: string,
+  tx?: TransactionClient
+) {
+  const db = tx ?? prisma
+
+  // 1. Fetch all matchups for this bracket
+  const matchups = await db.matchup.findMany({
+    where: { bracketId },
+    select: {
+      id: true,
+      round: true,
+      position: true,
+      bracketRegion: true,
+      nextMatchupId: true,
+    },
+    orderBy: [{ round: 'asc' }, { position: 'asc' }],
+  })
+
+  // 2. Group by round
+  const byRound = new Map<number, typeof matchups>()
+  for (const m of matchups) {
+    const arr = byRound.get(m.round) ?? []
+    arr.push(m)
+    byRound.set(m.round, arr)
+  }
+
+  // 3. Determine the max round (championship) — skip it (no next round)
+  const rounds = Array.from(byRound.keys()).sort((a, b) => a - b)
+  if (rounds.length === 0) return
+
+  // 4. For each round R (skip R0 and the final round), link to R+1
+  for (const round of rounds) {
+    if (round === 0) continue // skip play-in
+    const nextRound = round + 1
+    const nextRoundMatchups = byRound.get(nextRound)
+    if (!nextRoundMatchups || nextRoundMatchups.length === 0) continue // final round
+
+    const currentMatchups = byRound.get(round)!
+
+    // Determine if this is a within-region round:
+    // Within-region when current matchups have bracketRegion set and
+    // the next round also has bracketRegion set (R1->R2, R2->R3, R3->R4 sometimes)
+    const currentHasRegions = currentMatchups.every((m) => m.bracketRegion !== null)
+    const nextHasRegions = nextRoundMatchups.every((m) => m.bracketRegion !== null)
+
+    if (currentHasRegions && nextHasRegions) {
+      // Within-region pairing: group both rounds by region
+      const currentByRegion = new Map<string, typeof matchups>()
+      for (const m of currentMatchups) {
+        const region = m.bracketRegion!
+        const arr = currentByRegion.get(region) ?? []
+        arr.push(m)
+        currentByRegion.set(region, arr)
+      }
+
+      const nextByRegion = new Map<string, typeof matchups>()
+      for (const m of nextRoundMatchups) {
+        const region = m.bracketRegion!
+        const arr = nextByRegion.get(region) ?? []
+        arr.push(m)
+        nextByRegion.set(region, arr)
+      }
+
+      for (const [region, regionMatchups] of currentByRegion) {
+        const sorted = regionMatchups.sort((a, b) => a.position - b.position)
+        const nextSorted = (nextByRegion.get(region) ?? []).sort(
+          (a, b) => a.position - b.position
+        )
+
+        for (let i = 0; i < sorted.length; i++) {
+          const m = sorted[i]
+          if (m.nextMatchupId !== null) continue // already linked
+
+          const nextIndex = Math.floor(i / 2)
+          const target = nextSorted[nextIndex]
+          if (!target) continue
+
+          await db.matchup.update({
+            where: { id: m.id },
+            data: { nextMatchupId: target.id },
+          })
+        }
+      }
+    } else {
+      // Cross-region pairing: sort both by position, pair consecutively
+      const sorted = currentMatchups.sort((a, b) => a.position - b.position)
+      const nextSorted = nextRoundMatchups.sort((a, b) => a.position - b.position)
+
+      for (let i = 0; i < sorted.length; i++) {
+        const m = sorted[i]
+        if (m.nextMatchupId !== null) continue // already linked
+
+        const nextIndex = Math.floor(i / 2)
+        const target = nextSorted[nextIndex]
+        if (!target) continue
+
+        await db.matchup.update({
+          where: { id: m.id },
+          data: { nextMatchupId: target.id },
+        })
+      }
+    }
+  }
 }
 
 /**
@@ -299,6 +424,11 @@ export async function createSportsBracketDAL(
         }
       }
     }
+
+    // d2. Fallback: wire nextMatchupId from position data for any matchups
+    // still unlinked after ESPN Pass 2 (ESPN provider returns null for
+    // previousHomeGameId/previousAwayGameId)
+    await wireMatchupAdvancement(created.id, tx)
 
     // e. Set winners for already-completed games and propagate to next matchup
     for (const game of allGames) {
