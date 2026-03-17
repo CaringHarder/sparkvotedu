@@ -25,11 +25,26 @@ const SEED_TO_R1_POSITION: Record<number, number> = {
 }
 
 /**
- * Determine which slot a matchup feeds into in the next round.
- * Odd positions (1, 3, 5...) -> entrant1Id, even positions (2, 4, 6...) -> entrant2Id.
- * Mirrors the logic in bracket.ts getSlotForPosition and advancement.ts.
+ * Determine which slot a matchup feeds into in the next matchup.
+ * Queries sibling feeders (matchups sharing the same nextMatchupId) and
+ * assigns by position order: lower position → entrant1, higher → entrant2.
+ * Falls back to position parity for single-feeder cases.
  */
-function getSlotForPosition(position: number): 'entrant1Id' | 'entrant2Id' {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+async function getSlotByFeederOrder(
+  db: any,
+  matchupId: string,
+  nextMatchupId: string,
+  position: number
+): Promise<'entrant1Id' | 'entrant2Id'> {
+  const feeders = await db.matchup.findMany({
+    where: { nextMatchupId },
+    select: { id: true, position: true },
+    orderBy: { position: 'asc' },
+  })
+  if (feeders.length >= 2) {
+    return feeders[0].id === matchupId ? 'entrant1Id' : 'entrant2Id'
+  }
   return position % 2 === 1 ? 'entrant1Id' : 'entrant2Id'
 }
 
@@ -139,8 +154,26 @@ export async function wireMatchupAdvancement(
         }
       }
     } else {
-      // Cross-region pairing: sort both by position, pair consecutively
-      const sorted = currentMatchups.sort((a, b) => a.position - b.position)
+      // Cross-region pairing (R4 → Final Four):
+      // Determine bracket halves from R1 position ranges so correct regions meet.
+      // Regions whose R1 matchups have lower positions are the "top half" and meet
+      // each other; regions with higher R1 positions are the "bottom half".
+      const r1Matchups = byRound.get(1) ?? []
+      const regionMinPos = new Map<string, number>()
+      for (const m of r1Matchups) {
+        if (m.bracketRegion) {
+          const cur = regionMinPos.get(m.bracketRegion) ?? Infinity
+          if (m.position < cur) regionMinPos.set(m.bracketRegion, m.position)
+        }
+      }
+
+      // Sort current round's matchups by their region's R1 min position
+      // so bracket halves are adjacent: [topHalf1, topHalf2, bottomHalf1, bottomHalf2]
+      const sorted = currentMatchups.sort((a, b) => {
+        const aMin = regionMinPos.get(a.bracketRegion ?? '') ?? a.position
+        const bMin = regionMinPos.get(b.bracketRegion ?? '') ?? b.position
+        return aMin - bMin
+      })
       const nextSorted = nextRoundMatchups.sort((a, b) => a.position - b.position)
 
       for (let i = 0; i < sorted.length; i++) {
@@ -456,7 +489,7 @@ export async function createSportsBracketDAL(
         select: { nextMatchupId: true, position: true },
       })
       if (matchup?.nextMatchupId) {
-        const slot = getSlotForPosition(matchup.position)
+        const slot = await getSlotByFeederOrder(tx, matchupInfo.id, matchup.nextMatchupId, matchup.position)
         await tx.matchup.update({
           where: { id: matchup.nextMatchupId },
           data: { [slot]: winnerEntrantId },
@@ -588,7 +621,7 @@ export async function syncBracketResults(bracketId: string, games: SportsGame[])
 
         // Propagate winner to next matchup
         if (matchup.nextMatchupId) {
-          const slot = getSlotForPosition(matchup.position)
+          const slot = await getSlotByFeederOrder(prisma, matchup.id, matchup.nextMatchupId, matchup.position)
           await prisma.matchup.update({
             where: { id: matchup.nextMatchupId },
             data: { [slot]: winnerEntrantId },

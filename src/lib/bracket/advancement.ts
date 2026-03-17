@@ -5,13 +5,34 @@ import { seedLosersFromWinnersRound } from '@/lib/bracket/double-elim'
 type TransactionClient = Parameters<Parameters<PrismaClient['$transaction']>[0]>[0]
 
 /**
- * Determine whether a matchup at a given position feeds into entrant1 or entrant2
- * of the next matchup. Odd positions (1, 3, 5, 7) map to entrant1Id,
- * even positions (2, 4, 6, 8) map to entrant2Id.
- *
- * This mirrors the bracket engine's `Math.ceil(position / 2)` next matchup calculation.
+ * Simple position parity slot assignment for standard brackets.
+ * Odd positions (1, 3, 5, 7) map to entrant1Id, even to entrant2Id.
  */
 function getSlotForPosition(position: number): 'entrant1Id' | 'entrant2Id' {
+  return position % 2 === 1 ? 'entrant1Id' : 'entrant2Id'
+}
+
+/**
+ * Determine which slot a matchup feeds into in the next matchup.
+ * Queries sibling feeders (matchups sharing the same nextMatchupId) and
+ * assigns by position order: lower position → entrant1, higher → entrant2.
+ * Falls back to position parity for single-feeder cases.
+ * Used for advanceMatchupWinner which handles all bracket types including sports.
+ */
+async function getSlotByFeederOrder(
+  tx: TransactionClient,
+  matchupId: string,
+  nextMatchupId: string,
+  position: number
+): Promise<'entrant1Id' | 'entrant2Id'> {
+  const feeders = await tx.matchup.findMany({
+    where: { nextMatchupId },
+    select: { id: true, position: true },
+    orderBy: { position: 'asc' },
+  })
+  if (feeders.length >= 2) {
+    return feeders[0].id === matchupId ? 'entrant1Id' : 'entrant2Id'
+  }
   return position % 2 === 1 ? 'entrant1Id' : 'entrant2Id'
 }
 
@@ -56,7 +77,7 @@ export async function advanceMatchupWinner(
 
     // Propagate winner to the next matchup if one exists
     if (matchup.nextMatchupId) {
-      const slot = getSlotForPosition(matchup.position)
+      const slot = await getSlotByFeederOrder(tx, matchupId, matchup.nextMatchupId, matchup.position)
       await tx.matchup.update({
         where: { id: matchup.nextMatchupId },
         data: {

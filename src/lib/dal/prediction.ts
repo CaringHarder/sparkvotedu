@@ -587,10 +587,24 @@ export async function getTabulationResults(
 // ---------------------------------------------------------------------------
 
 /**
- * Determine which slot a matchup feeds into in the next round.
- * Odd positions (1, 3, 5...) -> entrant1Id, even positions (2, 4, 6...) -> entrant2Id.
+ * Determine which slot a matchup feeds into in the next matchup.
+ * Queries sibling feeders and assigns by position order: lower → entrant1, higher → entrant2.
  */
-function getSlotForPosition(position: number): 'entrant1Id' | 'entrant2Id' {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+async function getSlotByFeederOrder(
+  db: any,
+  matchupId: string,
+  nextMatchupId: string,
+  position: number
+): Promise<'entrant1Id' | 'entrant2Id'> {
+  const feeders = await db.matchup.findMany({
+    where: { nextMatchupId },
+    select: { id: true, position: true },
+    orderBy: { position: 'asc' },
+  })
+  if (feeders.length >= 2) {
+    return feeders[0].id === matchupId ? 'entrant1Id' : 'entrant2Id'
+  }
   return position % 2 === 1 ? 'entrant1Id' : 'entrant2Id'
 }
 
@@ -703,7 +717,7 @@ export async function tabulateBracketPredictions(
         // Propagate winner to next matchup entrant slot
         const matchup = matchups.find((m) => m.id === result.matchupId)
         if (matchup?.nextMatchupId) {
-          const slot = getSlotForPosition(matchup.position)
+          const slot = await getSlotByFeederOrder(tx, matchup.id, matchup.nextMatchupId, matchup.position)
           await tx.matchup.update({
             where: { id: matchup.nextMatchupId },
             data: { [slot]: result.winnerId },
@@ -785,7 +799,7 @@ export async function overrideMatchupWinnerDAL(
 
   // Propagate winner to next matchup slot
   if (matchup.nextMatchupId) {
-    const slot = getSlotForPosition(matchup.position)
+    const slot = await getSlotByFeederOrder(prisma, matchup.id, matchup.nextMatchupId, matchup.position)
     await prisma.matchup.update({
       where: { id: matchup.nextMatchupId },
       data: { [slot]: winnerId },
@@ -889,7 +903,7 @@ export async function overrideMatchupWinnerDAL(
         // Propagate to next slot
         const m = updatedMatchups.find((um) => um.id === result.matchupId)
         if (m?.nextMatchupId) {
-          const slot = getSlotForPosition(m.position)
+          const slot = await getSlotByFeederOrder(prisma, m.id, m.nextMatchupId, m.position)
           await prisma.matchup.update({
             where: { id: m.nextMatchupId },
             data: { [slot]: result.winnerId },

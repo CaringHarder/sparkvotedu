@@ -189,8 +189,12 @@ export function tabulatePredictions(
       if (winnerId && matchup.nextMatchupId) {
         const nextMatchup = matchupById.get(matchup.nextMatchupId)
         if (nextMatchup) {
-          // Position parity: odd position -> entrant1, even position -> entrant2
-          if (matchup.position % 2 === 1) {
+          // Determine slot by feeder order (lower position = entrant1)
+          const feeders = nonByeMatchups
+            .filter((m) => m.nextMatchupId === matchup.nextMatchupId)
+            .sort((a, b) => a.position - b.position)
+          const isFirstFeeder = feeders.length >= 2 ? feeders[0].matchupId === matchup.matchupId : matchup.position % 2 === 1
+          if (isFirstFeeder) {
             nextMatchup.entrant1Id = winnerId
           } else {
             nextMatchup.entrant2Id = winnerId

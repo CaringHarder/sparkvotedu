@@ -123,6 +123,18 @@ function buildAugmentedMatchups(
     byId.set(m.id, m)
   }
 
+  // Build feeder map: nextMatchupId -> feeders sorted by position (lower = entrant1 slot)
+  const feederMap = new Map<string, MatchupData[]>()
+  for (const m of cloned) {
+    if (m.nextMatchupId) {
+      if (!feederMap.has(m.nextMatchupId)) feederMap.set(m.nextMatchupId, [])
+      feederMap.get(m.nextMatchupId)!.push(m)
+    }
+  }
+  for (const feeders of feederMap.values()) {
+    feeders.sort((a, b) => a.position - b.position)
+  }
+
   // Sort by round ascending so we process earlier rounds first
   const sorted = [...cloned].sort((a, b) => a.round - b.round)
 
@@ -137,7 +149,10 @@ function buildAugmentedMatchups(
     const nextMatchup = byId.get(m.nextMatchupId)
     if (!nextMatchup) continue
 
-    // Position parity: odd -> entrant1 slot, even -> entrant2 slot
+    // Determine slot: first feeder (lower position) -> entrant1, second -> entrant2
+    const feeders = feederMap.get(m.nextMatchupId)
+    const isFirstFeeder = feeders ? feeders[0]?.id === m.id : m.position % 2 === 1
+
     const speculativeEntrant: BracketEntrantData = {
       id: selectedEntrant.id,
       name: selectedEntrant.name,
@@ -149,9 +164,8 @@ function buildAugmentedMatchups(
       tournamentSeed: selectedEntrant.tournamentSeed ?? null,
     }
 
-    if (m.position % 2 === 1) {
+    if (isFirstFeeder) {
       // Only set speculative if the slot is not already filled by actual DB data
-      // (i.e., the original matchup had null entrant1Id)
       const original = matchups.find((om) => om.id === nextMatchup.id)
       if (!original?.entrant1Id) {
         nextMatchup.entrant1Id = speculativeEntrant.id
