@@ -154,26 +154,11 @@ export async function wireMatchupAdvancement(
         }
       }
     } else {
-      // Cross-region pairing (R4 → Final Four):
-      // Determine bracket halves from R1 position ranges so correct regions meet.
-      // Regions whose R1 matchups have lower positions are the "top half" and meet
-      // each other; regions with higher R1 positions are the "bottom half".
-      const r1Matchups = byRound.get(1) ?? []
-      const regionMinPos = new Map<string, number>()
-      for (const m of r1Matchups) {
-        if (m.bracketRegion) {
-          const cur = regionMinPos.get(m.bracketRegion) ?? Infinity
-          if (m.position < cur) regionMinPos.set(m.bracketRegion, m.position)
-        }
-      }
-
-      // Sort current round's matchups by their region's R1 min position
-      // so bracket halves are adjacent: [topHalf1, topHalf2, bottomHalf1, bottomHalf2]
-      const sorted = currentMatchups.sort((a, b) => {
-        const aMin = regionMinPos.get(a.bracketRegion ?? '') ?? a.position
-        const bMin = regionMinPos.get(b.bracketRegion ?? '') ?? b.position
-        return aMin - bMin
-      })
+      // Cross-region pairing (R4 → Final Four, R5 → Championship):
+      // NCAA region pairings vary by tournament/year and can't be reliably
+      // inferred from position data. Sort by position and pair consecutively
+      // as a best-effort default. Use repairBracketLinkage to correct if needed.
+      const sorted = currentMatchups.sort((a, b) => a.position - b.position)
       const nextSorted = nextRoundMatchups.sort((a, b) => a.position - b.position)
 
       for (let i = 0; i < sorted.length; i++) {

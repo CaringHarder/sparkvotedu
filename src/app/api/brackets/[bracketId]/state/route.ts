@@ -45,38 +45,47 @@ export async function GET(
       return NextResponse.json({ error: 'Bracket not found' }, { status: 404 })
     }
 
-    // Fetch vote counts and voter IDs for each matchup in parallel
-    const matchupsWithCounts = await Promise.all(
-      bracket.matchups.map(async (matchup) => {
-        const [voteCounts, voterIds] = await Promise.all([
-          getVoteCountsForMatchup(matchup.id),
-          getVoterParticipantIds(matchup.id),
-        ])
-        return {
-          id: matchup.id,
-          round: matchup.round,
-          position: matchup.position,
-          status: matchup.status,
-          entrant1Id: matchup.entrant1Id,
-          entrant2Id: matchup.entrant2Id,
-          winnerId: matchup.winnerId,
-          entrant1: matchup.entrant1,
-          entrant2: matchup.entrant2,
-          winner: matchup.winner,
-          voteCounts,
-          voterIds,
-          bracketRegion: matchup.bracketRegion,
-          isBye: matchup.isBye,
-          roundRobinRound: matchup.roundRobinRound,
-          nextMatchupId: matchup.nextMatchupId,
-          externalGameId: matchup.externalGameId,
-          homeScore: matchup.homeScore,
-          awayScore: matchup.awayScore,
-          gameStatus: matchup.gameStatus,
-          gameStartTime: matchup.gameStartTime?.toISOString() ?? null,
-        }
-      })
-    )
+    // Only fetch vote counts for matchups in 'voting' status (skip for predictive/sports brackets
+    // where no matchups are voting -- avoids 134+ unnecessary DB queries per request)
+    const votingMatchups = bracket.matchups.filter((m) => m.status === 'voting')
+    const voteCountsMap: Record<string, Record<string, number>> = {}
+    const voterIdsMap: Record<string, string[]> = {}
+    if (votingMatchups.length > 0) {
+      await Promise.all(
+        votingMatchups.map(async (matchup) => {
+          const [voteCounts, voterIds] = await Promise.all([
+            getVoteCountsForMatchup(matchup.id),
+            getVoterParticipantIds(matchup.id),
+          ])
+          voteCountsMap[matchup.id] = voteCounts
+          voterIdsMap[matchup.id] = voterIds
+        })
+      )
+    }
+
+    const matchupsWithCounts = bracket.matchups.map((matchup) => ({
+      id: matchup.id,
+      round: matchup.round,
+      position: matchup.position,
+      status: matchup.status,
+      entrant1Id: matchup.entrant1Id,
+      entrant2Id: matchup.entrant2Id,
+      winnerId: matchup.winnerId,
+      entrant1: matchup.entrant1,
+      entrant2: matchup.entrant2,
+      winner: matchup.winner,
+      voteCounts: voteCountsMap[matchup.id] ?? {},
+      voterIds: voterIdsMap[matchup.id] ?? [],
+      bracketRegion: matchup.bracketRegion,
+      isBye: matchup.isBye,
+      roundRobinRound: matchup.roundRobinRound,
+      nextMatchupId: matchup.nextMatchupId,
+      externalGameId: matchup.externalGameId,
+      homeScore: matchup.homeScore,
+      awayScore: matchup.awayScore,
+      gameStatus: matchup.gameStatus,
+      gameStartTime: matchup.gameStartTime?.toISOString() ?? null,
+    }))
 
     return NextResponse.json({
       id: bracket.id,
