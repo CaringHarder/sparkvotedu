@@ -3,7 +3,7 @@
 import { useMemo } from 'react'
 import type { MatchupData, BracketEntrantData } from '@/lib/bracket/types'
 import { BracketZoomWrapper } from '@/components/bracket/bracket-zoom-wrapper'
-import { SportsMatchupOverlay } from '@/components/bracket/sports-matchup-box'
+import { SportsStatusBadge } from '@/components/bracket/sports-matchup-box'
 
 // --- Layout constants ---
 const MATCH_WIDTH = 160
@@ -52,7 +52,7 @@ interface BracketDiagramProps {
   accuracyMap?: Record<string, 'correct' | 'incorrect' | null>
   /** Whether to show seed position numbers next to entrant names */
   showSeedNumbers?: boolean
-  /** Sports bracket: renders team logos, scores, and status badges as overlay */
+  /** Sports bracket: renders team seeds, scores, and status badges inline */
   isSports?: boolean
 }
 
@@ -157,21 +157,24 @@ function MatchupBox({
   showSeedNumbers?: boolean
   isSports?: boolean
 }) {
-  // Sports brackets: let the standard MatchupBox render fully (backgrounds, highlights,
-  // click handlers, vote indicators) but suppress TEXT — the SportsMatchupOverlay
-  // handles text/logos/scores on top. This preserves prediction cascade visuals.
   const isByeMatchup = matchup.isBye === true
   // For bye matchups: show "BYE" for the null slot, real entrant name for the other
   const isBye1 = isByeMatchup && matchup.entrant1 == null
   const isBye2 = isByeMatchup && matchup.entrant2 == null
   const rawName1 = isBye1 ? 'BYE' : getEntrantName(matchup.entrant1)
   const rawName2 = isBye2 ? 'BYE' : getEntrantName(matchup.entrant2)
-  const entrant1Name = showSeedNumbers && matchup.entrant1?.seedPosition != null && !isBye1
-    ? `${matchup.entrant1.seedPosition}. ${rawName1}`
-    : rawName1
-  const entrant2Name = showSeedNumbers && matchup.entrant2?.seedPosition != null && !isBye2
-    ? `${matchup.entrant2.seedPosition}. ${rawName2}`
-    : rawName2
+  // Sports mode: use tournamentSeed + abbreviation (when scores visible) or full name
+  const hasScores = matchup.homeScore != null || matchup.awayScore != null
+  const entrant1Name = isSports && matchup.entrant1?.tournamentSeed != null && !isBye1
+    ? `${matchup.entrant1.tournamentSeed} ${hasScores && matchup.entrant1.abbreviation ? matchup.entrant1.abbreviation : rawName1}`
+    : showSeedNumbers && matchup.entrant1?.seedPosition != null && !isBye1
+      ? `${matchup.entrant1.seedPosition}. ${rawName1}`
+      : rawName1
+  const entrant2Name = isSports && matchup.entrant2?.tournamentSeed != null && !isBye2
+    ? `${matchup.entrant2.tournamentSeed} ${hasScores && matchup.entrant2.abbreviation ? matchup.entrant2.abbreviation : rawName2}`
+    : showSeedNumbers && matchup.entrant2?.seedPosition != null && !isBye2
+      ? `${matchup.entrant2.seedPosition}. ${rawName2}`
+      : rawName2
   const isEntrant1Winner = matchup.winnerId != null && matchup.winnerId === matchup.entrant1Id
   const isEntrant2Winner = matchup.winnerId != null && matchup.winnerId === matchup.entrant2Id
   const isTBD1 = !isBye1 && matchup.entrant1 == null
@@ -354,8 +357,6 @@ function MatchupBox({
         </rect>
       )}
 
-      {/* Text/logos/vote counts — hidden for sports brackets (SportsMatchupOverlay handles rendering) */}
-      <g style={isSports ? { display: 'none' } : undefined}>
       {/* Top entrant logo */}
       {matchup.entrant1?.logoUrl && !isBye1 && (
         <image
@@ -390,11 +391,29 @@ function MatchupBox({
           pointerEvents: 'none',
         }}
       >
-        {entrant1Name}{voted1 ? ' ✓' : ''}
+        {entrant1Name}{voted1 ? ' \u2713' : ''}
       </text>
 
-      {/* Top entrant vote count (teacher view) */}
-      {voteLabel && (
+      {/* Top entrant score (sports mode) */}
+      {isSports && matchup.homeScore != null && (
+        <text
+          x={x + MATCH_WIDTH - 8}
+          y={y + 19}
+          textAnchor="end"
+          style={{
+            fill: isEntrant1Winner ? 'var(--foreground)' : 'var(--muted-foreground)',
+            fontSize: 11,
+            fontFamily: 'inherit',
+            fontWeight: isEntrant1Winner ? 700 : 500,
+            pointerEvents: 'none',
+          }}
+        >
+          {matchup.homeScore}
+        </text>
+      )}
+
+      {/* Top entrant vote count (teacher view) — hidden when sports scores shown */}
+      {voteLabel && !(isSports && matchup.homeScore != null) && (
         <text
           x={x + MATCH_WIDTH - 8}
           y={y + 19}
@@ -423,6 +442,16 @@ function MatchupBox({
           opacity: isVoting ? 0.3 : 1,
         }}
       />
+
+      {/* Sports status badge (LIVE, FINAL, scheduled time) */}
+      {isSports && matchup.gameStatus && (
+        <SportsStatusBadge
+          matchup={matchup}
+          x={x}
+          y={y + MATCH_HEIGHT / 2 - 3}
+          width={MATCH_WIDTH}
+        />
+      )}
 
       {/* Clickable bottom entrant area */}
       {isClickable && matchup.entrant2Id && (
@@ -473,11 +502,29 @@ function MatchupBox({
           pointerEvents: 'none',
         }}
       >
-        {entrant2Name}{voted2 ? ' ✓' : ''}
+        {entrant2Name}{voted2 ? ' \u2713' : ''}
       </text>
 
-      {/* Bottom entrant vote count (teacher view) */}
-      {voteLabel && (
+      {/* Bottom entrant score (sports mode) */}
+      {isSports && matchup.awayScore != null && (
+        <text
+          x={x + MATCH_WIDTH - 8}
+          y={y + 44}
+          textAnchor="end"
+          style={{
+            fill: isEntrant2Winner ? 'var(--foreground)' : 'var(--muted-foreground)',
+            fontSize: 11,
+            fontFamily: 'inherit',
+            fontWeight: isEntrant2Winner ? 700 : 500,
+            pointerEvents: 'none',
+          }}
+        >
+          {matchup.awayScore}
+        </text>
+      )}
+
+      {/* Bottom entrant vote count (teacher view) — hidden when sports scores shown */}
+      {voteLabel && !(isSports && matchup.awayScore != null) && (
         <text
           x={x + MATCH_WIDTH - 8}
           y={y + 44}
@@ -493,7 +540,6 @@ function MatchupBox({
           {voteLabel.e2}
         </text>
       )}
-      </g>
     </g>
   )
 }
@@ -673,18 +719,6 @@ export function BracketDiagram({ matchups, totalRounds, className, bracketSize, 
             allowPendingClick={allowPendingClick}
             showSeedNumbers={showSeedNumbers}
             isSports={isSports}
-          />
-        ))}
-
-        {/* Sports overlay: team logos, scores, status badges */}
-        {isSports && positionedMatchups.map(({ matchup, pos }) => (
-          <SportsMatchupOverlay
-            key={`sports-${matchup.id}`}
-            matchup={matchup}
-            x={pos.x}
-            y={pos.y}
-            width={MATCH_WIDTH}
-            height={MATCH_HEIGHT}
           />
         ))}
 
