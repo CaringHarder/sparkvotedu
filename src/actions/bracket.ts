@@ -14,6 +14,7 @@ import {
   unarchiveBracketDAL,
   deleteBracketPermanentlyDAL,
 } from '@/lib/dal/bracket'
+import { wireMatchupAdvancement } from '@/lib/dal/sports'
 import {
   createBracketSchema,
   entrantSchema,
@@ -627,5 +628,49 @@ export async function updateBracketSettings(input: unknown) {
     return { success: true }
   } catch {
     return { error: 'Failed to update bracket settings' }
+  }
+}
+
+/**
+ * Repair nextMatchupId linkage for an existing sports bracket.
+ * Uses position-based algorithm to compute correct advancement paths.
+ * Auth -> validate -> ownership check -> repair -> return
+ */
+export async function repairBracketLinkage(bracketId: string) {
+  const teacher = await getAuthenticatedTeacher()
+  if (!teacher) {
+    return { error: 'Not authenticated' }
+  }
+
+  // Validate bracketId format
+  const parsed = z.string().uuid().safeParse(bracketId)
+  if (!parsed.success) {
+    return { error: 'Invalid bracket ID' }
+  }
+
+  try {
+    // Verify bracket ownership and type
+    const bracket = await prisma.bracket.findFirst({
+      where: {
+        id: bracketId,
+        teacherId: teacher.id,
+        bracketType: 'sports',
+      },
+      select: { id: true },
+    })
+
+    if (!bracket) {
+      return { error: 'Sports bracket not found or not owned by you' }
+    }
+
+    // Run position-based linkage repair (no transaction — uses prisma directly)
+    await wireMatchupAdvancement(bracketId)
+
+    revalidatePath(`/brackets/${bracketId}`)
+
+    return { success: true }
+  } catch (err) {
+    console.error('repairBracketLinkage failed:', err)
+    return { error: 'Failed to repair bracket linkage' }
   }
 }

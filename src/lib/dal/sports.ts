@@ -90,12 +90,17 @@ export async function wireMatchupAdvancement(
     const currentMatchups = byRound.get(round)!
 
     // Determine if this is a within-region round:
-    // Within-region when current matchups have bracketRegion set and
-    // the next round also has bracketRegion set (R1->R2, R2->R3, R3->R4 sometimes)
-    const currentHasRegions = currentMatchups.every((m) => m.bracketRegion !== null)
-    const nextHasRegions = nextRoundMatchups.every((m) => m.bracketRegion !== null)
+    // Within-region when BOTH rounds share the same set of regions.
+    // R4 has "East/West/South/Midwest" but R5 has "Final Four" — that's cross-region.
+    const currentRegions = new Set(currentMatchups.map((m) => m.bracketRegion).filter(Boolean))
+    const nextRegions = new Set(nextRoundMatchups.map((m) => m.bracketRegion).filter(Boolean))
+    const isWithinRegion =
+      currentRegions.size > 0 &&
+      nextRegions.size > 0 &&
+      currentRegions.size === nextRegions.size &&
+      [...currentRegions].every((r) => nextRegions.has(r))
 
-    if (currentHasRegions && nextHasRegions) {
+    if (isWithinRegion) {
       // Within-region pairing: group both rounds by region
       const currentByRegion = new Map<string, typeof matchups>()
       for (const m of currentMatchups) {
