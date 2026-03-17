@@ -56,37 +56,35 @@ export async function GET(
       },
     })
 
-    // For each bracket, check if participant has voted on current voting matchups
-    const bracketActivities = await Promise.all(
-      brackets.map(async (bracket) => {
-        let hasVoted = false
-
-        if (pid && bracket._count.matchups > 0) {
-          // Check if participant has at least one vote on a voting matchup
-          const voteCount = await prisma.vote.count({
-            where: {
-              participantId: pid,
-              matchup: {
-                bracketId: bracket.id,
-                status: 'voting',
-              },
-            },
-          })
-          hasVoted = voteCount > 0
-        }
-
-        return {
-          id: bracket.id,
-          name: bracket.name,
-          type: 'bracket' as const,
-          participantCount: bracket._count.matchups, // number of active voting matchups
-          hasVoted,
-          status: bracket.status,
-          bracketType: bracket.bracketType,
-          predictionStatus: bracket.predictionStatus,
-        }
+    // Batch check: which brackets has the participant voted in? (single query)
+    const votedBracketIds = new Set<string>()
+    if (pid && brackets.some((b) => b._count.matchups > 0)) {
+      const votedBrackets = await prisma.vote.findMany({
+        where: {
+          participantId: pid,
+          matchup: {
+            bracketId: { in: brackets.map((b) => b.id) },
+            status: 'voting',
+          },
+        },
+        select: { matchup: { select: { bracketId: true } } },
+        distinct: ['matchupId'],
       })
-    )
+      for (const v of votedBrackets) {
+        votedBracketIds.add(v.matchup.bracketId)
+      }
+    }
+
+    const bracketActivities = brackets.map((bracket) => ({
+      id: bracket.id,
+      name: bracket.name,
+      type: 'bracket' as const,
+      participantCount: bracket._count.matchups,
+      hasVoted: votedBracketIds.has(bracket.id),
+      status: bracket.status,
+      bracketType: bracket.bracketType,
+      predictionStatus: bracket.predictionStatus,
+    }))
 
     // Fetch polls in this session that are active or closed
     const polls = await prisma.poll.findMany({
@@ -103,26 +101,30 @@ export async function GET(
       },
     })
 
-    // Map polls to Activity interface, check if participant has voted
-    const pollActivities = await Promise.all(
-      polls.map(async (poll) => {
-        let hasVoted = false
-        if (pid) {
-          const voteCount = await prisma.pollVote.count({
-            where: { pollId: poll.id, participantId: pid },
-          })
-          hasVoted = voteCount > 0
-        }
-        return {
-          id: poll.id,
-          name: poll.question,
-          type: 'poll' as const,
-          participantCount: poll._count.votes,
-          hasVoted,
-          status: poll.status,
-        }
+    // Batch check: which polls has the participant voted in? (single query)
+    const votedPollIds = new Set<string>()
+    if (pid && polls.length > 0) {
+      const votedPolls = await prisma.pollVote.findMany({
+        where: {
+          participantId: pid,
+          pollId: { in: polls.map((p) => p.id) },
+        },
+        select: { pollId: true },
+        distinct: ['pollId'],
       })
-    )
+      for (const v of votedPolls) {
+        votedPollIds.add(v.pollId)
+      }
+    }
+
+    const pollActivities = polls.map((poll) => ({
+      id: poll.id,
+      name: poll.question,
+      type: 'poll' as const,
+      participantCount: poll._count.votes,
+      hasVoted: votedPollIds.has(poll.id),
+      status: poll.status,
+    }))
 
     // Merge bracket and poll activities, active first
     const allActivities = [...bracketActivities, ...pollActivities].sort(

@@ -191,6 +191,30 @@ export async function wireMatchupAdvancement(
       }
     }
   }
+
+  // 5. Propagate bracketRegion to matchups with null region.
+  // ESPN sometimes leaves R2 bracketRegion null. Inherit from R1 feeder matchups.
+  const refreshed = await db.matchup.findMany({
+    where: { bracketId },
+    select: { id: true, round: true, bracketRegion: true, nextMatchupId: true },
+  })
+  const regionByNextId = new Map<string, string>()
+  for (const m of refreshed) {
+    if (m.bracketRegion && m.nextMatchupId) {
+      regionByNextId.set(m.nextMatchupId, m.bracketRegion)
+    }
+  }
+  for (const m of refreshed) {
+    if (!m.bracketRegion && m.round > 0) {
+      const inherited = regionByNextId.get(m.id)
+      if (inherited) {
+        await db.matchup.update({
+          where: { id: m.id },
+          data: { bracketRegion: inherited },
+        })
+      }
+    }
+  }
 }
 
 /**
