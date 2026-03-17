@@ -1,16 +1,15 @@
 ---
 gsd_state_version: 1.0
-milestone: v3.0
-milestone_name: Student Join Overhaul + Cleanup
-status: completed
-stopped_at: Milestone v3.0 archived
-last_updated: "2026-03-09T20:00:00.000Z"
-last_activity: "2026-03-17 -- Quick task 43: fix next_matchup_id linkage for predictive bracket cascade"
+milestone: v1.0
+milestone_name: milestone
+status: unknown
+last_updated: "2026-03-17T23:58:06.745Z"
+last_activity: "2026-03-17 - Completed quick task 44: Fix live classroom issues"
 progress:
-  total_phases: 7
-  completed_phases: 7
-  total_plans: 11
-  completed_plans: 11
+  total_phases: 1
+  completed_phases: 0
+  total_plans: 0
+  completed_plans: 0
   percent: 100
 ---
 
@@ -48,7 +47,7 @@ All decisions archived in PROJECT.md Key Decisions table.
 
 ### Roadmap Evolution
 
-No active roadmap changes.
+- Phase 1 added: Sports bracket import reliability — auto-fix play-in entrant placement in R1 slots by tournament seed, add Final Four pairing configuration, fix R0 entrant assignment
 
 ### Pending Todos
 
@@ -79,6 +78,6 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-03-17
+Last session: 2026-03-17T23:58:06.736Z
 Last activity: 2026-03-17 - Completed quick task 44: Fix live classroom issues
 Resume: Start next milestone with `/gsd:new-milestone`
