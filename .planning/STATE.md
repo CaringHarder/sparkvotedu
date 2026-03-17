@@ -5,7 +5,7 @@ milestone_name: Student Join Overhaul + Cleanup
 status: completed
 stopped_at: Milestone v3.0 archived
 last_updated: "2026-03-09T20:00:00.000Z"
-last_activity: "2026-03-17 -- Quick task 42: merge sports bracket rendering into MatchupBox, remove overlay"
+last_activity: "2026-03-17 -- Quick task 43: fix next_matchup_id linkage for predictive bracket cascade"
 progress:
   total_phases: 7
   completed_phases: 7
@@ -74,9 +74,10 @@ None.
 | 39 | Build ESPN provider for NCAA tournament data | 2026-03-16 | 06badac | Verified | [39-build-espn-provider-for-ncaa-tournament-](./quick/39-build-espn-provider-for-ncaa-tournament-/) |
 | 40 | Fix NCAA bracket matchup ordering and add seed display | 2026-03-16 | 9d87822 | | [40-fix-ncaa-bracket-matchup-ordering-to-sta](./quick/40-fix-ncaa-bracket-matchup-ordering-to-sta/) |
 | 42 | Merge sports bracket rendering into MatchupBox, remove overlay | 2026-03-17 | a56e0cb | Verified | [42-merge-sports-bracket-rendering-into-the-](./quick/42-merge-sports-bracket-rendering-into-the-/) |
+| 43 | Fix next_matchup_id linkage for predictive bracket cascade | 2026-03-17 | 1bd3f86 | Verified | [43-fix-next-matchup-id-linkage-so-predictiv](./quick/43-fix-next-matchup-id-linkage-so-predictiv/) |
 
 ## Session Continuity
 
 Last session: 2026-03-17
-Last activity: 2026-03-17 - Completed quick task 42: Merge sports bracket rendering into MatchupBox, remove overlay
+Last activity: 2026-03-17 - Completed quick task 43: Fix next_matchup_id linkage for predictive bracket cascade
 Resume: Start next milestone with `/gsd:new-milestone`
