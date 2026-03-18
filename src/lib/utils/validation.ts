@@ -190,6 +190,7 @@ export const updateBracketSettingsSchema = z.object({
   viewingMode: z.enum(['simple', 'advanced']).optional(),
   showSeedNumbers: z.boolean().optional(),
   showVoteCounts: z.boolean().optional(),
+  finalFourPairing: z.string().optional(),
 })
 export type UpdateBracketSettingsInput = z.infer<typeof updateBracketSettingsSchema>
 

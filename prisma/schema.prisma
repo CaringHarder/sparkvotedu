@@ -106,6 +106,7 @@ model Bracket {
   dataSource               String?      @map("data_source")
   lastSyncAt               DateTime?    @map("last_sync_at")
   sportGender              String?      @map("sport_gender")
+  finalFourPairing         String?      @map("final_four_pairing")
   createdAt                DateTime     @default(now()) @map("created_at")
   updatedAt                DateTime     @updatedAt @map("updated_at")
 
