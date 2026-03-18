@@ -83,6 +83,7 @@ All decisions archived in PROJECT.md Key Decisions table.
 | 42 | Merge sports bracket rendering into MatchupBox, remove overlay | 2026-03-17 | a56e0cb | Verified | [42-merge-sports-bracket-rendering-into-the-](./quick/42-merge-sports-bracket-rendering-into-the-/) |
 | 43 | Fix next_matchup_id linkage for predictive bracket cascade | 2026-03-17 | 1bd3f86 | Verified | [43-fix-next-matchup-id-linkage-so-predictiv](./quick/43-fix-next-matchup-id-linkage-so-predictiv/) |
 | 44 | Fix live classroom issues: null R2 regions, slow API, Final Four pairing | 2026-03-17 | 7cc39e4 | | [44-fix-live-classroom-issues-null-r2-region](./quick/44-fix-live-classroom-issues-null-r2-region/) |
+| 45 | Change back-to-session link to HOME button | 2026-03-18 | 6a69ee5 | | [45-change-back-to-session-link-to-home-butt](./quick/45-change-back-to-session-link-to-home-butt/) |
 | Phase 01 P01 | 3min | 2 tasks | 6 files |
 | Phase 01 P02 | 2min | 2 tasks | 3 files |
 | Phase 01 P03 | 5min | 3 tasks | 5 files |
@@ -90,6 +91,6 @@ All decisions archived in PROJECT.md Key Decisions table.
 
 ## Session Continuity
 
-Last session: 2026-03-18T02:23:00Z
-Last activity: 2026-03-18 - Completed 02-01-PLAN.md
-Resume: Phase 02 complete. Ready for next phase or milestone.
+Last session: 2026-03-18T02:49:00Z
+Last activity: 2026-03-18 - Completed quick task 45
+Resume: Quick task 45 complete. Ready for next task or milestone.
