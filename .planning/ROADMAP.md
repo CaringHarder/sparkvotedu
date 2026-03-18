@@ -102,3 +102,15 @@
 | 25-28 | v1.3 | 11/11 | Complete | 2026-02-26 |
 | 29-38 | v2.0 | 36/36 | Complete | 2026-03-08 |
 | 39-45 | v3.0 | 11/11 | Complete | 2026-03-09 |
+
+### Phase 1: Sports bracket import reliability — auto-fix play-in entrant placement in R1 slots by tournament seed, add Final Four pairing configuration, fix R0 entrant assignment
+
+**Goal:** Reliable sports bracket import with auto-fix for seed/position mismatches, configurable Final Four pairings, play-in resolution on sync, and import-time warning collection
+**Requirements**: TBD
+**Depends on:** Phase 0
+**Plans:** 3 plans
+
+Plans:
+- [ ] 01-01-PLAN.md -- Schema migration, pairings utility, DAL warning collection + auto-fix + pairing-aware wiring
+- [ ] 01-02-PLAN.md -- Server actions: import warnings, play-in resolution, Final Four pairing updates, ESPN refresh
+- [ ] 01-03-PLAN.md -- UI: import warnings display, Final Four pairing dropdown in settings, Refresh from ESPN button
