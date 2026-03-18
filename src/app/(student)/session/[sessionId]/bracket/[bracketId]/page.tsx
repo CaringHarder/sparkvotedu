@@ -24,6 +24,7 @@ import { useSessionPresence } from '@/hooks/use-student-session'
 import { castVote } from '@/actions/vote'
 import { calculateRoundRobinStandings } from '@/lib/bracket/round-robin'
 import type { RoundRobinResult } from '@/lib/bracket/round-robin'
+import { Home } from 'lucide-react'
 import type { BracketWithDetails, MatchupData, BracketEntrantData } from '@/lib/bracket/types'
 
 /**
@@ -235,16 +236,10 @@ export default function StudentBracketVotingPage() {
   const backLink = (
     <Link
       href={`/session/${sessionId}`}
-      className="mb-4 inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors"
+      className="mb-4 inline-flex items-center gap-2 rounded-lg bg-blue-500 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-600 active:bg-blue-700 transition-colors"
     >
-      <svg viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4">
-        <path
-          fillRule="evenodd"
-          d="M17 10a.75.75 0 01-.75.75H5.612l4.158 3.96a.75.75 0 11-1.04 1.08l-5.5-5.25a.75.75 0 010-1.08l5.5-5.25a.75.75 0 111.04 1.08L5.612 9.25H16.25A.75.75 0 0117 10z"
-          clipRule="evenodd"
-        />
-      </svg>
-      Back to brackets
+      <Home className="h-4 w-4" />
+      HOME
     </Link>
   )
 
