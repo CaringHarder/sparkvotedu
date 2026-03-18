@@ -927,7 +927,7 @@ export function LiveDashboard({
     startTransition(async () => {
       const result = await updatePredictionStatus({
         bracketId: bracket.id,
-        status: 'predictions_closed',
+        status: 'active',
       })
       if (result && 'error' in result) setError(result.error as string)
     })

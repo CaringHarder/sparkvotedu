@@ -373,6 +373,19 @@ const AUTO_PREDICTION_TRANSITIONS: Record<string, string[]> = {
 }
 
 /**
+ * Valid prediction status transitions for sports brackets.
+ *
+ * Sports brackets use predictiveResolutionMode 'auto' but skip tabulation
+ * because games resolve via external API sync (ESPN/CBS), not internal
+ * tabulation. Transitions mirror manual mode: predictions_open -> active.
+ */
+const SPORTS_PREDICTION_TRANSITIONS: Record<string, string[]> = {
+  draft: ['predictions_open'],
+  predictions_open: ['active'],
+  active: ['completed'],
+}
+
+/**
  * Update a bracket's prediction status with forward-only transition validation.
  *
  * Ownership enforced via teacherId. Broadcasts prediction status change.
@@ -404,9 +417,12 @@ export async function updatePredictionStatusDAL(
 
   // Use bracket.status as the effective prediction status when predictionStatus is null (draft)
   const currentStatus = bracket.predictionStatus ?? 'draft'
-  const transitions = bracket.predictiveResolutionMode === 'auto'
-    ? AUTO_PREDICTION_TRANSITIONS
-    : MANUAL_PREDICTION_TRANSITIONS
+  const transitions =
+    bracket.bracketType === 'sports'
+      ? SPORTS_PREDICTION_TRANSITIONS
+      : bracket.predictiveResolutionMode === 'auto'
+        ? AUTO_PREDICTION_TRANSITIONS
+        : MANUAL_PREDICTION_TRANSITIONS
   const allowed = transitions[currentStatus] ?? []
 
   if (!allowed.includes(status)) {
