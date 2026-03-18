@@ -21,6 +21,7 @@ import { LockedSettingIndicator } from '@/components/shared/locked-setting-indic
 import { assignBracketToSession, updateBracketSettings } from '@/actions/bracket'
 import { recordResult, advanceRound } from '@/actions/round-robin'
 import { triggerSportsSync } from '@/actions/sports'
+import { getFinalFourPairings } from '@/lib/sports/pairings'
 
 interface SessionInfo {
   id: string
@@ -51,6 +52,8 @@ export function BracketDetail({ bracket, totalRounds, sessions, standings = [], 
   const [showSeedNumbers, setShowSeedNumbers] = useState(bracket.showSeedNumbers ?? true)
   const [showVoteCounts, setShowVoteCounts] = useState(bracket.showVoteCounts ?? true)
   const [isUpdatingSettings, setIsUpdatingSettings] = useState(false)
+  const [currentPairing, setCurrentPairing] = useState(bracket.finalFourPairing ?? '')
+  const [pairingWarning, setPairingWarning] = useState<string | null>(null)
 
   async function handleViewingModeChange(newMode: 'simple' | 'advanced') {
     setIsUpdatingSettings(true)
@@ -88,6 +91,26 @@ export function BracketDetail({ bracket, totalRounds, sessions, standings = [], 
     }
   }
 
+  async function handlePairingChange(value: string) {
+    setIsUpdatingSettings(true)
+    setPairingWarning(null)
+    const prev = currentPairing
+    setCurrentPairing(value)
+    try {
+      const result = await updateBracketSettings({
+        bracketId: bracket.id,
+        finalFourPairing: value || null,
+      })
+      if (result && 'predictionWarning' in result && result.predictionWarning) {
+        setPairingWarning('Note: Students have predictions for Final Four and beyond. Changing pairings may affect their brackets.')
+      }
+    } catch {
+      setCurrentPairing(prev)
+    } finally {
+      setIsUpdatingSettings(false)
+    }
+  }
+
   function getBracketTypeLabel(type: string): string {
     const labels: Record<string, string> = {
       single_elimination: 'Single Elimination',
@@ -104,6 +127,12 @@ export function BracketDetail({ bracket, totalRounds, sessions, standings = [], 
   const isDoubleElim = bracket.bracketType === 'double_elimination'
   const isSports = bracket.bracketType === 'sports'
   const isPredictiveAuto = isPredictive && bracket.predictiveResolutionMode === 'auto'
+
+  // Extract unique region names from R1 matchups for Final Four pairing options
+  const sportsRegions = isSports
+    ? [...new Set(bracket.matchups.filter((m) => m.round === 1 && m.bracketRegion).map((m) => m.bracketRegion!))]
+    : []
+  const finalFourOptions = isSports ? getFinalFourPairings(sportsRegions) : []
   const pacing = (bracket.roundRobinPacing ?? 'round_by_round') as 'round_by_round' | 'all_at_once'
   const isLive = bracket.roundRobinStandingsMode === 'live'
 
@@ -281,6 +310,53 @@ export function BracketDetail({ bracket, totalRounds, sessions, standings = [], 
             disabled={isUpdatingSettings}
             icon={<BarChart3 className="h-4 w-4" />}
           />
+        )}
+
+        {/* Final Four Pairings -- for sports brackets only */}
+        {isSports && finalFourOptions.length > 0 && (
+          <div className="space-y-1.5">
+            <label htmlFor="final-four-pairing" className="flex items-center gap-1.5 text-sm font-medium">
+              Final Four Pairings
+              <span className="text-xs text-muted-foreground" title="Which regions play each other in the Final Four semifinals">
+                (i)
+              </span>
+            </label>
+            <select
+              id="final-four-pairing"
+              value={currentPairing}
+              onChange={(e) => handlePairingChange(e.target.value)}
+              disabled={isUpdatingSettings}
+              className="w-full rounded-md border bg-background px-2 py-1.5 text-sm"
+            >
+              <option value="">Auto (position-based)</option>
+              {finalFourOptions.map((opt) => (
+                <option key={opt.value} value={opt.value}>
+                  {opt.label}
+                </option>
+              ))}
+            </select>
+            {pairingWarning && (
+              <p className="text-xs text-amber-600 dark:text-amber-400">{pairingWarning}</p>
+            )}
+          </div>
+        )}
+
+        {/* Refresh from ESPN -- for sports brackets only */}
+        {isSports && (
+          <div className="pt-1">
+            <button
+              type="button"
+              onClick={handleSportsSync}
+              disabled={syncing || isPending}
+              className="inline-flex w-full items-center justify-center gap-1.5 rounded-md border px-3 py-1.5 text-sm font-medium transition-colors hover:bg-accent disabled:opacity-50"
+            >
+              <RefreshCw className={cn('h-3.5 w-3.5', syncing && 'animate-spin')} />
+              {syncing ? 'Refreshing...' : 'Refresh from ESPN'}
+            </button>
+            {syncError && (
+              <p className="mt-1 text-xs text-red-600">{syncError}</p>
+            )}
+          </div>
         )}
       </DisplaySettingsSection>
 

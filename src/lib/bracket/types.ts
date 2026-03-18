@@ -113,6 +113,7 @@ export interface BracketData {
   dataSource: string | null
   lastSyncAt: string | null
   sportGender: string | null
+  finalFourPairing: string | null
   createdAt: string // ISO string for serialization
   updatedAt: string
 }

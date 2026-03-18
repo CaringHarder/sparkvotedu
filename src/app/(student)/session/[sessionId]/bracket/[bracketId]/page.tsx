@@ -1442,6 +1442,7 @@ function toBracketWithDetails(
     dataSource: null,
     lastSyncAt: null,
     sportGender: null,
+    finalFourPairing: null,
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
     entrants,

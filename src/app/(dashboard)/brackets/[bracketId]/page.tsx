@@ -91,6 +91,7 @@ export default async function BracketDetailPage({
     dataSource: bracket.dataSource ?? null,
     lastSyncAt: bracket.lastSyncAt?.toISOString() ?? null,
     sportGender: bracket.sportGender ?? null,
+    finalFourPairing: bracket.finalFourPairing ?? null,
     createdAt: bracket.createdAt.toISOString(),
     updatedAt: bracket.updatedAt.toISOString(),
     entrants: bracket.entrants.map((e) => ({
