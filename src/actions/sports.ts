@@ -95,8 +95,13 @@ export async function importTournament(input: unknown) {
       sessionId,
     })
 
-    if (!result) {
+    if (!result.bracket) {
       return { error: 'Failed to create sports bracket' }
+    }
+
+    // Log any import warnings
+    if (result.warnings.length > 0) {
+      console.warn('[importTournament] warnings:', result.warnings)
     }
 
     // Non-blocking broadcast (per 04-03 pattern)
@@ -105,7 +110,7 @@ export async function importTournament(input: unknown) {
     revalidatePath('/brackets')
     revalidatePath('/activities')
 
-    return { bracket: { id: result.id, name: result.name } }
+    return { bracket: { id: result.bracket.id, name: result.bracket.name } }
   } catch (err) {
     console.error('importTournament failed:', err)
     return { error: 'Failed to import tournament' }

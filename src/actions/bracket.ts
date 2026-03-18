@@ -594,7 +594,7 @@ export async function updateBracketSettings(input: unknown) {
     return { error: 'Invalid settings data', issues: parsed.error.issues }
   }
 
-  const { bracketId, viewingMode, showSeedNumbers, showVoteCounts } = parsed.data
+  const { bracketId, viewingMode, showSeedNumbers, showVoteCounts, finalFourPairing } = parsed.data
 
   try {
     // Ownership check: verify bracket belongs to this teacher
@@ -611,6 +611,7 @@ export async function updateBracketSettings(input: unknown) {
     if (viewingMode !== undefined) updateData.viewingMode = viewingMode
     if (showSeedNumbers !== undefined) updateData.showSeedNumbers = showSeedNumbers
     if (showVoteCounts !== undefined) updateData.showVoteCounts = showVoteCounts
+    if (finalFourPairing !== undefined) updateData.finalFourPairing = finalFourPairing
 
     // Update database
     await prisma.bracket.update({

@@ -12,6 +12,7 @@ import { getProvider, getProviderName } from '@/lib/sports/provider'
 import { resolveTeamLogoUrl } from '@/lib/sports/logo-resolver'
 import { broadcastBracketUpdate } from '@/lib/realtime/broadcast'
 import type { SportsGame, SportsTeam, SportGender } from '@/lib/sports/types'
+import { parsePairing, detectDefaultPairing } from '@/lib/sports/pairings'
 
 type TransactionClient = Parameters<Parameters<PrismaClient['$transaction']>[0]>[0]
 
@@ -66,7 +67,8 @@ async function getSlotByFeederOrder(
  */
 export async function wireMatchupAdvancement(
   bracketId: string,
-  tx?: TransactionClient
+  tx?: TransactionClient,
+  finalFourPairing?: string | null
 ) {
   const db = tx ?? prisma
 
@@ -154,25 +156,51 @@ export async function wireMatchupAdvancement(
         }
       }
     } else {
-      // Cross-region pairing (R4 → Final Four, R5 → Championship):
-      // NCAA region pairings vary by tournament/year and can't be reliably
-      // inferred from position data. Sort by position and pair consecutively
-      // as a best-effort default. Use repairBracketLinkage to correct if needed.
+      // Cross-region pairing (R4 -> Final Four, R5 -> Championship):
+      // If finalFourPairing is provided and this is R4->R5, use region-based pairing.
+      // Otherwise fall back to position-based consecutive pairing.
       const sorted = currentMatchups.sort((a, b) => a.position - b.position)
       const nextSorted = nextRoundMatchups.sort((a, b) => a.position - b.position)
 
-      for (let i = 0; i < sorted.length; i++) {
-        const m = sorted[i]
-        if (m.nextMatchupId !== null) continue // already linked
+      let paired = false
+      if (finalFourPairing && currentRegions.size > 0 && nextSorted.length >= 2) {
+        // Use configured pairing to wire R4 regional champions to correct R5 semis
+        const pairingTuples = parsePairing(finalFourPairing)
 
-        const nextIndex = Math.floor(i / 2)
-        const target = nextSorted[nextIndex]
-        if (!target) continue
+        for (let pairIdx = 0; pairIdx < pairingTuples.length; pairIdx++) {
+          const [regionA, regionB] = pairingTuples[pairIdx]
+          const target = nextSorted[pairIdx]
+          if (!target) continue
 
-        await db.matchup.update({
-          where: { id: m.id },
-          data: { nextMatchupId: target.id },
-        })
+          // Find R4 matchups from each region in this pairing
+          for (const m of sorted) {
+            if (m.nextMatchupId !== null) continue
+            if (m.bracketRegion === regionA || m.bracketRegion === regionB) {
+              await db.matchup.update({
+                where: { id: m.id },
+                data: { nextMatchupId: target.id },
+              })
+            }
+          }
+        }
+        paired = true
+      }
+
+      if (!paired) {
+        // Fallback: position-based consecutive pairing
+        for (let i = 0; i < sorted.length; i++) {
+          const m = sorted[i]
+          if (m.nextMatchupId !== null) continue
+
+          const nextIndex = Math.floor(i / 2)
+          const target = nextSorted[nextIndex]
+          if (!target) continue
+
+          await db.matchup.update({
+            where: { id: m.id },
+            data: { nextMatchupId: target.id },
+          })
+        }
       }
     }
   }
@@ -220,6 +248,8 @@ export async function createSportsBracketDAL(
   teacherId: string,
   input: { tournamentId: string; season: number; sessionId: string }
 ) {
+  const warnings: string[] = []
+
   // 1. Fetch tournament games from provider
   const provider = getProvider()
   const games = await provider.getTournamentGames(input.tournamentId, input.season)
@@ -322,7 +352,10 @@ export async function createSportsBracketDAL(
     for (const ffGame of firstFourGames) {
       const team1 = ffGame.homeTeam
       const team2 = ffGame.awayTeam
-      if (!team1 || !team2 || team1.externalId <= 0 || team2.externalId <= 0) continue
+      if (!team1 || !team2 || team1.externalId <= 0 || team2.externalId <= 0) {
+        warnings.push(`Incomplete play-in game data in ${ffGame.bracket ?? 'unknown'} region`)
+        continue
+      }
 
       const ffSeed = team1.seed ?? team2.seed ?? null
       const ffRegion = ffGame.bracket
@@ -369,6 +402,8 @@ export async function createSportsBracketDAL(
 
     // Position counters for non-R1 rounds (R0, R2+)
     const positionCounters = new Map<number, number>()
+    // Track used positions per region for collision detection (auto-fix)
+    const usedPositionsByRegion = new Map<string, Set<number>>()
 
     for (const game of allGames) {
       const round = game.round
@@ -380,9 +415,42 @@ export async function createSportsBracketDAL(
         const seed1 = game.homeTeam?.seed ?? 99
         const seed2 = game.awayTeam?.seed ?? 99
         const higherSeed = Math.min(seed1, seed2)
-        const seedPos = SEED_TO_R1_POSITION[higherSeed] ?? 1
         const regIdx = regionIndex.get(game.bracket) ?? 0
-        currentPosition = regIdx * 8 + seedPos
+
+        // Get or create the used positions set for this region
+        if (!usedPositionsByRegion.has(game.bracket)) {
+          usedPositionsByRegion.set(game.bracket, new Set())
+        }
+        const usedPositions = usedPositionsByRegion.get(game.bracket)!
+
+        if (higherSeed === 99) {
+          // Missing seed data -- use next available position
+          warnings.push(`Missing seed data for R1 game in ${game.bracket} region`)
+          let nextPos = 1
+          while (usedPositions.has(nextPos)) nextPos++
+          currentPosition = regIdx * 8 + nextPos
+          usedPositions.add(nextPos)
+        } else {
+          const seedPos = SEED_TO_R1_POSITION[higherSeed]
+          if (seedPos === undefined) {
+            // Unexpected seed value
+            warnings.push(`Unexpected seed ${higherSeed} in ${game.bracket} region - placed in next available slot`)
+            let nextPos = 1
+            while (usedPositions.has(nextPos)) nextPos++
+            currentPosition = regIdx * 8 + nextPos
+            usedPositions.add(nextPos)
+          } else if (usedPositions.has(seedPos)) {
+            // Position collision -- auto-fix by finding next available
+            warnings.push(`Seed ${higherSeed} position collision in ${game.bracket} region - auto-fixed to next available slot`)
+            let nextPos = 1
+            while (usedPositions.has(nextPos)) nextPos++
+            currentPosition = regIdx * 8 + nextPos
+            usedPositions.add(nextPos)
+          } else {
+            currentPosition = regIdx * 8 + seedPos
+            usedPositions.add(seedPos)
+          }
+        }
       } else {
         // For R0 (First Four) and R2+ games: sequential counter
         currentPosition = (positionCounters.get(round) ?? 0) + 1
@@ -472,10 +540,21 @@ export async function createSportsBracketDAL(
       }
     }
 
-    // d2. Fallback: wire nextMatchupId from position data for any matchups
+    // d2. Detect Final Four pairing from ESPN data (if R5 games exist)
+    const detectedPairing = detectDefaultPairing(games, r1Regions)
+
+    // d3. Fallback: wire nextMatchupId from position data for any matchups
     // still unlinked after ESPN Pass 2 (ESPN provider returns null for
     // previousHomeGameId/previousAwayGameId)
-    await wireMatchupAdvancement(created.id, tx)
+    await wireMatchupAdvancement(created.id, tx, detectedPairing)
+
+    // d4. Save detected pairing to bracket
+    if (detectedPairing) {
+      await tx.bracket.update({
+        where: { id: created.id },
+        data: { finalFourPairing: detectedPairing },
+      })
+    }
 
     // e. Set winners for already-completed games and propagate to next matchup
     for (const game of allGames) {
@@ -509,8 +588,13 @@ export async function createSportsBracketDAL(
     return created
   }, { timeout: 30000 })
 
-  // Return full bracket with relations
-  return prisma.bracket.findFirst({
+  // Log warnings server-side
+  if (warnings.length > 0) {
+    console.warn('[sports-import]', ...warnings)
+  }
+
+  // Return full bracket with relations and warnings
+  const fullBracket = await prisma.bracket.findFirst({
     where: { id: bracket.id, teacherId },
     include: {
       entrants: { orderBy: { seedPosition: 'asc' } },
@@ -520,6 +604,8 @@ export async function createSportsBracketDAL(
       },
     },
   })
+
+  return { bracket: fullBracket, warnings }
 }
 
 /**
