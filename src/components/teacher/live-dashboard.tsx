@@ -15,7 +15,7 @@ import { ParticipationSidebar } from '@/components/teacher/participation-sidebar
 import { VoteProgressBar } from '@/components/teacher/vote-progress-bar'
 import { QRCodeDisplay } from '@/components/teacher/qr-code-display'
 import { openMatchupsForVoting, advanceMatchup, batchAdvanceRound, undoRoundAdvancement, reopenBracket } from '@/actions/bracket-advance'
-import { Undo2, RotateCcw, Eye, Hash, BarChart3 } from 'lucide-react'
+import { Undo2, RotateCcw, Eye, Hash, BarChart3, CheckCircle2 } from 'lucide-react'
 import { recordResult, advanceRound } from '@/actions/round-robin'
 import { triggerSportsSync } from '@/actions/sports'
 import { updatePredictionStatus } from '@/actions/prediction'
@@ -1242,6 +1242,33 @@ export function LiveDashboard({
     })
   }, [bracket.id])
 
+  // Detect if all matchups are decided (bracket logically complete but status may still be 'active')
+  const isBracketAllDecided = useMemo(() => {
+    if (currentMatchups.length === 0) return false
+    if (isRoundRobin) {
+      return currentMatchups.every((m) => m.status === 'decided')
+    }
+    if (isDoubleElim) {
+      const gf = currentMatchups.filter((m) => m.bracketRegion === 'grand_finals')
+      if (gf.length === 0) return false
+      return gf.every((m) => m.status === 'decided')
+    }
+    // SE / Predictive / Sports: final round matchup(s) must be decided
+    const finalRoundMatchups = currentMatchups.filter((m) => m.round === totalRounds)
+    return finalRoundMatchups.length > 0 && finalRoundMatchups.every((m) => m.status === 'decided')
+  }, [currentMatchups, totalRounds, isRoundRobin, isDoubleElim])
+
+  // Close bracket handler -- transitions active bracket to completed
+  const handleCloseBracket = useCallback(() => {
+    setError(null)
+    startTransition(async () => {
+      const result = await updateBracketStatus({ bracketId: bracket.id, status: 'completed' })
+      if (result && 'error' in result) {
+        setError(result.error as string)
+      }
+    })
+  }, [bracket.id])
+
   return (
     <div className="flex h-full flex-col gap-3">
       {/* Winner Reveal overlay */}
@@ -1332,6 +1359,19 @@ export function LiveDashboard({
             <Switch checked={!isPaused} onCheckedChange={handlePauseToggle} disabled={isPending} />
             <span className="text-xs font-medium">{isPaused ? 'Paused' : 'Active'}</span>
           </div>
+        )}
+
+        {/* Close Bracket button -- shown when bracket is logically complete but still active */}
+        {bracket.status === 'active' && isBracketAllDecided && (
+          <button
+            type="button"
+            onClick={handleCloseBracket}
+            disabled={isPending}
+            className="inline-flex items-center gap-1.5 rounded-md bg-green-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-green-700 disabled:opacity-50"
+          >
+            <CheckCircle2 className="h-4 w-4" />
+            {isPending ? 'Closing...' : 'Close Bracket'}
+          </button>
         )}
 
         {/* Reopen button -- only shown for completed brackets */}
