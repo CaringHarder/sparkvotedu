@@ -233,6 +233,7 @@ export function useRealtimeBracket(bracketId: string, batchIntervalMs = 2000) {
           type === 'round_advanced' ||
           type === 'voting_opened' ||
           type === 'bracket_completed' ||
+          type === 'scores_synced' ||
           type === 'prediction_status_changed' ||
           type === 'reveal_round' ||
           type === 'reveal_complete' ||

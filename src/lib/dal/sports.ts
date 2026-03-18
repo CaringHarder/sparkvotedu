@@ -10,7 +10,7 @@ import { prisma } from '@/lib/prisma'
 import type { PrismaClient } from '../../../prisma/generated/prisma'
 import { getProvider, getProviderName } from '@/lib/sports/provider'
 import { resolveTeamLogoUrl } from '@/lib/sports/logo-resolver'
-import { broadcastBracketUpdate } from '@/lib/realtime/broadcast'
+import { broadcastBracketUpdate, broadcastActivityUpdate } from '@/lib/realtime/broadcast'
 import type { SportsGame, SportsTeam, SportGender } from '@/lib/sports/types'
 import { parsePairing, detectDefaultPairing } from '@/lib/sports/pairings'
 
@@ -792,9 +792,45 @@ export async function syncBracketResults(bracketId: string, games: SportsGame[])
     })
   }
 
-  // Broadcast bracket update for real-time subscribers
-  await broadcastBracketUpdate(bracketId, 'bracket_completed', {
-    type: 'scores_synced',
-    updatedMatchups: updatedCount,
-  }).catch(console.error)
+  // Check if all matchups are now decided → auto-complete the bracket
+  const allMatchups = await prisma.matchup.findMany({
+    where: { bracketId, round: { gt: 0 } }, // Exclude R0 play-in matchups
+    select: { status: true },
+  })
+
+  const allDecided = allMatchups.length > 0 && allMatchups.every((m) => m.status === 'decided')
+
+  if (allDecided) {
+    // Fetch current bracket state to check if already completed
+    const currentBracket = await prisma.bracket.findUnique({
+      where: { id: bracketId },
+      select: { status: true, predictionStatus: true, sessionId: true },
+    })
+
+    if (currentBracket && currentBracket.status !== 'completed') {
+      await prisma.bracket.update({
+        where: { id: bracketId },
+        data: {
+          status: 'completed',
+          predictionStatus: 'completed',
+        },
+      })
+
+      // Broadcast completion for teacher live dashboard + student activity grid
+      broadcastBracketUpdate(bracketId, 'bracket_completed', {
+        type: 'tournament_complete',
+      }).catch(console.error)
+
+      if (currentBracket.sessionId) {
+        broadcastActivityUpdate(currentBracket.sessionId).catch(console.error)
+      }
+    }
+  }
+
+  // Broadcast score sync for real-time subscribers
+  if (updatedCount > 0) {
+    broadcastBracketUpdate(bracketId, 'scores_synced', {
+      updatedMatchups: updatedCount,
+    }).catch(console.error)
+  }
 }

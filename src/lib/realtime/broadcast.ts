@@ -93,6 +93,7 @@ type BracketUpdateType =
   | 'round_undone'
   | 'bracket_reopened'
   | 'settings_changed'
+  | 'scores_synced'
 
 /**
  * Broadcast a bracket state change to a bracket channel.

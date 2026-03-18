@@ -1645,7 +1645,7 @@ export function LiveDashboard({
           </span>
         )}
 
-        {bracketDone && !isPredictiveAuto && !isSports && (
+        {bracketDone && !isPredictiveAuto && (
           <span className="flex items-center gap-1.5 rounded-md bg-green-50 px-3 py-1.5 text-xs font-semibold text-green-700 dark:bg-green-900/20 dark:text-green-400">
             Complete!
           </span>

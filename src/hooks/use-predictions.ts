@@ -72,7 +72,8 @@ export function usePredictions(bracketId: string, participantId?: string, initia
           type === 'prediction_status_changed' ||
           type === 'prediction_submitted' ||
           type === 'winner_selected' ||
-          type === 'bracket_completed'
+          type === 'bracket_completed' ||
+          type === 'scores_synced'
         ) {
           fetchData()
         }
