@@ -114,3 +114,13 @@ Plans:
 - [ ] 01-01-PLAN.md -- Schema migration, pairings utility, DAL warning collection + auto-fix + pairing-aware wiring
 - [ ] 01-02-PLAN.md -- Server actions: import warnings, play-in resolution, Final Four pairing updates, ESPN refresh
 - [ ] 01-03-PLAN.md -- UI: import warnings display, Final Four pairing dropdown in settings, Refresh from ESPN button
+
+### Phase 2: Polish student dashboard ended activity UX
+
+**Goal:** Visually separate active vs. closed activities on the student dashboard with dimmed cards, section-based layout, animated transitions, and auto-navigation guard
+**Requirements**: TBD
+**Depends on:** Phase 1
+**Plans:** 1 plan
+
+Plans:
+- [ ] 02-01-PLAN.md -- Card closed treatment, grid section splitting, auto-nav guard, cross-section animations
