@@ -23,6 +23,8 @@ export function TournamentBrowser({ sessions }: TournamentBrowserProps) {
     success: boolean
     message: string
     bracketId?: string
+    warnings?: string[]
+    autoDetectedPairing?: string
   } | null>(null)
   const [isPending, startTransition] = useTransition()
 
@@ -76,10 +78,15 @@ export function TournamentBrowser({ sessions }: TournamentBrowserProps) {
             message: result.error as string,
           })
         } else if ('bracket' in result && result.bracket) {
+          const warnings = 'warnings' in result ? (result.warnings as string[]) : []
+          // Check if auto-detected pairing is mentioned in warnings
+          const pairingWarning = warnings.find((w) => w.includes('Final Four pairing'))
           setImportResult({
             success: true,
             message: `Successfully imported "${result.bracket.name}"`,
             bracketId: result.bracket.id,
+            warnings: warnings.filter((w) => !w.includes('Final Four pairing')),
+            autoDetectedPairing: pairingWarning ?? undefined,
           })
           router.refresh()
         }
@@ -178,25 +185,46 @@ export function TournamentBrowser({ sessions }: TournamentBrowserProps) {
 
       {/* Import result message */}
       {importResult && (
-        <div
-          className={`rounded-lg border px-4 py-3 text-sm ${
-            importResult.success
-              ? 'border-green-200 bg-green-50 text-green-800 dark:border-green-900/50 dark:bg-green-950/20 dark:text-green-300'
-              : 'border-red-200 bg-red-50 text-red-800 dark:border-red-900/50 dark:bg-red-950/20 dark:text-red-300'
-          }`}
-        >
-          <div className="flex items-center justify-between">
-            <span>{importResult.message}</span>
-            {importResult.success && importResult.bracketId && (
-              <Link
-                href={`/brackets/${importResult.bracketId}`}
-                className="inline-flex items-center gap-1 font-medium underline underline-offset-2"
-              >
-                View Bracket
-                <ArrowUpRight className="h-3.5 w-3.5" />
-              </Link>
+        <div className="space-y-2">
+          <div
+            className={`rounded-lg border px-4 py-3 text-sm ${
+              importResult.success
+                ? 'border-green-200 bg-green-50 text-green-800 dark:border-green-900/50 dark:bg-green-950/20 dark:text-green-300'
+                : 'border-red-200 bg-red-50 text-red-800 dark:border-red-900/50 dark:bg-red-950/20 dark:text-red-300'
+            }`}
+          >
+            <div className="flex items-center justify-between">
+              <span>{importResult.message}</span>
+              {importResult.success && importResult.bracketId && (
+                <Link
+                  href={`/brackets/${importResult.bracketId}`}
+                  className="inline-flex items-center gap-1 font-medium underline underline-offset-2"
+                >
+                  View Bracket
+                  <ArrowUpRight className="h-3.5 w-3.5" />
+                </Link>
+              )}
+            </div>
+            {importResult.success && (
+              <p className="mt-1.5 text-xs opacity-80">
+                {importResult.autoDetectedPairing
+                  ? `${importResult.autoDetectedPairing} Change in bracket settings.`
+                  : 'You can configure Final Four pairings in bracket settings.'}
+              </p>
             )}
           </div>
+
+          {/* Import warnings */}
+          {importResult.success && importResult.warnings && importResult.warnings.length > 0 && (
+            <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800 dark:border-amber-900/50 dark:bg-amber-950/20 dark:text-amber-300">
+              <p className="font-medium">Import completed with notes:</p>
+              <ul className="mt-1 list-inside list-disc space-y-0.5 text-xs">
+                {importResult.warnings.map((warning, i) => (
+                  <li key={i}>{warning}</li>
+                ))}
+              </ul>
+            </div>
+          )}
         </div>
       )}
 
