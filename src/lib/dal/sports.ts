@@ -32,7 +32,7 @@ const SEED_TO_R1_POSITION: Record<number, number> = {
  * Falls back to position parity for single-feeder cases.
  */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-async function getSlotByFeederOrder(
+export async function getSlotByFeederOrder(
   db: any,
   matchupId: string,
   nextMatchupId: string,

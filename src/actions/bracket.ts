@@ -14,7 +14,7 @@ import {
   unarchiveBracketDAL,
   deleteBracketPermanentlyDAL,
 } from '@/lib/dal/bracket'
-import { wireMatchupAdvancement } from '@/lib/dal/sports'
+import { wireMatchupAdvancement, getSlotByFeederOrder } from '@/lib/dal/sports'
 import {
   createBracketSchema,
   entrantSchema,
@@ -619,6 +619,49 @@ export async function updateBracketSettings(input: unknown) {
       data: updateData,
     })
 
+    let predictionWarning = false
+
+    // When finalFourPairing changes, re-wire R4->R5 linkage and re-propagate winners
+    if (finalFourPairing !== undefined) {
+      // Clear R4 nextMatchupId links before re-wiring
+      await prisma.matchup.updateMany({
+        where: { bracketId, round: 4 },
+        data: { nextMatchupId: null },
+      })
+
+      // Also clear R5 entrant slots (they'll be re-populated from R4 winners)
+      await prisma.matchup.updateMany({
+        where: { bracketId, round: 5 },
+        data: { entrant1Id: null, entrant2Id: null },
+      })
+
+      // Re-wire all rounds including R4->R5 with new pairing
+      await wireMatchupAdvancement(bracketId, undefined, finalFourPairing)
+
+      // Check for predictions on R5+ matchups (warn if pairing change affects them)
+      const r5PlusPredictions = await prisma.prediction.count({
+        where: { matchup: { bracketId, round: { gte: 5 } } },
+      })
+      if (r5PlusPredictions > 0) {
+        predictionWarning = true
+      }
+
+      // Re-propagate R4 winners into R5 matchup slots
+      const r4Matchups = await prisma.matchup.findMany({
+        where: { bracketId, round: 4, winnerId: { not: null }, nextMatchupId: { not: null } },
+        select: { id: true, winnerId: true, nextMatchupId: true, position: true },
+      })
+
+      for (const m of r4Matchups) {
+        if (!m.nextMatchupId || !m.winnerId) continue
+        const slot = await getSlotByFeederOrder(prisma, m.id, m.nextMatchupId, m.position)
+        await prisma.matchup.update({
+          where: { id: m.nextMatchupId },
+          data: { [slot]: m.winnerId },
+        })
+      }
+    }
+
     // Broadcast settings_changed event to connected students
     await broadcastBracketUpdate(bracketId, 'settings_changed', updateData)
 
@@ -626,7 +669,7 @@ export async function updateBracketSettings(input: unknown) {
     revalidatePath('/activities')
     revalidatePath(`/brackets/${bracketId}`)
 
-    return { success: true }
+    return { success: true, ...(predictionWarning ? { predictionWarning } : {}) }
   } catch {
     return { error: 'Failed to update bracket settings' }
   }
