@@ -657,7 +657,7 @@ export async function repairBracketLinkage(bracketId: string) {
         teacherId: teacher.id,
         bracketType: 'sports',
       },
-      select: { id: true },
+      select: { id: true, finalFourPairing: true },
     })
 
     if (!bracket) {
@@ -665,7 +665,7 @@ export async function repairBracketLinkage(bracketId: string) {
     }
 
     // Run position-based linkage repair (no transaction — uses prisma directly)
-    await wireMatchupAdvancement(bracketId)
+    await wireMatchupAdvancement(bracketId, undefined, bracket.finalFourPairing)
 
     revalidatePath(`/brackets/${bracketId}`)
 

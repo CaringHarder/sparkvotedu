@@ -110,7 +110,7 @@ export async function importTournament(input: unknown) {
     revalidatePath('/brackets')
     revalidatePath('/activities')
 
-    return { bracket: { id: result.bracket.id, name: result.bracket.name } }
+    return { bracket: { id: result.bracket.id, name: result.bracket.name }, warnings: result.warnings }
   } catch (err) {
     console.error('importTournament failed:', err)
     return { error: 'Failed to import tournament' }

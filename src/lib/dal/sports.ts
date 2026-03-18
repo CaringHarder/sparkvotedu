@@ -733,6 +733,57 @@ export async function syncBracketResults(bracketId: string, games: SportsGame[])
     updatedCount++
   }
 
+  // Play-in (R0) resolution: replace combined entrants with actual winners
+  const r0Matchups = await prisma.matchup.findMany({
+    where: {
+      bracketId,
+      round: 0,
+      externalGameId: { not: null },
+    },
+    select: {
+      id: true,
+      externalGameId: true,
+    },
+  })
+
+  for (const r0 of r0Matchups) {
+    if (r0.externalGameId === null) continue
+    const game = gameByExternalId.get(r0.externalGameId)
+    if (!game || !game.isClosed || !game.winnerId) continue
+
+    // Determine the winning team from the game data
+    const winningTeam =
+      game.homeTeam && game.homeTeam.externalId === game.winnerId
+        ? game.homeTeam
+        : game.awayTeam && game.awayTeam.externalId === game.winnerId
+          ? game.awayTeam
+          : null
+    if (!winningTeam) continue
+
+    // Find the combined entrant (externalTeamId IS NULL, abbreviation contains winner)
+    const combinedEntrant = await prisma.bracketEntrant.findFirst({
+      where: {
+        bracketId,
+        externalTeamId: null,
+        abbreviation: { contains: winningTeam.abbreviation },
+      },
+      select: { id: true },
+    })
+
+    if (combinedEntrant) {
+      await prisma.bracketEntrant.update({
+        where: { id: combinedEntrant.id },
+        data: {
+          name: winningTeam.shortName,
+          abbreviation: winningTeam.abbreviation,
+          logoUrl: resolveTeamLogoUrl(winningTeam.logoUrl, winningTeam.abbreviation),
+          externalTeamId: winningTeam.externalId,
+        },
+      })
+      console.log('[play-in-resolve]', winningTeam.abbreviation, 'wins play-in, replacing combined entry')
+    }
+  }
+
   // Update lastSyncAt on bracket
   if (updatedCount > 0) {
     await prisma.bracket.update({
