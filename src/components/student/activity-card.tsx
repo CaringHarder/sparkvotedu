@@ -5,6 +5,7 @@ import type { Activity } from '@/hooks/use-realtime-activities'
 
 interface ActivityCardProps {
   activity: Activity
+  isClosed?: boolean
   onClick: () => void
 }
 
@@ -17,16 +18,20 @@ interface ActivityCardProps {
  * Visual differentiation: brand-blue for brackets, brand-amber for polls.
  * Responsive: works on mobile (stacked) and desktop (grid).
  */
-export function ActivityCard({ activity, onClick }: ActivityCardProps) {
+export function ActivityCard({ activity, isClosed = false, onClick }: ActivityCardProps) {
   const isBracket = activity.type === 'bracket'
 
   return (
     <Card
-      className={`cursor-pointer transition-all hover:shadow-md ${
-        isBracket
-          ? 'hover:border-brand-blue/40'
-          : 'hover:border-brand-amber/40'
-      }`}
+      className={
+        isClosed
+          ? 'cursor-default opacity-55 transition-all'
+          : `cursor-pointer transition-all hover:shadow-md ${
+              isBracket
+                ? 'hover:border-brand-blue/40'
+                : 'hover:border-brand-amber/40'
+            }`
+      }
       onClick={onClick}
     >
       <CardContent className="flex flex-col items-center gap-3 px-4 py-5 text-center">
@@ -90,7 +95,11 @@ export function ActivityCard({ activity, onClick }: ActivityCardProps) {
         </div>
 
         {/* Status indicator */}
-        {activity.hasVoted ? (
+        {isClosed ? (
+          <div className="rounded-full bg-muted px-2.5 py-1 text-xs font-medium text-muted-foreground">
+            Closed
+          </div>
+        ) : activity.hasVoted ? (
           <div className="flex items-center gap-1.5 rounded-full bg-green-100 px-2.5 py-1 text-xs font-medium text-green-700 dark:bg-green-900/30 dark:text-green-400">
             <svg
               xmlns="http://www.w3.org/2000/svg"
