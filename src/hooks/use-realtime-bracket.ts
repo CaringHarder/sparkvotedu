@@ -258,6 +258,11 @@ export function useRealtimeBracket(bracketId: string, batchIntervalMs = 2000) {
         }
       })
 
+    // Periodic voter ID recovery: refetch full state every 10s when WebSocket
+    // is active. Recovers voter IDs from dropped broadcasts without waiting
+    // for a structural event. In polling mode the 3s interval already covers this.
+    let voterSyncInterval: ReturnType<typeof setInterval> | null = null
+
     // Transport fallback: if WebSocket doesn't connect within 5 seconds,
     // switch to HTTP polling every 3 seconds
     const wsTimeout = setTimeout(() => {
@@ -267,6 +272,9 @@ export function useRealtimeBracket(bracketId: string, batchIntervalMs = 2000) {
         fetchBracketState()
         // Start polling interval
         pollInterval = setInterval(fetchBracketState, 3000)
+      } else {
+        // WebSocket connected — start slower periodic sync for voter ID recovery
+        voterSyncInterval = setInterval(fetchBracketState, 10000)
       }
     }, 5000)
 
@@ -275,6 +283,7 @@ export function useRealtimeBracket(bracketId: string, batchIntervalMs = 2000) {
       clearInterval(flushInterval)
       clearTimeout(wsTimeout)
       if (pollInterval) clearInterval(pollInterval)
+      if (voterSyncInterval) clearInterval(voterSyncInterval)
     }
   }, [bracketId, supabase, batchIntervalMs, fetchBracketState])
 
