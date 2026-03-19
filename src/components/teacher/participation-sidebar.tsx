@@ -12,6 +12,7 @@ interface ParticipationSidebarProps {
   voterIds: string[]
   selectedMatchupId: string | null
   hasActiveVotingContext?: boolean
+  voteLabel?: string
   onToggle: () => void
   isOpen: boolean
   teacherNameViewDefault?: string
@@ -25,6 +26,7 @@ export function ParticipationSidebar({
   voterIds,
   selectedMatchupId,
   hasActiveVotingContext = true,
+  voteLabel = 'voted',
   onToggle,
   isOpen,
   teacherNameViewDefault = 'fun',
@@ -143,11 +145,11 @@ export function ParticipationSidebar({
             <div className="mb-3 rounded-md bg-muted/50 p-2">
               <div className="flex items-center justify-between">
                 <span className="text-sm font-medium">
-                  {votedCount}/{participants.length} voted
+                  {votedCount}/{participants.length} {voteLabel}
                 </span>
                 {allVoted && (
                   <span className="animate-in fade-in rounded-full bg-green-100 px-2 py-0.5 text-xs font-semibold text-green-700">
-                    All voted!
+                    All {voteLabel}!
                   </span>
                 )}
               </div>

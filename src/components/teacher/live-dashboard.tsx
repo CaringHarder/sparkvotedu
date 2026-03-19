@@ -43,6 +43,7 @@ interface LiveDashboardProps {
   sessionCode?: string | null
   standings?: RoundRobinStanding[]
   predictionScores?: PredictionScore[]
+  predictionSubmitterIds?: string[]
   sessionName?: string | null
   teacherNameViewDefault?: string
 }
@@ -106,6 +107,7 @@ export function LiveDashboard({
   sessionCode,
   standings = [],
   predictionScores = [],
+  predictionSubmitterIds = [],
   sessionName,
   teacherNameViewDefault = 'fun',
 }: LiveDashboardProps) {
@@ -511,13 +513,17 @@ export function LiveDashboard({
   // Merge initial and realtime voter IDs per matchup
   const mergedVoterIds = useMemo(() => {
     const merged: Record<string, string[]> = { ...initialVoterIds }
+    // Seed prediction submitters from initial load
+    if (predictionSubmitterIds.length > 0) {
+      merged['predictions'] = [...predictionSubmitterIds]
+    }
     for (const [matchupId, pids] of Object.entries(realtimeVoterIds)) {
       const existing = new Set(merged[matchupId] ?? [])
       for (const pid of pids) existing.add(pid)
       merged[matchupId] = [...existing]
     }
     return merged
-  }, [initialVoterIds, realtimeVoterIds])
+  }, [initialVoterIds, realtimeVoterIds, predictionSubmitterIds])
 
   // Current round (SE/Predictive only -- DE uses region-based deCurrentDbRound)
   const currentRound = useMemo(() => {
@@ -807,7 +813,7 @@ export function LiveDashboard({
         matchupVoterSets.every(set => set.has(pid))
       )
     }
-    if (isPredictive) {
+    if (isPredictive || isSports) {
       // Use the special 'predictions' key for prediction submitters
       return mergedVoterIds['predictions'] ?? []
     }
@@ -824,11 +830,11 @@ export function LiveDashboard({
       }
     }
     return [...allVoterIds]
-  }, [isRoundRobin, isPredictive, selectedMatchupId, currentMatchups,
+  }, [isRoundRobin, isPredictive, isSports, selectedMatchupId, currentMatchups,
       currentRound, currentRoundRobinRound, mergedVoterIds, participants])
 
   // Whether there is an active voting context (for sidebar display)
-  const hasActiveVotingContext = isRoundRobin || isPredictive || selectedMatchupId !== null ||
+  const hasActiveVotingContext = isRoundRobin || isPredictive || isSports || selectedMatchupId !== null ||
     currentMatchups.some((m) => m.status === 'voting')
 
   const handleRecordRoundRobinResult = useCallback((matchupId: string, winnerId: string | null) => {
@@ -1958,6 +1964,7 @@ export function LiveDashboard({
           voterIds={currentVoterIds}
           selectedMatchupId={selectedMatchupId}
           hasActiveVotingContext={hasActiveVotingContext}
+          voteLabel={(isPredictive || isSports) && bracket.predictionStatus !== 'active' ? 'predicted' : 'voted'}
           newParticipantIds={newParticipantIds}
           onToggle={() => setSidebarOpen(!sidebarOpen)}
           isOpen={sidebarOpen}

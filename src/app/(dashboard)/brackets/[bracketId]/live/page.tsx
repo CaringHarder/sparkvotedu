@@ -3,7 +3,7 @@ import { getAuthenticatedTeacher } from '@/lib/dal/auth'
 import { getBracketWithDetails } from '@/lib/dal/bracket'
 import { getMatchupVoteSummary, getVoterParticipantIds } from '@/lib/dal/vote'
 import { getRoundRobinStandings } from '@/lib/dal/round-robin'
-import { scoreBracketPredictions } from '@/lib/dal/prediction'
+import { scoreBracketPredictions, getPredictionSubmitterIds } from '@/lib/dal/prediction'
 import { prisma } from '@/lib/prisma'
 import { LiveDashboard } from '@/components/teacher/live-dashboard'
 import type { BracketStatus, RoundRobinStanding, PredictionScore } from '@/lib/bracket/types'
@@ -114,11 +114,15 @@ export default async function LiveDashboardPage({ params }: PageProps) {
     standings = await getRoundRobinStandings(bracketId)
   }
 
-  // Fetch prediction scores for predictive and sports brackets
+  // Fetch prediction scores and submitter IDs for predictive and sports brackets
   // Sports brackets support student predictions (predictiveResolutionMode: 'auto')
   let predictionScores: PredictionScore[] = []
+  let predictionSubmitterIds: string[] = []
   if (bracket.bracketType === 'predictive' || bracket.bracketType === 'sports') {
-    predictionScores = await scoreBracketPredictions(bracketId)
+    ;[predictionScores, predictionSubmitterIds] = await Promise.all([
+      scoreBracketPredictions(bracketId),
+      getPredictionSubmitterIds(bracketId),
+    ])
   }
 
   // Serialize all data for client component
@@ -217,6 +221,7 @@ export default async function LiveDashboardPage({ params }: PageProps) {
       sessionCode={sessionCode}
       standings={standings}
       predictionScores={predictionScores}
+      predictionSubmitterIds={predictionSubmitterIds}
       sessionName={sessionName}
       teacherNameViewDefault={teacherNameViewDefault}
     />

@@ -117,6 +117,19 @@ export async function getParticipantPredictions(
 }
 
 /**
+ * Get distinct participant IDs who have submitted predictions for a bracket.
+ * Used to populate the participation sidebar with prediction submitters on initial load.
+ */
+export async function getPredictionSubmitterIds(bracketId: string): Promise<string[]> {
+  const submitters = await prisma.prediction.findMany({
+    where: { bracketId },
+    select: { participantId: true },
+    distinct: ['participantId'],
+  })
+  return submitters.map((s) => s.participantId)
+}
+
+/**
  * Score all predictions in a bracket against resolved matchup outcomes.
  *
  * Uses the pure scoring engine from predictive.ts, then enriches
