@@ -273,8 +273,8 @@ export function useRealtimeBracket(bracketId: string, batchIntervalMs = 2000) {
         // Start polling interval
         pollInterval = setInterval(fetchBracketState, 3000)
       } else {
-        // WebSocket connected — start slower periodic sync for voter ID recovery
-        voterSyncInterval = setInterval(fetchBracketState, 10000)
+        // WebSocket connected — periodic sync for voter ID recovery
+        voterSyncInterval = setInterval(fetchBracketState, 3000)
       }
     }, 5000)
 
