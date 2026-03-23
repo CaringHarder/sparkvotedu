@@ -10,7 +10,7 @@
  */
 
 import { NextResponse } from 'next/server'
-import { getActiveSportsBrackets, syncBracketResults } from '@/lib/dal/sports'
+import { getActiveSportsBrackets, syncBracketResults, repairBracketAdvancement } from '@/lib/dal/sports'
 import { getProvider } from '@/lib/sports/provider'
 
 export const dynamic = 'force-dynamic'
@@ -98,6 +98,9 @@ export async function GET(request: Request) {
           bracket.externalTournamentId,
           season
         )
+
+        // Repair R2-R4 positions before syncing results (fixes Sweet 16 ordering bug)
+        await repairBracketAdvancement(bracket.id, games)
 
         // Sync bracket matchups with live game data
         await syncBracketResults(bracket.id, games)

@@ -232,6 +232,138 @@ export async function wireMatchupAdvancement(
 }
 
 /**
+ * Repair bracket advancement wiring for existing brackets.
+ * Recalculates R2-R4 matchup positions from team seeds, then
+ * re-wires nextMatchupId links and re-propagates decided winners.
+ */
+export async function repairBracketAdvancement(
+  bracketId: string,
+  games: SportsGame[]
+) {
+  // Build game lookup by externalId
+  const gameByExternalId = new Map<number, SportsGame>()
+  for (const game of games) {
+    gameByExternalId.set(game.externalId, game)
+  }
+
+  // Fetch R2-R4 matchups with externalGameId
+  const matchups = await prisma.matchup.findMany({
+    where: {
+      bracketId,
+      round: { in: [2, 3, 4] },
+      externalGameId: { not: null },
+    },
+    select: {
+      id: true,
+      round: true,
+      position: true,
+      bracketRegion: true,
+      externalGameId: true,
+    },
+  })
+
+  if (matchups.length === 0) return
+
+  // Determine region ordering from R1 matchups
+  const r1Matchups = await prisma.matchup.findMany({
+    where: { bracketId, round: 1 },
+    select: { bracketRegion: true },
+    distinct: ['bracketRegion'],
+    orderBy: { position: 'asc' },
+  })
+  const regionIndex = new Map<string, number>()
+  r1Matchups.forEach((m, i) => {
+    if (m.bracketRegion) regionIndex.set(m.bracketRegion, i)
+  })
+
+  // Recalculate positions
+  let anyChanged = false
+  for (const matchup of matchups) {
+    if (!matchup.externalGameId || !matchup.bracketRegion) continue
+    const game = gameByExternalId.get(matchup.externalGameId)
+    if (!game) continue
+
+    const seed1 = game.homeTeam?.seed ?? null
+    const seed2 = game.awayTeam?.seed ?? null
+    const knownSeed = seed1 ?? seed2
+    if (knownSeed === null) continue
+
+    const r1Pos = SEED_TO_R1_POSITION[knownSeed]
+    if (r1Pos === undefined) continue
+
+    const round = matchup.round
+    const regIdx = regionIndex.get(matchup.bracketRegion) ?? 0
+    const gamesPerRegion = Math.floor(8 / Math.pow(2, round - 1))
+    const withinRegionPos = Math.ceil(r1Pos / Math.pow(2, round - 1))
+    const correctPosition = regIdx * gamesPerRegion + withinRegionPos
+
+    if (matchup.position !== correctPosition) {
+      await prisma.matchup.update({
+        where: { id: matchup.id },
+        data: { position: correctPosition },
+      })
+      anyChanged = true
+    }
+  }
+
+  if (!anyChanged) return
+
+  // Clear all nextMatchupId links so wireMatchupAdvancement rebuilds them
+  await prisma.matchup.updateMany({
+    where: { bracketId, nextMatchupId: { not: null } },
+    data: { nextMatchupId: null },
+  })
+
+  // Clear entrant assignments on undecided R3+ matchups (they'll be re-propagated)
+  await prisma.matchup.updateMany({
+    where: {
+      bracketId,
+      round: { gte: 3 },
+      winnerId: null,
+    },
+    data: { entrant1Id: null, entrant2Id: null },
+  })
+
+  // Detect Final Four pairing from bracket settings
+  const bracket = await prisma.bracket.findUnique({
+    where: { id: bracketId },
+    select: { finalFourPairing: true },
+  })
+  const finalFourPairing = bracket?.finalFourPairing ?? null
+
+  // Re-wire advancement with correct positions
+  await wireMatchupAdvancement(bracketId, undefined, finalFourPairing)
+
+  // Re-propagate winners from decided matchups, round by round
+  const decidedMatchups = await prisma.matchup.findMany({
+    where: {
+      bracketId,
+      winnerId: { not: null },
+      nextMatchupId: { not: null },
+    },
+    select: {
+      id: true,
+      winnerId: true,
+      nextMatchupId: true,
+      position: true,
+      round: true,
+    },
+    orderBy: [{ round: 'asc' }, { position: 'asc' }],
+  })
+
+  for (const matchup of decidedMatchups) {
+    if (!matchup.nextMatchupId || !matchup.winnerId) continue
+    const slot = await getSlotByFeederOrder(
+      prisma, matchup.id, matchup.nextMatchupId, matchup.position
+    )
+    await prisma.matchup.update({
+      where: { id: matchup.nextMatchupId },
+      data: { [slot]: matchup.winnerId },
+    })
+  }
+}
+
+/**
  * Create a sports bracket from tournament data fetched via the sports data provider.
  *
  * 1. Fetches all tournament games from the provider

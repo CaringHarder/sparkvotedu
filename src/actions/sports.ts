@@ -2,7 +2,7 @@
 
 import { prisma } from '@/lib/prisma'
 import { getAuthenticatedTeacher } from '@/lib/dal/auth'
-import { createSportsBracketDAL, getActiveSportsBrackets, syncBracketResults } from '@/lib/dal/sports'
+import { createSportsBracketDAL, getActiveSportsBrackets, syncBracketResults, repairBracketAdvancement } from '@/lib/dal/sports'
 import { importTournamentSchema } from '@/lib/utils/validation'
 import { canAccess } from '@/lib/gates/features'
 import { getProvider } from '@/lib/sports/provider'
@@ -157,6 +157,9 @@ export async function triggerSportsSync() {
         bracket.externalTournamentId,
         season
       )
+
+      // Repair R2-R4 positions before syncing results (fixes Sweet 16 ordering bug)
+      await repairBracketAdvancement(bracket.id, games)
 
       await syncBracketResults(bracket.id, games)
       syncedCount++
