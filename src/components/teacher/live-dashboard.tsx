@@ -1633,8 +1633,8 @@ export function LiveDashboard({
           </button>
         )}
 
-        {/* Undo round button -- appears near advance controls when undo is available */}
-        {undoableRound && !undoFeedback && (
+        {/* Undo round button -- appears near advance controls when undo is available (not for sports brackets) */}
+        {undoableRound && !undoFeedback && !isSports && (
           <button
             onClick={() => setShowUndoConfirm(true)}
             disabled={isPending}

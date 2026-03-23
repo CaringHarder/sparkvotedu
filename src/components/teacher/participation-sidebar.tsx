@@ -206,11 +206,13 @@ export function ParticipationSidebar({
                     }
                     className={`cursor-pointer rounded-md border px-2 py-2 text-xs text-left transition-all duration-500 ${
                       isNew
-                        ? 'border-green-400 bg-green-100 text-green-900 animate-pulse'
-                        : !isConnected
-                          ? `border-muted bg-muted/30 text-muted-foreground ${isFading ? 'opacity-30' : 'opacity-50'}`
-                          : hasVoted
-                            ? 'border-green-300 bg-green-50 text-green-800'
+                        ? 'border-green-400 bg-green-100 text-green-900 dark:bg-green-950 dark:text-green-300 dark:border-green-700 animate-pulse'
+                        : hasVoted
+                          ? !isConnected
+                            ? `border-green-300/50 bg-green-50/50 text-green-800/70 dark:border-green-800/50 dark:bg-green-950/30 dark:text-green-400/70 ${isFading ? 'opacity-40' : 'opacity-70'}`
+                            : 'border-green-300 bg-green-50 text-green-800 dark:border-green-700 dark:bg-green-950/50 dark:text-green-300'
+                          : !isConnected
+                            ? `border-muted bg-muted/30 text-muted-foreground ${isFading ? 'opacity-30' : 'opacity-50'}`
                             : 'border-border bg-background text-foreground'
                     }`}
                   >
