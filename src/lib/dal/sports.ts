@@ -970,6 +970,36 @@ export async function syncBracketResults(bracketId: string, games: SportsGame[])
     })
   }
 
+  // Auto-close predictions when any game goes live
+  // If predictionStatus is still 'predictions_open' and any game is in_progress or final,
+  // automatically transition to 'active' so no more predictions can be submitted.
+  const anyGameLive = games.some(
+    (g) => g.status === 'in_progress' || g.status === 'final'
+  )
+  if (anyGameLive) {
+    const bracketForPredictions = await prisma.bracket.findUnique({
+      where: { id: bracketId },
+      select: { predictionStatus: true, sessionId: true },
+    })
+    if (bracketForPredictions?.predictionStatus === 'predictions_open') {
+      await prisma.bracket.update({
+        where: { id: bracketId },
+        data: { predictionStatus: 'active' },
+      })
+      console.log('[sports-sync] Auto-closed predictions for bracket', bracketId, '- first game is live')
+
+      // Broadcast so teacher live dashboard and student UIs update in real-time
+      broadcastBracketUpdate(bracketId, 'prediction_status_changed', {
+        predictionStatus: 'active',
+        reason: 'auto_closed_game_live',
+      }).catch(console.error)
+
+      if (bracketForPredictions.sessionId) {
+        broadcastActivityUpdate(bracketForPredictions.sessionId).catch(console.error)
+      }
+    }
+  }
+
   // Check if all matchups are now decided → auto-complete the bracket
   const allMatchups = await prisma.matchup.findMany({
     where: { bracketId, round: { gt: 0 } }, // Exclude R0 play-in matchups
