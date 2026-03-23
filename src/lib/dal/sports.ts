@@ -276,8 +276,9 @@ export async function repairBracketAdvancement(
     if (m.bracketRegion) regionIndex.set(m.bracketRegion, i)
   })
 
-  // Recalculate positions
-  let anyChanged = false
+  // Recalculate positions — collect changes first, then apply in two passes
+  // to avoid unique constraint violations on (bracket_id, round, position)
+  const positionUpdates: Array<{ id: string; newPosition: number }> = []
   for (const matchup of matchups) {
     if (!matchup.externalGameId || !matchup.bracketRegion) continue
     const game = gameByExternalId.get(matchup.externalGameId)
@@ -298,15 +299,27 @@ export async function repairBracketAdvancement(
     const correctPosition = regIdx * gamesPerRegion + withinRegionPos
 
     if (matchup.position !== correctPosition) {
-      await prisma.matchup.update({
-        where: { id: matchup.id },
-        data: { position: correctPosition },
-      })
-      anyChanged = true
+      positionUpdates.push({ id: matchup.id, newPosition: correctPosition })
     }
   }
 
-  if (!anyChanged) return
+  if (positionUpdates.length === 0) return
+
+  // Pass 1: move all affected matchups to temporary negative positions (avoids unique constraint collisions)
+  for (let i = 0; i < positionUpdates.length; i++) {
+    await prisma.matchup.update({
+      where: { id: positionUpdates[i].id },
+      data: { position: -(i + 1000) },
+    })
+  }
+
+  // Pass 2: set correct positions
+  for (const upd of positionUpdates) {
+    await prisma.matchup.update({
+      where: { id: upd.id },
+      data: { position: upd.newPosition },
+    })
+  }
 
   // Clear all nextMatchupId links so wireMatchupAdvancement rebuilds them
   await prisma.matchup.updateMany({
