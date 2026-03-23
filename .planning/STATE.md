@@ -87,6 +87,7 @@ All decisions archived in PROJECT.md Key Decisions table.
 | 46 | Fix Close Predictions button error on sports brackets | 2026-03-18 | e319ff4 | Verified | [46-fix-close-predictions-button-error-on-sp](./quick/46-fix-close-predictions-button-error-on-sp/) |
 | 47 | Auto-complete sports bracket when all matchups decided via sync | 2026-03-18 | 2adc4f3 | | [47-auto-complete-sports-bracket-when-all-ma](./quick/47-auto-complete-sports-bracket-when-all-ma/) |
 | 48 | Fix bracket vote tracking accuracy and add prediction submission indicator | 2026-03-19 | df5c160 | Verified | [48-fix-bracket-vote-tracking-accuracy-and-a](./quick/48-fix-bracket-vote-tracking-accuracy-and-a/) |
+| 49 | Fix Sweet 16 bracket matchup ordering after ESPN sync | 2026-03-23 | b4654c0 | | [49-fix-sweet-16-bracket-matchup-ordering-af](./quick/49-fix-sweet-16-bracket-matchup-ordering-af/) |
 | Phase 01 P01 | 3min | 2 tasks | 6 files |
 | Phase 01 P02 | 2min | 2 tasks | 3 files |
 | Phase 01 P03 | 5min | 3 tasks | 5 files |
@@ -94,6 +95,6 @@ All decisions archived in PROJECT.md Key Decisions table.
 
 ## Session Continuity
 
-Last session: 2026-03-18T02:59:05Z
-Last activity: 2026-03-19 - Completed quick task 48
-Resume: Quick task 48 complete. Ready for next task or milestone.
+Last session: 2026-03-23T13:27:43Z
+Last activity: 2026-03-23 - Completed quick task 49
+Resume: Quick task 49 complete. Ready for next task or milestone.
