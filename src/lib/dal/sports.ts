@@ -22,7 +22,8 @@ type TransactionClient = Parameters<Parameters<PrismaClient['$transaction']>[0]>
  * 1v16=pos1, 8v9=pos2, 5v12=pos3, 4v13=pos4, 6v11=pos5, 3v14=pos6, 7v10=pos7, 2v15=pos8
  */
 const SEED_TO_R1_POSITION: Record<number, number> = {
-  1: 1, 8: 2, 5: 3, 4: 4, 6: 5, 3: 6, 7: 7, 2: 8,
+  1: 1, 16: 1, 8: 2, 9: 2, 5: 3, 12: 3, 4: 4, 13: 4,
+  6: 5, 11: 5, 3: 6, 14: 6, 7: 7, 10: 7, 2: 8, 15: 8,
 }
 
 /**
@@ -400,8 +401,10 @@ export async function createSportsBracketDAL(
     const regionIndex = new Map<string, number>()
     r1Regions.forEach((r, i) => regionIndex.set(r, i))
 
-    // Position counters for non-R1 rounds (R0, R2+)
+    // Position counters for non-R1 rounds (R0, R5+)
     const positionCounters = new Map<number, number>()
+    // Per-region sequential fallback counters for R2-R4 when seeds are unknown
+    const regionPositionCounters = new Map<string, number>()
     // Track used positions per region for collision detection (auto-fix)
     const usedPositionsByRegion = new Map<string, Set<number>>()
 
@@ -451,8 +454,38 @@ export async function createSportsBracketDAL(
             usedPositions.add(seedPos)
           }
         }
+      } else if (round >= 2 && round <= 4 && game.bracket && regionIndex.has(game.bracket)) {
+        // Within-region rounds R2-R4: derive position from team seeds
+        const seed1 = game.homeTeam?.seed ?? null
+        const seed2 = game.awayTeam?.seed ?? null
+        const knownSeed = seed1 ?? seed2
+
+        const regIdx = regionIndex.get(game.bracket) ?? 0
+        // gamesPerRegion: R2=4, R3=2, R4=1
+        const gamesPerRegion = Math.floor(8 / Math.pow(2, round - 1))
+
+        if (knownSeed !== null) {
+          const r1Pos = SEED_TO_R1_POSITION[knownSeed]
+          if (r1Pos !== undefined) {
+            // Position within region: ceil(r1Pos / 2^(round-1))
+            const withinRegionPos = Math.ceil(r1Pos / Math.pow(2, round - 1))
+            currentPosition = regIdx * gamesPerRegion + withinRegionPos
+          } else {
+            // Unknown seed value, fall back to per-region sequential
+            const key = `${round}-${game.bracket}`
+            const counter = (regionPositionCounters.get(key) ?? 0) + 1
+            regionPositionCounters.set(key, counter)
+            currentPosition = regIdx * gamesPerRegion + counter
+          }
+        } else {
+          // No seed data available, fall back to per-region sequential
+          const key = `${round}-${game.bracket}`
+          const counter = (regionPositionCounters.get(key) ?? 0) + 1
+          regionPositionCounters.set(key, counter)
+          currentPosition = regIdx * gamesPerRegion + counter
+        }
       } else {
-        // For R0 (First Four) and R2+ games: sequential counter
+        // For R0 (First Four) and R5+ (Final Four, Championship): sequential counter
         currentPosition = (positionCounters.get(round) ?? 0) + 1
         positionCounters.set(round, currentPosition)
       }
