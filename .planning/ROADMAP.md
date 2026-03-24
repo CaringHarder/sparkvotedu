@@ -124,3 +124,14 @@ Plans:
 
 Plans:
 - [ ] 02-01-PLAN.md -- Card closed treatment, grid section splitting, auto-nav guard, cross-section animations
+
+### Phase 3: Add CSV upload for poll options and audit bracket CSV import for name, description, and photo support
+
+**Goal:** Add CSV upload for poll options (new feature matching bracket CSV pattern) and extend bracket CSV parser with image/logo URL support, both with download-and-reupload to Supabase Storage
+**Requirements**: TBD
+**Depends on:** Phase 2
+**Plans:** 2 plans
+
+Plans:
+- [ ] 03-01-PLAN.md -- Poll CSV parser, bracket parser logoUrl extension, shared image download+reupload utility
+- [ ] 03-02-PLAN.md -- PollCSVUpload component, OptionList integration, bracket CSVUpload image support, bracket-form wiring
