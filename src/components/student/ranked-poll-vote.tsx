@@ -127,6 +127,55 @@ export function RankedPollVote({
         )}
       </div>
 
+      {/* Error message */}
+      {error && (
+        <p className="text-center text-sm text-destructive">{error}</p>
+      )}
+
+      {/* Action buttons */}
+      <div className="flex flex-wrap items-center justify-center gap-3">
+        {/* Submit button */}
+        {!submitted && (
+          <Button
+            size="lg"
+            onClick={submitVote}
+            disabled={!isComplete || submitting}
+            className={`min-w-[240px] text-xl font-bold py-7 ${
+              !isComplete
+                ? ''
+                : submitting
+                  ? 'bg-green-400 hover:bg-green-400 text-white border-0'
+                  : 'bg-green-500 hover:bg-green-600 text-white border-0 shadow-lg shadow-green-500/30 ring-4 ring-green-300/50 animate-[pulse_2s_ease-in-out_infinite]'
+            }`}
+          >
+            {submitting
+              ? 'Voting...'
+              : isComplete
+                ? 'VOTE'
+                : `Rank ${maxRankings - rankings.length} more`}
+          </Button>
+        )}
+
+        {/* Change rankings button */}
+        {submitted && canChangeVote && (
+          <Button variant="outline" size="lg" onClick={enableChangeVote}>
+            Change Rankings
+          </Button>
+        )}
+
+        {/* Undo / Reset buttons */}
+        {rankings.length > 0 && !submitted && (
+          <>
+            <Button variant="outline" size="sm" onClick={undoLastRanking}>
+              Undo Last
+            </Button>
+            <Button variant="outline" size="sm" onClick={resetRankings}>
+              Reset All
+            </Button>
+          </>
+        )}
+      </div>
+
       {/* Options list */}
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         {poll.options
@@ -180,49 +229,6 @@ export function RankedPollVote({
               </Card>
             )
           })}
-      </div>
-
-      {/* Error message */}
-      {error && (
-        <p className="text-center text-sm text-destructive">{error}</p>
-      )}
-
-      {/* Action buttons */}
-      <div className="flex flex-wrap items-center justify-center gap-3">
-        {/* Undo / Reset buttons */}
-        {rankings.length > 0 && !submitted && (
-          <>
-            <Button variant="outline" size="sm" onClick={undoLastRanking}>
-              Undo Last
-            </Button>
-            <Button variant="outline" size="sm" onClick={resetRankings}>
-              Reset All
-            </Button>
-          </>
-        )}
-
-        {/* Submit button */}
-        {!submitted && (
-          <Button
-            size="lg"
-            onClick={submitVote}
-            disabled={!isComplete || submitting}
-            className="min-w-[180px]"
-          >
-            {submitting
-              ? 'Submitting...'
-              : isComplete
-                ? 'Submit Rankings'
-                : `Rank ${maxRankings - rankings.length} more`}
-          </Button>
-        )}
-
-        {/* Change rankings button */}
-        {submitted && canChangeVote && (
-          <Button variant="outline" size="lg" onClick={enableChangeVote}>
-            Change Rankings
-          </Button>
-        )}
       </div>
     </div>
   )
