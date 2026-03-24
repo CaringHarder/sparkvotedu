@@ -3,7 +3,7 @@ import { NextResponse, type NextRequest } from 'next/server'
 import { prisma } from '@/lib/prisma'
 
 const AUTH_PAGES = ['/login', '/signup', '/forgot-password', '/update-password', '/auth', '/verify-email']
-const PUBLIC_PAGES = ['/', '/join', '/pricing']
+const PUBLIC_PAGES = ['/', '/join', '/pricing', '/terms', '/privacy']
 
 function isAuthPage(pathname: string): boolean {
   return AUTH_PAGES.some((page) => pathname === page || pathname.startsWith(`${page}/`))
