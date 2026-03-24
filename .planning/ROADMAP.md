@@ -133,5 +133,5 @@ Plans:
 **Plans:** 2 plans
 
 Plans:
-- [ ] 03-01-PLAN.md -- Poll CSV parser, bracket parser logoUrl extension, shared image download+reupload utility
+- [x] 03-01-PLAN.md -- Poll CSV parser, bracket parser logoUrl extension, shared image download+reupload utility
 - [ ] 03-02-PLAN.md -- PollCSVUpload component, OptionList integration, bracket CSVUpload image support, bracket-form wiring
