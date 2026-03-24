@@ -210,27 +210,28 @@ export function CardContextMenu({
 
           <DropdownMenuSeparator />
 
-          {!isArchived && (
+          {!isArchived ? (
             <DropdownMenuItem
+              variant="destructive"
               disabled={isPending}
               onSelect={handleArchive}
             >
               <Archive className="h-4 w-4" />
               Archive
             </DropdownMenuItem>
+          ) : (
+            <DropdownMenuItem
+              variant="destructive"
+              disabled={isPending}
+              onSelect={(e) => {
+                e.stopPropagation()
+                setShowDeleteDialog(true)
+              }}
+            >
+              <Trash2 className="h-4 w-4" />
+              Delete Permanently
+            </DropdownMenuItem>
           )}
-
-          <DropdownMenuItem
-            variant="destructive"
-            disabled={isPending}
-            onSelect={(e) => {
-              e.stopPropagation()
-              setShowDeleteDialog(true)
-            }}
-          >
-            <Trash2 className="h-4 w-4" />
-            Delete
-          </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
 

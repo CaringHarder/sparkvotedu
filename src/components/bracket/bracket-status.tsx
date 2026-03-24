@@ -2,7 +2,7 @@
 
 import { useTransition, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { updateBracketStatus, deleteBracket } from '@/actions/bracket'
+import { updateBracketStatus, archiveBracket } from '@/actions/bracket'
 
 // --- BracketStatusBadge ---
 
@@ -60,10 +60,10 @@ export function BracketLifecycleControls({
     })
   }
 
-  function handleDelete() {
+  function handleArchive() {
     setError(null)
     startTransition(async () => {
-      const result = await deleteBracket({ bracketId })
+      const result = await archiveBracket({ bracketId })
       if (result && 'error' in result) {
         setError(result.error as string)
       } else {
@@ -98,9 +98,9 @@ export function BracketLifecycleControls({
         <button
           onClick={() => setShowDeleteConfirm(true)}
           disabled={isPending}
-          className="rounded-md bg-red-600 px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-red-700 disabled:opacity-50"
+          className="rounded-md bg-amber-600 px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-amber-700 disabled:opacity-50"
         >
-          Delete
+          Archive
         </button>
       </div>
 
@@ -108,16 +108,16 @@ export function BracketLifecycleControls({
         <p className="text-xs text-red-600">{error}</p>
       )}
 
-      {/* Delete confirmation dialog */}
+      {/* Archive confirmation dialog */}
       {showDeleteConfirm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
           <div className="mx-4 w-full max-w-sm rounded-lg border bg-card p-6 shadow-lg">
             <h3 className="text-sm font-semibold text-card-foreground">
-              Delete Bracket
+              Archive Bracket
             </h3>
             <p className="mt-2 text-sm text-muted-foreground">
-              Are you sure you want to delete &quot;{bracketName}&quot;? This
-              cannot be undone.
+              Archive &quot;{bracketName}&quot;? You can recover it later from
+              the archived view.
             </p>
             <div className="mt-4 flex justify-end gap-2">
               <button
@@ -130,12 +130,12 @@ export function BracketLifecycleControls({
               <button
                 onClick={() => {
                   setShowDeleteConfirm(false)
-                  handleDelete()
+                  handleArchive()
                 }}
                 disabled={isPending}
-                className="rounded-md bg-red-600 px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-red-700 disabled:opacity-50"
+                className="rounded-md bg-amber-600 px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-amber-700 disabled:opacity-50"
               >
-                {isPending ? 'Deleting...' : 'Delete'}
+                {isPending ? 'Archiving...' : 'Archive'}
               </button>
             </div>
           </div>

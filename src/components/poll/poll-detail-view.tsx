@@ -7,7 +7,7 @@ import {
   ArrowLeft,
   Pencil,
   Copy,
-  Trash2,
+  Archive,
   Link2,
   Unlink,
   Eye,
@@ -21,7 +21,7 @@ import { PollForm } from '@/components/poll/poll-form'
 import {
   updatePoll,
   updatePollStatus,
-  deletePoll,
+  archivePoll,
   duplicatePoll,
   assignPollToSession,
 } from '@/actions/poll'
@@ -193,10 +193,10 @@ export function PollDetailView({ poll, sessions, sessionName }: PollDetailViewPr
     })
   }
 
-  function handleDelete() {
+  function handleArchive() {
     setError(null)
     startTransition(async () => {
-      const result = await deletePoll({ pollId: poll.id })
+      const result = await archivePoll({ pollId: poll.id })
       if (result && 'error' in result) {
         setError(result.error as string)
       } else {
@@ -282,7 +282,7 @@ export function PollDetailView({ poll, sessions, sessionName }: PollDetailViewPr
             Duplicate
           </Button>
 
-          {/* Delete */}
+          {/* Archive */}
           <Button
             variant="outline"
             size="sm"
@@ -290,8 +290,8 @@ export function PollDetailView({ poll, sessions, sessionName }: PollDetailViewPr
             disabled={isPending}
             className="h-8 gap-1.5 text-destructive hover:text-destructive"
           >
-            <Trash2 className="h-3.5 w-3.5" />
-            Delete
+            <Archive className="h-3.5 w-3.5" />
+            Archive
           </Button>
         </div>
       </div>
@@ -422,16 +422,16 @@ export function PollDetailView({ poll, sessions, sessionName }: PollDetailViewPr
         </Card>
       )}
 
-      {/* Delete confirmation modal (same pattern as bracket-status.tsx) */}
+      {/* Archive confirmation modal */}
       {showDeleteConfirm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
           <div className="mx-4 w-full max-w-sm rounded-lg border bg-card p-6 shadow-lg">
             <h3 className="text-sm font-semibold text-card-foreground">
-              Delete Poll
+              Archive Poll
             </h3>
             <p className="mt-2 text-sm text-muted-foreground">
-              Are you sure you want to delete &quot;{poll.question}&quot;? This
-              cannot be undone.
+              Archive &quot;{poll.question}&quot;? You can recover it later from
+              the archived view.
             </p>
             <div className="mt-4 flex justify-end gap-2">
               <button
@@ -444,12 +444,12 @@ export function PollDetailView({ poll, sessions, sessionName }: PollDetailViewPr
               <button
                 onClick={() => {
                   setShowDeleteConfirm(false)
-                  handleDelete()
+                  handleArchive()
                 }}
                 disabled={isPending}
-                className="rounded-md bg-red-600 px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-red-700 disabled:opacity-50"
+                className="rounded-md bg-amber-600 px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-amber-700 disabled:opacity-50"
               >
-                {isPending ? 'Deleting...' : 'Delete'}
+                {isPending ? 'Archiving...' : 'Archive'}
               </button>
             </div>
           </div>
