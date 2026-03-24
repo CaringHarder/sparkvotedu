@@ -96,6 +96,7 @@ All decisions archived in PROJECT.md Key Decisions table.
 | 50 | Hide undo round button for sports brackets and fix per-student vote indicator | 2026-03-23 | b34c9a5 | | [50-hide-undo-round-button-for-sports-bracke](./quick/50-hide-undo-round-button-for-sports-bracke/) |
 | 51 | Auto-close predictions when first ESPN game goes live | 2026-03-23 | 0561924 | | [51-auto-close-predictions-when-first-espn-g](./quick/51-auto-close-predictions-when-first-espn-g/) |
 | 52 | Replace delete with archive for active/draft polls and brackets | 2026-03-24 | faafb4b | | [52-replace-delete-with-archive-for-active-d](./quick/52-replace-delete-with-archive-for-active-d/) |
+| 53 | Fix broken terms and privacy page links | 2026-03-24 | 81c4503 | | [53-fix-broken-terms-and-privacy-page-links-](./quick/53-fix-broken-terms-and-privacy-page-links-/) |
 | Phase 01 P01 | 3min | 2 tasks | 6 files |
 | Phase 01 P02 | 2min | 2 tasks | 3 files |
 | Phase 01 P03 | 5min | 3 tasks | 5 files |
@@ -105,6 +106,6 @@ All decisions archived in PROJECT.md Key Decisions table.
 
 ## Session Continuity
 
-Last session: 2026-03-24T16:38:38.799Z
-Last activity: 2026-03-24 - Completed quick task 52
-Resume: Quick task 52 complete. Ready for next task or milestone.
+Last session: 2026-03-24T18:41:00Z
+Last activity: 2026-03-24 - Completed quick task 53
+Resume: Quick task 53 complete. Ready for next task or milestone.
