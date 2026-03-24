@@ -107,5 +107,5 @@ All decisions archived in PROJECT.md Key Decisions table.
 ## Session Continuity
 
 Last session: 2026-03-24T18:41:00Z
-Last activity: 2026-03-24 - Completed quick task 53
+Last activity: 2026-03-24 - Completed quick task 53: fix broken terms and privacy page links on homepage
 Resume: Quick task 53 complete. Ready for next task or milestone.
