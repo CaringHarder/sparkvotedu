@@ -6,6 +6,7 @@ import { GripVertical, X, Plus } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { OptionImageUpload } from '@/components/poll/option-image-upload'
+import { PollCSVUpload } from '@/components/poll/poll-csv-upload'
 
 export interface OptionItem {
   id: string
@@ -69,6 +70,18 @@ export function OptionList({
     [options, onChange]
   )
 
+  const handleCSVImport = useCallback(
+    (parsed: Array<{ text: string; imageUrl?: string }>) => {
+      const newOptions: OptionItem[] = parsed.map((p) => ({
+        id: nanoid(),
+        text: p.text,
+        imageUrl: p.imageUrl,
+      }))
+      onChange(newOptions)
+    },
+    [onChange]
+  )
+
   // --- Drag-and-drop (HTML5 native, same as entrant-list) ---
   const handleDragStart = useCallback(
     (e: React.DragEvent, index: number) => {
@@ -126,6 +139,13 @@ export function OptionList({
           <Plus className="mr-1 h-4 w-4" />
           Add Option
         </Button>
+        {!disabled && (
+          <PollCSVUpload
+            onImportComplete={handleCSVImport}
+            maxOptions={maxOptions}
+            pollId={pollId}
+          />
+        )}
       </div>
     )
   }
@@ -202,22 +222,29 @@ export function OptionList({
 
       {/* Add option button */}
       {!disabled && (
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          onClick={addOption}
-          disabled={options.length >= maxOptions}
-          className="w-full"
-        >
-          <Plus className="mr-1 h-4 w-4" />
-          Add Option
-          {maxOptions < 32 && (
-            <span className="ml-1 text-muted-foreground">
-              ({options.length}/{maxOptions})
-            </span>
-          )}
-        </Button>
+        <>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={addOption}
+            disabled={options.length >= maxOptions}
+            className="w-full"
+          >
+            <Plus className="mr-1 h-4 w-4" />
+            Add Option
+            {maxOptions < 32 && (
+              <span className="ml-1 text-muted-foreground">
+                ({options.length}/{maxOptions})
+              </span>
+            )}
+          </Button>
+          <PollCSVUpload
+            onImportComplete={handleCSVImport}
+            maxOptions={maxOptions}
+            pollId={pollId}
+          />
+        </>
       )}
     </div>
   )
