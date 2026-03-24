@@ -210,12 +210,13 @@ export function BracketForm() {
   )
 
   const handleEntrantsFromCSV = useCallback(
-    (parsed: Array<{ name: string; seed: number }>) => {
+    (parsed: Array<{ name: string; seed: number; logoUrl?: string }>) => {
       if (!size) return
       const newEntrants: FormEntrant[] = parsed.slice(0, size).map((p, i) => ({
         id: nanoid(),
         name: p.name,
         seedPosition: i + 1,
+        logoUrl: p.logoUrl || undefined,
       }))
       setEntrants(newEntrants)
     },
@@ -778,6 +779,7 @@ export function BracketForm() {
                 <CSVUpload
                   onEntrantsParsed={handleEntrantsFromCSV}
                   maxEntrants={size}
+                  bracketId={null}
                 />
               )}
 
