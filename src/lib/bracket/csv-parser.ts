@@ -3,6 +3,7 @@ import Papa from 'papaparse'
 export interface ParsedEntrant {
   name: string
   seed: number
+  logoUrl?: string
 }
 
 /**
@@ -21,6 +22,7 @@ export function parseEntrantCSV(file: File): Promise<ParsedEntrant[]> {
           .map((row, index) => ({
             name: (row['name'] || row['entrant'] || row['team'] || Object.values(row)[0] || '').trim(),
             seed: index + 1,
+            logoUrl: (row['image'] || row['logo'] || row['logourl'] || row['photo'] || '').trim() || undefined,
           }))
           .filter((e) => e.name.length > 0)
         resolve(entrants)
