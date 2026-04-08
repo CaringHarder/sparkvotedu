@@ -55,7 +55,7 @@ export async function GET(request: Request) {
   })
 
   // Fetch ESPN games for comparison
-  let espnGames: Record<number, unknown> = {}
+  let espnGames: Record<string, unknown> = {}
   try {
     const provider = getProvider()
     const seasonMatch = bracket.name.match(/\b(20\d{2})\b/)
