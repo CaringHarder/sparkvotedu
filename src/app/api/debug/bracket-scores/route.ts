@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { getProvider } from '@/lib/sports/factory'
+import { getProvider } from '@/lib/sports/provider'
 
 /**
  * Temporary diagnostic endpoint to inspect Final Four matchup data.
