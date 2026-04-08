@@ -319,7 +319,7 @@ export async function assignPollToSessionDAL(
  * New poll is always draft status with " (Copy)" appended to question.
  * Verifies teacher ownership of the source poll.
  */
-export async function duplicatePollDAL(pollId: string, teacherId: string) {
+export async function duplicatePollDAL(pollId: string, teacherId: string, targetSessionId?: string) {
   const sourcePoll = await prisma.poll.findFirst({
     where: { id: pollId, teacherId },
     include: { options: { orderBy: { position: 'asc' } } },
@@ -340,6 +340,7 @@ export async function duplicatePollDAL(pollId: string, teacherId: string) {
         rankingDepth: sourcePoll.rankingDepth,
         status: 'draft',
         teacherId,
+        sessionId: targetSessionId ?? null,
       },
     })
 

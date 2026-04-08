@@ -375,6 +375,7 @@ export async function assignPollToSession(input: unknown) {
 // Schema for duplicating a poll
 const duplicatePollInputSchema = z.object({
   pollId: z.string().uuid(),
+  targetSessionId: z.string().uuid().optional(),
 })
 
 /**
@@ -393,7 +394,7 @@ export async function duplicatePoll(input: unknown) {
   }
 
   try {
-    const result = await duplicatePollDAL(parsed.data.pollId, teacher.id)
+    const result = await duplicatePollDAL(parsed.data.pollId, teacher.id, parsed.data.targetSessionId)
     if (!result) {
       return { error: 'Poll not found' }
     }

@@ -830,13 +830,33 @@ export async function renameBracketDAL(
 }
 
 /**
+ * Get all brackets for a specific session.
+ * Returns brackets with entrant counts, ordered by most recently updated first.
+ * Includes draft, active, and completed brackets (excludes archived).
+ */
+export async function getBracketsBySessionDAL(sessionId: string) {
+  return prisma.bracket.findMany({
+    where: {
+      sessionId,
+      status: { not: 'archived' },
+    },
+    orderBy: { updatedAt: 'desc' },
+    include: {
+      _count: { select: { entrants: true } },
+      session: { select: { code: true, name: true } },
+    },
+  })
+}
+
+/**
  * Duplicate a bracket with its entrants (not matchups, votes, or predictions).
  * New bracket is always draft status with " (Copy)" appended to name.
  * Ownership enforced via teacherId filter.
  */
 export async function duplicateBracketDAL(
   bracketId: string,
-  teacherId: string
+  teacherId: string,
+  targetSessionId?: string
 ) {
   const source = await prisma.bracket.findFirst({
     where: { id: bracketId, teacherId },
@@ -860,7 +880,7 @@ export async function duplicateBracketDAL(
         maxEntrants: source.maxEntrants,
         status: 'draft',
         teacherId,
-        sessionId: null,
+        sessionId: targetSessionId ?? null,
         viewingMode: source.viewingMode,
         showVoteCounts: source.showVoteCounts,
         showSeedNumbers: source.showSeedNumbers,
