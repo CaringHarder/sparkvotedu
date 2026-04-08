@@ -768,13 +768,8 @@ export async function createSportsBracketDAL(
     // because winners are placed by bracket position. Re-map scores so homeScore
     // (displayed next to entrant1) actually reflects entrant1's team score.
     //
-    // Build reverse map: entrant UUID -> external team ID
-    const externalIdByEntrant = new Map<string, number>()
-    for (const [extId, entrantId] of entrantByExternalId) {
-      externalIdByEntrant.set(entrantId, extId)
-    }
-
-    // Build game lookup for quick access
+    // Primary strategy: use winner to align scores (most reliable).
+    // Fallback: use entrant-to-team mapping for undecided games.
     const gameByExtId = new Map<number, SportsGame>()
     for (const g of allGames) gameByExtId.set(g.externalId, g)
 
@@ -789,24 +784,62 @@ export async function createSportsBracketDAL(
         externalGameId: true,
         entrant1Id: true,
         entrant2Id: true,
+        winnerId: true,
         homeScore: true,
         awayScore: true,
       },
     })
+
+    // Build reverse map for fallback: entrant UUID -> external team ID
+    const externalIdByEntrant = new Map<string, number>()
+    for (const [extId, entrantId] of entrantByExternalId) {
+      externalIdByEntrant.set(entrantId, extId)
+    }
 
     for (const m of allMatchupsForScoreAlign) {
       if (m.externalGameId === null) continue
       const g = gameByExtId.get(m.externalGameId)
       if (!g) continue
 
-      const e1ExtId = m.entrant1Id ? externalIdByEntrant.get(m.entrant1Id) : undefined
-      const espnHomeId = g.homeTeam?.externalId
+      // Determine ESPN winner's score vs loser's score
+      let espnWinnerScore: number | null = null
+      let espnLoserScore: number | null = null
+      if (g.winnerId != null) {
+        if (g.homeTeam?.externalId === g.winnerId) {
+          espnWinnerScore = g.homeScore
+          espnLoserScore = g.awayScore
+        } else if (g.awayTeam?.externalId === g.winnerId) {
+          espnWinnerScore = g.awayScore
+          espnLoserScore = g.homeScore
+        }
+      }
 
-      if (e1ExtId !== undefined && espnHomeId !== undefined && e1ExtId !== espnHomeId) {
-        // entrant1 is NOT ESPN home team — swap scores so they align with entrant slots
+      let correctHomeScore = m.homeScore
+      let correctAwayScore = m.awayScore
+
+      if (m.winnerId && espnWinnerScore != null) {
+        // Decided game: assign winner's score to the winning entrant's slot
+        if (m.entrant1Id === m.winnerId) {
+          correctHomeScore = espnWinnerScore
+          correctAwayScore = espnLoserScore
+        } else {
+          correctHomeScore = espnLoserScore
+          correctAwayScore = espnWinnerScore
+        }
+      } else {
+        // Undecided: use entrant-to-team mapping
+        const e1ExtId = m.entrant1Id ? externalIdByEntrant.get(m.entrant1Id) : undefined
+        const espnHomeId = g.homeTeam?.externalId
+        if (e1ExtId !== undefined && espnHomeId !== undefined && e1ExtId !== espnHomeId) {
+          correctHomeScore = m.awayScore
+          correctAwayScore = m.homeScore
+        }
+      }
+
+      if (correctHomeScore !== m.homeScore || correctAwayScore !== m.awayScore) {
         await tx.matchup.update({
           where: { id: m.id },
-          data: { homeScore: m.awayScore, awayScore: m.homeScore },
+          data: { homeScore: correctHomeScore, awayScore: correctAwayScore },
         })
       }
     }
@@ -933,35 +966,60 @@ export async function syncBracketResults(bracketId: string, games: SportsGame[])
     // Map scores to entrant slots (entrant1 = top, entrant2 = bottom in display).
     // ESPN home/away does NOT always correspond to entrant1/entrant2 — especially
     // in later rounds where entrants are placed by bracket position, not ESPN designation.
-    // We resolve which entrant is the ESPN home team and assign scores accordingly.
-    const entrant1ExtId = matchup.entrant1Id ? externalTeamIdByEntrant.get(matchup.entrant1Id) : undefined
-    const entrant2ExtId = matchup.entrant2Id ? externalTeamIdByEntrant.get(matchup.entrant2Id) : undefined
-    const espnHomeId = game.homeTeam?.externalId
-    const espnAwayId = game.awayTeam?.externalId
-
+    //
+    // Primary strategy: use the WINNER to align scores. For decided games we know
+    // which entrant won (matchup.winnerId) and which ESPN team won (game.winnerId).
+    // We find the winner's score from ESPN and assign it to the correct entrant slot.
+    //
+    // Fallback: for undecided games, use entrant-to-team ID mapping.
     let entrant1Score: number | null = null
     let entrant2Score: number | null = null
 
-    if (entrant1ExtId !== undefined && entrant1ExtId === espnHomeId) {
-      // entrant1 is ESPN home team — scores align naturally
-      entrant1Score = game.homeScore
-      entrant2Score = game.awayScore
-    } else if (entrant1ExtId !== undefined && entrant1ExtId === espnAwayId) {
-      // entrant1 is ESPN away team — swap scores
-      entrant1Score = game.awayScore
-      entrant2Score = game.homeScore
-    } else if (entrant2ExtId !== undefined && entrant2ExtId === espnHomeId) {
-      // entrant2 is ESPN home team — swap scores
-      entrant1Score = game.awayScore
-      entrant2Score = game.homeScore
-    } else if (entrant2ExtId !== undefined && entrant2ExtId === espnAwayId) {
-      // entrant2 is ESPN away team — scores align naturally
-      entrant1Score = game.homeScore
-      entrant2Score = game.awayScore
+    // Determine ESPN winner's score vs loser's score
+    let espnWinnerScore: number | null = null
+    let espnLoserScore: number | null = null
+    if (game.winnerId != null) {
+      if (game.homeTeam?.externalId === game.winnerId) {
+        espnWinnerScore = game.homeScore
+        espnLoserScore = game.awayScore
+      } else if (game.awayTeam?.externalId === game.winnerId) {
+        espnWinnerScore = game.awayScore
+        espnLoserScore = game.homeScore
+      }
+    }
+
+    if (matchup.winnerId && espnWinnerScore != null) {
+      // Decided game: assign winner's score to the winning entrant's slot
+      if (matchup.entrant1Id === matchup.winnerId) {
+        entrant1Score = espnWinnerScore
+        entrant2Score = espnLoserScore
+      } else {
+        entrant1Score = espnLoserScore
+        entrant2Score = espnWinnerScore
+      }
     } else {
-      // Fallback: no entrant-to-team mapping found, use raw ESPN order
-      entrant1Score = game.homeScore
-      entrant2Score = game.awayScore
+      // Undecided game: fall back to entrant-to-team ID mapping
+      const entrant1ExtId = matchup.entrant1Id ? externalTeamIdByEntrant.get(matchup.entrant1Id) : undefined
+      const entrant2ExtId = matchup.entrant2Id ? externalTeamIdByEntrant.get(matchup.entrant2Id) : undefined
+      const espnHomeId = game.homeTeam?.externalId
+      const espnAwayId = game.awayTeam?.externalId
+
+      if (entrant1ExtId !== undefined && entrant1ExtId === espnHomeId) {
+        entrant1Score = game.homeScore
+        entrant2Score = game.awayScore
+      } else if (entrant1ExtId !== undefined && entrant1ExtId === espnAwayId) {
+        entrant1Score = game.awayScore
+        entrant2Score = game.homeScore
+      } else if (entrant2ExtId !== undefined && entrant2ExtId === espnHomeId) {
+        entrant1Score = game.awayScore
+        entrant2Score = game.homeScore
+      } else if (entrant2ExtId !== undefined && entrant2ExtId === espnAwayId) {
+        entrant1Score = game.homeScore
+        entrant2Score = game.awayScore
+      } else {
+        entrant1Score = game.homeScore
+        entrant2Score = game.awayScore
+      }
     }
 
     // Update scores and game status
