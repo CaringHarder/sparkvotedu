@@ -375,76 +375,6 @@ export async function repairBracketAdvancement(
     })
   }
 
-  // After entrant re-propagation, externalGameIds may no longer match the
-  // entrants in each matchup (entrants moved but game IDs stayed). Realign
-  // by matching ESPN game teams to actual matchup entrants.
-  const entrantsForRealign = await prisma.bracketEntrant.findMany({
-    where: { bracketId },
-    select: { id: true, externalTeamId: true },
-  })
-  const extTeamByEntrant = new Map<string, number>()
-  for (const e of entrantsForRealign) {
-    if (e.externalTeamId !== null) extTeamByEntrant.set(e.id, e.externalTeamId)
-  }
-
-  // Find matchups that have externalGameId but whose entrants don't match the game's teams
-  const allMatchupsForRealign = await prisma.matchup.findMany({
-    where: { bracketId, externalGameId: { not: null }, entrant1Id: { not: null }, entrant2Id: { not: null } },
-    select: { id: true, round: true, externalGameId: true, entrant1Id: true, entrant2Id: true },
-  })
-
-  // Group matchups by round (swaps only make sense within the same round)
-  const matchupsByRound = new Map<number, typeof allMatchupsForRealign>()
-  for (const m of allMatchupsForRealign) {
-    if (!matchupsByRound.has(m.round)) matchupsByRound.set(m.round, [])
-    matchupsByRound.get(m.round)!.push(m)
-  }
-
-  for (const [, roundMatchups] of matchupsByRound) {
-    // Find misaligned matchups in this round
-    const misaligned: Array<{ matchup: typeof roundMatchups[0]; entrantExtIds: Set<number> }> = []
-
-    for (const m of roundMatchups) {
-      if (m.externalGameId === null || !m.entrant1Id || !m.entrant2Id) continue
-      const game = gameByExternalId.get(m.externalGameId)
-      if (!game) continue
-
-      const e1Ext = extTeamByEntrant.get(m.entrant1Id)
-      const e2Ext = extTeamByEntrant.get(m.entrant2Id)
-      if (e1Ext === undefined || e2Ext === undefined) continue
-
-      const gameTeamIds = new Set([game.homeTeam?.externalId, game.awayTeam?.externalId])
-      if (!gameTeamIds.has(e1Ext) || !gameTeamIds.has(e2Ext)) {
-        misaligned.push({ matchup: m, entrantExtIds: new Set([e1Ext, e2Ext]) })
-      }
-    }
-
-    if (misaligned.length < 2) continue
-
-    // Try to find correct game for each misaligned matchup from the pool of games
-    // assigned to other misaligned matchups in the same round
-    const availableGameIds = misaligned.map((m) => m.matchup.externalGameId!)
-    for (const { matchup: m, entrantExtIds } of misaligned) {
-      for (const gameId of availableGameIds) {
-        if (gameId === m.externalGameId) continue
-        const game = gameByExternalId.get(gameId)
-        if (!game) continue
-
-        const homeExt = game.homeTeam?.externalId
-        const awayExt = game.awayTeam?.externalId
-        if (homeExt !== undefined && awayExt !== undefined &&
-            entrantExtIds.has(homeExt) && entrantExtIds.has(awayExt)) {
-          // This game matches this matchup's entrants — swap the externalGameId
-          await prisma.matchup.update({
-            where: { id: m.id },
-            data: { externalGameId: gameId },
-          })
-          console.log('[game-id-realign]', m.id, 'round', m.round, ':', m.externalGameId, '→', gameId)
-          break
-        }
-      }
-    }
-  }
 }
 
 /**
@@ -1024,6 +954,79 @@ export async function syncBracketResults(bracketId: string, games: SportsGame[])
       entrantByExternalTeamId.set(e.externalTeamId, e.id)
       externalTeamIdByEntrant.set(e.id, e.externalTeamId)
     }
+  }
+
+  // Realign externalGameIds: after repair re-propagation, entrants may have
+  // moved to different matchup slots but externalGameIds stayed, causing
+  // cross-wired games (e.g., UConn/ILL matchup has the ARIZ/MICH game ID).
+  // Fix by matching ESPN game teams to actual matchup entrants within each round.
+  const allMatchupsForRealign = await prisma.matchup.findMany({
+    where: { bracketId, externalGameId: { not: null }, entrant1Id: { not: null }, entrant2Id: { not: null } },
+    select: { id: true, round: true, externalGameId: true, entrant1Id: true, entrant2Id: true },
+  })
+
+  const matchupsByRound = new Map<number, typeof allMatchupsForRealign>()
+  for (const m of allMatchupsForRealign) {
+    if (!matchupsByRound.has(m.round)) matchupsByRound.set(m.round, [])
+    matchupsByRound.get(m.round)!.push(m)
+  }
+
+  let gameIdsRealigned = false
+  for (const [, roundMatchups] of matchupsByRound) {
+    const misaligned: Array<{ matchup: typeof roundMatchups[0]; entrantExtIds: Set<number> }> = []
+
+    for (const m of roundMatchups) {
+      if (m.externalGameId === null || !m.entrant1Id || !m.entrant2Id) continue
+      const game = gameByExternalId.get(m.externalGameId)
+      if (!game) continue
+
+      const e1Ext = externalTeamIdByEntrant.get(m.entrant1Id)
+      const e2Ext = externalTeamIdByEntrant.get(m.entrant2Id)
+      if (e1Ext === undefined || e2Ext === undefined) continue
+
+      const gameTeamIds = new Set([game.homeTeam?.externalId, game.awayTeam?.externalId])
+      if (!gameTeamIds.has(e1Ext) || !gameTeamIds.has(e2Ext)) {
+        misaligned.push({ matchup: m, entrantExtIds: new Set([e1Ext, e2Ext]) })
+      }
+    }
+
+    if (misaligned.length < 2) continue
+
+    const availableGameIds = misaligned.map((mi) => mi.matchup.externalGameId!)
+    for (const { matchup: m, entrantExtIds } of misaligned) {
+      for (const gameId of availableGameIds) {
+        if (gameId === m.externalGameId) continue
+        const game = gameByExternalId.get(gameId)
+        if (!game) continue
+
+        const homeExt = game.homeTeam?.externalId
+        const awayExt = game.awayTeam?.externalId
+        if (homeExt !== undefined && awayExt !== undefined &&
+            entrantExtIds.has(homeExt) && entrantExtIds.has(awayExt)) {
+          await prisma.matchup.update({
+            where: { id: m.id },
+            data: { externalGameId: gameId },
+          })
+          console.log('[game-id-realign]', m.id, 'round', m.round, ':', m.externalGameId, '→', gameId)
+          gameIdsRealigned = true
+          break
+        }
+      }
+    }
+  }
+
+  // If game IDs were realigned, re-fetch matchups so the main loop uses corrected data
+  if (gameIdsRealigned) {
+    const refreshed = await prisma.matchup.findMany({
+      where: { bracketId, externalGameId: { not: null } },
+      select: {
+        id: true, externalGameId: true, homeScore: true, awayScore: true,
+        gameStatus: true, winnerId: true, nextMatchupId: true, position: true,
+        entrant1Id: true, entrant2Id: true,
+      },
+    })
+    matchups.length = 0
+    matchups.push(...refreshed)
   }
 
   let updatedCount = 0
