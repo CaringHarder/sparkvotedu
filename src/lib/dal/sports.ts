@@ -1111,6 +1111,57 @@ export async function syncBracketResults(bracketId: string, games: SportsGame[])
     }
   }
 
+  // Score correction safety net: re-read ALL decided matchups and force-apply
+  // winner-based score alignment. This catches matchups missed by the main loop
+  // (e.g., externalGameId not matching, stale cache, etc.)
+  const correctionMatchups = await prisma.matchup.findMany({
+    where: {
+      bracketId,
+      winnerId: { not: null },
+      externalGameId: { not: null },
+      homeScore: { not: null },
+    },
+    select: {
+      id: true,
+      externalGameId: true,
+      entrant1Id: true,
+      entrant2Id: true,
+      winnerId: true,
+      homeScore: true,
+      awayScore: true,
+    },
+  })
+
+  for (const m of correctionMatchups) {
+    if (m.externalGameId === null || m.winnerId === null) continue
+    const game = gameByExternalId.get(m.externalGameId)
+    if (!game || game.winnerId == null) continue
+
+    // Determine ESPN winner/loser scores
+    let winScore: number | null = null
+    let loseScore: number | null = null
+    if (game.homeTeam?.externalId === game.winnerId) {
+      winScore = game.homeScore
+      loseScore = game.awayScore
+    } else if (game.awayTeam?.externalId === game.winnerId) {
+      winScore = game.awayScore
+      loseScore = game.homeScore
+    }
+    if (winScore == null) continue
+
+    // Determine correct scores for entrant slots
+    const correctHome = m.entrant1Id === m.winnerId ? winScore : loseScore
+    const correctAway = m.entrant1Id === m.winnerId ? loseScore : winScore
+
+    if (m.homeScore !== correctHome || m.awayScore !== correctAway) {
+      await prisma.matchup.update({
+        where: { id: m.id },
+        data: { homeScore: correctHome, awayScore: correctAway },
+      })
+      console.log('[score-correction]', m.id, 'fixed:', m.homeScore, '→', correctHome, '/', m.awayScore, '→', correctAway)
+    }
+  }
+
   // Update lastSyncAt on bracket
   if (updatedCount > 0) {
     await prisma.bracket.update({
