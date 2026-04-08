@@ -763,6 +763,54 @@ export async function createSportsBracketDAL(
       }
     }
 
+    // f. Align scores with entrant slots.
+    // After winner propagation, entrant1/entrant2 may differ from ESPN home/away
+    // because winners are placed by bracket position. Re-map scores so homeScore
+    // (displayed next to entrant1) actually reflects entrant1's team score.
+    //
+    // Build reverse map: entrant UUID -> external team ID
+    const externalIdByEntrant = new Map<string, number>()
+    for (const [extId, entrantId] of entrantByExternalId) {
+      externalIdByEntrant.set(entrantId, extId)
+    }
+
+    // Build game lookup for quick access
+    const gameByExtId = new Map<number, SportsGame>()
+    for (const g of allGames) gameByExtId.set(g.externalId, g)
+
+    const allMatchupsForScoreAlign = await tx.matchup.findMany({
+      where: {
+        bracketId: created.id,
+        externalGameId: { not: null },
+        homeScore: { not: null },
+      },
+      select: {
+        id: true,
+        externalGameId: true,
+        entrant1Id: true,
+        entrant2Id: true,
+        homeScore: true,
+        awayScore: true,
+      },
+    })
+
+    for (const m of allMatchupsForScoreAlign) {
+      if (m.externalGameId === null) continue
+      const g = gameByExtId.get(m.externalGameId)
+      if (!g) continue
+
+      const e1ExtId = m.entrant1Id ? externalIdByEntrant.get(m.entrant1Id) : undefined
+      const espnHomeId = g.homeTeam?.externalId
+
+      if (e1ExtId !== undefined && espnHomeId !== undefined && e1ExtId !== espnHomeId) {
+        // entrant1 is NOT ESPN home team — swap scores so they align with entrant slots
+        await tx.matchup.update({
+          where: { id: m.id },
+          data: { homeScore: m.awayScore, awayScore: m.homeScore },
+        })
+      }
+    }
+
     return created
   }, { timeout: 30000 })
 
@@ -854,6 +902,8 @@ export async function syncBracketResults(bracketId: string, games: SportsGame[])
       winnerId: true,
       nextMatchupId: true,
       position: true,
+      entrant1Id: true,
+      entrant2Id: true,
     },
   })
 
@@ -864,9 +914,11 @@ export async function syncBracketResults(bracketId: string, games: SportsGame[])
   })
 
   const entrantByExternalTeamId = new Map<number, string>()
+  const externalTeamIdByEntrant = new Map<string, number>()
   for (const e of entrants) {
     if (e.externalTeamId !== null) {
       entrantByExternalTeamId.set(e.externalTeamId, e.id)
+      externalTeamIdByEntrant.set(e.id, e.externalTeamId)
     }
   }
 
@@ -878,10 +930,45 @@ export async function syncBracketResults(bracketId: string, games: SportsGame[])
     const game = gameByExternalId.get(matchup.externalGameId)
     if (!game) continue
 
+    // Map scores to entrant slots (entrant1 = top, entrant2 = bottom in display).
+    // ESPN home/away does NOT always correspond to entrant1/entrant2 — especially
+    // in later rounds where entrants are placed by bracket position, not ESPN designation.
+    // We resolve which entrant is the ESPN home team and assign scores accordingly.
+    const entrant1ExtId = matchup.entrant1Id ? externalTeamIdByEntrant.get(matchup.entrant1Id) : undefined
+    const entrant2ExtId = matchup.entrant2Id ? externalTeamIdByEntrant.get(matchup.entrant2Id) : undefined
+    const espnHomeId = game.homeTeam?.externalId
+    const espnAwayId = game.awayTeam?.externalId
+
+    let entrant1Score: number | null = null
+    let entrant2Score: number | null = null
+
+    if (entrant1ExtId !== undefined && entrant1ExtId === espnHomeId) {
+      // entrant1 is ESPN home team — scores align naturally
+      entrant1Score = game.homeScore
+      entrant2Score = game.awayScore
+    } else if (entrant1ExtId !== undefined && entrant1ExtId === espnAwayId) {
+      // entrant1 is ESPN away team — swap scores
+      entrant1Score = game.awayScore
+      entrant2Score = game.homeScore
+    } else if (entrant2ExtId !== undefined && entrant2ExtId === espnHomeId) {
+      // entrant2 is ESPN home team — swap scores
+      entrant1Score = game.awayScore
+      entrant2Score = game.homeScore
+    } else if (entrant2ExtId !== undefined && entrant2ExtId === espnAwayId) {
+      // entrant2 is ESPN away team — scores align naturally
+      entrant1Score = game.homeScore
+      entrant2Score = game.awayScore
+    } else {
+      // Fallback: no entrant-to-team mapping found, use raw ESPN order
+      entrant1Score = game.homeScore
+      entrant2Score = game.awayScore
+    }
+
     // Update scores and game status
+    // homeScore/awayScore fields are used as entrant1Score/entrant2Score in display
     const updateData: Record<string, unknown> = {
-      homeScore: game.homeScore,
-      awayScore: game.awayScore,
+      homeScore: entrant1Score,
+      awayScore: entrant2Score,
       gameStatus: game.status,
     }
 
