@@ -5,6 +5,7 @@ status: draft
 shadcn_initialized: true
 preset: new-york
 created: 2026-04-08
+revised: 2026-04-08
 ---
 
 # Phase 4 — UI Design Contract
@@ -57,10 +58,11 @@ Exceptions: none
 
 | Role | Size | Weight | Line Height | Usage in this phase |
 |------|------|--------|-------------|---------------------|
-| Body | 14px (`text-sm`) | 400 (normal) | 1.5 (20px) | Card metadata, student roster rows, badge text |
-| Label | 14px (`text-sm`) | 500 (medium) | 1.4 (20px) | Tab trigger labels, sidebar nav items, dropdown labels |
+| Body | 14px (`text-sm`) | 400 (normal) | 1.5 (20px) | Card metadata, student roster rows, badge text, tab trigger labels, sidebar nav items, dropdown labels |
 | Heading | 20px (`text-xl`) | 600 (semibold) | 1.3 (26px) | Session name in workspace header, page titles |
-| Display | 30px (`text-3xl`) | 700 (bold) | 1.2 (36px) | Dashboard welcome message (existing) |
+| Display | 30px (`text-3xl`) | 600 (semibold) | 1.2 (36px) | Dashboard welcome message (existing) |
+
+Declared weights: 400 (normal), 600 (semibold). No other weights permitted in this phase.
 
 ### Card Title Typography (D-12 fix)
 
@@ -74,7 +76,7 @@ Card titles (`BracketCard`, `PollCard`) use:
 ### Join Code Typography (D-08)
 
 - Size: 28px (`text-2xl` with `tracking-widest`)
-- Weight: 700 (`font-bold`)
+- Weight: 600 (`font-semibold`) -- prominence comes from size, monospace, and letter-spacing, not weight
 - Font: Geist Mono (`font-mono`) for clarity of alphanumeric codes
 - Color: `text-foreground`
 
@@ -89,7 +91,7 @@ This phase does not introduce new colors. It uses the existing project palette d
 | Dominant (60%) | `--background` (oklch(1 0 0) light / oklch(0.145 0 0) dark) | Page background, main content area |
 | Secondary (30%) | `--card` / `--sidebar` | Session cards, sidebar navigation, tab content panels, dropdown popover |
 | Accent (10%) | `--brand-blue` (oklch(0.68 0.15 230)) | Active tab indicator, session status "active" badge, join code highlight, "Create Bracket"/"Create Poll" CTA buttons |
-| Destructive | `--destructive` (oklch(0.577 0.245 27.325)) | Delete actions in context menus, "End Session" confirmation |
+| Destructive | `--destructive` (oklch(0.577 0.245 27.325)) | Delete actions in context menus, "End Session" confirmation button |
 
 Accent reserved for:
 - Active tab underline/highlight in session workspace tabs
@@ -146,7 +148,7 @@ Desktop (>=1024px):
     Dashboard          [LayoutDashboard icon]
     Sessions           [Users icon]
     Archived           [Archive icon]
-    ─── separator ───
+    --- separator ---
     Analytics          [LineChart icon]
     Billing            [CreditCard icon]
     Profile            [User icon]
@@ -158,39 +160,41 @@ Mobile (<1024px):
 ### Session Workspace (D-07, D-08)
 
 ```
-┌─────────────────────────────────────────────────────┐
-│  Session Header                                      │
-│  ┌───────────────────────────────────────────────┐  │
-│  │ [EditableSessionName]          [Status Badge]  │  │
-│  │                                                │  │
-│  │ Join Code: A B C D        [Copy] [QR]         │  │
-│  │                                                │  │
-│  │ 24 students  ·  8 brackets  ·  3 polls        │  │
-│  └───────────────────────────────────────────────┘  │
-│                                                      │
-│  ┌──────────┬──────────┬──────────┐                 │
-│  │ Brackets │  Polls   │ Students │  <-- TabsList   │
-│  └──────────┴──────────┴──────────┘                 │
-│                                                      │
-│  Tab Content Area                                    │
-│  ┌───────────────────────────────────────────────┐  │
-│  │  [+ Create Bracket]  (right-aligned)           │  │
-│  │                                                │  │
-│  │  ┌─────────┐  ┌─────────┐  ┌─────────┐       │  │
-│  │  │ Card 1  │  │ Card 2  │  │ Card 3  │       │  │
-│  │  └─────────┘  └─────────┘  └─────────┘       │  │
-│  │                                                │  │
-│  └───────────────────────────────────────────────┘  │
-└─────────────────────────────────────────────────────┘
++-----------------------------------------------------+
+|  Session Header                                      |
+|  +-----------------------------------------------+  |
+|  | [EditableSessionName]          [Status Badge]  |  |
+|  |                                                |  |
+|  | Join Code: A B C D        [Copy] [QR]         |  |
+|  |                                                |  |
+|  | 24 students  .  8 brackets  .  3 polls        |  |
+|  +-----------------------------------------------+  |
+|                                                      |
+|  +----------+----------+----------+                 |
+|  | Brackets |  Polls   | Students |  <-- TabsList   |
+|  +----------+----------+----------+                 |
+|                                                      |
+|  Tab Content Area                                    |
+|  +-----------------------------------------------+  |
+|  |  [+ Create Bracket]  (right-aligned)           |  |
+|  |                                                |  |
+|  |  +---------+  +---------+  +---------+       |  |
+|  |  | Card 1  |  | Card 2  |  | Card 3  |       |  |
+|  |  +---------+  +---------+  +---------+       |  |
+|  |                                                |  |
+|  +-----------------------------------------------+  |
++-----------------------------------------------------+
 ```
 
 - Session header: `py-6 px-0` (uses page content padding)
 - Session name: `text-xl font-semibold` editable inline
-- Join code: `text-2xl font-bold font-mono tracking-widest` with copy button
+- Join code: `text-2xl font-semibold font-mono tracking-widest` with copy button
+- Copy button: icon-only `Button` variant="ghost" size="icon", `aria-label="Copy join code"`
+- QR button: icon-only `Button` variant="ghost" size="icon", `aria-label="Show QR code"`
 - Status badge: existing `Badge` component, variant based on session status
 - Stats row: `text-sm text-muted-foreground`, items separated by `·` (middle dot)
 - Tabs: shadcn `Tabs` component, full width
-- Tab triggers: `text-sm font-medium` with count in parentheses, e.g. "Brackets (8)"
+- Tab triggers: `text-sm` with count in parentheses, e.g. "Brackets (8)"
 - Tab content: `mt-6` spacing from tab bar
 - Card grid: `grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4`
 - Create CTA: `Button` variant="outline" with Plus icon, right-aligned above card grid
@@ -210,7 +214,7 @@ Mobile (<1024px):
 - Title: "Move to session" or "Duplicate to session" (passed as prop)
 - List items: session name + status badge + student count
 - Current session: shown but disabled/grayed with "(current)" label
-- Confirm button: "Move" or "Duplicate" (matches action)
+- Confirm button: "Move Activity" or "Duplicate Activity" (matches action)
 - Loading state: button shows spinner and disables during server action
 
 ---
@@ -250,6 +254,14 @@ Mobile (<1024px):
 | Select session | Navigates to `/sessions/{id}` |
 | No active sessions | Dropdown not rendered; "Create Session" CTA is prominent |
 
+### End Session Confirmation
+
+| Interaction | Behavior |
+|-------------|----------|
+| Click "End Session" | Opens confirmation dialog before ending the session |
+| Confirm | Calls end session action, redirects to sessions list |
+| Cancel | Closes dialog, no action taken |
+
 ### Orphan Migration (D-13)
 
 | Scenario | Behavior |
@@ -277,9 +289,13 @@ Mobile (<1024px):
 | Empty state: Sessions list body | "Create a session to organize your classroom activities." |
 | Session picker dialog: Move title | "Move to session" |
 | Session picker dialog: Duplicate title | "Duplicate to session" |
-| Session picker dialog: confirm (move) | "Move" |
-| Session picker dialog: confirm (duplicate) | "Duplicate" |
+| Session picker dialog: confirm (move) | "Move Activity" |
+| Session picker dialog: confirm (duplicate) | "Duplicate Activity" |
 | Session picker dialog: current session label | "(current)" |
+| End Session dialog: heading | "End this session?" |
+| End Session dialog: body | "Students will no longer be able to join or participate. You can still view results in your archived sessions." |
+| End Session dialog: confirm button | "End Session" |
+| End Session dialog: cancel button | "Cancel" |
 | Destructive: Delete bracket/poll | "Delete [name]": "This will permanently delete this activity and all its votes. This cannot be undone." |
 | Destructive: Archive bracket/poll | "Archive [name]": "This will move the activity to your archived sessions. You can restore it later." |
 | Error: Move failed | "Failed to move activity. Please try again." |
@@ -305,6 +321,7 @@ No third-party registries declared.
 - Select dropdown: shadcn Select provides keyboard navigation, ARIA combobox pattern
 - Card titles with `line-clamp-2`: full title available via `title` attribute on the `<h3>` for tooltip/screen reader access
 - Context menu items: existing Radix DropdownMenu provides keyboard navigation and ARIA
+- Icon-only buttons: Copy join code button must have `aria-label="Copy join code"`. QR code button must have `aria-label="Show QR code"`. Both use `Button` variant="ghost" size="icon".
 
 ---
 
