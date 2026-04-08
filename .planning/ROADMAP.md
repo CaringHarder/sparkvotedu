@@ -135,3 +135,16 @@ Plans:
 Plans:
 - [x] 03-01-PLAN.md -- Poll CSV parser, bracket parser logoUrl extension, shared image download+reupload utility
 - [x] 03-02-PLAN.md -- PollCSVUpload component, OptionList integration, bracket CSVUpload image support, bracket-form wiring
+
+### Phase 4: Restructure teacher dashboard navigation to session-first workflow
+
+**Goal:** Restructure the teacher dashboard so sessions are the primary navigation and organizational unit. Teachers pick a session first, then manage its brackets and polls from within that session's tabbed workspace. Remove Activities sidebar section, migrate orphan activities, fix card title truncation, add Move/Duplicate to session context menu actions, and replace dashboard session cards with a dropdown selector.
+**Requirements**: D-01 through D-18
+**Depends on:** Phase 3
+**Plans:** 4 plans
+
+Plans:
+- [ ] 04-01-PLAN.md -- Sidebar simplification, card title truncation fix, route redirects
+- [ ] 04-02-PLAN.md -- DAL functions (getBracketsBySession, getSessionWithActivities, migrateOrphanActivities), duplicate-to-session action extensions
+- [ ] 04-03-PLAN.md -- Session workspace rebuild with tabbed interface (Brackets | Polls | Students)
+- [ ] 04-04-PLAN.md -- Context menu Move/Duplicate to session, dashboard dropdown selector, orphan migration trigger, visual verification
