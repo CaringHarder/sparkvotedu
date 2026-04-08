@@ -25,6 +25,7 @@ interface PollCardData {
 interface PollCardProps {
   poll: PollCardData
   onRemoved?: (type: 'delete' | 'archive') => void
+  sessions?: Array<{ id: string; name: string | null; status: string; code: string; _count: { participants: number } }>
 }
 
 const pollTypeConfig: Record<string, { label: string; className: string }> = {
@@ -32,7 +33,7 @@ const pollTypeConfig: Record<string, { label: string; className: string }> = {
   ranked: { label: 'Ranked', className: 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400' },
 }
 
-export function PollCard({ poll, onRemoved }: PollCardProps) {
+export function PollCard({ poll, onRemoved, sessions }: PollCardProps) {
   const router = useRouter()
   const [isRenaming, setIsRenaming] = useState(false)
   const [renameValue, setRenameValue] = useState(poll.question)
@@ -99,6 +100,9 @@ export function PollCard({ poll, onRemoved }: PollCardProps) {
             onRemoved?.('delete')
             router.refresh()
           }}
+          sessions={sessions}
+          currentSessionId={poll.sessionId}
+          onMoved={() => router.refresh()}
         />
       </div>
 

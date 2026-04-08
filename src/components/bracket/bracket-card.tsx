@@ -29,6 +29,7 @@ interface BracketCardProps {
     sportGender?: string | null
   }
   onRemoved?: (type: 'delete' | 'archive') => void
+  sessions?: Array<{ id: string; name: string | null; status: string; code: string; _count: { participants: number } }>
 }
 
 const BRACKET_TYPE_LABELS: Record<string, string> = {
@@ -47,7 +48,7 @@ function formatDate(dateStr: string): string {
   })
 }
 
-export function BracketCard({ bracket, onRemoved }: BracketCardProps) {
+export function BracketCard({ bracket, onRemoved, sessions }: BracketCardProps) {
   const router = useRouter()
   const [isRenaming, setIsRenaming] = useState(false)
   const [renameValue, setRenameValue] = useState(bracket.name)
@@ -136,6 +137,9 @@ export function BracketCard({ bracket, onRemoved }: BracketCardProps) {
             onRemoved?.('delete')
             router.refresh()
           }}
+          sessions={sessions}
+          currentSessionId={bracket.sessionId}
+          onMoved={() => router.refresh()}
         />
       </div>
 

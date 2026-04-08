@@ -1,6 +1,6 @@
 import { redirect } from 'next/navigation'
 import { getAuthenticatedTeacher } from '@/lib/dal/auth'
-import { getSessionWithActivities } from '@/lib/dal/class-session'
+import { getSessionWithActivities, getTeacherSessions } from '@/lib/dal/class-session'
 import { SessionWorkspace } from '@/components/teacher/session-workspace'
 
 interface SessionDetailPageProps {
@@ -19,10 +19,21 @@ export default async function SessionDetailPage({
     redirect('/login')
   }
 
-  const session = await getSessionWithActivities(sessionId, teacher.id)
+  const [session, allSessions] = await Promise.all([
+    getSessionWithActivities(sessionId, teacher.id),
+    getTeacherSessions(teacher.id),
+  ])
   if (!session) {
     redirect('/sessions')
   }
+
+  const serializedSessions = allSessions.map(s => ({
+    id: s.id,
+    name: s.name,
+    status: s.status,
+    code: s.code,
+    _count: { participants: s._count.participants },
+  }))
 
   // D-09: Default tab = tab with most recently updated activity
   let defaultTab = 'brackets'
@@ -91,6 +102,7 @@ export default async function SessionDetailPage({
     <SessionWorkspace
       session={serializedSession}
       defaultTab={activeTab}
+      sessions={serializedSessions}
     />
   )
 }

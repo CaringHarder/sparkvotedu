@@ -58,6 +58,14 @@ interface PollData {
   sessionName?: string | null
 }
 
+interface SessionOptionData {
+  id: string
+  name: string | null
+  status: string
+  code: string
+  _count: { participants: number }
+}
+
 interface SessionWorkspaceProps {
   session: {
     id: string
@@ -72,9 +80,10 @@ interface SessionWorkspaceProps {
     _count: { participants: number; brackets: number; polls: number }
   }
   defaultTab: string
+  sessions?: SessionOptionData[]
 }
 
-export function SessionWorkspace({ session, defaultTab }: SessionWorkspaceProps) {
+export function SessionWorkspace({ session, defaultTab, sessions }: SessionWorkspaceProps) {
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
   const isActive = session.status === 'active'
@@ -213,6 +222,7 @@ export function SessionWorkspace({ session, defaultTab }: SessionWorkspaceProps)
                   key={bracket.id}
                   bracket={bracket}
                   onRemoved={() => router.refresh()}
+                  sessions={sessions}
                 />
               ))}
             </div>
@@ -244,6 +254,7 @@ export function SessionWorkspace({ session, defaultTab }: SessionWorkspaceProps)
                   key={poll.id}
                   poll={poll}
                   onRemoved={() => router.refresh()}
+                  sessions={sessions}
                 />
               ))}
             </div>

@@ -11,6 +11,8 @@ import {
   Archive,
   Trash2,
   RotateCcw,
+  FolderInput,
+  CopyPlus,
 } from 'lucide-react'
 import {
   DropdownMenu,
@@ -20,8 +22,9 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { DeleteConfirmDialog } from '@/components/shared/delete-confirm-dialog'
-import { renameBracket, duplicateBracket, archiveBracket, deleteBracket } from '@/actions/bracket'
-import { renamePoll, duplicatePoll, archivePoll, deletePoll, reopenPoll } from '@/actions/poll'
+import { SessionPickerDialog } from '@/components/teacher/session-picker-dialog'
+import { renameBracket, duplicateBracket, archiveBracket, deleteBracket, assignBracketToSession } from '@/actions/bracket'
+import { renamePoll, duplicatePoll, archivePoll, deletePoll, reopenPoll, assignPollToSession } from '@/actions/poll'
 import { reopenBracket } from '@/actions/bracket-advance'
 
 interface CardContextMenuProps {
@@ -36,6 +39,9 @@ interface CardContextMenuProps {
   onArchived?: () => void
   onDeleted?: () => void
   onReopened?: () => void
+  sessions?: Array<{ id: string; name: string | null; status: string; code: string; _count: { participants: number } }>
+  currentSessionId?: string | null
+  onMoved?: () => void
 }
 
 export function CardContextMenu({
@@ -50,11 +56,16 @@ export function CardContextMenu({
   onArchived,
   onDeleted,
   onReopened,
+  sessions,
+  currentSessionId,
+  onMoved,
 }: CardContextMenuProps) {
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
   const [copied, setCopied] = useState(false)
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
+  const [showMoveDialog, setShowMoveDialog] = useState(false)
+  const [showDuplicateDialog, setShowDuplicateDialog] = useState(false)
 
   function handleEdit(e: Event) {
     e.stopPropagation()
@@ -142,6 +153,40 @@ export function CardContextMenu({
     })
   }
 
+  async function handleMoveToSession(targetSessionId: string) {
+    if (itemType === 'bracket') {
+      const result = await assignBracketToSession({ bracketId: itemId, sessionId: targetSessionId })
+      if (!('error' in result)) {
+        setShowMoveDialog(false)
+        onMoved?.()
+        router.refresh()
+      }
+    } else {
+      const result = await assignPollToSession({ pollId: itemId, sessionId: targetSessionId })
+      if (!('error' in result)) {
+        setShowMoveDialog(false)
+        onMoved?.()
+        router.refresh()
+      }
+    }
+  }
+
+  async function handleDuplicateToSession(targetSessionId: string) {
+    if (itemType === 'bracket') {
+      const result = await duplicateBracket({ bracketId: itemId, targetSessionId })
+      if ('bracket' in result && result.bracket) {
+        setShowDuplicateDialog(false)
+        router.refresh()
+      }
+    } else {
+      const result = await duplicatePoll({ pollId: itemId, targetSessionId })
+      if ('poll' in result && result.poll) {
+        setShowDuplicateDialog(false)
+        router.refresh()
+      }
+    }
+  }
+
   const isLive = status === 'active'
   const isArchived = status === 'archived'
 
@@ -198,6 +243,32 @@ export function CardContextMenu({
             Duplicate
           </DropdownMenuItem>
 
+          {sessions && sessions.length > 0 && (
+            <>
+              <DropdownMenuItem
+                disabled={isPending}
+                onSelect={(e) => {
+                  e.stopPropagation()
+                  setShowMoveDialog(true)
+                }}
+              >
+                <FolderInput className="h-4 w-4" />
+                Move to session...
+              </DropdownMenuItem>
+
+              <DropdownMenuItem
+                disabled={isPending}
+                onSelect={(e) => {
+                  e.stopPropagation()
+                  setShowDuplicateDialog(true)
+                }}
+              >
+                <CopyPlus className="h-4 w-4" />
+                Duplicate to session...
+              </DropdownMenuItem>
+            </>
+          )}
+
           {(status === 'completed' || status === 'closed') && !isArchived && (
             <DropdownMenuItem
               disabled={isPending}
@@ -244,6 +315,31 @@ export function CardContextMenu({
         onConfirm={handleDeleteConfirm}
         isPending={isPending}
       />
+
+      {sessions && (
+        <>
+          <SessionPickerDialog
+            open={showMoveDialog}
+            onOpenChange={setShowMoveDialog}
+            sessions={sessions}
+            currentSessionId={currentSessionId ?? null}
+            onConfirm={handleMoveToSession}
+            title="Move to session"
+            confirmLabel="Move Activity"
+            isPending={isPending}
+          />
+          <SessionPickerDialog
+            open={showDuplicateDialog}
+            onOpenChange={setShowDuplicateDialog}
+            sessions={sessions}
+            currentSessionId={currentSessionId ?? null}
+            onConfirm={handleDuplicateToSession}
+            title="Duplicate to session"
+            confirmLabel="Duplicate Activity"
+            isPending={isPending}
+          />
+        </>
+      )}
     </>
   )
 }
