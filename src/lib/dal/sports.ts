@@ -963,12 +963,38 @@ export async function syncBracketResults(bracketId: string, games: SportsGame[])
     const game = gameByExternalId.get(matchup.externalGameId)
     if (!game) continue
 
-    // Map scores to entrant slots (entrant1 = top, entrant2 = bottom in display).
+    // Step 1: Resolve winnerId FIRST (before score alignment needs it).
+    // This ensures the winner-based score alignment has winnerId available.
+    const updateData: Record<string, unknown> = {
+      gameStatus: game.status,
+    }
+
+    let effectiveWinnerId = matchup.winnerId
+
+    if (game.isClosed && game.winnerId && !matchup.winnerId) {
+      const winnerEntrantId = entrantByExternalTeamId.get(game.winnerId)
+      if (winnerEntrantId) {
+        updateData.winnerId = winnerEntrantId
+        updateData.status = 'decided'
+        effectiveWinnerId = winnerEntrantId
+
+        // Propagate winner to next matchup
+        if (matchup.nextMatchupId) {
+          const slot = await getSlotByFeederOrder(prisma, matchup.id, matchup.nextMatchupId, matchup.position)
+          await prisma.matchup.update({
+            where: { id: matchup.nextMatchupId },
+            data: { [slot]: winnerEntrantId },
+          })
+        }
+      }
+    }
+
+    // Step 2: Map scores to entrant slots (entrant1 = top, entrant2 = bottom in display).
     // ESPN home/away does NOT always correspond to entrant1/entrant2 — especially
     // in later rounds where entrants are placed by bracket position, not ESPN designation.
     //
     // Primary strategy: use the WINNER to align scores. For decided games we know
-    // which entrant won (matchup.winnerId) and which ESPN team won (game.winnerId).
+    // which entrant won (effectiveWinnerId) and which ESPN team won (game.winnerId).
     // We find the winner's score from ESPN and assign it to the correct entrant slot.
     //
     // Fallback: for undecided games, use entrant-to-team ID mapping.
@@ -988,9 +1014,9 @@ export async function syncBracketResults(bracketId: string, games: SportsGame[])
       }
     }
 
-    if (matchup.winnerId && espnWinnerScore != null) {
+    if (effectiveWinnerId && espnWinnerScore != null) {
       // Decided game: assign winner's score to the winning entrant's slot
-      if (matchup.entrant1Id === matchup.winnerId) {
+      if (matchup.entrant1Id === effectiveWinnerId) {
         entrant1Score = espnWinnerScore
         entrant2Score = espnLoserScore
       } else {
@@ -1022,31 +1048,9 @@ export async function syncBracketResults(bracketId: string, games: SportsGame[])
       }
     }
 
-    // Update scores and game status
-    // homeScore/awayScore fields are used as entrant1Score/entrant2Score in display
-    const updateData: Record<string, unknown> = {
-      homeScore: entrant1Score,
-      awayScore: entrant2Score,
-      gameStatus: game.status,
-    }
-
-    // If game is closed and has a winner, and matchup doesn't already have one
-    if (game.isClosed && game.winnerId && !matchup.winnerId) {
-      const winnerEntrantId = entrantByExternalTeamId.get(game.winnerId)
-      if (winnerEntrantId) {
-        updateData.winnerId = winnerEntrantId
-        updateData.status = 'decided'
-
-        // Propagate winner to next matchup
-        if (matchup.nextMatchupId) {
-          const slot = await getSlotByFeederOrder(prisma, matchup.id, matchup.nextMatchupId, matchup.position)
-          await prisma.matchup.update({
-            where: { id: matchup.nextMatchupId },
-            data: { [slot]: winnerEntrantId },
-          })
-        }
-      }
-    }
+    // Apply scores
+    updateData.homeScore = entrant1Score
+    updateData.awayScore = entrant2Score
 
     await prisma.matchup.update({
       where: { id: matchup.id },

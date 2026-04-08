@@ -163,7 +163,7 @@ export async function scoreBracketPredictions(
     // Calculate totalRounds from bracket size
     const bracket = await prisma.bracket.findUnique({
       where: { id: bracketId },
-      select: { size: true, maxEntrants: true },
+      select: { size: true, maxEntrants: true, bracketType: true },
     })
 
     if (!bracket) return []
@@ -171,13 +171,65 @@ export async function scoreBracketPredictions(
     const effectiveSize = bracket.maxEntrants ?? bracket.size
     const totalRounds = Math.ceil(Math.log2(effectiveSize))
 
+    // For sports brackets, remap predictions to handle matchup slot changes.
+    // repairBracketAdvancement can re-wire which matchup slot a team ends up in,
+    // but predictions were stored against the original matchup IDs. Fix by matching
+    // predictions to matchups by ROUND + predicted team rather than matchup ID.
+    let scoringPredictions = predictions.map((p) => ({
+      participantId: p.participantId,
+      matchupId: p.matchupId,
+      predictedWinnerId: p.predictedWinnerId,
+    }))
+
+    if (bracket.bracketType === 'sports') {
+      // Build map: round -> set of winner entrant IDs
+      const winnersByRound = new Map<number, Map<string, string>>()
+      for (const m of resolvedMatchups) {
+        if (!winnersByRound.has(m.round)) {
+          winnersByRound.set(m.round, new Map())
+        }
+        // Map winner entrant ID -> matchup ID that they won
+        winnersByRound.get(m.round)!.set(m.winnerId!, m.id)
+      }
+
+      // Build map: matchupId -> round (from predictions' matchup IDs)
+      const matchupRoundMap = new Map<string, number>()
+      for (const m of resolvedMatchups) {
+        matchupRoundMap.set(m.id, m.round)
+      }
+      // Also fetch rounds for matchups that predictions reference but may not be resolved yet
+      const predMatchupIds = [...new Set(predictions.map((p) => p.matchupId))]
+      const predMatchups = await prisma.matchup.findMany({
+        where: { id: { in: predMatchupIds } },
+        select: { id: true, round: true },
+      })
+      for (const m of predMatchups) {
+        matchupRoundMap.set(m.id, m.round)
+      }
+
+      // Remap each prediction: if predictedWinnerId won a different matchup in the
+      // same round, redirect the prediction to that matchup so scoring gives credit.
+      scoringPredictions = scoringPredictions.map((pred) => {
+        const round = matchupRoundMap.get(pred.matchupId)
+        if (round === undefined) return pred
+
+        const roundWinners = winnersByRound.get(round)
+        if (!roundWinners) return pred
+
+        // Check if the predicted winner actually won a matchup in this round
+        const actualMatchupId = roundWinners.get(pred.predictedWinnerId)
+        if (actualMatchupId && actualMatchupId !== pred.matchupId) {
+          // Redirect prediction to the matchup where this team actually won
+          return { ...pred, matchupId: actualMatchupId }
+        }
+
+        return pred
+      })
+    }
+
     // Call the pure scoring engine
     const scores = scorePredictions(
-      predictions.map((p) => ({
-        participantId: p.participantId,
-        matchupId: p.matchupId,
-        predictedWinnerId: p.predictedWinnerId,
-      })),
+      scoringPredictions,
       resolvedMatchups.map((m) => ({
         id: m.id,
         round: m.round,
