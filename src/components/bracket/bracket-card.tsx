@@ -158,7 +158,7 @@ export function BracketCard({ bracket, onRemoved }: BracketCardProps) {
               className="truncate rounded-md border bg-background px-2 py-0.5 text-sm font-semibold text-card-foreground focus:outline-none focus:ring-2 focus:ring-ring"
             />
           ) : (
-            <h3 className="truncate text-sm font-semibold text-card-foreground group-hover:text-primary">
+            <h3 className="line-clamp-2 text-sm font-semibold text-card-foreground group-hover:text-primary" title={renameValue}>
               {renameValue}
             </h3>
           )}
