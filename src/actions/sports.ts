@@ -137,12 +137,32 @@ export async function triggerSportsSync() {
 
   try {
     const provider = getProvider()
+    // Include completed brackets so teachers can re-sync score corrections
     const activeBrackets = await getActiveSportsBrackets()
+    const completedBrackets = await prisma.bracket.findMany({
+      where: {
+        bracketType: 'sports',
+        status: 'completed',
+        teacherId: teacher.id,
+      },
+      include: {
+        matchups: {
+          where: { externalGameId: { not: null } },
+          select: {
+            id: true,
+            externalGameId: true,
+            homeScore: true,
+            awayScore: true,
+          },
+        },
+      },
+    })
 
-    // Filter to only brackets owned by this teacher
-    const teacherBrackets = activeBrackets.filter(
-      (b) => b.teacherId === teacher.id
-    )
+    // Filter active to only brackets owned by this teacher, then merge with completed
+    const teacherBrackets = [
+      ...activeBrackets.filter((b) => b.teacherId === teacher.id),
+      ...completedBrackets,
+    ]
 
     let syncedCount = 0
 

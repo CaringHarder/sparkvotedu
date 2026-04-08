@@ -1005,6 +1005,9 @@ export async function reopenBracketDAL(
     case 'predictive':
       await undoRoundPredictive(bracketId, finalRound.round)
       break
+    case 'sports':
+      // Sports brackets don't undo rounds — just reset status so sync can run again
+      break
     default:
       return { error: 'Reopen not supported for this bracket type' }
   }
