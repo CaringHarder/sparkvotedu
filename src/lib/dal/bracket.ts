@@ -830,6 +830,25 @@ export async function renameBracketDAL(
 }
 
 /**
+ * Get all brackets for a specific session.
+ * Returns brackets with entrant counts, ordered by most recently updated first.
+ * Includes draft, active, and completed brackets (excludes archived).
+ */
+export async function getBracketsBySessionDAL(sessionId: string) {
+  return prisma.bracket.findMany({
+    where: {
+      sessionId,
+      status: { not: 'archived' },
+    },
+    orderBy: { updatedAt: 'desc' },
+    include: {
+      _count: { select: { entrants: true } },
+      session: { select: { code: true, name: true } },
+    },
+  })
+}
+
+/**
  * Duplicate a bracket with its entrants (not matchups, votes, or predictions).
  * New bracket is always draft status with " (Copy)" appended to name.
  * Ownership enforced via teacherId filter.

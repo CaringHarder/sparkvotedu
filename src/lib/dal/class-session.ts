@@ -113,14 +113,27 @@ export async function endSession(sessionId: string, teacherId: string) {
  * Includes participant count for dashboard display.
  */
 export async function getTeacherSessions(teacherId: string) {
-  return prisma.classSession.findMany({
+  const sessions = await prisma.classSession.findMany({
     where: { teacherId, archivedAt: null },
     orderBy: { createdAt: 'desc' },
     include: {
       _count: {
-        select: { participants: true },
+        select: { participants: true, brackets: true, polls: true },
       },
     },
+  })
+
+  // D-06: Sort active first (by createdAt desc), then ended (by endedAt desc)
+  return sessions.sort((a, b) => {
+    if (a.status === 'active' && b.status !== 'active') return -1
+    if (a.status !== 'active' && b.status === 'active') return 1
+    if (a.status === 'active' && b.status === 'active') {
+      return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+    }
+    // Both ended: sort by endedAt desc (most recent first)
+    const aEnd = a.endedAt ? new Date(a.endedAt).getTime() : 0
+    const bEnd = b.endedAt ? new Date(b.endedAt).getTime() : 0
+    return bEnd - aEnd
   })
 }
 
@@ -275,4 +288,88 @@ export async function getArchivedSessions(
       },
     },
   })
+}
+
+/**
+ * Get a session with its brackets, polls, and participants.
+ * Used by the session workspace page to render all tabs.
+ * Verifies teacher ownership. Returns null if not found/unauthorized.
+ */
+export async function getSessionWithActivities(
+  sessionId: string,
+  teacherId: string
+) {
+  return prisma.classSession.findFirst({
+    where: {
+      id: sessionId,
+      teacherId,
+    },
+    include: {
+      participants: {
+        where: { firstName: { not: '' } },
+        orderBy: { createdAt: 'asc' },
+      },
+      brackets: {
+        where: { status: { not: 'archived' } },
+        orderBy: { updatedAt: 'desc' },
+        include: {
+          _count: { select: { entrants: true } },
+        },
+      },
+      polls: {
+        where: { status: { not: 'archived' } },
+        orderBy: { updatedAt: 'desc' },
+        include: {
+          _count: { select: { votes: true } },
+        },
+      },
+      _count: {
+        select: { participants: true, brackets: true, polls: true },
+      },
+    },
+  })
+}
+
+/**
+ * Migrate orphan brackets and polls (sessionId = null) to an auto-created "General" session.
+ * Idempotent: safe to call multiple times. Reuses existing "General" session if present.
+ * Returns the General session if orphans were found, or null if no orphans.
+ */
+export async function migrateOrphanActivities(teacherId: string) {
+  const [orphanBrackets, orphanPolls] = await Promise.all([
+    prisma.bracket.findMany({
+      where: { teacherId, sessionId: null },
+      select: { id: true },
+    }),
+    prisma.poll.findMany({
+      where: { teacherId, sessionId: null },
+      select: { id: true },
+    }),
+  ])
+
+  if (orphanBrackets.length === 0 && orphanPolls.length === 0) {
+    return null
+  }
+
+  // Find or create "General" session for this teacher
+  let generalSession = await prisma.classSession.findFirst({
+    where: { teacherId, name: 'General' },
+  })
+  if (!generalSession) {
+    generalSession = await createClassSession(teacherId, 'General')
+  }
+
+  // Assign all orphans to the General session
+  await prisma.$transaction([
+    prisma.bracket.updateMany({
+      where: { teacherId, sessionId: null },
+      data: { sessionId: generalSession.id },
+    }),
+    prisma.poll.updateMany({
+      where: { teacherId, sessionId: null },
+      data: { sessionId: generalSession.id },
+    }),
+  ])
+
+  return generalSession
 }
