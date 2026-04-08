@@ -380,6 +380,7 @@ export async function renameBracket(input: unknown) {
 // Schema for duplicating a bracket
 const duplicateBracketInputSchema = z.object({
   bracketId: z.string().uuid(),
+  targetSessionId: z.string().uuid().optional(),
 })
 
 /**
@@ -398,7 +399,7 @@ export async function duplicateBracket(input: unknown) {
   }
 
   try {
-    const result = await duplicateBracketDAL(parsed.data.bracketId, teacher.id)
+    const result = await duplicateBracketDAL(parsed.data.bracketId, teacher.id, parsed.data.targetSessionId)
 
     if ('error' in result) {
       return { error: result.error }

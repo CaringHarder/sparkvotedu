@@ -855,7 +855,8 @@ export async function getBracketsBySessionDAL(sessionId: string) {
  */
 export async function duplicateBracketDAL(
   bracketId: string,
-  teacherId: string
+  teacherId: string,
+  targetSessionId?: string
 ) {
   const source = await prisma.bracket.findFirst({
     where: { id: bracketId, teacherId },
@@ -879,7 +880,7 @@ export async function duplicateBracketDAL(
         maxEntrants: source.maxEntrants,
         status: 'draft',
         teacherId,
-        sessionId: null,
+        sessionId: targetSessionId ?? null,
         viewingMode: source.viewingMode,
         showVoteCounts: source.showVoteCounts,
         showSeedNumbers: source.showSeedNumbers,
