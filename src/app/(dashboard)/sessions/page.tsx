@@ -14,6 +14,7 @@ export default async function SessionsPage() {
   }
 
   const sessions = await getTeacherSessions(teacher.id)
+  const activeSessions = sessions.filter(s => s.status === 'active')
 
   return (
     <div className="space-y-8">
@@ -27,14 +28,18 @@ export default async function SessionsPage() {
       <SessionCreator />
 
       <div className="space-y-4">
-        <h2 className="text-lg font-semibold">Your Sessions</h2>
+        <h2 className="text-lg font-semibold">Active Sessions</h2>
         {sessions.length === 0 ? (
           <p className="text-sm text-muted-foreground">
             No sessions yet. Create one above to get started.
           </p>
+        ) : activeSessions.length === 0 ? (
+          <p className="text-sm text-muted-foreground">
+            No active sessions. Activate a session to see it here.
+          </p>
         ) : (
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {sessions.map((session) => (
+            {activeSessions.slice(0, 6).map((session) => (
               <div key={session.id} className="relative">
                 <Link
                   href={`/sessions/${session.id}`}

@@ -136,7 +136,7 @@ export async function DashboardShell() {
             </Link>
           </div>
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {activeSessions.slice(0, 3).map((session) => (
+            {activeSessions.slice(0, 6).map((session) => (
               <Link
                 key={session.id}
                 href={`/sessions/${session.id}`}
