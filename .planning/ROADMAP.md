@@ -141,10 +141,11 @@ Plans:
 **Goal:** Restructure the teacher dashboard so sessions are the primary navigation and organizational unit. Teachers pick a session first, then manage its brackets and polls from within that session's tabbed workspace. Remove Activities sidebar section, migrate orphan activities, fix card title truncation, add Move/Duplicate to session context menu actions, and replace dashboard session cards with a dropdown selector.
 **Requirements**: D-01 through D-18
 **Depends on:** Phase 3
-**Plans:** 4 plans
+**Plans:** 5 plans
 
 Plans:
 - [x] 04-01-PLAN.md -- Sidebar simplification, card title truncation fix, route redirects
 - [x] 04-02-PLAN.md -- DAL functions (getBracketsBySession, getSessionWithActivities, migrateOrphanActivities), duplicate-to-session action extensions
 - [x] 04-03-PLAN.md -- Session workspace rebuild with tabbed interface (Brackets | Polls | Students)
 - [x] 04-04-PLAN.md -- Context menu Move/Duplicate to session, dashboard dropdown selector, orphan migration trigger, visual verification
+- [ ] 04-05-PLAN.md -- Gap closure: mobile nav pinning, End Session confirmation dialog, dropdown visual prominence
