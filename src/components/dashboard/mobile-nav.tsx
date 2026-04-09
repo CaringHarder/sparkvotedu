@@ -3,8 +3,10 @@
 import { useState, useEffect, useCallback } from 'react'
 import { createPortal } from 'react-dom'
 import Image from 'next/image'
+import Link from 'next/link'
+import { usePathname } from 'next/navigation'
 import { Menu, X } from 'lucide-react'
-import { SidebarNav } from '@/components/dashboard/sidebar-nav'
+import { navItems, bottomNavItems, type NavItem } from '@/components/dashboard/sidebar-nav'
 import { SignOutButton } from '@/components/auth/signout-button'
 import { ThemeToggle } from '@/components/theme-toggle'
 
@@ -50,6 +52,36 @@ export function MobileNav() {
   }, [isOpen])
 
   const close = useCallback(() => setIsOpen(false), [])
+  const pathname = usePathname()
+
+  function renderMobileNavLink(item: NavItem) {
+    const isActive =
+      (pathname === item.href || pathname.startsWith(item.href + '/')) &&
+      !navItems.some(
+        (other) =>
+          other.href !== item.href &&
+          other.href.startsWith(item.href) &&
+          (pathname === other.href || pathname.startsWith(other.href + '/'))
+      )
+    const Icon = item.icon
+
+    return (
+      <Link
+        key={item.href}
+        href={item.href}
+        className={`group flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-all duration-150 ${
+          isActive
+            ? 'bg-brand-blue/10 text-brand-blue dark:bg-brand-blue/15 dark:text-brand-blue'
+            : 'text-muted-foreground hover:bg-brand-blue/5 hover:text-foreground dark:hover:bg-brand-blue/10'
+        }`}
+      >
+        <Icon className={`h-4 w-4 shrink-0 transition-colors ${
+          isActive ? 'text-brand-blue' : 'text-muted-foreground group-hover:text-foreground'
+        }`} />
+        {item.label}
+      </Link>
+    )
+  }
 
   const drawer = (
     <>
@@ -100,9 +132,18 @@ export function MobileNav() {
           </button>
         </div>
 
-        {/* Navigation content */}
-        <div className="flex flex-1 flex-col overflow-y-auto px-4 py-4" onClick={close}>
-          <SidebarNav />
+        {/* Scrollable top navigation */}
+        <div className="flex-1 overflow-y-auto px-4 py-4" onClick={close}>
+          <nav className="flex flex-col gap-1">
+            {navItems.map(item => renderMobileNavLink(item))}
+          </nav>
+        </div>
+
+        {/* Sticky bottom navigation -- never scrolls */}
+        <div className="border-t border-border/60 px-4 py-3" onClick={close}>
+          <nav className="flex flex-col gap-1">
+            {bottomNavItems.map(item => renderMobileNavLink(item))}
+          </nav>
         </div>
 
         {/* Footer: Theme toggle + Sign out */}

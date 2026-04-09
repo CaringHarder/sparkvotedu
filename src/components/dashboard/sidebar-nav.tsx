@@ -5,19 +5,19 @@ import { usePathname } from 'next/navigation'
 import { LayoutDashboard, Users, Archive, CreditCard, LineChart, User } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 
-interface NavItem {
+export interface NavItem {
   label: string
   href: string
   icon: LucideIcon
 }
 
-const navItems: NavItem[] = [
+export const navItems: NavItem[] = [
   { label: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
   { label: 'Sessions', href: '/sessions', icon: Users },
   { label: 'Archived', href: '/sessions/archived', icon: Archive },
 ]
 
-const bottomNavItems: NavItem[] = [
+export const bottomNavItems: NavItem[] = [
   { label: 'Analytics', href: '/analytics', icon: LineChart },
   { label: 'Billing', href: '/billing', icon: CreditCard },
   { label: 'Profile', href: '/profile', icon: User },
