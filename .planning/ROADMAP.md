@@ -144,7 +144,7 @@ Plans:
 **Plans:** 4 plans
 
 Plans:
-- [ ] 04-01-PLAN.md -- Sidebar simplification, card title truncation fix, route redirects
-- [ ] 04-02-PLAN.md -- DAL functions (getBracketsBySession, getSessionWithActivities, migrateOrphanActivities), duplicate-to-session action extensions
-- [ ] 04-03-PLAN.md -- Session workspace rebuild with tabbed interface (Brackets | Polls | Students)
-- [ ] 04-04-PLAN.md -- Context menu Move/Duplicate to session, dashboard dropdown selector, orphan migration trigger, visual verification
+- [x] 04-01-PLAN.md -- Sidebar simplification, card title truncation fix, route redirects
+- [x] 04-02-PLAN.md -- DAL functions (getBracketsBySession, getSessionWithActivities, migrateOrphanActivities), duplicate-to-session action extensions
+- [x] 04-03-PLAN.md -- Session workspace rebuild with tabbed interface (Brackets | Polls | Students)
+- [x] 04-04-PLAN.md -- Context menu Move/Duplicate to session, dashboard dropdown selector, orphan migration trigger, visual verification
