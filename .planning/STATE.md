@@ -102,6 +102,7 @@ All decisions archived in PROJECT.md Key Decisions table.
 | 52 | Replace delete with archive for active/draft polls and brackets | 2026-03-24 | faafb4b | | [52-replace-delete-with-archive-for-active-d](./quick/52-replace-delete-with-archive-for-active-d/) |
 | 53 | Fix broken terms and privacy page links | 2026-03-24 | 81c4503 | | [53-fix-broken-terms-and-privacy-page-links-](./quick/53-fix-broken-terms-and-privacy-page-links-/) |
 | 260324-l3w | Fix ranked poll UI to match simple poll pattern | 2026-03-24 | dfddfff | | [260324-l3w-fix-ranked-poll-ui-to-match-poll-ui-acti](./quick/260324-l3w-fix-ranked-poll-ui-to-match-poll-ui-acti/) |
+| 260409-drh | Add session dropdown to dashboard and sessions page (most recent 6 active) | 2026-04-09 | de6a488 | | [260409-drh-the-dashboard-and-sessions-page-should-b](./quick/260409-drh-the-dashboard-and-sessions-page-should-b/) |
 | Phase 01 P01 | 3min | 2 tasks | 6 files |
 | Phase 01 P02 | 2min | 2 tasks | 3 files |
 | Phase 01 P03 | 5min | 3 tasks | 5 files |
@@ -113,5 +114,5 @@ All decisions archived in PROJECT.md Key Decisions table.
 ## Session Continuity
 
 Last session: 2026-04-08T20:09:27Z
-Last activity: 2026-04-09
+Last activity: 2026-04-09 - Completed quick task 260409-drh: Add session dropdown to dashboard and sessions page
 Resume: Plan 04-05 complete. Phase 04 gap closure done.
