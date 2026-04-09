@@ -21,6 +21,7 @@ interface NavSection {
 
 const navItems: NavItem[] = [
   { label: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
+  { label: 'Analytics', href: '/analytics', icon: LineChart },
   { label: 'Sessions', href: '/sessions', icon: Users },
   { label: 'Archived', href: '/sessions/archived', icon: Archive },
 ]
@@ -41,7 +42,6 @@ const activitiesSection: NavSection = {
 }
 
 const bottomNavItems: NavItem[] = [
-  { label: 'Analytics', href: '/analytics', icon: LineChart },
   { label: 'Billing', href: '/billing', icon: CreditCard },
   { label: 'Profile', href: '/profile', icon: User },
 ]
