@@ -127,10 +127,10 @@ export async function DashboardShell() {
         </div>
       </div>
 
-      {/* Session Quick-Switch (D-16, D-17) */}
+      {/* Session Quick-Switch */}
       {activeSessions.length > 0 && (
         <DashboardSessionDropdown
-          sessions={activeSessions.map(s => ({
+          sessions={activeSessions.slice(0, 6).map(s => ({
             id: s.id,
             name: s.name,
             code: s.code,

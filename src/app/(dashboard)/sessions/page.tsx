@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation'
 import { getAuthenticatedTeacher } from '@/lib/dal/auth'
 import { getTeacherSessions } from '@/lib/dal/class-session'
 import { SessionCreator } from '@/components/teacher/session-creator'
+import { DashboardSessionDropdown } from '@/components/dashboard/dashboard-session-dropdown'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { SessionCardMenu } from '@/components/teacher/session-card-menu'
@@ -14,6 +15,7 @@ export default async function SessionsPage() {
   }
 
   const sessions = await getTeacherSessions(teacher.id)
+  const activeSessions = sessions.filter(s => s.status === 'active').slice(0, 6)
 
   return (
     <div className="space-y-8">
@@ -23,6 +25,17 @@ export default async function SessionsPage() {
           Create and manage your class sessions.
         </p>
       </div>
+
+      {activeSessions.length > 0 && (
+        <DashboardSessionDropdown
+          sessions={activeSessions.map(s => ({
+            id: s.id,
+            name: s.name,
+            code: s.code,
+            _count: { participants: s._count.participants },
+          }))}
+        />
+      )}
 
       <SessionCreator />
 
