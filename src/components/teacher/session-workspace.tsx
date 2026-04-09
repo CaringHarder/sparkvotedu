@@ -1,7 +1,7 @@
 'use client'
 
 import { useRouter } from 'next/navigation'
-import { useTransition } from 'react'
+import { useState, useTransition } from 'react'
 import { Plus, Copy } from 'lucide-react'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Badge } from '@/components/ui/badge'
@@ -11,6 +11,7 @@ import { PollCard } from '@/components/poll/poll-card'
 import { StudentRoster } from '@/components/teacher/student-roster'
 import { EditableSessionName } from '@/components/teacher/editable-session-name'
 import { QRCodeDisplay } from '@/components/teacher/qr-code-display'
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { endSession } from '@/actions/class-session'
 import Link from 'next/link'
 
@@ -86,6 +87,7 @@ interface SessionWorkspaceProps {
 export function SessionWorkspace({ session, defaultTab, sessions }: SessionWorkspaceProps) {
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
+  const [showEndConfirm, setShowEndConfirm] = useState(false)
   const isActive = session.status === 'active'
 
   function getSessionFallback(): string {
@@ -95,9 +97,14 @@ export function SessionWorkspace({ session, defaultTab, sessions }: SessionWorks
   }
 
   function handleEndSession() {
+    setShowEndConfirm(true)
+  }
+
+  function confirmEndSession() {
     startTransition(async () => {
       const result = await endSession(session.id)
       if (!result.error) {
+        setShowEndConfirm(false)
         router.refresh()
       }
     })
@@ -280,6 +287,26 @@ export function SessionWorkspace({ session, defaultTab, sessions }: SessionWorks
           )}
         </TabsContent>
       </Tabs>
+
+      {/* End Session Confirmation Dialog */}
+      <Dialog open={showEndConfirm} onOpenChange={setShowEndConfirm}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>End this session?</DialogTitle>
+            <DialogDescription>
+              Students will no longer be able to join or participate. You can still view results in your archived sessions.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowEndConfirm(false)} disabled={isPending}>
+              Cancel
+            </Button>
+            <Button variant="destructive" onClick={confirmEndSession} disabled={isPending}>
+              {isPending ? 'Ending...' : 'End Session'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
