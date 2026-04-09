@@ -105,6 +105,7 @@ All decisions archived in PROJECT.md Key Decisions table.
 | 260409-drh | Add session dropdown to dashboard and sessions page (most recent 6 active) | 2026-04-09 | de6a488 | | [260409-drh-the-dashboard-and-sessions-page-should-b](./quick/260409-drh-the-dashboard-and-sessions-page-should-b/) |
 | 260409-ecx | Fix dropdown to show all sessions alphabetically, cards limited to 6 most recent | 2026-04-09 | f7bf18e | | [260409-ecx-fix-session-dropdown-to-show-all-session](./quick/260409-ecx-fix-session-dropdown-to-show-all-session/) |
 | 260409-em1 | Fix session cards: add to dashboard, limit sessions page to 6 active | 2026-04-09 | 72308ff | | [260409-em1-fix-session-cards-dashboard-shows-none-s](./quick/260409-em1-fix-session-cards-dashboard-shows-none-s/) |
+| 260409-erc | Remove sessions list page, consolidate into dashboard | 2026-04-09 | 87a88ec | | [260409-erc-remove-sessions-list-page-redirect-sessi](./quick/260409-erc-remove-sessions-list-page-redirect-sessi/) |
 | Phase 01 P01 | 3min | 2 tasks | 6 files |
 | Phase 01 P02 | 2min | 2 tasks | 3 files |
 | Phase 01 P03 | 5min | 3 tasks | 5 files |
@@ -116,5 +117,5 @@ All decisions archived in PROJECT.md Key Decisions table.
 ## Session Continuity
 
 Last session: 2026-04-08T20:09:27Z
-Last activity: 2026-04-09 - Completed quick task 260409-em1: Fix session cards on dashboard and sessions page
+Last activity: 2026-04-09 - Completed quick task 260409-erc: Remove sessions list page, consolidate into dashboard
 Resume: Plan 04-05 complete. Phase 04 gap closure done.
