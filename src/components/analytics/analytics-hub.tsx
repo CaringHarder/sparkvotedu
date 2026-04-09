@@ -237,15 +237,26 @@ export function AnalyticsHub({ sessions, orphanBrackets, orphanPolls }: Analytic
 
   return (
     <div className="space-y-8">
-      {/* Header with dropdown */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <LineChart className="h-6 w-6 text-primary" />
-          <h1 className="text-2xl font-bold tracking-tight">Analytics</h1>
+      {/* Header */}
+      <div className="flex items-center gap-2">
+        <LineChart className="h-6 w-6 text-primary" />
+        <h1 className="text-2xl font-bold tracking-tight">Analytics</h1>
+      </div>
+
+      {/* Session selector card */}
+      <div className="rounded-xl border bg-card p-5 shadow-sm">
+        <div className="flex items-center gap-3 mb-3">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-brand-blue/10">
+            <LineChart className="h-5 w-5 text-brand-blue" />
+          </div>
+          <div>
+            <h3 className="text-sm font-semibold text-foreground">Session Analytics</h3>
+            <p className="text-xs text-muted-foreground">{sessions.length} session{sessions.length !== 1 ? 's' : ''} with data</p>
+          </div>
         </div>
         <Select value={selectedSessionId} onValueChange={setSelectedSessionId}>
-          <SelectTrigger className="w-[220px]">
-            <SelectValue placeholder="Select session..." />
+          <SelectTrigger className="w-full">
+            <SelectValue placeholder="Select a session..." />
           </SelectTrigger>
           <SelectContent>
             {sessions.map((session) => (
