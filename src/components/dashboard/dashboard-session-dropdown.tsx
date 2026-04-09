@@ -1,6 +1,7 @@
 'use client'
 
 import { useRouter } from 'next/navigation'
+import { Users } from 'lucide-react'
 import {
   Select,
   SelectContent,
@@ -26,9 +27,18 @@ export function DashboardSessionDropdown({ sessions }: DashboardSessionDropdownP
   if (sessions.length === 0) return null
 
   return (
-    <div className="max-w-sm">
+    <div className="rounded-xl border bg-card p-5 shadow-sm">
+      <div className="flex items-center gap-3 mb-3">
+        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-brand-blue/10">
+          <Users className="h-5 w-5 text-brand-blue" />
+        </div>
+        <div>
+          <h3 className="text-sm font-semibold text-foreground">Active Sessions</h3>
+          <p className="text-xs text-muted-foreground">{sessions.length} session{sessions.length !== 1 ? 's' : ''} running</p>
+        </div>
+      </div>
       <Select onValueChange={(value) => router.push(`/sessions/${value}`)}>
-        <SelectTrigger>
+        <SelectTrigger className="w-full">
           <SelectValue placeholder="Jump to a session..." />
         </SelectTrigger>
         <SelectContent>

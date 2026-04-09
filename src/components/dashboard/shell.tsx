@@ -129,17 +129,14 @@ export async function DashboardShell() {
 
       {/* Session Quick-Switch (D-16, D-17) */}
       {activeSessions.length > 0 && (
-        <div className="space-y-2">
-          <h2 className="text-lg font-semibold tracking-tight">Active Sessions</h2>
-          <DashboardSessionDropdown
-            sessions={activeSessions.map(s => ({
-              id: s.id,
-              name: s.name,
-              code: s.code,
-              _count: { participants: s._count.participants },
-            }))}
-          />
-        </div>
+        <DashboardSessionDropdown
+          sessions={activeSessions.map(s => ({
+            id: s.id,
+            name: s.name,
+            code: s.code,
+            _count: { participants: s._count.participants },
+          }))}
+        />
       )}
 
       {/* Empty state */}
