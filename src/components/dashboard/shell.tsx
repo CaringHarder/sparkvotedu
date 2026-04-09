@@ -24,6 +24,11 @@ export async function DashboardShell() {
   await migrateOrphanActivities(teacher.id)
 
   const activeSessions = sessions.filter(s => s.status === 'active')
+  const dropdownSessions = [...activeSessions].sort((a, b) => {
+    const nameA = (a.name || '').toLowerCase()
+    const nameB = (b.name || '').toLowerCase()
+    return nameA.localeCompare(nameB)
+  })
   const tier = (billing.tier || 'free') as SubscriptionTier
   const limits = TIER_LIMITS[tier]
 
@@ -130,7 +135,7 @@ export async function DashboardShell() {
       {/* Session Quick-Switch */}
       {activeSessions.length > 0 && (
         <DashboardSessionDropdown
-          sessions={activeSessions.slice(0, 6).map(s => ({
+          sessions={dropdownSessions.map(s => ({
             id: s.id,
             name: s.name,
             code: s.code,
