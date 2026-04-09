@@ -82,7 +82,7 @@ Teachers can instantly engage any classroom through voting -- on any topic, in a
 
 ### Active
 
-(None -- planning next milestone)
+- ✓ Session-first dashboard navigation (sidebar simplification, session workspace tabs, context menu actions, dropdown selector, gap closure for mobile nav/confirmation/prominence) -- v4.0
 
 ### Future
 
@@ -109,7 +109,7 @@ Teachers can instantly engage any classroom through voting -- on any topic, in a
 
 ## Context
 
-**Current state:** v3.0 shipped 2026-03-09. Live at sparkvotedu.com. 89,896 LOC TypeScript. 45 phases completed across 6 milestones (v1.0-v3.0).
+**Current state:** Phase 04 complete (2026-04-09). Live at sparkvotedu.com. ~90K LOC TypeScript. Teacher dashboard restructured to session-first workflow with tabbed workspace, context menu actions, and dropdown session navigation.
 
 **Tech stack:** Next.js 16 (App Router, Turbopack), Prisma v7, Supabase (auth + realtime + storage), Stripe (billing), SportsDataIO (sports data), Tailwind CSS v4, shadcn/ui, Framer Motion.
 
@@ -162,4 +162,7 @@ Teachers can instantly engage any classroom through voting -- on any topic, in a
 | FingerprintJS complete removal | Dead code, ~150KB bundle bloat, privacy concerns | ✓ Good -- clean codebase |
 
 ---
-*Last updated: 2026-03-09 after v3.0 milestone*
+| Session-first dashboard navigation | Teachers need session context before activity context; sidebar was cluttered | ✓ Good -- 3-item sidebar, tabbed workspace, context menu actions |
+
+---
+*Last updated: 2026-04-09 after Phase 04 completion*
