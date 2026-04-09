@@ -64,8 +64,8 @@ export function SessionDetail({ session }: SessionDetailProps) {
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-2">
-        <Link href="/sessions" className="text-sm text-muted-foreground hover:text-foreground">
-          Sessions
+        <Link href="/dashboard" className="text-sm text-muted-foreground hover:text-foreground">
+          Dashboard
         </Link>
         <span className="text-sm text-muted-foreground">/</span>
         <span className="text-sm">{session.name || getSessionFallback(session.createdAt)}</span>
