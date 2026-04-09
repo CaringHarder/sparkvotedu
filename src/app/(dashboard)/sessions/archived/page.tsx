@@ -38,7 +38,7 @@ export default async function ArchivedSessionsPage({
     <div className="space-y-8">
       <div className="flex items-center gap-3">
         <Link
-          href="/sessions"
+          href="/dashboard"
           className="flex h-8 w-8 items-center justify-center rounded-md border border-input bg-background text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
         >
           <ArrowLeft className="h-4 w-4" />

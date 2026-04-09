@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { LayoutDashboard, Users, Archive, CreditCard, LineChart, User } from 'lucide-react'
+import { LayoutDashboard, Archive, CreditCard, LineChart, User } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 
 export interface NavItem {
@@ -13,7 +13,6 @@ export interface NavItem {
 
 export const navItems: NavItem[] = [
   { label: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
-  { label: 'Sessions', href: '/sessions', icon: Users },
   { label: 'Archived', href: '/sessions/archived', icon: Archive },
 ]
 
