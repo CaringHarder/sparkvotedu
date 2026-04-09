@@ -15,7 +15,12 @@ export default async function SessionsPage() {
   }
 
   const sessions = await getTeacherSessions(teacher.id)
-  const activeSessions = sessions.filter(s => s.status === 'active').slice(0, 6)
+  const activeSessions = sessions.filter(s => s.status === 'active')
+  const dropdownSessions = [...activeSessions].sort((a, b) => {
+    const nameA = (a.name || '').toLowerCase()
+    const nameB = (b.name || '').toLowerCase()
+    return nameA.localeCompare(nameB)
+  })
 
   return (
     <div className="space-y-8">
@@ -28,7 +33,7 @@ export default async function SessionsPage() {
 
       {activeSessions.length > 0 && (
         <DashboardSessionDropdown
-          sessions={activeSessions.map(s => ({
+          sessions={dropdownSessions.map(s => ({
             id: s.id,
             name: s.name,
             code: s.code,
