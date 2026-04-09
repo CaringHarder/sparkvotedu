@@ -3,7 +3,7 @@ import { getTeacherSessions, migrateOrphanActivities } from '@/lib/dal/class-ses
 import { getTeacherBillingOverview } from '@/lib/dal/billing'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
-import { Plus, ArrowRight, Sparkles, Zap } from 'lucide-react'
+import { Plus, ArrowRight, Sparkles, Zap, Users } from 'lucide-react'
 import { PlanBadge } from '@/components/billing/plan-badge'
 import { TIER_LIMITS, type SubscriptionTier } from '@/lib/gates/tiers'
 import { DashboardSessionDropdown } from '@/components/dashboard/dashboard-session-dropdown'
@@ -134,14 +134,52 @@ export async function DashboardShell() {
 
       {/* Session Quick-Switch */}
       {activeSessions.length > 0 && (
-        <DashboardSessionDropdown
-          sessions={dropdownSessions.map(s => ({
-            id: s.id,
-            name: s.name,
-            code: s.code,
-            _count: { participants: s._count.participants },
-          }))}
-        />
+        <>
+          <DashboardSessionDropdown
+            sessions={dropdownSessions.map(s => ({
+              id: s.id,
+              name: s.name,
+              code: s.code,
+              _count: { participants: s._count.participants },
+            }))}
+          />
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <h2 className="text-lg font-semibold tracking-tight">Active Sessions</h2>
+              <Link
+                href="/sessions"
+                className="flex items-center gap-1 text-sm font-medium text-brand-blue hover:underline"
+              >
+                View all <ArrowRight className="h-4 w-4" />
+              </Link>
+            </div>
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              {activeSessions.slice(0, 6).map((session) => (
+                <Link
+                  key={session.id}
+                  href={`/sessions/${session.id}`}
+                  className="group rounded-xl border bg-card p-4 shadow-sm transition-all duration-200 hover:border-brand-amber/40 hover:shadow-md"
+                >
+                  <div className="flex items-start justify-between">
+                    <p className="font-medium text-foreground">{session.name || `Unnamed Session \u2014 ${new Date(session.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`}</p>
+                    <span className="inline-flex items-center rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-medium text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400">
+                      Active
+                    </span>
+                  </div>
+                  <p className="mt-2 font-mono text-xl font-bold tracking-wider text-brand-amber">
+                    {session.code}
+                  </p>
+                  <div className="mt-2 flex items-center gap-1.5 text-sm text-muted-foreground">
+                    <Users className="h-3.5 w-3.5" />
+                    <span>
+                      {session._count.participants} student{session._count.participants !== 1 ? 's' : ''}
+                    </span>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </div>
+        </>
       )}
 
       {/* Empty state */}
