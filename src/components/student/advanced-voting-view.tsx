@@ -118,6 +118,17 @@ export function AdvancedVotingView({
   // Handle vote click on entrant in diagram
   const handleEntrantClick = useCallback(
     (matchupId: string, entrantId: string) => {
+      // Guard: brackets do not allow vote changes. If the student has already
+      // voted on this matchup, or the matchup is not currently open for
+      // voting, drop the click entirely. Without this, the advanced bracket
+      // diagram — which is also shown briefly when a simple bracket is still
+      // loading its viewingMode — would let the student overwrite an existing
+      // vote. The server action also enforces this, so this guard is defense
+      // in depth against the race + UX confusion.
+      const matchup = currentMatchups.find((m) => m.id === matchupId)
+      if (!matchup || matchup.status !== 'voting') return
+      if (votes[matchupId] != null) return
+
       // Optimistic update
       setVotes((prev) => ({ ...prev, [matchupId]: entrantId }))
       onVoteUpdate?.(matchupId, entrantId)
@@ -134,7 +145,7 @@ export function AdvancedVotingView({
         }
       })
     },
-    [participantId, initialVotes, onVoteUpdate]
+    [participantId, initialVotes, onVoteUpdate, currentMatchups, votes]
   )
 
   // Count votable matchups and voted matchups

@@ -1,7 +1,7 @@
 'use server'
 
 import { prisma } from '@/lib/prisma'
-import { castVoteDAL, getVoteCountsForMatchup } from '@/lib/dal/vote'
+import { castVoteDAL, getVoteCountsForMatchup, hasVoted } from '@/lib/dal/vote'
 import { broadcastVoteUpdate } from '@/lib/realtime/broadcast'
 import { castVoteSchema } from '@/lib/utils/validation'
 
@@ -60,6 +60,21 @@ export async function castVote(input: unknown) {
 
     if (participant.banned) {
       return { error: 'Participant is banned from voting' }
+    }
+
+    // Enforce one-vote-per-matchup: reject if this participant already has a
+    // vote recorded for this matchup. Brackets do not support vote changes
+    // (unlike polls, which have an explicit allowVoteChange flag). Without
+    // this guard, the upsert below would silently overwrite an existing vote,
+    // which lets the advanced bracket view bypass the client-side lock and
+    // also lets races (e.g. viewingMode fetch delay) change an existing vote.
+    const existing = await hasVoted(matchupId, participantId)
+    if (existing) {
+      // Idempotent: re-submitting the same vote is not an error.
+      if (existing.entrantId === entrantId) {
+        return { success: true, votedEntrantId: entrantId }
+      }
+      return { error: 'Vote already recorded' }
     }
 
     // Cast the vote via DAL (upsert for idempotent vote creation/update)

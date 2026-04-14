@@ -451,7 +451,18 @@ function SELiveView({
 }) {
   const { viewingMode } = useRealtimeBracket(bracket.id)
 
-  if (viewingMode === 'simple') {
+  // Race fix: useRealtimeBracket's viewingMode starts as undefined until its
+  // first fetchBracketState resolves (~7-10s on cold mount). If we waited for
+  // that, every bracket — including brackets with persisted viewingMode
+  // 'simple' — would render AdvancedVotingView first and flip later. During
+  // that window, the advanced view's click handler lets students change
+  // already-cast votes. Fall back to the bracket's persisted viewingMode that
+  // the page already fetched (bracket.viewingMode) until the realtime hook
+  // reports a value. Once realtime reports, it takes over (enabling the
+  // teacher to flip the mode live).
+  const effectiveViewingMode = viewingMode ?? bracket.viewingMode
+
+  if (effectiveViewingMode === 'simple') {
     return (
       <SimpleVotingView
         matchups={bracket.matchups}
