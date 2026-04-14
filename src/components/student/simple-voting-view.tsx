@@ -34,7 +34,14 @@ export function SimpleVotingView({
   bracketName,
   initialVotes,
 }: SimpleVotingViewProps) {
-  const [currentIndex, setCurrentIndex] = useState(0)
+  // Initialize to the first unvoted votable matchup so returning students who
+  // already voted on every open matchup land directly on the "All votes in!"
+  // waiting screen instead of a locked matchup card.
+  const [currentIndex, setCurrentIndex] = useState(() => {
+    const votable = initialMatchups.filter((m) => m.status === 'voting')
+    const firstUnvoted = votable.findIndex((m) => !initialVotes[m.id])
+    return firstUnvoted === -1 ? votable.length : firstUnvoted
+  })
   const [showConfirmation, setShowConfirmation] = useState(false)
   const [showCelebration, setShowCelebration] = useState(false)
   const [revealState, setRevealState] = useState<{
