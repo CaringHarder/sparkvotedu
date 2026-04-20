@@ -131,6 +131,57 @@ function getEntrantName(entrant: BracketEntrantData | null): string {
   return entrant?.name ?? 'TBD'
 }
 
+// --- Entrant name fit helper (hybrid: native → soft-squeeze → truncate) ---
+// Returns the display string plus an optional textLength attribute so the
+// SVG <text> element can render without overflowing its card budget.
+//
+// Strategy (in order):
+//   1) If the name fits natively at its estimated natural width → render as-is.
+//   2) If squeezing to >= SQUEEZE_FLOOR_RATIO (80%) of natural width fits →
+//      emit `textLength={budget}` with `lengthAdjust="spacingAndGlyphs"` to
+//      soft-compress the glyphs (preserves full text, slight cramping).
+//   3) Otherwise, truncate char-by-char until the remaining string + ellipsis
+//      fits within the budget at natural spacing; caller should also add a
+//      <title> child so the full name is available on hover / to AT.
+//
+// Character-width heuristic: Geist Sans at fontSize 11 ≈ 5.2 internal SVG
+// units/char on average. Real glyphs vary (i/l narrow, M/W wide); this
+// average errs slightly narrow so the squeeze path triggers before truncation
+// for edge-case-wide strings — safe since SVG `textLength` gracefully handles
+// small over-estimates.
+const AVG_CHAR_WIDTH_AT_FONTSIZE_11 = 5.2
+const SQUEEZE_FLOOR_RATIO = 0.8
+const ELLIPSIS = '\u2026'
+
+function fitEntrantName(
+  fullText: string,
+  budget: number
+): { display: string; textLength?: number; truncated: boolean } {
+  if (budget <= 0) {
+    return { display: fullText, truncated: false }
+  }
+  const naturalWidth = fullText.length * AVG_CHAR_WIDTH_AT_FONTSIZE_11
+  if (naturalWidth <= budget) {
+    return { display: fullText, truncated: false }
+  }
+  // Soft-squeeze path: squeezing natural width down to `budget` is acceptable
+  // as long as the required ratio is >= SQUEEZE_FLOOR_RATIO.
+  if (budget / naturalWidth >= SQUEEZE_FLOOR_RATIO) {
+    return { display: fullText, textLength: budget, truncated: false }
+  }
+  // Truncate with ellipsis. Reserve space for ellipsis char at natural spacing.
+  const ellipsisWidth = AVG_CHAR_WIDTH_AT_FONTSIZE_11
+  const availableForText = Math.max(0, budget - ellipsisWidth)
+  const maxChars = Math.max(
+    0,
+    Math.floor(availableForText / AVG_CHAR_WIDTH_AT_FONTSIZE_11)
+  )
+  if (maxChars === 0) {
+    return { display: ELLIPSIS, truncated: true }
+  }
+  return { display: fullText.slice(0, maxChars) + ELLIPSIS, truncated: true }
+}
+
 // --- Single matchup box ---
 function MatchupBox({
   matchup,
@@ -184,6 +235,34 @@ function MatchupBox({
   const isClickable = (isVoting || (allowPendingClick && matchup.status === 'pending')) && onEntrantClick && !isByeMatchup
   const voted1 = votedEntrantId === matchup.entrant1Id
   const voted2 = votedEntrantId === matchup.entrant2Id
+
+  // --- Available width budget for each entrant's name text (internal SVG units) ---
+  // Base: MATCH_WIDTH (160) - left inset (8) - right inset (8) = 144.
+  // Subtract logo width (16 px image + 8 px offset delta = 16) when logo rendered.
+  // Subtract ~20 for right-side score/vote-count text.
+  // Subtract ~7 for the " ✓" suffix when entrant is the voted one.
+  const HAS_LOGO_OFFSET = 16
+  const RIGHT_LABEL_RESERVE = 20
+  const VOTED_CHECK_RESERVE = 7
+  const baseBudget = MATCH_WIDTH - 8 - 8
+  const hasRight1 =
+    (isSports && matchup.homeScore != null) ||
+    (voteLabel != null && !(isSports && matchup.homeScore != null))
+  const hasRight2 =
+    (isSports && matchup.awayScore != null) ||
+    (voteLabel != null && !(isSports && matchup.awayScore != null))
+  const budget1 =
+    baseBudget -
+    (matchup.entrant1?.logoUrl && !isBye1 ? HAS_LOGO_OFFSET : 0) -
+    (hasRight1 ? RIGHT_LABEL_RESERVE : 0) -
+    (voted1 ? VOTED_CHECK_RESERVE : 0)
+  const budget2 =
+    baseBudget -
+    (matchup.entrant2?.logoUrl && !isBye2 ? HAS_LOGO_OFFSET : 0) -
+    (hasRight2 ? RIGHT_LABEL_RESERVE : 0) -
+    (voted2 ? VOTED_CHECK_RESERVE : 0)
+  const fit1 = fitEntrantName(entrant1Name, budget1)
+  const fit2 = fitEntrantName(entrant2Name, budget2)
 
   return (
     <g>
@@ -374,6 +453,8 @@ function MatchupBox({
       <text
         x={x + (matchup.entrant1?.logoUrl && !isBye1 ? 24 : 8)}
         y={y + 19}
+        textLength={fit1.textLength}
+        lengthAdjust={fit1.textLength != null ? 'spacingAndGlyphs' : undefined}
         style={{
           fill: isBye1
             ? 'var(--muted-foreground)'
@@ -391,7 +472,8 @@ function MatchupBox({
           pointerEvents: 'none',
         }}
       >
-        {entrant1Name}{voted1 ? ' \u2713' : ''}
+        {fit1.truncated && <title>{entrant1Name}{voted1 ? ' \u2713' : ''}</title>}
+        {fit1.display}{voted1 ? ' \u2713' : ''}
       </text>
 
       {/* Top entrant score (sports mode) */}
@@ -485,6 +567,8 @@ function MatchupBox({
       <text
         x={x + (matchup.entrant2?.logoUrl && !isBye2 ? 24 : 8)}
         y={y + 44}
+        textLength={fit2.textLength}
+        lengthAdjust={fit2.textLength != null ? 'spacingAndGlyphs' : undefined}
         style={{
           fill: isBye2
             ? 'var(--muted-foreground)'
@@ -502,7 +586,8 @@ function MatchupBox({
           pointerEvents: 'none',
         }}
       >
-        {entrant2Name}{voted2 ? ' \u2713' : ''}
+        {fit2.truncated && <title>{entrant2Name}{voted2 ? ' \u2713' : ''}</title>}
+        {fit2.display}{voted2 ? ' \u2713' : ''}
       </text>
 
       {/* Bottom entrant score (sports mode) */}
